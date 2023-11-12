@@ -1,0 +1,8 @@
+name: Account Activity Metrics
+identifier: account_activity_metrics
+metricGroup: account_activity_metrics_group
+metrics:
+  - metricName: account_activity_metrics
+    metricDefinition: Number of unique active projects & unique account logins in an account
+    type: Count
+    unit: "1"

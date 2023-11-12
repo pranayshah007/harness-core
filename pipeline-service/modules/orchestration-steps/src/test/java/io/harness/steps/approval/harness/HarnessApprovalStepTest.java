@@ -255,7 +255,10 @@ public class HarnessApprovalStepTest {
     AutoApprovalParams autoApprovalParams =
         AutoApprovalParams.builder()
             .action(AutoApprovalAction.APPROVE)
-            .scheduledDeadline(ScheduledDeadline.builder().time("time").timeZone("timezone").build())
+            .scheduledDeadline(ScheduledDeadline.builder()
+                                   .time(ParameterField.createValueField("time"))
+                                   .timeZone(ParameterField.createValueField("timezone"))
+                                   .build())
             .comments(ParameterField.<String>builder().value("comments").build())
             .build();
     specParameters.setAutoApproval(autoApprovalParams);
@@ -300,7 +303,10 @@ public class HarnessApprovalStepTest {
     AutoApprovalParams autoApprovalParams =
         AutoApprovalParams.builder()
             .action(AutoApprovalAction.APPROVE)
-            .scheduledDeadline(ScheduledDeadline.builder().time("time").timeZone("timezone").build())
+            .scheduledDeadline(ScheduledDeadline.builder()
+                                   .time(ParameterField.createValueField("time"))
+                                   .timeZone(ParameterField.createValueField("timezone"))
+                                   .build())
             .comments(ParameterField.<String>builder().value("comments").build())
             .build();
     specParameters.setAutoApproval(autoApprovalParams);
@@ -368,6 +374,14 @@ public class HarnessApprovalStepTest {
                         .minimumCount(ParameterField.<Integer>builder().value(1).build())
                         .disallowPipelineExecutor(ParameterField.<Boolean>builder().value(false).build())
                         .build())
+                .autoApproval(AutoApprovalParams.builder()
+                                  .action(AutoApprovalAction.APPROVE)
+                                  .scheduledDeadline(ScheduledDeadline.builder()
+                                                         .time(ParameterField.createValueField("2040-05-05 04:24 am"))
+                                                         .timeZone(ParameterField.createValueField("Asia/Kolkata"))
+                                                         .build())
+                                  .comments(ParameterField.<String>builder().value("comments").build())
+                                  .build())
                 .isAutoRejectEnabled(ParameterField.<Boolean>builder().value(false).build())
                 .build())
         .build();

@@ -12,6 +12,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -49,6 +50,8 @@ public class MultiDeploymentStepPlanCreator {
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILDREN).build())
                 .build())
         .skipExpressionChain(true)
+        .advisorObtainmentForExecutionMode(ExecutionMode.PIPELINE_ROLLBACK, metadata.getAdviserObtainments())
+        .advisorObtainmentForExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK, metadata.getAdviserObtainments())
         .adviserObtainments(metadata.getAdviserObtainments())
         .build();
   }

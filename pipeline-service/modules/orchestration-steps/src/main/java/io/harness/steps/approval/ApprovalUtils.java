@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -54,6 +55,7 @@ public class ApprovalUtils {
   public static final String SERVICENOW_DELEGATE_TASK_NAME =
       format("ServiceNow Task: %s", ServiceNowActionNG.GET_TICKET.getDisplayName());
   private static final String EMPTY_STRING = "";
+  private static final String NEWLINE_CHARS_REGEX = "(?:\\r\\n|\\r|\\n)";
   public static final List<String> JIRA_APPROVAL_STATIC_FIELDS =
       Arrays.asList(JiraConstantsNG.PROJECT_KEY, JiraConstantsNG.ISSUE_TYPE_KEY, JiraConstantsNG.STATUS_KEY);
 
@@ -187,5 +189,18 @@ public class ApprovalUtils {
       return null;
     }
     return fieldNameToKeys.get(name);
+  }
+
+  public Map<String, String> escapeHTMLForTextFields(
+      @NotNull Map<String, String> templateData, @NotNull List<String> textFields) {
+    for (String textField : textFields) {
+      templateData.computeIfPresent(textField,
+          (field, value)
+              ->
+          // regex: non-capturing group with 3 alternatives matching carriage return and newline characters
+          value.replaceAll(NEWLINE_CHARS_REGEX, "<br>"));
+    }
+
+    return templateData;
   }
 }

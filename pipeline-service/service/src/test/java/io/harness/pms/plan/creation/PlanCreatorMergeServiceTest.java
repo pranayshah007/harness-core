@@ -197,8 +197,12 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
         .isEqualTo(PlanExecutionContextMapper.toExecutionContext(
             executionMetadataLocal, settingsValueMap, Collections.emptyMap()));
     Dependency globalDependency = planCreationContextValue.getGlobalDependency();
-    assertThat(globalDependency.getMetadataMap()).containsKey(YAMLFieldNameConstants.OPTIONS);
-    byte[] bytes = globalDependency.getMetadataMap().get(YAMLFieldNameConstants.OPTIONS).toByteArray();
+    assertThat(globalDependency.getNodeMetadata().getDataMap()).containsKey(YAMLFieldNameConstants.OPTIONS);
+    byte[] bytes = globalDependency.getNodeMetadata()
+                       .getDataMap()
+                       .get(YAMLFieldNameConstants.OPTIONS)
+                       .getBytesValue()
+                       .toByteArray();
     Options options = (Options) kryoSerializer.asObject(bytes);
     assertThat(options).isNotNull();
     assertThat(options.getRepository()).isNotNull();
@@ -251,8 +255,12 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
         .isEqualTo(PlanExecutionContextMapper.toExecutionContext(
             executionMetadataLocal, settingsValueMap, Collections.emptyMap()));
     Dependency globalDependency = planCreationContextValue.getGlobalDependency();
-    assertThat(globalDependency.getMetadataMap()).containsKey(YAMLFieldNameConstants.OPTIONS);
-    byte[] bytes = globalDependency.getMetadataMap().get(YAMLFieldNameConstants.OPTIONS).toByteArray();
+    assertThat(globalDependency.getNodeMetadata().getDataMap()).containsKey(YAMLFieldNameConstants.OPTIONS);
+    byte[] bytes = globalDependency.getNodeMetadata()
+                       .getDataMap()
+                       .get(YAMLFieldNameConstants.OPTIONS)
+                       .getBytesValue()
+                       .toByteArray();
     Options options = (Options) kryoSerializer.asObject(bytes);
     assertThat(options).isNotNull();
     assertThat(options.getRepository()).isNotNull();

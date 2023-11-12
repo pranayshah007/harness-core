@@ -46,6 +46,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.Getter;
@@ -71,6 +72,7 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
   public static final String TASK_FAILED = "task_failed";
   private static String DELEGATE_NAME =
       isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME") : "";
+  @Getter private AtomicBoolean isAborted;
 
   public AbstractDelegateRunnableTask(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
@@ -84,6 +86,22 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
     this.taskType = delegateTaskPackage.getData().getTaskType();
     this.isAsync = delegateTaskPackage.getData().isAsync();
     this.logStreamingTaskClient = logStreamingTaskClient;
+    SecretSanitizerThreadLocal.addAll(delegateTaskPackage.getSecrets());
+  }
+
+  public AbstractDelegateRunnableTask(DelegateTaskPackage delegateTaskPackage,
+      ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
+      BooleanSupplier preExecute, AtomicBoolean isAborted) {
+    this.delegateId = delegateTaskPackage.getDelegateId();
+    this.taskId = delegateTaskPackage.getDelegateTaskId();
+    this.parameters = delegateTaskPackage.getData().getParameters();
+    this.accountId = delegateTaskPackage.getAccountId();
+    this.consumer = consumer;
+    this.preExecute = preExecute;
+    this.taskType = delegateTaskPackage.getData().getTaskType();
+    this.isAsync = delegateTaskPackage.getData().isAsync();
+    this.logStreamingTaskClient = logStreamingTaskClient;
+    this.isAborted = isAborted;
     SecretSanitizerThreadLocal.addAll(delegateTaskPackage.getSecrets());
   }
 

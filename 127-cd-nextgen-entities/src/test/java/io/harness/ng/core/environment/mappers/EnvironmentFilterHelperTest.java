@@ -32,8 +32,12 @@ import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.BasicDBList;
 import java.beans.PropertyDescriptor;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,6 +47,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.junit.Before;
@@ -383,6 +388,54 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = OwnerRule.SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testCreateCriteriaToGetEnvironmentsForProjects() throws IOException {
+    List<String> projectIdentifiers = List.of("projectIdentifier1", "projectIdentifier2");
+    List<String> orgIdentifiers = List.of("orgIdentifier1", "orgIdentifier2");
+    Criteria criteria = environmentFilterHelper.createCriteriaToGetScopedEnvironments(
+        accountIdentifier, orgIdentifiers, projectIdentifiers, null, List.of("Project"));
+    Document criteriaObj = criteria.getCriteriaObject();
+    JsonNode expected = readJsonNode("environment/list-project-envs.json");
+    assertThat(new ObjectMapper().readTree(criteriaObj.toJson())).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testCreateCriteriaToGetAllEnvironments() throws IOException {
+    Criteria criteria = environmentFilterHelper.createCriteriaToGetScopedEnvironments(
+        accountIdentifier, null, null, null, List.of("Account", "Org", "Project"));
+    Document criteriaObj = criteria.getCriteriaObject();
+    JsonNode expected = readJsonNode("environment/list-all-envs.json");
+    assertThat(new ObjectMapper().readTree(criteriaObj.toJson())).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testCreateCriteriaToGetEnvironmentsForProjectsWithEnvType() throws IOException {
+    List<String> projectIdentifiers = List.of("projectIdentifier1", "projectIdentifier2");
+    List<String> orgIdentifiers = List.of("orgIdentifier1", "orgIdentifier2");
+    Criteria criteria = environmentFilterHelper.createCriteriaToGetScopedEnvironments(
+        accountIdentifier, orgIdentifiers, projectIdentifiers, "Production", List.of("Project"));
+    Document criteriaObj = criteria.getCriteriaObject();
+    JsonNode expected = readJsonNode("environment/list-envs-filtered-by-type.json");
+    assertThat(new ObjectMapper().readTree(criteriaObj.toJson())).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testCreateCriteriaToGetEnvironmentsForAccount() throws IOException {
+    Criteria criteria = environmentFilterHelper.createCriteriaToGetScopedEnvironments(
+        accountIdentifier, null, null, null, List.of("Account"));
+    Document criteriaObj = criteria.getCriteriaObject();
+    JsonNode expected = readJsonNode("environment/list-account-envs.json");
+    assertThat(new ObjectMapper().readTree(criteriaObj.toJson())).isEqualTo(expected);
+  }
+
+  @Test
   @Owner(developers = OwnerRule.HINGER)
   @Category(UnitTests.class)
   public void testListFilteringWithoutRefsAtProjectLevel() {
@@ -422,5 +475,11 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
     assertThat(criteriaObj.toJson())
         .isEqualTo(
             "{\"accountId\": \"accountIdentifier\", \"$and\": [{\"$or\": [{\"orgIdentifier\": \"orgIdentifier\", \"projectIdentifier\": \"projectIdentifier\", \"identifier\": {\"$in\": [\"env\"]}}]}], \"deleted\": false}");
+  }
+
+  private JsonNode readJsonNode(String resourceName) throws IOException {
+    final String resource = IOUtils.resourceToString(resourceName, StandardCharsets.UTF_8, getClass().getClassLoader());
+    ObjectMapper objectMapper = new ObjectMapper();
+    return objectMapper.readTree(resource);
   }
 }

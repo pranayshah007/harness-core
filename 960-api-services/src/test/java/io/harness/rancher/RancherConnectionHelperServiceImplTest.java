@@ -14,6 +14,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -98,5 +100,14 @@ public class RancherConnectionHelperServiceImplTest extends CategoryTest {
     doThrow(RancherClientRuntimeException.class).when(rancherClusterClient).generateKubeconfig(any(), any(), any());
     assertThatThrownBy(() -> rancherConnectionHelperService.generateKubeconfig("url", "token", "cluster"))
         .isInstanceOf(RancherClientRuntimeException.class);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testIgnoreKubeconfigDeletionIfTokenIdIsEmpty() {
+    String emptyToken = "";
+    rancherConnectionHelperService.deleteKubeconfigToken("url", "token", emptyToken);
+    verify(rancherClusterClient, times(0)).deleteKubeconfigToken(any(), any(), any());
   }
 }

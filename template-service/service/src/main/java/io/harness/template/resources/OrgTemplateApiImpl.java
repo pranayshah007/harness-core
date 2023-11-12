@@ -36,23 +36,28 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @NextGenManagerAuth
 public class OrgTemplateApiImpl implements OrgTemplateApi {
-  private final TemplateResourceApiUtils templateResourceApiUtils;
+  private final TemplateResourceApiHelper templateResourceApiHelper;
   @Override
   public Response createTemplatesOrg(@OrgIdentifier String org, TemplateCreateRequestBody templateCreateRequestBody,
       @AccountIdentifier String account) {
     GitCreateDetails gitCreateDetails = templateCreateRequestBody.getGitDetails();
     TemplateRequestInfoDTO requestInfoDTO =
-        templateResourceApiUtils.mapCreateToRequestInfoDTO(templateCreateRequestBody);
+        templateResourceApiHelper.mapCreateToRequestInfoDTO(templateCreateRequestBody);
     Boolean isStable = Boolean.TRUE.equals(templateCreateRequestBody.isIsStable());
-    return templateResourceApiUtils.createTemplate(
+    return templateResourceApiHelper.createTemplate(
         account, org, null, gitCreateDetails, requestInfoDTO, isStable, templateCreateRequestBody.getComments());
   }
 
   @Override
   public Response deleteTemplateOrg(@ResourceIdentifier String templateIdentifier, @OrgIdentifier String org,
       String versionLabel, @AccountIdentifier String account, String comments, Boolean forceDelete) {
-    return templateResourceApiUtils.deleteTemplate(
+    return templateResourceApiHelper.deleteTemplate(
         account, org, null, templateIdentifier, versionLabel, comments, Boolean.TRUE == forceDelete);
+  }
+
+  @Override
+  public Response getOrgTemplatesInputsSchema(String org, String template, String version, String harnessAccount) {
+    return templateResourceApiHelper.getInputsSchema(harnessAccount, org, null, template, version);
   }
 
   @Override
@@ -60,7 +65,7 @@ public class OrgTemplateApiImpl implements OrgTemplateApi {
       String versionLabel, @AccountIdentifier String account, Boolean getInputYaml, String branch,
       String parentConnectorRef, String parentRepoName, String parentAccountId, String parentOrgId,
       String parentProjectId) {
-    return templateResourceApiUtils.getTemplate(account, org, null, templateIdentifier, versionLabel, false, branch,
+    return templateResourceApiHelper.getTemplate(account, org, null, templateIdentifier, versionLabel, false, branch,
         parentConnectorRef, parentRepoName, parentAccountId, parentOrgId, parentProjectId, getInputYaml);
   }
 
@@ -68,7 +73,7 @@ public class OrgTemplateApiImpl implements OrgTemplateApi {
   public Response getTemplateStableOrg(@OrgIdentifier String org, @ResourceIdentifier String templateIdentifier,
       @AccountIdentifier String account, Boolean getInputYaml, String branch, String parentConnectorRef,
       String parentRepoName, String parentAccountId, String parentOrgId, String parentProjectId) {
-    return templateResourceApiUtils.getTemplate(account, org, null, templateIdentifier, null, false, branch,
+    return templateResourceApiHelper.getTemplate(account, org, null, templateIdentifier, null, false, branch,
         parentConnectorRef, parentRepoName, parentAccountId, parentOrgId, parentProjectId, getInputYaml);
   }
 
@@ -77,14 +82,14 @@ public class OrgTemplateApiImpl implements OrgTemplateApi {
       Integer limit, String sort, String order, String searchTerm, String listType, Boolean recursive,
       List<String> names, List<String> identifiers, String description, List<String> entityTypes,
       List<String> childTypes) {
-    return templateResourceApiUtils.getTemplates(account, org, null, page, limit, sort, order, searchTerm, listType,
+    return templateResourceApiHelper.getTemplates(account, org, null, page, limit, sort, order, searchTerm, listType,
         recursive, names, identifiers, description, entityTypes, childTypes);
   }
 
   @Override
   public Response importTemplateOrg(@OrgIdentifier String org, @ResourceIdentifier String template,
       @Valid TemplateImportRequestBody body, @AccountIdentifier String harnessAccount) {
-    return templateResourceApiUtils.importTemplate(
+    return templateResourceApiHelper.importTemplate(
         harnessAccount, org, null, template, body.getGitImportDetails(), body.getTemplateImportRequest());
   }
 
@@ -93,15 +98,15 @@ public class OrgTemplateApiImpl implements OrgTemplateApi {
       String versionLabel, TemplateUpdateRequestBody templateUpdateRequestBody, @AccountIdentifier String account) {
     GitUpdateDetails gitUpdateDetails = templateUpdateRequestBody.getGitDetails();
     TemplateRequestInfoDTO requestInfoDTO =
-        templateResourceApiUtils.mapUpdateToRequestInfoDTO(templateUpdateRequestBody);
-    return templateResourceApiUtils.updateTemplate(account, org, null, templateIdentifier, versionLabel,
+        templateResourceApiHelper.mapUpdateToRequestInfoDTO(templateUpdateRequestBody);
+    return templateResourceApiHelper.updateTemplate(account, org, null, templateIdentifier, versionLabel,
         gitUpdateDetails, requestInfoDTO, false, templateUpdateRequestBody.getComments());
   }
 
   @Override
   public Response updateTemplateStableOrg(@OrgIdentifier String org, @ResourceIdentifier String templateIdentifier,
       String versionLabel, GitFindDetails gitFindDetails, @AccountIdentifier String account) {
-    return templateResourceApiUtils.updateStableTemplate(
+    return templateResourceApiHelper.updateStableTemplate(
         account, org, null, templateIdentifier, versionLabel, gitFindDetails, gitFindDetails.getComments());
   }
 }

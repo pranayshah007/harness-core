@@ -140,11 +140,10 @@ CodeformatRequired() {
   done
 
   if [ "$run_codeformat" = true ]; then
-    echo "Run codeformat"
-    PR_Name+=("SmartPRChecks-CodeformatCheckstyle")
     echo "CodeFormat Result: True"
     echo "true" > /tmp/codeformatcheck
   else
+    PR_Name+=("SmartPRChecks-CodeformatCheckstyle")
     echo "CodeFormat Result: False"
     echo "false" > /tmp/codeformatcheck
   fi

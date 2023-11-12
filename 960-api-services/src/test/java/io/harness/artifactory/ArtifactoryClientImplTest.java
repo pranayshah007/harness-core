@@ -17,11 +17,15 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.jfrog.artifactory.client.model.impl.PackageTypeImpl.docker;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
 
@@ -35,12 +39,14 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import org.jfrog.artifactory.client.impl.ArtifactoryImpl;
 import org.jfrog.artifactory.client.model.impl.PackageTypeImpl;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -50,6 +56,10 @@ public class ArtifactoryClientImplTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @InjectMocks ArtifactoryClientImpl artifactoryClient;
+
+  private static final String ARTIFACT_PATH = "CDS-72487/v1";
+  private static final String ARTIFACT_FULL_PATH = "generic-local/CDS-72487/v1";
+  private static final String REPOSITORY = "generic-local";
 
   /**
    * The Wire mock rule.
@@ -224,5 +234,42 @@ public class ArtifactoryClientImplTest extends CategoryTest {
     assertThat(label.get("maintainer").equals("Test Harness.io"));
     assertThat(artifactMetaInfo.getSha()).isEqualTo(SHA);
     assertThat(artifactMetaInfo.getShaV2()).isEqualTo(SHA);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getBuildDetailWithFullPath() {
+    BuildDetails buildDetails =
+        artifactoryClient.getBuildDetailWithFullPath(artifactoryConfig, REPOSITORY, ARTIFACT_PATH);
+    String expectedUrl = artifactoryConfig.getArtifactoryUrl() + ARTIFACT_FULL_PATH;
+    assertThat(buildDetails.getBuildUrl()).isEqualTo(expectedUrl);
+    assertThat(buildDetails.getNumber()).isEqualTo(ARTIFACT_PATH);
+    assertThat(buildDetails.getArtifactPath()).isEqualTo(ARTIFACT_PATH);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getBuildDetailWithFullPath_NullResponse() {
+    BuildDetails buildDetails = artifactoryClient.getBuildDetailWithFullPath(artifactoryConfig, "abc", ARTIFACT_PATH);
+    assertThat(buildDetails).isNull();
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getBuildDetailWithFullPath_Exception() {
+    MockedStatic<ArtifactoryClientImpl> artifactoryClientMockedStatic = mockStatic(ArtifactoryClientImpl.class);
+    ArtifactoryImpl artifactory = mock(ArtifactoryImpl.class);
+
+    artifactoryClientMockedStatic.when(() -> ArtifactoryClientImpl.getArtifactoryClient(artifactoryConfig))
+        .thenReturn(artifactory);
+
+    when(artifactory.repository(REPOSITORY)).thenThrow(new InvalidRequestException(""));
+
+    BuildDetails buildDetails =
+        artifactoryClient.getBuildDetailWithFullPath(artifactoryConfig, REPOSITORY, ARTIFACT_PATH);
+    assertThat(buildDetails).isNull();
   }
 }

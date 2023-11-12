@@ -43,6 +43,17 @@ public interface InstanceInfoService {
       Ambiance ambiance, @NotNull List<ServerInstanceInfo> instanceInfoList);
 
   /**
+   * Save list of deployed server instances info into sweeping output with metadata.
+   *
+   * @param ambiance ambiance
+   * @param instanceInfoList server instances to be saved
+   * @param metadata deployment metadata
+   * @return step outcome
+   */
+  StepOutcome saveServerInstancesIntoSweepingOutput(
+      Ambiance ambiance, @NotNull List<ServerInstanceInfo> instanceInfoList, DeploymentOutcomeMetadata metadata);
+
+  /**
    * Save deployment info outcome directly into sweeping output.
    *
    * @param ambiance ambiance

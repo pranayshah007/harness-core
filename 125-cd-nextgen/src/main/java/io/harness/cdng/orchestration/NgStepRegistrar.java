@@ -31,6 +31,7 @@ import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStep;
 import io.harness.cdng.aws.asg.AsgServiceSettingsStep;
+import io.harness.cdng.aws.asg.AsgShiftTrafficStep;
 import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStep;
 import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStep;
 import io.harness.cdng.aws.sam.AwsSamBuildStep;
@@ -62,6 +63,9 @@ import io.harness.cdng.ecs.EcsRollingRollbackStep;
 import io.harness.cdng.ecs.EcsRunTaskStep;
 import io.harness.cdng.ecs.EcsServiceSetupStep;
 import io.harness.cdng.ecs.EcsUpgradeContainerStep;
+import io.harness.cdng.ecs.asyncsteps.EcsCanaryDeleteStepV2;
+import io.harness.cdng.ecs.asyncsteps.EcsCanaryDeployStepV2;
+import io.harness.cdng.ecs.asyncsteps.EcsRollingDeployStepV2;
 import io.harness.cdng.elastigroup.ElastigroupBGStageSetupStep;
 import io.harness.cdng.elastigroup.ElastigroupServiceSettingsStep;
 import io.harness.cdng.elastigroup.ElastigroupSetupStep;
@@ -85,6 +89,8 @@ import io.harness.cdng.googlefunctions.rollbackgenone.GoogleFunctionsGenOneRollb
 import io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
+import io.harness.cdng.helm.async.HelmDeployStepV2;
+import io.harness.cdng.helm.async.HelmRollbackStepV2;
 import io.harness.cdng.hooks.steps.ServiceHooksStep;
 import io.harness.cdng.infra.steps.EnvironmentStep;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
@@ -112,8 +118,9 @@ import io.harness.cdng.k8s.asyncsteps.K8sCanaryDeleteStepV2;
 import io.harness.cdng.k8s.asyncsteps.K8sCanaryStepV2;
 import io.harness.cdng.k8s.asyncsteps.K8sDeleteStepV2;
 import io.harness.cdng.k8s.asyncsteps.K8sDryRunManifestStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sRollingRollbackStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sRollingStepV2;
 import io.harness.cdng.k8s.asyncsteps.K8sScaleStepV2;
-import io.harness.cdng.k8s.ayncsteps.K8sRollingRollbackStepV2;
 import io.harness.cdng.manifest.steps.ManifestStep;
 import io.harness.cdng.manifest.steps.ManifestsStep;
 import io.harness.cdng.manifest.steps.ManifestsStepV2;
@@ -124,6 +131,7 @@ import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerStep;
 import io.harness.cdng.pipeline.steps.NGSectionStep;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildrenStep;
+import io.harness.cdng.pipeline.steps.v1.DeploymentStageStepV1;
 import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStep;
 import io.harness.cdng.provision.awscdk.AwsCdkDeployStep;
 import io.harness.cdng.provision.awscdk.AwsCdkDestroyStep;
@@ -215,6 +223,7 @@ public class NgStepRegistrar {
     engineSteps.put(InfrastructureTaskExecutableStep.STEP_TYPE, InfrastructureTaskExecutableStep.class);
     engineSteps.put(InfrastructureTaskExecutableStepV2.STEP_TYPE, InfrastructureTaskExecutableStepV2.class);
     engineSteps.put(DeploymentStageStep.STEP_TYPE, DeploymentStageStep.class);
+    engineSteps.put(DeploymentStageStepV1.STEP_TYPE, DeploymentStageStepV1.class);
     engineSteps.put(ServiceConfigStepConstants.STEP_TYPE, ServiceConfigStep.class);
     engineSteps.put(ServiceSectionStepConstants.STEP_TYPE, ServiceSectionStep.class);
     engineSteps.put(ServiceStepConstants.STEP_TYPE, ServiceStep.class);
@@ -285,6 +294,11 @@ public class NgStepRegistrar {
     engineSteps.put(EcsUpgradeContainerStep.STEP_TYPE, EcsUpgradeContainerStep.class);
     engineSteps.put(EcsBasicRollbackStep.STEP_TYPE, EcsBasicRollbackStep.class);
 
+    // ECS ASYNC
+    engineSteps.put(EcsCanaryDeleteStepV2.STEP_TYPE, EcsCanaryDeleteStepV2.class);
+    engineSteps.put(EcsCanaryDeployStepV2.STEP_TYPE, EcsCanaryDeployStepV2.class);
+    engineSteps.put(EcsRollingDeployStepV2.STEP_TYPE, EcsRollingDeployStepV2.class);
+
     engineSteps.put(AzureCreateARMResourceStep.STEP_TYPE, AzureCreateARMResourceStep.class);
     engineSteps.put(MultiDeploymentSpawnerStep.STEP_TYPE, MultiDeploymentSpawnerStep.class);
     engineSteps.put(AzureCreateBPStep.STEP_TYPE, AzureCreateBPStep.class);
@@ -315,6 +329,7 @@ public class NgStepRegistrar {
     engineSteps.put(AsgBlueGreenDeployStep.STEP_TYPE, AsgBlueGreenDeployStep.class);
     engineSteps.put(AsgBlueGreenRollbackStep.STEP_TYPE, AsgBlueGreenRollbackStep.class);
     engineSteps.put(AsgServiceSettingsStep.STEP_TYPE, AsgServiceSettingsStep.class);
+    engineSteps.put(AsgShiftTrafficStep.STEP_TYPE, AsgShiftTrafficStep.class);
 
     // TAS
     engineSteps.put(TasCanaryAppSetupStep.STEP_TYPE, TasCanaryAppSetupStep.class);
@@ -388,9 +403,12 @@ public class NgStepRegistrar {
     engineSteps.put(K8sRollingRollbackStepV2.STEP_TYPE, K8sRollingRollbackStepV2.class);
     engineSteps.put(K8sBGStageScaleDownStepV2.STEP_TYPE, K8sBGStageScaleDownStepV2.class);
     engineSteps.put(K8sDryRunManifestStepV2.STEP_TYPE, K8sDryRunManifestStepV2.class);
-
     engineSteps.put(K8sDeleteStepV2.STEP_TYPE, K8sDeleteStepV2.class);
     engineSteps.put(K8sApplyStepV2.STEP_TYPE, K8sApplyStepV2.class);
+    engineSteps.put(K8sRollingStepV2.STEP_TYPE, K8sRollingStepV2.class);
+
+    engineSteps.put(HelmDeployStepV2.STEP_TYPE, HelmDeployStepV2.class);
+    engineSteps.put(HelmRollbackStepV2.STEP_TYPE, HelmRollbackStepV2.class);
 
     return engineSteps;
   }

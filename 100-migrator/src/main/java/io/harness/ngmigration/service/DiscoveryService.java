@@ -325,6 +325,8 @@ public class DiscoveryService {
           }
         });
 
+    MigratorUtility.sort(files);
+
     NGClient ngClient = MigratorUtility.getRestClient(inputDTO, ngClientConfig, NGClient.class);
     PmsClient pmsClient = MigratorUtility.getRestClient(inputDTO, pipelineServiceClientConfig, PmsClient.class);
     TemplateClient templateClient =
@@ -355,6 +357,7 @@ public class DiscoveryService {
             MigrationImportSummaryDTO importSummaryDTO =
                 ngMigration.migrate(ngClient, pmsClient, templateClient, inputDTO, file);
             addToSummary(summaryDTO, file, importSummaryDTO);
+            migratorMappingService.mapCgNgEntity(file);
           } catch (IOException e) {
             log.error("Unable to migrate entity", e);
             summaryDTO.getErrors().add(

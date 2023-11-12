@@ -9,6 +9,9 @@ package io.harness.idp.scorecard.scores.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.scorecard.scores.repositories.EntityIdentifierAndCheckStatus;
+import io.harness.idp.scorecard.scores.repositories.EntityIdentifierAndScore;
+import io.harness.idp.scorecard.scores.repositories.ScorecardIdentifierAndScore;
 import io.harness.spec.server.idp.v1.model.EntityScores;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
 import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfo;
@@ -16,6 +19,8 @@ import io.harness.spec.server.idp.v1.model.ScorecardScore;
 import io.harness.spec.server.idp.v1.model.ScorecardSummaryInfo;
 
 import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface ScoreService {
@@ -39,4 +44,12 @@ public interface ScoreService {
   ScorecardSummaryInfo getScorecardRecalibratedScoreInfoForAnEntityAndScorecard(
       String accountIdentifier, String entityIdentifier, String scorecardIdentifier);
   List<EntityScores> getEntityScores(String harnessAccount, ScorecardFilter filter);
+  List<EntityIdentifierAndScore> getScoresForEntityIdentifiersAndScorecardIdentifiers(
+      String accountIdentifier, List<String> entityIdentifiers, List<String> scorecardIdentifiers);
+  List<EntityIdentifierAndCheckStatus> getCheckStatusForEntityIdentifiersAndScorecardIdentifiers(
+      String accountIdentifier, List<String> entityIdentifiers, List<String> scorecardIdentifiers,
+      Pair<Long, Long> previousDay24HourTimeFrame, String checkIdentifier, boolean custom);
+  Map<String, ScorecardIdentifierAndScore> getComputedScoresForScorecards(
+      String accountIdentifier, List<String> scorecardIdentifiers);
+  void migrateScoresWithCheckIdentifier();
 }

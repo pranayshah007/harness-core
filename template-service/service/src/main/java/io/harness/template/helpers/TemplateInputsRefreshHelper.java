@@ -55,6 +55,7 @@ public class TemplateInputsRefreshHelper {
   @Inject private NGTemplateFeatureFlagHelperService featureFlagHelperService;
   @Inject private NgManagerReconcileClient ngManagerReconcileClient;
   // Returns the refreshed YAML when a YAML String is passed.
+
   public String refreshTemplates(String accountId, String orgId, String projectId, String yaml, boolean loadFromCache) {
     // Case -> empty YAML, cannot refresh
     if (isEmpty(yaml)) {
@@ -153,14 +154,14 @@ public class TemplateInputsRefreshHelper {
   }
 
   // Gets the Updated Template Input values
-  private JsonNode getUpdatedTemplateValue(String accountId, String orgId, String projectId, JsonNode TemplateNodeValue,
+  private JsonNode getUpdatedTemplateValue(String accountId, String orgId, String projectId, JsonNode templateNodeValue,
       Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache) {
     // Template Inputs linked to the YAML
-    JsonNode templateInputs = TemplateNodeValue.get(TEMPLATE_INPUTS);
+    JsonNode templateInputs = templateNodeValue.get(TEMPLATE_INPUTS);
 
     // Template YAML corresponding to the TemplateRef and Version Label
     TemplateEntityGetResponse templateEntityGetResponse = templateMergeServiceHelper.getLinkedTemplateEntity(
-        accountId, orgId, projectId, TemplateNodeValue, templateCacheMap, loadFromCache, HarnessYamlVersion.V0);
+        accountId, orgId, projectId, templateNodeValue, templateCacheMap, loadFromCache, HarnessYamlVersion.V0);
     TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
     String templateYaml = templateEntity.getYaml();
 
@@ -177,7 +178,7 @@ public class TemplateInputsRefreshHelper {
     // refreshed json node
     JsonNode refreshedJsonNode = YamlRefreshHelper.refreshNodeFromSourceNode(templateInputs, templateSpec);
 
-    ObjectNode updatedValue = (ObjectNode) TemplateNodeValue;
+    ObjectNode updatedValue = (ObjectNode) templateNodeValue;
 
     if (refreshedJsonNode == null) {
       // CASE -> When Template does not contain any runtime inputs

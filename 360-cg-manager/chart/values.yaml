@@ -127,6 +127,7 @@ global:
         - secretName: ""
           keys:
             CG_LICENSE: ""
+            NG_LICENSE: ""
       secretManagement: 
         externalSecretsOperator:
           - secretStore:
@@ -134,6 +135,9 @@ global:
               kind: ""
             remoteKeys:
               CG_LICENSE:
+                name: ""
+                property: ""
+              NG_LICENSE:
                 name: ""
                 property: ""
   cd:
@@ -454,7 +458,7 @@ featureFlags:
   # -- STO Feature Flags
   CI: "CING_ENABLED,CI_INDIRECT_LOG_UPLOAD,CI_LE_STATUS_REST_ENABLED"
   # -- STO Feature Flags
-  STO: "STO_BASELINE_REGEX,STO_STEP_PALETTE_BURP_ENTERPRISE,STO_STEP_PALETTE_CODEQL,STO_STEP_PALETTE_FOSSA,STO_STEP_PALETTE_GIT_LEAKS,STO_STEP_PALETTE_SEMGREP"
+  STO: "STO_STEP_PALETTE_BURP_ENTERPRISE,STO_STEP_PALETTE_CODEQL,STO_STEP_PALETTE_FOSSA,STO_STEP_PALETTE_GIT_LEAKS,STO_STEP_PALETTE_SEMGREP,STO_STEP_PALETTE_SYSDIG,STO_STEP_PALETTE_ANCHORE_ENTERPRISE"
   # -- SRM Flags
   SRM: "CVNG_ENABLED"
   # -- Custom Dashboard Flags
@@ -474,7 +478,7 @@ featureFlags:
   # -- CHAOS Feature Flags
   CHAOS: "CHAOS_ENABLED"
   # -- CET Feature Flags
-  CET: "CET_ENABLED,SRM_CODE_ERROR_NOTIFICATIONS,SRM_ET_RESOLVED_EVENTS,SRM_ET_CRITICAL_EVENTS"
+  CET: "SRM_CODE_ERROR_NOTIFICATIONS,SRM_ET_RESOLVED_EVENTS,SRM_ET_CRITICAL_EVENTS"
   # -- Additional Feature Flag
   ADDITIONAL: ""
 

@@ -47,6 +47,8 @@ import io.harness.spec.server.pipeline.v1.model.InputSetUpdateRequestBody;
 import io.harness.utils.ApiUtils;
 import io.harness.utils.PageUtils;
 
+import com.codahale.metrics.annotation.ResponseMetered;
+import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import java.util.Objects;
 import java.util.Optional;
@@ -73,6 +75,8 @@ public class InputSetsApiImpl implements InputSetsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  @Timed
+  @ResponseMetered
   public Response createInputSet(InputSetCreateRequestBody requestBody, @ResourceIdentifier String pipeline,
       @OrgIdentifier String org, @ProjectIdentifier String project, @AccountIdentifier String account) {
     if (requestBody == null) {
@@ -91,6 +95,8 @@ public class InputSetsApiImpl implements InputSetsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_DELETE)
+  @Timed
+  @ResponseMetered
   public Response deleteInputSet(@OrgIdentifier String org, @ProjectIdentifier String project, String inputSet,
       @ResourceIdentifier String pipeline, @AccountIdentifier String account) {
     log.info(String.format("Deleting input set with identifier %s for pipeline %s in project %s, org %s, account %s",
@@ -101,6 +107,8 @@ public class InputSetsApiImpl implements InputSetsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @Timed
+  @ResponseMetered
   public Response getInputSet(@OrgIdentifier String org, @ProjectIdentifier String project, String inputSet,
       @ResourceIdentifier String pipeline, @AccountIdentifier String account, String branchGitX,
       String parentEntityConnectorRef, String parentEntityRepoName, Boolean loadFromFallbackBranch,
@@ -158,6 +166,8 @@ public class InputSetsApiImpl implements InputSetsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @Timed
+  @ResponseMetered
   public Response listInputSets(@OrgIdentifier String org, @ProjectIdentifier String project,
       @ResourceIdentifier String pipeline, @AccountIdentifier String account, Integer page, Integer limit,
       String searchTerm, String sort, String order) {
@@ -179,6 +189,8 @@ public class InputSetsApiImpl implements InputSetsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  @Timed
+  @ResponseMetered
   public Response updateInputSet(InputSetUpdateRequestBody requestBody, @ResourceIdentifier String pipeline,
       @OrgIdentifier String org, @ProjectIdentifier String project, String inputSet,
       @AccountIdentifier String account) {

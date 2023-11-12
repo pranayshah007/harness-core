@@ -12,6 +12,8 @@ global:
   loadbalancerURL: ""
   stackDriverLoggingEnabled: false
   disableFreezeNotifyTemplate: true
+  ssca: 
+    enabled: false
   database:
     postgres:
       ## - installed = true if installed within cluster
@@ -227,8 +229,7 @@ mongo:
               property: ""
 
 
-  ssca: 
-    enabled: false
+  
 
 replicaCount: 1
 maxSurge: 1
@@ -380,6 +381,22 @@ virtualService:
   annotations: {}
 ingress:
   annotations: {}
+
+ssca_images:
+  ssca_plugin:
+    image:
+      registry: docker.io
+      digest: ""
+      tag: "0.12.2"
+      repository: harness/ssca-plugin
+      imagePullSecrets: []
+  slsa_plugin:
+    image:
+      registry: docker.io
+      digest: ""
+      tag: "0.12.0"
+      repository: harness/slsa-plugin
+      imagePullSecrets: []
 
 secrets:
   default:

@@ -48,6 +48,8 @@ import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIValue;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
+import io.harness.cvng.servicelevelobjective.beans.slispec.WindowBasedServiceLevelIndicatorSpec;
+import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
@@ -113,9 +115,8 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
   @Inject private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
   @Override
   public SLIOnboardingGraphs getOnboardingGraphs(ProjectParams projectParams, String monitoredServiceIdentifier,
-      ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String tracingId) {
-    List<CVConfig> cvConfigs =
-        getCvConfigs(projectParams, monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef());
+      String healthSourceRef, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String tracingId) {
+    List<CVConfig> cvConfigs = getCvConfigs(projectParams, monitoredServiceIdentifier, healthSourceRef);
     CVConfig baseCVConfig = cvConfigs.get(0);
 
     MonitoredService monitoredService =
@@ -124,7 +125,7 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                                                         .build());
 
     ServiceLevelIndicator serviceLevelIndicator = convertDTOToEntity(projectParams, serviceLevelIndicatorDTO,
-        monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef(), monitoredService.isEnabled());
+        monitoredServiceIdentifier, healthSourceRef, monitoredService.isEnabled());
 
     DataCollectionInfo dataCollectionInfo = dataSourceTypeDataCollectionInfoMapperMap.get(baseCVConfig.getType())
                                                 .toDataCollectionInfo(cvConfigs, serviceLevelIndicator);
@@ -173,6 +174,14 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
   }
 
   @Override
+  public SLIOnboardingGraphs getOnboardingGraphs(
+      ProjectParams projectParams, SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec, String tracingId) {
+    return getOnboardingGraphs(projectParams, simpleServiceLevelObjectiveSpec.getMonitoredServiceRef(),
+        simpleServiceLevelObjectiveSpec.getHealthSourceRef(),
+        simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0), tracingId);
+  }
+
+  @Override
   public MetricOnboardingGraph getMetricGraphs(ProjectParams projectParams, String monitoredServiceIdentifier,
       String healthSourceRef, RatioSLIMetricEventType ratioSLIMetricEventType, List<String> metricIdentifiers,
       String tracingId) {
@@ -196,7 +205,9 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
   private SLIValue getSLIValue(ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, SLIAnalyseResponse sliAnalyseResponse,
       SLIAnalyseResponse initialSLIResponse) {
     if (serviceLevelIndicatorDTO.getType() == SLIEvaluationType.WINDOW) {
-      return serviceLevelIndicatorDTO.getSLIMissingDataType().calculateSLIValue(
+      WindowBasedServiceLevelIndicatorSpec windowBasedServiceLevelIndicatorSpec =
+          (WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec();
+      return windowBasedServiceLevelIndicatorSpec.getSliMissingDataType().calculateSLIValue(
           sliAnalyseResponse.getRunningGoodCount(), sliAnalyseResponse.getRunningBadCount(),
           Duration.between(initialSLIResponse.getTimeStamp(), sliAnalyseResponse.getTimeStamp()).toMinutes() + 1);
     } else if (serviceLevelIndicatorDTO.getType() == SLIEvaluationType.REQUEST) {

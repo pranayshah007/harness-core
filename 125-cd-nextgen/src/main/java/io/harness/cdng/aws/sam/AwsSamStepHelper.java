@@ -9,6 +9,8 @@ package io.harness.cdng.aws.sam;
 
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 import static java.lang.String.format;
@@ -38,6 +40,7 @@ import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
 import io.harness.delegate.task.stepstatus.StepOutput;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -71,6 +74,8 @@ public class AwsSamStepHelper {
   @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
 
   private static String SAM_BUILD_DEFAULT_IMAGE = "harnessdev/sam-build:1.82.0-latest";
+
+  private static String NG_SECRET_MANAGER = "ngSecretManager";
   private static String SAM_DEPLOY_DEFAULT_IMAGE = "harnessdev/sam-deploy:1.82.0-latest";
 
   ObjectMapper objectMapper = NG_DEFAULT_OBJECT_MAPPER;
@@ -252,5 +257,37 @@ public class AwsSamStepHelper {
     } else {
       throw new InvalidRequestException("Default Images for SAM Build and SAM Deploy Step only supported");
     }
+  }
+
+  public Map<String, String> validateEnvVariables(Map<String, String> environmentVariables) {
+    if (isEmpty(environmentVariables)) {
+      return environmentVariables;
+    }
+
+    List<String> envVarsWithNullValue = environmentVariables.entrySet()
+                                            .stream()
+                                            .filter(entry -> entry.getValue() == null)
+                                            .map(Map.Entry::getKey)
+                                            .collect(Collectors.toList());
+    if (isNotEmpty(envVarsWithNullValue)) {
+      throw new InvalidArgumentsException(format("Not found value for environment variable%s: %s",
+          envVarsWithNullValue.size() == 1 ? "" : "s", String.join(",", envVarsWithNullValue)));
+    }
+
+    return environmentVariables;
+  }
+
+  public Map<String, String> getEnvVarsWithSecretRef(Map<String, String> envVars) {
+    return envVars.entrySet()
+        .stream()
+        .filter(entry -> entry.getValue() != null && entry.getValue().contains(NG_SECRET_MANAGER))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  public Map<String, String> removeAllEnvVarsWithSecretRef(Map<String, String> envVars) {
+    final Map<String, String> secretEnvVariables = getEnvVarsWithSecretRef(envVars);
+    envVars.entrySet().removeAll(secretEnvVariables.entrySet());
+
+    return secretEnvVariables;
   }
 }

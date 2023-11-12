@@ -14,10 +14,12 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
@@ -97,21 +99,28 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
         ? SkipType.SKIP_TREE
         : SkipType.NOOP;
 
-    return PlanNode.builder()
-        .uuid(strategyNodeId)
-        .identifier(metadata.getStrategyNodeIdentifier())
-        .stepType(StrategyStep.STEP_TYPE)
-        .group(StepOutcomeGroup.STRATEGY.name())
-        .name(metadata.getStrategyNodeName())
-        .stepParameters(stepParameters)
-        .facilitatorObtainment(
-            FacilitatorObtainment.newBuilder()
-                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILDREN).build())
-                .build())
-        .skipExpressionChain(true)
-        .skipGraphType(skipType)
-        .adviserObtainments(metadata.getAdviserObtainments())
-        .build();
+    PlanNodeBuilder planNodeBuilder =
+        PlanNode.builder()
+            .uuid(strategyNodeId)
+            .identifier(metadata.getStrategyNodeIdentifier())
+            .stepType(StrategyStep.STEP_TYPE)
+            .group(StepOutcomeGroup.STRATEGY.name())
+            .name(metadata.getStrategyNodeName())
+            .stepParameters(stepParameters)
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILDREN).build())
+                    .build())
+            .skipExpressionChain(true)
+            .skipGraphType(skipType)
+            .adviserObtainments(metadata.getAdviserObtainments());
+    if (metadata.getAddAdviserForExecutionModes() != null && metadata.getAddAdviserForExecutionModes()) {
+      planNodeBuilder.advisorObtainmentForExecutionMode(
+          ExecutionMode.PIPELINE_ROLLBACK, metadata.getAdviserObtainments());
+      planNodeBuilder.advisorObtainmentForExecutionMode(
+          ExecutionMode.POST_EXECUTION_ROLLBACK, metadata.getAdviserObtainments());
+    }
+    return planNodeBuilder.build();
   }
 
   @Override

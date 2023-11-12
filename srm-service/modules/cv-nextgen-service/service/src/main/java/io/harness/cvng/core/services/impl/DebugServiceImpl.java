@@ -267,19 +267,22 @@ public class DebugServiceImpl implements DebugService {
     return true;
   }
   @Override
-  public boolean forceDeleteSLO(ProjectParams projectParams, List<String> sloIdentifiers) {
+  public boolean forceDeleteSLO(
+      ProjectParams projectParams, List<String> sloIdentifiers, List<String> uniqueIdentifiers) {
     if (!debugConfigService.isDebugEnabled()) {
       throw new RuntimeException("Debug Mode is turned off");
     }
-    return serviceLevelObjectiveV2Service.forceDelete(projectParams, sloIdentifiers);
+    return serviceLevelObjectiveV2Service.forceDelete(projectParams, sloIdentifiers, uniqueIdentifiers);
   }
 
   @Override
-  public boolean forceDeleteCompositeSLO(ProjectParams projectParams, List<String> compositeSloIdentifiers) {
+  public boolean forceDeleteCompositeSLO(
+      ProjectParams projectParams, List<String> compositeSloIdentifiers, List<String> uniqueIdentifiers) {
     if (!debugConfigService.isDebugEnabled()) {
       throw new RuntimeException("Debug Mode is turned off");
     }
-    return serviceLevelObjectiveV2Service.forceDeleteCompositeSLO(projectParams, compositeSloIdentifiers);
+    return serviceLevelObjectiveV2Service.forceDeleteCompositeSLO(
+        projectParams, compositeSloIdentifiers, uniqueIdentifiers);
   }
 
   @Override

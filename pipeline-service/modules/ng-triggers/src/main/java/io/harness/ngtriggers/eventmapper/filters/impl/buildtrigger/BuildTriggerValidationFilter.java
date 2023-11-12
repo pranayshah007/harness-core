@@ -15,6 +15,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.eventmapping.TriggerEligibilityInfo;
 import io.harness.ngtriggers.beans.dto.eventmapping.UnMatchedTriggerInfo;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse.WebhookEventMappingResponseBuilder;
@@ -53,15 +54,16 @@ public class BuildTriggerValidationFilter implements TriggerFilter {
 
     for (TriggerDetails trigger : filterRequestData.getDetails()) {
       try {
-        if (checkTriggerEligibility(trigger)) {
+        TriggerEligibilityInfo triggerEligibilityInfo = checkTriggerEligibility(trigger);
+        if (triggerEligibilityInfo.isResult()) {
           matchedTriggers.add(trigger);
         } else {
           UnMatchedTriggerInfo unMatchedTriggerInfo =
               UnMatchedTriggerInfo.builder()
                   .unMatchedTriggers(trigger)
                   .finalStatus(TriggerEventResponse.FinalStatus.VALIDATION_FAILED_FOR_TRIGGER)
-                  .message(trigger.getNgTriggerEntity().getIdentifier()
-                      + " didn't match polling event after event condition evaluation")
+                  .message(trigger.getNgTriggerEntity().getIdentifier() + " failed validation. "
+                      + triggerEligibilityInfo.getMessage())
                   .build();
           unMatchedTriggersInfoList.add(unMatchedTriggerInfo);
         }
@@ -88,8 +90,9 @@ public class BuildTriggerValidationFilter implements TriggerFilter {
     return mappingResponseBuilder.build();
   }
 
-  boolean checkTriggerEligibility(TriggerDetails triggerDetails) {
+  TriggerEligibilityInfo checkTriggerEligibility(TriggerDetails triggerDetails) {
     boolean result = true;
+    String message = null;
     try {
       ValidationResult validationResult = triggerValidationHandler.applyValidations(triggerDetails);
       ngTriggerService.updateTriggerWithValidationStatus(triggerDetails.getNgTriggerEntity(), validationResult, true);
@@ -98,14 +101,16 @@ public class BuildTriggerValidationFilter implements TriggerFilter {
         log.error("Error while requesting pipeline execution for Build Trigger: "
             + TriggerHelper.getTriggerRef(triggerDetails.getNgTriggerEntity()));
         result = false;
+        message = validationResult.getMessage();
       }
     } catch (Exception e) {
       log.error(String.format("Failed while validating trigger: %s during Build Event Processing",
                     TriggerHelper.getTriggerRef(triggerDetails.getNgTriggerEntity())),
           e);
       result = false;
+      message = e.getMessage();
     }
 
-    return result;
+    return TriggerEligibilityInfo.builder().result(result).message(message).build();
   }
 }

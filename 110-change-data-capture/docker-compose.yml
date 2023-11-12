@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+
+  timescale:
+    image: timescale/timescaledb:latest-pg14
+    environment:
+      - POSTGRES_DB=harness
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "harness" ]
+    expose:
+      - 5432
+    ports:
+      - 5432:5432
+    networks:
+      harness-network:
+
+  mongo:
+    image: mongo:5.0
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "devrs", "--port", "27017" ]
+    healthcheck:
+      test: "mongo --eval 'db.runCommand(\"ping\").ok' --quiet"
+    expose:
+      - 27017
+    ports:
+      - 27017:27017
+    networks:
+      harness-network:
+    volumes:
+      - mongo_data:/data/db
+
+  mongo-setup:
+    image: mongo:5.0
+    command: "mongo --host mongo --eval \"sleep(1000);rs.initiate({ _id : 'devrs', members: [ { _id: 0, host: 'mongo:27017' } ] });rs.status()\""
+    restart: on-failure
+    depends_on:
+      - mongo
+    networks:
+      harness-network:
+
+networks:
+  harness-network:
+    ipam:
+      config:
+        - subnet: 192.168.0.0/24
+
+volumes:
+  mongo_data:

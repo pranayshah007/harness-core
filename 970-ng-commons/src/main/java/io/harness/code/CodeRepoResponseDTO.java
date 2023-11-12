@@ -7,11 +7,13 @@
 
 package io.harness.code;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CodeRepoResponseDTO {
   long id;
   String uid;

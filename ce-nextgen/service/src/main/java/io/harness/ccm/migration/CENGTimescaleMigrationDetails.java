@@ -10,6 +10,7 @@ package io.harness.ccm.migration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.migration.timescale.BillingDataAddInstanceUsageColumnsMigration;
+import io.harness.ccm.migration.timescale.CCMAnomalyTableAddCloudProviderColumn;
 import io.harness.ccm.migration.timescale.CCMAnomalyTableAddServiceColumn;
 import io.harness.ccm.migration.timescale.CCMRecommendationTableAddServicenowColumn;
 import io.harness.ccm.migration.timescale.CeRecommendationTableAddGovernanceColumn;
@@ -43,6 +44,7 @@ public class CENGTimescaleMigrationDetails implements MigrationDetails {
         .add(Pair.of(4, CCMRecommendationTableAddServicenowColumn.class))
         .add(Pair.of(5, CCMAnomalyTableAddServiceColumn.class))
         .add(Pair.of(6, BillingDataAddInstanceUsageColumnsMigration.class))
+        .add(Pair.of(7, CCMAnomalyTableAddCloudProviderColumn.class))
         .build();
   }
 }

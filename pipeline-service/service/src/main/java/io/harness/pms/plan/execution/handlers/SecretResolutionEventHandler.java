@@ -11,15 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.observers.SecretObserverInfo;
 import io.harness.engine.observers.SecretResolutionObserver;
+import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto;
-import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
 import io.harness.ng.core.entityusageactivity.EntityUsageTypes;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -30,7 +29,6 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.google.protobuf.StringValue;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,14 +43,9 @@ public class SecretResolutionEventHandler implements AsyncInformObserver, Secret
   public void onSecretsRuntimeUsage(SecretObserverInfo secretObserverInfo) {
     Ambiance ambiance = secretObserverInfo.getAmbiance();
 
-    IdentifierRefProtoDTO identifierRefProtoDTO =
-        IdentifierRefProtoDTO.newBuilder()
-            .setAccountIdentifier(StringValue.of(AmbianceUtils.getAccountId(ambiance)))
-            .setOrgIdentifier(StringValue.of(AmbianceUtils.getOrgIdentifier(ambiance)))
-            .setProjectIdentifier(StringValue.of(AmbianceUtils.getProjectIdentifier(ambiance)))
-            .setIdentifier(StringValue.of(AmbianceUtils.getPipelineIdentifier(ambiance)))
-            .setScope(getScopeOfPipelineEntity(ambiance))
-            .build();
+    IdentifierRefProtoDTO identifierRefProtoDTO = IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+        AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+        AmbianceUtils.getProjectIdentifier(ambiance), AmbianceUtils.getPipelineIdentifier(ambiance));
 
     IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(secretObserverInfo.getSecretIdentifier(),
         AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
@@ -71,22 +64,11 @@ public class SecretResolutionEventHandler implements AsyncInformObserver, Secret
                     .setPlanExecutionId(ambiance.getPlanExecutionId())
                     .setStageExecutionId(AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance))
                     .build())
+            .setIdentifierRef(identifierRefProtoDTO)
+            .setEntityType(EntityTypeProtoEnum.PIPELINES)
             .build();
 
     secretRuntimeUsageService.createSecretRuntimeUsage(identifierRef, referredByEntity, entityUsageDetail);
-  }
-
-  private ScopeProtoEnum getScopeOfPipelineEntity(Ambiance ambiance) {
-    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
-    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-
-    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
-      return ScopeProtoEnum.PROJECT;
-    } else if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
-      return ScopeProtoEnum.ORG;
-    } else {
-      return ScopeProtoEnum.ACCOUNT;
-    }
   }
 
   @Override

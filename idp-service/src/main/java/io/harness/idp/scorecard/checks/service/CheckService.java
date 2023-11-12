@@ -8,9 +8,13 @@
 package io.harness.idp.scorecard.checks.service;
 
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
+import io.harness.idp.scorecard.checks.entity.CheckStatusEntity;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
+import io.harness.spec.server.idp.v1.model.CheckGraph;
+import io.harness.spec.server.idp.v1.model.CheckStatsResponse;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,4 +28,9 @@ public interface CheckService {
   void deleteCustomCheck(String accountIdentifier, String identifier, boolean forceDelete);
   CheckDetails getCheckDetails(String accountIdentifier, String identifier, Boolean custom);
   List<CheckEntity> getChecksByAccountIdAndIdentifiers(String accountIdentifier, Set<String> identifiers);
+  CheckStatsResponse getCheckStats(String accountIdentifier, String identifier, Boolean custom);
+  List<CheckGraph> getCheckGraph(String accountIdentifier, String identifier, Boolean custom);
+  void computeCheckStatus();
+  Map<String, CheckStatusEntity> getCheckStatusByAccountIdAndIdentifiers(
+      String accountIdentifier, List<String> identifiers);
 }

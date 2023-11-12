@@ -38,6 +38,8 @@ public class ChangeDataCaptureServiceConfig extends Configuration {
   @JsonProperty("cdc-mongo") private MongoConfig cdcMongo = MongoConfig.builder().build();
   @JsonProperty("pms-harness") private MongoConfig pmsMongo = MongoConfig.builder().build();
   @JsonProperty("ng-harness") private MongoConfig ngMongo = MongoConfig.builder().build();
+  @JsonProperty("cvng") private MongoConfig cvngMongo = MongoConfig.builder().build();
+  @JsonProperty("chaos-harness") private MongoConfig chaosMongo = MongoConfig.builder().build();
   @JsonProperty("timescaledb") private TimeScaleDBConfig timeScaleDBConfig;
   @JsonProperty("mongotags") private MongoTagsConfig mongoTagsConfig = MongoTagsConfig.builder().build();
   @JsonProperty("gcp-project-id") private String gcpProjectId;
@@ -45,7 +47,6 @@ public class ChangeDataCaptureServiceConfig extends Configuration {
   @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("changeStreamBatchSize") private int changeStreamBatchSize;
-  @JsonProperty("cvng") private MongoConfig cvngMongo = MongoConfig.builder().build();
 
   public static Collection<Class<?>> getResourceClasses() {
     Reflections reflections = new Reflections(RESOURCE_PACKAGE);

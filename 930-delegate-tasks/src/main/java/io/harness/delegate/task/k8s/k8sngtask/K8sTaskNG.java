@@ -119,9 +119,9 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
         ManifestType manifestType = k8sDeployRequest.getManifestDelegateConfig() != null
             ? k8sDeployRequest.getManifestDelegateConfig().getManifestType()
             : null;
-        K8sDelegateTaskParams k8SDelegateTaskParams = getK8sDelegateTaskParamsBasedOnManifestType(workingDirectory,
-            helmVersion, k8sDeployRequest.isUseNewKubectlVersion(), k8sDeployRequest.isUseLatestKustomizeVersion(),
-            manifestType);
+        K8sDelegateTaskParams k8SDelegateTaskParams = getK8sDelegateTaskParamsBasedOnManifestType(kubernetesConfig,
+            workingDirectory, helmVersion, k8sDeployRequest.isUseNewKubectlVersion(),
+            k8sDeployRequest.isUseLatestKustomizeVersion(), manifestType);
 
         // TODO: @anshul/vaibhav , fix this
         //        logK8sVersion(k8sDeployRequest, k8SDelegateTaskParams, commandUnitsProgress);
@@ -189,14 +189,15 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
     return true;
   }
 
-  public K8sDelegateTaskParams getK8sDelegateTaskParamsBasedOnManifestType(String workingDirectory,
-      HelmVersion helmVersion, boolean isUseNewKubectlVersion, boolean isUseLatestKustomizeVersion,
-      ManifestType manifestType) {
+  public K8sDelegateTaskParams getK8sDelegateTaskParamsBasedOnManifestType(KubernetesConfig kubernetesConfig,
+      String workingDirectory, HelmVersion helmVersion, boolean isUseNewKubectlVersion,
+      boolean isUseLatestKustomizeVersion, ManifestType manifestType) {
     K8sDelegateTaskParamsBuilder k8sDelegateTaskParamsBuilder =
         K8sDelegateTaskParams.builder()
             .kubectlPath(k8sGlobalConfigService.getKubectlPath(isUseNewKubectlVersion))
             .kubeconfigPath(KUBECONFIG_FILENAME)
-            .workingDirectory(workingDirectory);
+            .workingDirectory(workingDirectory)
+            .kubernetesConfig(kubernetesConfig);
 
     if (!isNull(manifestType)) {
       switch (manifestType) {

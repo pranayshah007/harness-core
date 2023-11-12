@@ -803,7 +803,8 @@ public class TerraformStepHelperTest extends CategoryTest {
         assertThat(
             remoteTerraformVarFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO().getUrl())
             .isEqualTo("https://github.com/wings-software/terraform");
-        assertThat(remoteTerraformVarFileInfo.getGitFetchFilesConfig().isOptional()).isTrue();
+        assertThat(remoteTerraformVarFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig().isOptional())
+            .isTrue();
       }
     }
   }
@@ -3279,7 +3280,8 @@ public class TerraformStepHelperTest extends CategoryTest {
             .isEqualTo("terraform");
         assertThat(remoteTerraformVarFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO())
             .isInstanceOf(GithubConnectorDTO.class);
-        assertThat(remoteTerraformVarFileInfo.getGitFetchFilesConfig().isOptional()).isTrue();
+        assertThat(remoteTerraformVarFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig().isOptional())
+            .isTrue();
       }
     }
   }
@@ -3497,6 +3499,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     doNothing().when(cdStepHelper).validateGitStoreConfig(any());
     doNothing().when(cdStepHelper).validateManifest(any(), any(), any());
 
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
     doReturn(connectorInfo).when(cdStepHelper).getConnector(any(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(mockGitConfigAuthenticationInfoHelper)
@@ -3510,7 +3513,11 @@ public class TerraformStepHelperTest extends CategoryTest {
     List<TerraformVarFileInfo> varFileInfos = helper.getRemoteVarFilesInfo(varFilesMap, getAmbiance());
 
     assertThat(varFileInfos).isNotEmpty();
-    assertThat(((RemoteTerraformVarFileInfo) varFileInfos.get(0)).getGitFetchFilesConfig().isOptional()).isTrue();
+    assertThat(((RemoteTerraformVarFileInfo) varFileInfos.get(0))
+                   .getGitFetchFilesConfig()
+                   .getGitStoreDelegateConfig()
+                   .isOptional())
+        .isTrue();
     assertThat(((RemoteTerraformVarFileInfo) varFileInfos.get(0)).getGitFetchFilesConfig().getIdentifier())
         .isEqualTo("var-file-02");
     assertThat(((RemoteTerraformVarFileInfo) varFileInfos.get(0)).getGitFetchFilesConfig().getManifestType())

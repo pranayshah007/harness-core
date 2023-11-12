@@ -31,7 +31,7 @@ gcp-project-id: "ce-qa-274307"
 harness-mongo:
   uri: mongodb://localhost:27017/harness
   connectTimeout: 30000
-  serverSelectionTimeout: 86400000
+  serverSelectionTimeout: 90000
   socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
@@ -61,6 +61,10 @@ ng-harness:
 cvng:
   uri: mongodb://localhost:27017/cvng
   aliasDBName: cvng
+
+chaos-harness:
+  uri: mongodb://localhost:27017/harness-chaos
+  aliasDBName: harness-chaos
 
 timescaledb:
   timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"

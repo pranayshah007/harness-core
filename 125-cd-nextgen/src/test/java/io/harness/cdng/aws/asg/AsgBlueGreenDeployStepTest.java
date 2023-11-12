@@ -10,11 +10,17 @@ package io.harness.cdng.aws.asg;
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.VITALIE;
 
+import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG;
+import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V2;
+import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V3;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
@@ -442,5 +448,38 @@ public class AsgBlueGreenDeployStepTest extends CategoryTest {
         .isEqualTo(asgLoadBalancerConfig.getStageListenerArn());
     assertThat(awsAsgLoadBalancerConfigYaml.getStageListenerRuleArn().getValue())
         .isEqualTo(asgLoadBalancerConfig.getStageListenerRuleArn());
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getPrepareRollbackTaskTypeTest() {
+    AsgBlueGreenDeployStepParameters asgBlueGreenDeployStepParameters =
+        AsgBlueGreenDeployStepParameters.infoBuilder()
+            .loadBalancers(ParameterField.createValueField(Collections.EMPTY_LIST))
+            .build();
+
+    AsgInfraConfig asgInfraConfig = AsgInfraConfig.builder().build();
+
+    doReturn(false)
+        .when(asgStepCommonHelper)
+        .isV2Feature(nullable(Map.class), nullable(AsgInstances.class), any(), any(), any());
+
+    TaskType ret = asgBlueGreenDeployStep.getPrepareRollbackTaskType(asgBlueGreenDeployStepParameters, asgInfraConfig);
+    assertThat(ret).isEqualTo(AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG);
+
+    doReturn(true)
+        .when(asgStepCommonHelper)
+        .isV2Feature(nullable(Map.class), nullable(AsgInstances.class), any(), any(), any());
+
+    doReturn(false).when(asgStepCommonHelper).isShiftTrafficFeature(anyList());
+
+    ret = asgBlueGreenDeployStep.getPrepareRollbackTaskType(asgBlueGreenDeployStepParameters, asgInfraConfig);
+    assertThat(ret).isEqualTo(AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V2);
+
+    doReturn(true).when(asgStepCommonHelper).isShiftTrafficFeature(anyList());
+
+    ret = asgBlueGreenDeployStep.getPrepareRollbackTaskType(asgBlueGreenDeployStepParameters, asgInfraConfig);
+    assertThat(ret).isEqualTo(AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V3);
   }
 }

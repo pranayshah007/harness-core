@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 35
+version : 36
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -104,12 +104,13 @@ settings :
       ENTERPRISE:
         defaultValue: 35d
         editable: true
+
   - identifier: stage_timeout
     name: Max Stage Timeout
     category: PMS
-    defaultValue: 30m
-    groupIdentifier: pms_execution_settings
+    defaultValue: 1h
     valueType: STRING
+    groupIdentifier: pms_execution_settings
     allowedScopes:
       - ACCOUNT
       - ORGANIZATION
@@ -127,9 +128,9 @@ settings :
   - identifier: step_timeout
     name: Max Step Timeout
     category: PMS
-    groupIdentifier: pms_execution_settings
-    defaultValue: 30m
+    defaultValue: 1h
     valueType: STRING
+    groupIdentifier: pms_execution_settings
     allowedScopes:
       - ACCOUNT
       - ORGANIZATION
@@ -541,3 +542,13 @@ settings :
     allowOverrides: false
     allowedScopes:
       - ACCOUNT
+  - identifier: native_helm_enable_steady_state_for_jobs
+    name: Perform steady state check for Jobs in Native Helm deployments
+    category: CD
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT

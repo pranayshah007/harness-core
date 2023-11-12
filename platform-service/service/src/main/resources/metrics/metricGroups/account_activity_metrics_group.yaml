@@ -1,0 +1,6 @@
+name: Account Activity Metrics Group
+identifier: account_activity_metrics_group
+labels:
+  - accountId
+  - active_projects
+  - unique_logins

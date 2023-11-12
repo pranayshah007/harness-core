@@ -20,6 +20,7 @@ java_library(
         "//:lombok",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/execution:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/repositories/executions:module",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/cdstage:module",
         "//970-ng-commons:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//980-commons/src/main/java/io/harness/exception:module",

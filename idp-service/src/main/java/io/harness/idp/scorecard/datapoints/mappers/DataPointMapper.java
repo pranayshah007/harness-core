@@ -25,6 +25,7 @@ public class DataPointMapper {
     dataPoint.setConditionalInputDescription(dataPointEntity.getConditionalInputValueDescription());
     dataPoint.setDataPointIdentifier(dataPointEntity.getIdentifier());
     dataPoint.setDetailedDescription(dataPointEntity.getDetailedDescription());
+    dataPoint.setInputDetails(dataPointEntity.getInputDetails());
     return dataPoint;
   }
 }

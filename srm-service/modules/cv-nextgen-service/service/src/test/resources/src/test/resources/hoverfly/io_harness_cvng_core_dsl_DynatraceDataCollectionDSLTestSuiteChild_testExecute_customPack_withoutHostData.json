@@ -19,10 +19,6 @@
           "value" : "https"
         } ],
         "query" : {
-          "entitySelector" : [ {
-            "matcher" : "exact",
-            "value" : "type(\"dt.entity.service\"),entityId(\"SERVICE-D739201C4CBBA618\")"
-          } ],
           "from" : [ {
             "matcher" : "exact",
             "value" : "1658793540000"

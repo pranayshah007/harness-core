@@ -10,6 +10,7 @@ import static io.harness.idp.common.CommonUtils.readFileFromClassPath;
 import static io.harness.idp.common.Constants.COMPLIANCE_ENV;
 import static io.harness.idp.common.Constants.PRE_QA_ENV;
 import static io.harness.idp.common.Constants.QA_ENV;
+import static io.harness.idp.configmanager.utils.ConfigManagerUtils.asJsonNode;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
@@ -73,6 +74,8 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
   private static final String PLUGIN_CONFIG_NOT_FOUND =
       "Plugin configs for plugin - %s is not present for account - %s";
+  private static final String AUTH_NOT_CONFIGURED =
+      "Go to Admin -> OAuth Configurations to setup a %s OAuth app and then come back to enable this plugin";
   private static final String NO_PLUGIN_ENABLED_FOR_ACCOUNT = "No plugin is enabled for account - %s";
   private static final String BASE_APP_CONFIG_PATH = "baseappconfig.yaml";
   private static final String BASE_APP_CONFIG_PATH_QA = "baseappconfig-qa.yaml";
@@ -92,7 +95,6 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
       "Invalid schema for merged app-config.yaml for account - %s";
 
   private static final long baseTimeStamp = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000;
-  private static final String HARNESS_CI_CD_PLUGIN_IDENTIFIER = "harness-ci-cd";
 
   private static final String INVALID_SCHEMA_FOR_INTEGRATIONS =
       "Invalid json schema for integrations config for account - %s";
@@ -133,7 +135,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       AppConfigEntity insertedData = appConfigRepository.save(appConfigEntity);
 
-      if (appConfig.getConfigId().equals(HARNESS_CI_CD_PLUGIN_IDENTIFIER)) {
+      if (appConfig.getConfigId().equals(Constants.HARNESS_CI_CD_PLUGIN)) {
         appConfigEntity.setEnabled(true);
       }
 
@@ -202,7 +204,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   public AppConfig toggleConfigForAccount(
       String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType) throws ExecutionException {
     AppConfigEntity updatedData = null;
-    Boolean createdNewConfig = false;
+    boolean createdNewConfig = false;
 
     if (isEnabled) {
       AppConfigEntity appConfigEntity =
@@ -214,7 +216,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
                                                  .accountIdentifier(accountIdentifier)
                                                  .configType(configType)
                                                  .configId(configId)
-                                                 .enabled(isEnabled)
+                                                 .enabled(true)
                                                  .createdAt(currentTime)
                                                  .lastModifiedAt(currentTime)
                                                  .enabledDisabledAt(currentTime)
@@ -240,7 +242,67 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     if (updatedData == null) {
       throw new InvalidRequestException(format(PLUGIN_CONFIG_NOT_FOUND, configId, accountIdentifier));
     }
+    if (isEnabled && isAuthRequired(configId, updatedData.getConfigs())
+        && !isAuthConfigured(accountIdentifier, getAuthId(configId))) {
+      throw new InvalidRequestException(format(AUTH_NOT_CONFIGURED, getAuthName(configId)));
+    }
     return AppConfigMapper.toDTO(updatedData);
+  }
+
+  private boolean isAuthRequired(String pluginId, String config) {
+    switch (pluginId) {
+      case Constants.GITHUB_ACTIONS_PLUGIN:
+      case Constants.GITHUB_INSIGHTS_PLUGIN:
+      case Constants.GITHUB_PULL_REQUESTS_PLUGIN:
+        return true;
+      case Constants.KUBERNETES_PLUGIN:
+        return isAuthRequiredForK8s(config);
+      default:
+        return false;
+    }
+  }
+
+  private String getAuthId(String pluginId) {
+    switch (pluginId) {
+      case Constants.GITHUB_ACTIONS_PLUGIN:
+      case Constants.GITHUB_INSIGHTS_PLUGIN:
+      case Constants.GITHUB_PULL_REQUESTS_PLUGIN:
+        return Constants.GITHUB_AUTH;
+      case Constants.KUBERNETES_PLUGIN:
+        return Constants.GOOGLE_AUTH;
+      default:
+        return null;
+    }
+  }
+
+  private String getAuthName(String pluginId) {
+    switch (pluginId) {
+      case Constants.GITHUB_ACTIONS_PLUGIN:
+      case Constants.GITHUB_INSIGHTS_PLUGIN:
+      case Constants.GITHUB_PULL_REQUESTS_PLUGIN:
+        return "GitHub";
+      case Constants.KUBERNETES_PLUGIN:
+        return "Google Cloud";
+    }
+    return null;
+  }
+
+  private boolean isAuthRequiredForK8s(String config) {
+    JsonNode clusters = ConfigManagerUtils.getNodeByName(asJsonNode(config), "clusters");
+    boolean isRequired = false;
+    for (JsonNode cluster : clusters) {
+      if (cluster.get("authProvider").asText().equals("google")) {
+        isRequired = true;
+        break;
+      }
+    }
+    return isRequired;
+  }
+
+  private boolean isAuthConfigured(String accountId, String authId) {
+    Optional<AppConfigEntity> appConfig =
+        appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(accountId, authId, ConfigType.AUTH);
+    return appConfig.isPresent();
   }
 
   @Override

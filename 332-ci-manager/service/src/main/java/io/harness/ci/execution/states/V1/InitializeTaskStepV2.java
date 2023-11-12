@@ -70,6 +70,7 @@ import io.harness.ci.execution.utils.CIStagePlanCreationUtils;
 import io.harness.ci.execution.validation.CIAccountValidationService;
 import io.harness.ci.execution.validation.CIYAMLSanitizationService;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.metrics.CIManagerMetricsService;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.data.structure.CollectionUtils;
@@ -197,7 +198,12 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   @Inject QueueExecutionUtils queueExecutionUtils;
   @Inject private StepExecutionParametersRepository stepExecutionParametersRepository;
   @Inject CIExecutionRepository ciExecutionRepository;
+
+  @Inject private CIManagerMetricsService ciManagerMetricsService;
   @Inject private CILogKeyRepository ciLogKeyRepository;
+
+  private static final String STEP_STATUS = "ci_active_step_execution_count";
+  private static final String STEP_TIME_COUNT = "ci_step_execution_time";
 
   private static final String DEPENDENCY_OUTCOME = "dependencies";
 
@@ -571,12 +577,24 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) ciTaskExecutionResponse;
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
 
+    long startTime = AmbianceUtils.getCurrentLevelStartTs(ambiance);
+    long currentTime = System.currentTimeMillis();
     DependencyOutcome dependencyOutcome =
         getK8DependencyOutcome(ambiance, initializeStepInfo, k8sTaskExecutionResponse.getK8sTaskResponse());
     LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome =
         getPodDetailsOutcome(k8sTaskExecutionResponse.getK8sTaskResponse());
     StepResponse.StepOutcome stepOutcome =
         StepResponse.StepOutcome.builder().name(DEPENDENCY_OUTCOME).outcome(dependencyOutcome).build();
+
+    try {
+      ciManagerMetricsService.recordStepExecutionCount(k8sTaskExecutionResponse.getCommandExecutionStatus().name(),
+          STEP_STATUS, AmbianceUtils.getAccountId(ambiance), InitializeStepInfo.STEP_TYPE.getType());
+      ciManagerMetricsService.recordStepStatusExecutionTime(k8sTaskExecutionResponse.getCommandExecutionStatus().name(),
+          (currentTime - startTime) / 1000, STEP_TIME_COUNT, AmbianceUtils.getAccountId(ambiance),
+          InitializeStepInfo.STEP_TYPE.getType());
+    } catch (Exception ex) {
+      log.error(ex.getMessage());
+    }
     if (k8sTaskExecutionResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
       log.info(
           "LiteEngineTaskStep pod creation task executed successfully with response [{}]", k8sTaskExecutionResponse);

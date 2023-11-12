@@ -25,5 +25,4 @@ public class GitFetchFilesConfig {
   String manifestType;
   GitStoreDelegateConfig gitStoreDelegateConfig;
   boolean succeedIfFileNotFound;
-  boolean optional;
 }

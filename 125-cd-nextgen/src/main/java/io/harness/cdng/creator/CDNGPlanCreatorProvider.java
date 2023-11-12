@@ -144,6 +144,7 @@ import io.harness.cdng.creator.plan.steps.aws.asg.AsgCanaryDeleteStepPlanCreator
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgCanaryDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgRollingDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgRollingRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.aws.asg.AsgShiftTrafficStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.lambda.AwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.lambda.AwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.sam.AwsSamBuildStepPlanCreator;
@@ -199,6 +200,7 @@ import io.harness.cdng.creator.variables.AsgCanaryDeleteStepVariableCreator;
 import io.harness.cdng.creator.variables.AsgCanaryDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.AsgRollingDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.AsgRollingRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.AsgShiftTrafficStepVariableCreator;
 import io.harness.cdng.creator.variables.CommandStepVariableCreator;
 import io.harness.cdng.creator.variables.CustomStageVariableCreator;
 import io.harness.cdng.creator.variables.DeploymentStageVariableCreator;
@@ -502,6 +504,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new AsgBlueGreenSwapServiceStepPlanCreator());
     planCreators.add(new AsgBlueGreenDeployStepPlanCreator());
     planCreators.add(new AsgBlueGreenRollbackStepPlanCreator());
+    planCreators.add(new AsgShiftTrafficStepPlanCreator());
 
     // TAS
     planCreators.add(new TasCanaryAppSetupStepPlanCreator());
@@ -671,6 +674,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new AsgBlueGreenSwapServiceStepVariableCreator());
     variableCreators.add(new AsgBlueGreenDeployStepVariableCreator());
     variableCreators.add(new AsgBlueGreenRollbackStepVariableCreator());
+    variableCreators.add(new AsgShiftTrafficStepVariableCreator());
 
     // TAS
     variableCreators.add(new TasCanaryAppSetupStepVariableCreator());
@@ -1413,6 +1417,13 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .build();
 
+    StepInfo asgShiftTraffic =
+        StepInfo.newBuilder()
+            .setName("ASG Shift Traffic")
+            .setType(StepSpecTypeConstants.ASG_SHIFT_TRAFFIC)
+            .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
+            .build();
+
     StepInfo tasRouteMapping =
         StepInfo.newBuilder()
             .setName("Route Mapping")
@@ -1669,6 +1680,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(tasRollingRollback);
     stepInfos.add(k8sDryRunManifest);
     stepInfos.add(asgBlueGreenSwapService);
+    stepInfos.add(asgShiftTraffic);
     stepInfos.add(terraformCloudRun);
     stepInfos.add(awsLambdaDeploy);
     stepInfos.add(awsSamDeploy);

@@ -9,6 +9,7 @@ package io.harness.setupusage;
 
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.TATHAGAT;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -83,7 +84,7 @@ public class InfrastructureEntitySetupUsageHelperTest extends CategoryTest {
     mocks = MockitoAnnotations.openMocks(this);
     doReturn(Optional.of(Environment.builder().name(ENV_NAME).build()))
         .when(environmentService)
-        .get(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+        .getMetadata(anyString(), anyString(), anyString(), anyString(), anyBoolean());
   }
 
   @After
@@ -235,6 +236,22 @@ public class InfrastructureEntitySetupUsageHelperTest extends CategoryTest {
         .isThrownBy(() -> infraSetupUsageHelper.checkThatInfraIsNotReferredByOthers(entity))
         .withMessageContaining(
             "The infrastructure infraId cannot be deleted because it is being referenced in 1 entity. To delete your infrastructure, please remove the reference infrastructure from these entities");
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testBuildInfraDefRefBasedEntityDetailProtoDTO() {
+    InfrastructureEntity infra = InfrastructureEntity.builder()
+                                     .accountId(ACCOUNT)
+                                     .orgIdentifier(ORG)
+                                     .projectIdentifier(PROJECT)
+                                     .identifier("infra1")
+                                     .name("Name")
+                                     .envIdentifier(ENV_NAME)
+                                     .build();
+    infraSetupUsageHelper.buildInfraDefRefBasedEntityDetailProtoDTO(infra);
+    verify(environmentService, times(1)).getMetadata(any(), any(), any(), any(), anyBoolean());
   }
 
   private void verifyInfrastructureReferredByEntity(

@@ -34,7 +34,6 @@ public class SLODashboardWidget {
   String environmentName;
   List<MonitoredServiceDetail> monitoredServiceDetails;
   Map<String, String> tags;
-  ServiceLevelIndicatorType type;
   SLIEvaluationType evaluationType;
   @NotNull ServiceLevelObjectiveType sloType;
   @NotNull BurnRate burnRate;

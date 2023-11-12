@@ -51,11 +51,12 @@ public class AggregatorPrimarySyncController extends AggregatorBaseSyncControlle
       ChangeEventFailureHandler changeEventFailureHandler, ACLGeneratorService aclGeneratorService,
       RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler,
       UserGroupCRUDEventHandler userGroupCRUDEventHandler, ScopeService scopeService,
-      AccessControlAdminService accessControlAdminService) {
+      AccessControlAdminService accessControlAdminService,
+      @Named("enableAclProcessingThroughOutbox") boolean enableAclProcessingThroughOutbox) {
     super(primaryAclRepository, roleAssignmentRepository, roleRepository, resourceGroupRepository, userGroupRepository,
         aggregatorConfiguration, persistentLocker, changeEventFailureHandler, AggregatorJobType.PRIMARY,
         aclGeneratorService, roleAssignmentCRUDEventHandler, userGroupCRUDEventHandler, scopeService,
-        accessControlAdminService);
+        accessControlAdminService, enableAclProcessingThroughOutbox);
   }
 
   @Override

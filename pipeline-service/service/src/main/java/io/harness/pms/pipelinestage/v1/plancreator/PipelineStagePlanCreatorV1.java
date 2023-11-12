@@ -14,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
-import io.harness.plancreator.DependencyMetadata;
 import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.steps.internal.PmsStepPlanCreatorUtils;
 import io.harness.plancreator.strategy.StrategyUtils;
@@ -26,6 +25,7 @@ import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -181,29 +181,23 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
     }
 
     // This will be empty till we enable strategy support for Pipeline Stage
-    DependencyMetadata dependencyMetadata = getDependencyMetadataForStrategy(ctx, stageNode, dependenciesNodeMap);
+    Map<String, HarnessValue> dependencyMetadata =
+        getDependencyMetadataForStrategy(ctx, stageNode, dependenciesNodeMap);
 
-    // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
-    // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
-    // bytes for complex objects. We will deprecate the first one in v1
-    // Dependencies is added for strategy node
     return PlanCreationResponse.builder()
         .graphLayoutResponse(getLayoutNodeInfo(ctx))
         .planNode(builder.build())
-        .dependencies(
-            DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
-                .toBuilder()
-                .putDependencyMetadata(stageNode.getUuid(),
-                    Dependency.newBuilder()
-                        .putAllMetadata(dependencyMetadata.getMetadataMap())
-                        .setNodeMetadata(
-                            HarnessStruct.newBuilder().putAllData(dependencyMetadata.getNodeMetadataMap()).build())
-                        .build())
-                .build())
+        .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+                          .toBuilder()
+                          .putDependencyMetadata(stageNode.getUuid(),
+                              Dependency.newBuilder()
+                                  .setNodeMetadata(HarnessStruct.newBuilder().putAllData(dependencyMetadata).build())
+                                  .build())
+                          .build())
         .build();
   }
 
-  private DependencyMetadata getDependencyMetadataForStrategy(
+  private Map<String, HarnessValue> getDependencyMetadataForStrategy(
       PlanCreationContext ctx, YamlField stageNode, Map<String, YamlField> dependenciesNodeMap) {
     return StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(
         kryoSerializer, ctx, stageNode.getUuid(), dependenciesNodeMap, getAdviserObtainments(ctx.getDependency()));

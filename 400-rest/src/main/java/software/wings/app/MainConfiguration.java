@@ -163,6 +163,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("ocVersion") private String ocVersion;
   @JsonProperty("scmVersion") private String scmVersion;
   @JsonProperty("trialRegistrationAllowed") private boolean trialRegistrationAllowed;
+  @JsonProperty("useUserProvidedAccountIdInTrialSignup") private boolean useUserProvidedAccountIdInTrialSignup;
   @JsonProperty("eventsFrameworkAvailableInOnPrem") private boolean eventsFrameworkAvailableInOnPrem;
   @JsonProperty(value = "trialRegistrationAllowedForBugathon", defaultValue = "false")
   private boolean trialRegistrationAllowedForBugathon;

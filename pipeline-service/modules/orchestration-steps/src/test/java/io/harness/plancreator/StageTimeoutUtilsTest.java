@@ -18,15 +18,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.category.element.UnitTests;
-import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
-import io.harness.pms.timeout.SdkTimeoutObtainment;
-import io.harness.pms.utils.StageTimeoutUtils;
+import io.harness.pms.utils.SdkTimeoutObtainmentUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.steps.approval.stage.ApprovalStageNode;
-import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.common.base.Charsets;
@@ -58,17 +54,13 @@ public class StageTimeoutUtilsTest extends CategoryTest {
   public void shouldReturnSdkTimeObtainmentFF() {
     long duration = 10;
 
-    SdkTimeoutObtainment sdkTimeoutObtainment =
-        StageTimeoutUtils.getStageTimeoutObtainment(ParameterField.createValueField(
-            Timeout.builder().timeoutString("10h").timeoutInMillis(TimeUnit.HOURS.toMillis(duration)).build()));
+    ParameterField<Timeout> timeoutParameterField = SdkTimeoutObtainmentUtils.getTimeout(
+        ParameterField.createValueField(
+            Timeout.builder().timeoutString("10h").timeoutInMillis(TimeUnit.HOURS.toMillis(duration)).build()),
+        "10d", false);
 
-    assertThat(sdkTimeoutObtainment).isNotNull();
-    assertThat(sdkTimeoutObtainment.getParameters())
-        .isEqualTo(
-            AbsoluteSdkTimeoutTrackerParameters.builder()
-                .timeout(TimeoutUtils.getTimeoutParameterFieldStringForStage(ParameterField.createValueField(
-                    Timeout.builder().timeoutString("10h").timeoutInMillis(TimeUnit.HOURS.toMillis(duration)).build())))
-                .build());
+    assertThat(timeoutParameterField).isNotNull();
+    assertThat(timeoutParameterField.getValue().getTimeoutString()).isEqualTo("10h");
   }
 
   @Test
@@ -76,31 +68,27 @@ public class StageTimeoutUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldReturnSdkTimeOutObtainment() throws IOException {
     long duration = 10;
-    ApprovalStageNode stageNode = new ApprovalStageNode();
-    stageNode.setTimeout(ParameterField.createValueField(
-        Timeout.builder().timeoutString("10h").timeoutInMillis(TimeUnit.HOURS.toMillis(duration)).build()));
-    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
+    ParameterField<Timeout> timeoutParameterField = ParameterField.createValueField(
+        Timeout.builder().timeoutString("10h").timeoutInMillis(TimeUnit.HOURS.toMillis(duration)).build());
+    ParameterField<Timeout> sdkTimeoutObtainment =
+        SdkTimeoutObtainmentUtils.getTimeout(timeoutParameterField, "10h", false);
+
+    assertThat(timeoutParameterField).isNotNull();
+    assertThat(timeoutParameterField.getValue().getTimeoutString()).isEqualTo("10h");
+
+    sdkTimeoutObtainment = SdkTimeoutObtainmentUtils.getTimeout(ParameterField.createValueField(null), "10d", false);
 
     assertThat(sdkTimeoutObtainment).isNotNull();
-    assertThat(sdkTimeoutObtainment.getParameters())
-        .isEqualTo(
-            AbsoluteSdkTimeoutTrackerParameters.builder()
-                .timeout(TimeoutUtils.getTimeoutParameterFieldStringForStage(ParameterField.createValueField(
-                    Timeout.builder().timeoutString("10h").timeoutInMillis(TimeUnit.HOURS.toMillis(duration)).build())))
-                .build());
-    stageNode.setTimeout(ParameterField.createValueField(null));
-    sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
-
-    assertThat(sdkTimeoutObtainment).isNull();
+    assertThat(timeoutParameterField.getValue().getTimeoutString()).isEqualTo("10h");
   }
 
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void shouldReturnNull() {
-    SdkTimeoutObtainment sdkTimeoutObtainment =
-        StageTimeoutUtils.getStageTimeoutObtainment(ParameterField.createValueField(null));
-
-    assertThat(sdkTimeoutObtainment).isNull();
+    ParameterField<Timeout> timeoutParameterField =
+        SdkTimeoutObtainmentUtils.getTimeout(ParameterField.createValueField(null), "10h", false);
+    assertThat(timeoutParameterField).isNotNull();
+    assertThat(timeoutParameterField.getValue().getTimeoutString()).isEqualTo("10h");
   }
 }

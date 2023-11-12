@@ -7,6 +7,7 @@
 
 package io.harness.yaml.schema.inputs.beans;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -18,4 +19,7 @@ public class InputDetails {
   private String description;
   private boolean required;
   private Object defaultValue;
+  private List<Object> allowedValues;
+  private String regex;
+  @Builder.Default private Boolean execution = false;
 }

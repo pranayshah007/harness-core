@@ -10,6 +10,7 @@ package io.harness.notification.service;
 import static io.harness.rule.OwnerRule.JENNY;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,10 +26,12 @@ import io.harness.notification.entities.NotificationEvent;
 import io.harness.notification.entities.NotificationEventConfig;
 import io.harness.notification.entities.NotificationRule;
 import io.harness.notification.entities.NotificationRule.NotificationRuleKeys;
+import io.harness.notification.entities.eventmetadata.DelegateNotificationEventParameters;
 import io.harness.notification.repositories.NotificationRuleRepository;
 import io.harness.notification.service.api.NotificationRuleManagementService;
 import io.harness.rule.Owner;
 
+import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,13 +84,16 @@ public class NotificationRuleManagementServiceTest extends CategoryTest {
     criteria.and(NotificationRuleKeys.orgIdentifier).is(ORG_IDENTIFIER);
     criteria.and(NotificationRuleKeys.projectIdentifier).is(PROJECT_IDENTIFIER);
     criteria.and(NotificationRuleKeys.notificationEntity).is(NotificationEntity.DELEGATE.name());
+    criteria.and(NotificationRuleKeys.notificationEvent).is(NotificationEvent.DELEGATE_DOWN.name());
 
     when(notificationRuleRepository.findOne(criteria)).thenReturn(notificationRule);
-    NotificationRule nr = notificationRuleManagementService.get(
-        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, NotificationEntity.DELEGATE);
-    assertEquals(NotificationEntity.DELEGATE, nr.getNotificationEntity());
+    NotificationRule nr = notificationRuleManagementService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
+        NotificationEntity.DELEGATE, NotificationEvent.DELEGATE_DOWN);
     assertEquals(nr.getNotificationChannelForEvent(NotificationEvent.DELEGATE_DOWN).size(), 1);
     assertEquals(nr.getNotificationEvents().size(), 2);
+    assertThat(
+        nr.getNotificationConditions().get(0).getNotificationEventConfigs().get(0).getNotificationEventParameters())
+        .isInstanceOf(DelegateNotificationEventParameters.class);
   }
 
   @Test
@@ -139,14 +145,20 @@ public class NotificationRuleManagementServiceTest extends CategoryTest {
                                                   .notificationChannelType(NotificationChannelType.EMAIL)
                                                   .channel(EmailChannel.builder().emailIds(List.of(EMAIL_ID)).build())
                                                   .build();
-    NotificationEventConfig notificationEventConfig1 = NotificationEventConfig.builder()
-                                                           .notificationEvent(NotificationEvent.DELEGATE_DOWN)
-                                                           .notificationChannels(List.of(notificationChannel))
-                                                           .build();
-    NotificationEventConfig notificationEventConfig2 = NotificationEventConfig.builder()
-                                                           .notificationEvent(NotificationEvent.DELEGATE_EXPIRED)
-                                                           .notificationChannels(List.of(notificationChannel))
-                                                           .build();
+    NotificationEventConfig notificationEventConfig1 =
+        NotificationEventConfig.builder()
+            .notificationEvent(NotificationEvent.DELEGATE_DOWN)
+            .notificationEventParameters(
+                DelegateNotificationEventParameters.builder().delegateGroupIdentifiers(Collections.emptyList()).build())
+            .notificationChannels(List.of(notificationChannel))
+            .build();
+    NotificationEventConfig notificationEventConfig2 =
+        NotificationEventConfig.builder()
+            .notificationEvent(NotificationEvent.DELEGATE_EXPIRED)
+            .notificationEventParameters(
+                DelegateNotificationEventParameters.builder().delegateGroupIdentifiers(Collections.emptyList()).build())
+            .notificationChannels(List.of(notificationChannel))
+            .build();
 
     NotificationCondition notificationCondition =
         NotificationCondition.builder()
@@ -156,7 +168,6 @@ public class NotificationRuleManagementServiceTest extends CategoryTest {
     return NotificationRule.builder()
         .accountIdentifier(ACCOUNT_IDENTIFIER)
         .identifier("NR1")
-        .notificationEntity(NotificationEntity.DELEGATE)
         .notificationConditions(List.of(notificationCondition))
         .build();
   }

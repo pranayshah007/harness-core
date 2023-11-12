@@ -8,18 +8,23 @@
 package io.harness.ssca.services;
 
 import io.harness.entities.Instance;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.repositories.CdInstanceSummaryRepo;
+import io.harness.repositories.EnforcementSummaryRepo;
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewRequestBody;
 import io.harness.ssca.beans.EnvType;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.CdInstanceSummary;
 import io.harness.ssca.entities.CdInstanceSummary.CdInstanceSummaryKeys;
+import io.harness.ssca.entities.EnforcementSummaryEntity.EnforcementSummaryEntityKeys;
 
 import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +34,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
   @Inject CdInstanceSummaryRepo cdInstanceSummaryRepo;
   @Inject ArtifactService artifactService;
+  @Inject EnforcementSummaryRepo enforcementSummaryRepo;
 
   @Override
   public boolean upsertInstance(Instance instance) {
@@ -109,9 +115,44 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
         Pattern pattern = Pattern.compile("[.]*" + filterBody.getEnvironment() + "[.]*");
         criteria.and(CdInstanceSummaryKeys.envName).regex(pattern);
       }
-      if (Objects.nonNull(filterBody.getEnvironmentType_())) {
-        Pattern pattern = Pattern.compile("[.]*" + filterBody.getEnvironmentType_() + "[.]*");
-        criteria.and(CdInstanceSummaryKeys.envName).regex(pattern);
+      if (Objects.nonNull(filterBody.getEnvironmentType())) {
+        switch (filterBody.getEnvironmentType()) {
+          case PROD:
+            criteria.and(CdInstanceSummaryKeys.envType).is(EnvType.Production);
+            break;
+          case NONPROD:
+            criteria.and(CdInstanceSummaryKeys.envType).is(EnvType.PreProduction);
+            break;
+          default:
+            throw new InvalidArgumentsException(
+                String.format("Unknown environment type filter: %s", filterBody.getEnvironmentType()));
+        }
+      }
+      if (Objects.nonNull(filterBody.getPolicyViolation())) {
+        Criteria enforcementSummaryCriteria = Criteria.where(EnforcementSummaryEntityKeys.accountId)
+                                                  .is(accountId)
+                                                  .and(EnforcementSummaryEntityKeys.orgIdentifier)
+                                                  .is(orgIdentifier)
+                                                  .and(EnforcementSummaryEntityKeys.projectIdentifier)
+                                                  .is(projectIdentifier);
+
+        switch (filterBody.getPolicyViolation()) {
+          case ALLOW:
+            enforcementSummaryCriteria.and(EnforcementSummaryEntityKeys.allowListViolationCount).gt(0);
+            break;
+          case DENY:
+            enforcementSummaryCriteria.and(EnforcementSummaryEntityKeys.denyListViolationCount).gt(0);
+            break;
+          default:
+            throw new InvalidArgumentsException(
+                String.format("Unknown policy type filter: %s", filterBody.getPolicyViolation()));
+        }
+
+        List<String> pipelineExecutionIds = enforcementSummaryRepo.findAll(enforcementSummaryCriteria)
+                                                .stream()
+                                                .map(entity -> entity.getPipelineExecutionId())
+                                                .collect(Collectors.toList());
+        criteria.and(CdInstanceSummaryKeys.lastPipelineExecutionId).in(pipelineExecutionIds);
       }
     }
 

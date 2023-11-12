@@ -32,6 +32,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.commons.entities.billing.CECloudAccount.CECloudAccountKeys;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
+import io.harness.changestreamsframework.ChangeType;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.entities.AccountEntity;
 import io.harness.entities.CDCEntity;
@@ -96,6 +97,7 @@ import org.bson.conversions.Bson;
 @OwnedBy(HarnessTeam.CDC)
 public class PartialSyncResource {
   private static final String HANDLER_KEY = "handler";
+  private static final String CHANGE_TYPE_KEY = "changeType";
 
   @Inject ChangeDataCaptureBulkMigrationHelper changeDataCaptureBulkMigrationHelper;
 
@@ -122,12 +124,13 @@ public class PartialSyncResource {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public RestResponse<String> triggerAccountSync(@QueryParam(ACCOUNT_KEY) @Nullable String accountId,
       @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
-      @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
+      @QueryParam("createdAt_to") @Nullable Long createdAtTo,
+      @QueryParam(CHANGE_TYPE_KEY) @Nullable ChangeType changeType) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, ID_KEY, accountId);
     addTsFilter(filters, AccountKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(accountEntity, filters, null);
+    return triggerSync(accountEntity, filters, null, changeType);
   }
 
   @GET
@@ -138,13 +141,14 @@ public class PartialSyncResource {
   public RestResponse<String> triggerCloudAccountSync(@QueryParam(IDENTIFIER_KEY) @Nullable String identifier,
       @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(HANDLER_KEY) @Nullable String handler,
       @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
-      @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
+      @QueryParam("createdAt_to") @Nullable Long createdAtTo,
+      @QueryParam(CHANGE_TYPE_KEY) @Nullable ChangeType changeType) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, ID_KEY, identifier);
     addEqFilter(filters, CECloudAccountKeys.accountId, accountId);
     addTsFilter(filters, CECloudAccountKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(ceCloudAccountCDCEntity, filters, handler);
+    return triggerSync(ceCloudAccountCDCEntity, filters, handler, changeType);
   }
 
   @GET
@@ -156,14 +160,15 @@ public class PartialSyncResource {
       @QueryParam(ENVIRONMENT_IDENTIFIER_KEY) @Nullable String identifier,
       @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(PROJECT_KEY) @Nullable String projectIdentifier,
       @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
-      @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
+      @QueryParam("createdAt_to") @Nullable Long createdAtTo,
+      @QueryParam(CHANGE_TYPE_KEY) @Nullable ChangeType changeType) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, EnvironmentKeys.identifier, identifier);
     addEqFilter(filters, EnvironmentKeys.accountId, accountId);
     addEqFilter(filters, EnvironmentKeys.projectIdentifier, projectIdentifier);
     addTsFilter(filters, EnvironmentKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(environmentCDCEntity, filters, null);
+    return triggerSync(environmentCDCEntity, filters, null, changeType);
   }
 
   @GET
@@ -174,14 +179,15 @@ public class PartialSyncResource {
   public RestResponse<String> triggerInfrastructureSync(@QueryParam(INFRA_IDENTIFIER) @Nullable String identifier,
       @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(PROJECT_KEY) @Nullable String projectIdentifier,
       @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
-      @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
+      @QueryParam("createdAt_to") @Nullable Long createdAtTo,
+      @QueryParam(CHANGE_TYPE_KEY) @Nullable ChangeType changeType) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, InfrastructureEntityKeys.identifier, identifier);
     addEqFilter(filters, InfrastructureEntityKeys.accountId, accountId);
     addEqFilter(filters, InfrastructureEntityKeys.projectIdentifier, projectIdentifier);
     addTsFilter(filters, InfrastructureEntityKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(infrastructureEntityTimeScale, filters, null);
+    return triggerSync(infrastructureEntityTimeScale, filters, null, changeType);
   }
 
   @GET
@@ -192,13 +198,14 @@ public class PartialSyncResource {
   public RestResponse<String> triggerOrganizationSync(@QueryParam(ORG_KEY) @Nullable String identifier,
       @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(PROJECT_KEY) @Nullable String projectIdentifier,
       @QueryParam(HANDLER_KEY) @Nullable String handler, @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
-      @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
+      @QueryParam("createdAt_to") @Nullable Long createdAtTo,
+      @QueryParam(CHANGE_TYPE_KEY) @Nullable ChangeType changeType) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, OrganizationKeys.identifier, identifier);
     addEqFilter(filters, OrganizationKeys.accountIdentifier, accountId);
     addTsFilter(filters, OrganizationKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(organizationEntity, filters, handler);
+    return triggerSync(organizationEntity, filters, handler, changeType);
   }
 
   @GET
@@ -209,14 +216,15 @@ public class PartialSyncResource {
   public RestResponse<String> triggerPipelinesSync(@QueryParam(PIPELINE_KEY) @Nullable String identifier,
       @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(PROJECT_KEY) @Nullable String projectIdentifier,
       @QueryParam(HANDLER_KEY) @Nullable String handler, @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
-      @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
+      @QueryParam("createdAt_to") @Nullable Long createdAtTo,
+      @QueryParam(CHANGE_TYPE_KEY) @Nullable ChangeType changeType) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, PipelineEntityKeys.identifier, identifier);
     addEqFilter(filters, PipelineEntityKeys.accountId, accountId);
     addEqFilter(filters, PipelineEntityKeys.projectIdentifier, projectIdentifier);
     addTsFilter(filters, PipelineEntityKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(pipelineCDCEntity, filters, handler);
+    return triggerSync(pipelineCDCEntity, filters, handler, changeType);
   }
 
   @GET
@@ -228,7 +236,8 @@ public class PartialSyncResource {
       @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(PROJECT_KEY) @Nullable String projectIdentifier,
       @QueryParam(PIPELINE_KEY) @Nullable String pipelineIdentifier,
       @QueryParam(PLAN_KEY) @Nullable String planExecutionId, @QueryParam(HANDLER_KEY) @Nullable String handler,
-      @QueryParam("startTs_from") @Nullable Long startTsFrom, @QueryParam("startTs_to") @Nullable Long startTsTo) {
+      @QueryParam("startTs_from") @Nullable Long startTsFrom, @QueryParam("startTs_to") @Nullable Long startTsTo,
+      @QueryParam(CHANGE_TYPE_KEY) @Nullable ChangeType changeType) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, PlanExecutionSummaryKeys.planExecutionId, planExecutionId);
     addEqFilter(filters, PlanExecutionSummaryKeys.accountId, accountId);
@@ -236,7 +245,7 @@ public class PartialSyncResource {
     addEqFilter(filters, PlanExecutionSummaryKeys.pipelineIdentifier, pipelineIdentifier);
     addTsFilter(filters, PlanExecutionSummaryKeys.startTs, startTsFrom, startTsTo);
 
-    return triggerSync(pipelineExecutionSummaryEntityCDCEntity, filters, handler);
+    return triggerSync(pipelineExecutionSummaryEntityCDCEntity, filters, handler, changeType);
   }
 
   @GET
@@ -248,7 +257,8 @@ public class PartialSyncResource {
       @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(PROJECT_KEY) @Nullable String projectIdentifier,
       @QueryParam(PIPELINE_KEY) @Nullable String pipelineIdentifier,
       @QueryParam(PLAN_KEY) @Nullable String planExecutionId, @QueryParam(HANDLER_KEY) @Nullable String handler,
-      @QueryParam("startTs_from") @Nullable Long startTsFrom, @QueryParam("startTs_to") @Nullable Long startTsTo) {
+      @QueryParam("startTs_from") @Nullable Long startTsFrom, @QueryParam("startTs_to") @Nullable Long startTsTo,
+      @QueryParam(CHANGE_TYPE_KEY) @Nullable ChangeType changeType) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, StageExecutionInfoKeys.stageExecutionId, identifier);
     addEqFilter(filters, StageExecutionInfoKeys.planExecutionId, planExecutionId);
@@ -257,7 +267,7 @@ public class PartialSyncResource {
     addEqFilter(filters, StageExecutionInfoKeys.pipelineIdentifier, pipelineIdentifier);
     addTsFilter(filters, StageExecutionInfoKeys.startts, startTsFrom, startTsTo);
 
-    return triggerSync(cdStageExecutionCDCEntity, filters, handler);
+    return triggerSync(cdStageExecutionCDCEntity, filters, handler, changeType);
   }
 
   @GET
@@ -269,7 +279,8 @@ public class PartialSyncResource {
       @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(PROJECT_KEY) @Nullable String projectIdentifier,
       @QueryParam(PIPELINE_KEY) @Nullable String pipelineIdentifier,
       @QueryParam(PLAN_KEY) @Nullable String planExecutionId, @QueryParam(HANDLER_KEY) @Nullable String handler,
-      @QueryParam("startTs_from") @Nullable Long startTsFrom, @QueryParam("startTs_to") @Nullable Long startTsTo) {
+      @QueryParam("startTs_from") @Nullable Long startTsFrom, @QueryParam("startTs_to") @Nullable Long startTsTo,
+      @QueryParam(CHANGE_TYPE_KEY) @Nullable ChangeType changeType) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, StageExecutionEntityKeys.stageExecutionId, identifier);
     addEqFilter(filters, StageExecutionEntityKeys.planExecutionId, planExecutionId);
@@ -278,7 +289,7 @@ public class PartialSyncResource {
     addEqFilter(filters, StageExecutionEntityKeys.pipelineIdentifier, pipelineIdentifier);
     addTsFilter(filters, StageExecutionEntityKeys.startts, startTsFrom, startTsTo);
 
-    return triggerSync(pipelineStageExecutionCDCEntity, filters, handler);
+    return triggerSync(pipelineStageExecutionCDCEntity, filters, handler, changeType);
   }
 
   @GET
@@ -291,7 +302,8 @@ public class PartialSyncResource {
       @QueryParam(PIPELINE_KEY) @Nullable String pipelineIdentifier,
       @QueryParam(PLAN_KEY) @Nullable String planExecutionId, @QueryParam(HANDLER_KEY) @Nullable String handler,
       @QueryParam(STAGE_KEY) @Nullable String stageExecutionId, @QueryParam("startTs_from") @Nullable Long startTsFrom,
-      @QueryParam("startTs_to") @Nullable Long startTsTo) {
+      @QueryParam("startTs_to") @Nullable Long startTsTo,
+      @QueryParam(CHANGE_TYPE_KEY) @Nullable ChangeType changeType) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, StepExecutionEntityKeys.stepExecutionId, identifier);
     addEqFilter(filters, StepExecutionEntityKeys.stageExecutionId, stageExecutionId);
@@ -301,7 +313,7 @@ public class PartialSyncResource {
     addEqFilter(filters, StageExecutionEntityKeys.pipelineIdentifier, pipelineIdentifier);
     addTsFilter(filters, StageExecutionEntityKeys.startts, startTsFrom, startTsTo);
 
-    return triggerSync(stepExecutionCDCEntity, filters, handler);
+    return triggerSync(stepExecutionCDCEntity, filters, handler, changeType);
   }
 
   @GET
@@ -312,13 +324,14 @@ public class PartialSyncResource {
   public RestResponse<String> triggerProjectsSync(@QueryParam(PROJECT_KEY) @Nullable String identifier,
       @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(HANDLER_KEY) @Nullable String handler,
       @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
-      @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
+      @QueryParam("createdAt_to") @Nullable Long createdAtTo,
+      @QueryParam(CHANGE_TYPE_KEY) @Nullable ChangeType changeType) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, ProjectKeys.identifier, identifier);
     addEqFilter(filters, ProjectKeys.accountIdentifier, accountId);
     addTsFilter(filters, ProjectKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(projectEntity, filters, handler);
+    return triggerSync(projectEntity, filters, handler, changeType);
   }
 
   @GET
@@ -329,13 +342,14 @@ public class PartialSyncResource {
   public RestResponse<String> triggerServicesSync(@QueryParam(SERVICE_IDENTIFIER_KEY) @Nullable String identifier,
       @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(HANDLER_KEY) @Nullable String handler,
       @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
-      @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
+      @QueryParam("createdAt_to") @Nullable Long createdAtTo,
+      @QueryParam(CHANGE_TYPE_KEY) @Nullable ChangeType changeType) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, ServiceEntityKeys.identifier, identifier);
     addEqFilter(filters, ServiceEntityKeys.accountId, accountId);
     addTsFilter(filters, ServiceEntityKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(serviceCDCEntity, filters, handler);
+    return triggerSync(serviceCDCEntity, filters, handler, changeType);
   }
 
   @GET
@@ -346,13 +360,14 @@ public class PartialSyncResource {
   public RestResponse<String> triggerConnectorsSync(@QueryParam(CONNECTOR_IDENTIFIER_KEY) @Nullable String identifier,
       @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(HANDLER_KEY) @Nullable String handler,
       @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
-      @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
+      @QueryParam("createdAt_to") @Nullable Long createdAtTo,
+      @QueryParam(CHANGE_TYPE_KEY) @Nullable ChangeType changeType) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, ConnectorKeys.identifier, identifier);
     addEqFilter(filters, ConnectorKeys.accountIdentifier, accountId);
     addTsFilter(filters, ConnectorKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(connectorCDCEntity, filters, handler);
+    return triggerSync(connectorCDCEntity, filters, handler, changeType);
   }
 
   @GET
@@ -362,12 +377,13 @@ public class PartialSyncResource {
   @ApiOperation(value = "trigger bulk sync for the users entity using supplied filters")
   public RestResponse<String> triggerUsersSync(@QueryParam(USER_ID) @Nullable String identifier,
       @QueryParam(HANDLER_KEY) @Nullable String handler, @QueryParam("createdAt_from") @Nullable Long createdAtFrom,
-      @QueryParam("createdAt_to") @Nullable Long createdAtTo) {
+      @QueryParam("createdAt_to") @Nullable Long createdAtTo,
+      @QueryParam(CHANGE_TYPE_KEY) @Nullable ChangeType changeType) {
     List<Bson> filters = new ArrayList<>();
     addEqFilter(filters, UserMetadataKeys.userId, identifier);
     addTsFilter(filters, ServiceEntityKeys.createdAt, createdAtFrom, createdAtTo);
 
-    return triggerSync(userEntity, filters, handler);
+    return triggerSync(userEntity, filters, handler, changeType);
   }
 
   private void addEqFilter(List<Bson> filters, String key, String value) {
@@ -383,7 +399,8 @@ public class PartialSyncResource {
     }
   }
 
-  public RestResponse<String> triggerSync(CDCEntity<?> entity, List<Bson> filters, String handler) {
+  public RestResponse<String> triggerSync(
+      CDCEntity<?> entity, List<Bson> filters, String handler, ChangeType changeType) {
     if (filters.isEmpty()) {
       RestResponse<String> restResponse = new RestResponse<>();
       restResponse.setResponseMessages(List.of(ResponseMessage.builder()
@@ -397,7 +414,8 @@ public class PartialSyncResource {
       return restResponse;
     }
 
-    int count = changeDataCaptureBulkMigrationHelper.doPartialSync(Set.of(entity), Filters.and(filters), handler);
+    int count =
+        changeDataCaptureBulkMigrationHelper.doPartialSync(Set.of(entity), Filters.and(filters), handler, changeType);
     return new RestResponse<>(count + " events synced");
   }
 }

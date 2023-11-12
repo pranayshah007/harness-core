@@ -65,11 +65,12 @@ public class AggregatorSecondarySyncController extends AggregatorBaseSyncControl
       @Named(SECONDARY_ACL_GENERATOR_SERVICE) ACLGeneratorService aclGeneratorService,
       RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler,
       UserGroupCRUDEventHandler userGroupCRUDEventHandler, ScopeService scopeService,
-      AccessControlAdminService accessControlAdminService) {
+      AccessControlAdminService accessControlAdminService,
+      @Named("enableAclProcessingThroughOutbox") boolean enableAclProcessingThroughOutbox) {
     super(aclRepository, roleAssignmentRepository, roleRepository, resourceGroupRepository, userGroupRepository,
         aggregatorConfiguration, persistentLocker, changeEventFailureHandler, AggregatorJobType.SECONDARY,
         aclGeneratorService, roleAssignmentCRUDEventHandler, userGroupCRUDEventHandler, scopeService,
-        accessControlAdminService);
+        accessControlAdminService, enableAclProcessingThroughOutbox);
     this.aggregatorSecondarySyncStateRepository = aggregatorSecondarySyncStateRepository;
     this.aclRepository = aclRepository;
     this.mongoReconciliationOffsetRepository = mongoReconciliationOffsetRepository;

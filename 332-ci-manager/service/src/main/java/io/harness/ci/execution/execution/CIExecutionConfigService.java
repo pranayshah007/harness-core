@@ -695,6 +695,7 @@ public class CIExecutionConfigService {
       case GIT_CLONE:
         return getApplicableImage(stepInfoType, accountLevelImageConfig.getGitClone(), globalImageConfig.getGitClone());
       case IACM_TERRAFORM_PLUGIN:
+      case IACM_APPROVAL:
         return getApplicableImage(
             stepInfoType, accountLevelImageConfig.getIacmTerraform(), globalImageConfig.getIacmTerraform());
       case SSCA_ORCHESTRATION:
@@ -759,6 +760,7 @@ public class CIExecutionConfigService {
       case SECURITY:
       case UPLOAD_ARTIFACTORY:
       case IACM_TERRAFORM_PLUGIN:
+      case IACM_APPROVAL:
       case SSCA_ORCHESTRATION:
       case SSCA_ENFORCEMENT:
         break;

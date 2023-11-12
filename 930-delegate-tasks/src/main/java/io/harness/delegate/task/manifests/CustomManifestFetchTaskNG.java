@@ -123,7 +123,8 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
 
         Path pathToManifestFiles =
             Paths.get(defaultSourceWorkingDirectory, customManifestSource.getFilePaths().get(0)).normalize();
-        if (!isManifestsFilesSizeAllowed(logCallback, pathToManifestFiles.toString())) {
+        if (!isManifestsFilesSizeAllowed(
+                logCallback, pathToManifestFiles.toString(), customManifestSource.getFilePaths().get(0))) {
           throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress),
               new InvalidRequestException(
                   format(KubernetesExceptionMessages.CUSTOM_REMOTE_MANIFEST_SIZE_LIMIT, pathToManifestFiles)));
@@ -200,8 +201,13 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
         .build();
   }
 
-  private boolean isManifestsFilesSizeAllowed(LogCallback logCallback, String defaultSourceWorkingDirectory) {
-    long sizeOfManifest = FileUtils.sizeOf(new File(defaultSourceWorkingDirectory));
+  private boolean isManifestsFilesSizeAllowed(
+      LogCallback logCallback, String defaultSourceWorkingDirectory, String userDefinedDirectory) {
+    File file = new File(defaultSourceWorkingDirectory);
+    if (!file.exists()) {
+      file = new File(userDefinedDirectory);
+    }
+    long sizeOfManifest = FileUtils.sizeOf(file);
     // added 25Mb cap on manifest files
     if (sizeOfManifest / (1024 * 1024) > 25) {
       logCallback.saveExecutionLog(

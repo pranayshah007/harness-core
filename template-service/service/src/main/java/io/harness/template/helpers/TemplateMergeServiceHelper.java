@@ -43,6 +43,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.pms.expression.helper.InputSetMergeHelperV1;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.MergeHelper;
@@ -766,15 +767,28 @@ public class TemplateMergeServiceHelper {
    * @param appendInputSetValidator
    * @return jsonNode of merged yaml
    */
-  private Pair<TemplateEntity, JsonNode> replaceTemplateOccurrenceWithTemplateSpecYaml(String accountId, String orgId,
+  @VisibleForTesting
+  protected Pair<TemplateEntity, JsonNode> replaceTemplateOccurrenceWithTemplateSpecYaml(String accountId, String orgId,
       String projectId, JsonNode template, Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache,
       boolean appendInputSetValidator, String yamlVersion) {
-    JsonNode templateInputs = template.get(TEMPLATE_INPUTS);
-
     TemplateEntityGetResponse templateEntityGetResponse =
         getLinkedTemplateEntity(accountId, orgId, projectId, template, templateCacheMap, loadFromCache, yamlVersion);
     TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
-    JsonNode templateSpec = getSpecFromTemplateEntity(templateEntity);
+    validateTemplateEntity(templateEntity.getHarnessVersion(), yamlVersion);
+    String templateYaml = templateEntity.getYaml();
+    // If entity version is V1 then we will use the InputsExpressionEvaluator to merge the inputs instead of doing the
+    // Yaml-merge.
+    if (HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
+      JsonNode inputsWrapperNode = template.get(YAMLFieldNameConstants.SPEC);
+      templateYaml = InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(
+          inputsWrapperNode, YamlUtils.readAsJsonNode(templateYaml));
+      JsonNode templateSpec =
+          getSpecFromTemplateEntity(templateYaml, templateEntity.getIdentifier(), templateEntity.getHarnessVersion());
+      return Pair.of(templateEntity, templateSpec);
+    }
+    JsonNode templateInputs = template.get(TEMPLATE_INPUTS);
+    JsonNode templateSpec =
+        getSpecFromTemplateEntity(templateYaml, templateEntity.getIdentifier(), templateEntity.getHarnessVersion());
     return Pair.of(templateEntity,
         mergeTemplateInputsToTemplateSpecInTemplateYaml(templateInputs, templateSpec, appendInputSetValidator));
   }
@@ -1062,16 +1076,14 @@ public class TemplateMergeServiceHelper {
         .getYaml();
   }
 
-  private JsonNode getSpecFromTemplateEntity(TemplateEntity templateEntity) {
-    String templateYaml = templateEntity.getYaml();
-    if (HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
+  private JsonNode getSpecFromTemplateEntity(String templateYaml, String templateId, String harnessVersion) {
+    if (HarnessYamlVersion.isV1(harnessVersion)) {
       // First spec is the root for the template content it will name/id/type field. Inner spec will have the content
       // of the template.
       JsonNode templateNode = YamlUtils.readAsJsonNode(templateYaml).get(YAMLFieldNameConstants.SPEC);
       if (templateNode == null || !templateNode.has(YAMLFieldNameConstants.SPEC)) {
         throw new NGTemplateException(
-            String.format("Could not extract spec from the template YAML for the template with id: %s",
-                templateEntity.getIdentifier()));
+            String.format("Could not extract spec from the template YAML for the template with id: %s", templateId));
       }
       return templateNode.get(YAMLFieldNameConstants.SPEC);
     }
@@ -1081,6 +1093,14 @@ public class TemplateMergeServiceHelper {
     } catch (IOException e) {
       log.error("Could not read template yaml", e);
       throw new NGTemplateException("Could not read template yaml: " + e.getMessage());
+    }
+  }
+
+  private void validateTemplateEntity(String templateEntityVersion, String entityVersion) {
+    if (!(HarnessYamlVersion.isV1(entityVersion))) {
+      if (HarnessYamlVersion.isV1(templateEntityVersion)) {
+        throw new NGTemplateException("V1 templates cannot be linked with V0 pipelines/templates");
+      }
     }
   }
 }

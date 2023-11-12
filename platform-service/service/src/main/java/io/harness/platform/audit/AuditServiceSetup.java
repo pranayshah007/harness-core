@@ -15,6 +15,7 @@ import static java.util.stream.Collectors.toSet;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.retention.AuditAccountSyncService;
 import io.harness.audit.retention.AuditRetentionIteratorHandler;
+import io.harness.audit.scheduledJobs.AccountActivityMetricsPublisherService;
 import io.harness.health.HealthService;
 import io.harness.metrics.jobs.RecordMetricsJob;
 import io.harness.metrics.service.api.MetricService;
@@ -62,7 +63,6 @@ public class AuditServiceSetup {
     registerIterators(injector);
     registerOasResource(appConfig, environment, injector);
     initializeMonitoring(appConfig, injector);
-
     if (BooleanUtils.isTrue(appConfig.getEnableOpentelemetry())) {
       registerTraceFilter(environment, injector);
     }
@@ -97,6 +97,8 @@ public class AuditServiceSetup {
 
   private void registerManagedBeans(Environment environment, Injector injector) {
     environment.lifecycle().manage(injector.getInstance(AuditAccountSyncService.class));
+
+    environment.lifecycle().manage(injector.getInstance(AccountActivityMetricsPublisherService.class));
   }
 
   private void registerIterators(Injector injector) {

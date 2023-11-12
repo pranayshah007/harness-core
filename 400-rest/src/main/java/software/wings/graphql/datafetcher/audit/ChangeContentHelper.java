@@ -7,6 +7,8 @@
 
 package software.wings.graphql.datafetcher.audit;
 
+import static io.harness.TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.event.handler.impl.segment.SegmentHandler;
@@ -42,7 +44,7 @@ public class ChangeContentHelper {
     }
     Map<String, String> properties = new HashMap<String, String>() {
       {
-        put("userId", String.format("system-%s", accountId));
+        put("userId", String.format(SEGMENT_DUMMY_ACCOUNT_PREFIX + "%s", accountId));
         put("groupId", accountId);
       }
     };
@@ -61,7 +63,8 @@ public class ChangeContentHelper {
               accountId, e.getMessage()));
         }
       } else if (triggeredBy.getTriggeredByType() == TriggeredByType.API_KEY) {
-        segmentHelper.reportTrackEvent(String.format("system-%s", accountId), segmentEvent, properties, integrations);
+        segmentHelper.reportTrackEvent(
+            String.format(SEGMENT_DUMMY_ACCOUNT_PREFIX + "%s", accountId), segmentEvent, properties, integrations);
       }
     }
   }

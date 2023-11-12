@@ -24,6 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.aws.sam.AwsSamDeployStep;
 import io.harness.cdng.aws.sam.AwsSamDeployStepInfo;
 import io.harness.cdng.aws.sam.AwsSamStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -96,6 +97,8 @@ public class AwsSamDeployPluginInfoProviderTest extends CategoryTest {
 
   @Mock AwsSamStepHelper awsSamStepHelper;
 
+  @Mock AwsSamDeployStep awsSamDeployStep;
+
   @Mock PluginInfoProviderUtils pluginInfoProviderUtils;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Mock private ConnectorService connectorService;
   @InjectMocks @Spy private AwsSamDeployPluginInfoProvider awsSamDeployPluginInfoProvider;
@@ -106,7 +109,20 @@ public class AwsSamDeployPluginInfoProviderTest extends CategoryTest {
   public void testGetPluginInfo() throws IOException {
     String accountId = "accountId";
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
+    PluginCreationRequest pluginCreationRequest = getPluginCreationRequest();
 
+    String samDir = "samDir";
+    doReturn(samDir).when(awsSamStepHelper).getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(any());
+
+    PluginCreationResponseWrapper pluginCreationResponseWrapper =
+        awsSamDeployPluginInfoProvider.getPluginInfo(pluginCreationRequest, Collections.emptySet(), ambiance);
+
+    assertThat(pluginCreationResponseWrapper.getStepInfo().getIdentifier()).isEqualTo("identifier");
+    assertThat(pluginCreationResponseWrapper.getStepInfo().getName()).isEqualTo("name");
+    assertThat(pluginCreationResponseWrapper.getStepInfo().getUuid()).isEqualTo("uuid");
+  }
+
+  private PluginCreationRequest getPluginCreationRequest() throws IOException {
     String jsonNode = "jsonNdod";
     PluginCreationRequest pluginCreationRequest = PluginCreationRequest.newBuilder().setStepJsonNode(jsonNode).build();
     CdAbstractStepNode cdAbstractStepNode = mock(CdAbstractStepNode.class);
@@ -176,16 +192,12 @@ public class AwsSamDeployPluginInfoProviderTest extends CategoryTest {
     ManifestsOutcome manifestsOutcome = new ManifestsOutcome(manifestOutcomeHashMap);
     when(outcomeService.resolveOptional(any(), any()))
         .thenReturn(OptionalOutcome.builder().outcome(manifestsOutcome).build());
-
-    String samDir = "samDir";
     doReturn(awsSamDirectoryManifestOutcome).when(awsSamStepHelper).getAwsSamDirectoryManifestOutcome(any());
-    doReturn(samDir).when(awsSamStepHelper).getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(any());
 
-    PluginCreationResponseWrapper pluginCreationResponseWrapper =
-        awsSamDeployPluginInfoProvider.getPluginInfo(pluginCreationRequest, Collections.emptySet(), ambiance);
+    doReturn(new HashMap<>()).when(awsSamDeployStep).getEnvironmentVariables(any(), any());
+    doReturn(new HashMap<>()).when(awsSamStepHelper).getEnvVarsWithSecretRef(any());
+    doReturn(new HashMap<>()).when(awsSamStepHelper).validateEnvVariables(any());
 
-    assertThat(pluginCreationResponseWrapper.getStepInfo().getIdentifier()).isEqualTo("identifier");
-    assertThat(pluginCreationResponseWrapper.getStepInfo().getName()).isEqualTo("name");
-    assertThat(pluginCreationResponseWrapper.getStepInfo().getUuid()).isEqualTo("uuid");
+    return pluginCreationRequest;
   }
 }

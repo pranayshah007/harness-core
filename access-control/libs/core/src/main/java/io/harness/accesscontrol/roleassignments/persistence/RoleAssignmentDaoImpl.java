@@ -107,13 +107,17 @@ public class RoleAssignmentDaoImpl implements RoleAssignmentDao {
   }
 
   @Override
-  public long deleteMulti(RoleAssignmentFilter roleAssignmentFilter) {
-    return roleAssignmentRepository.deleteMulti(createCriteriaFromFilter(roleAssignmentFilter, false));
+  public List<RoleAssignment> findAndRemove(RoleAssignmentFilter roleAssignmentFilter) {
+    List<RoleAssignmentDBO> roleAssignmentDBOS =
+        roleAssignmentRepository.findAndRemove(createCriteriaFromFilter(roleAssignmentFilter, false));
+    return roleAssignmentDBOS.stream().map(RoleAssignmentDBOMapper::fromDBO).collect(Collectors.toList());
   }
 
   @Override
-  public long deleteMulti(String scopeIdentifier, List<String> identifiers) {
-    return roleAssignmentRepository.deleteMulti(createCriteriaForBulkDelete(scopeIdentifier, identifiers));
+  public List<RoleAssignment> findAndRemove(String scopeIdentifier, List<String> identifiers) {
+    List<RoleAssignmentDBO> roleAssignmentDBOS =
+        roleAssignmentRepository.findAndRemove(createCriteriaForBulkDelete(scopeIdentifier, identifiers));
+    return roleAssignmentDBOS.stream().map(RoleAssignmentDBOMapper::fromDBO).collect(Collectors.toList());
   }
 
   private Criteria createCriteriaForBulkDelete(String scopeIdentifier, List<String> roleAssignmentThatCanBeDeleted) {

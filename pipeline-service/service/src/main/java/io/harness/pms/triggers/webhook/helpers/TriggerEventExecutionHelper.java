@@ -389,6 +389,7 @@ public class TriggerEventExecutionHelper {
       }
 
       TriggerPayload triggerPayload = buildTriggerPayloadBuilder(triggerDetails, pollingResponse).build();
+      build = pollingResponse.getBuildInfo().getVersions(0);
       if (triggerPayload != null) {
         pseudoEvent.setPayload(triggerPayload.toString());
       }

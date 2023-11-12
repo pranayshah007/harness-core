@@ -153,7 +153,8 @@ public class GitXWebhookMapper {
   }
 
   public GitXEventsListRequestDTO buildEventsListGitXWebhookRequestDTO(String accountIdentifier,
-      String webhookIdentifier, Long eventStartTime, Long eventEndTime, String repoName, String filePath) {
+      String webhookIdentifier, Long eventStartTime, Long eventEndTime, String repoName, String filePath,
+      String eventIdentifier, String eventStatus) {
     if ((eventStartTime == null && eventEndTime != null) || (eventStartTime != null && eventEndTime == null)) {
       throw new InvalidRequestException(String.format(
           "Either the Event start time [%d] or the Event end time [%d] not provided.", eventStartTime, eventEndTime));
@@ -165,6 +166,8 @@ public class GitXWebhookMapper {
         .eventEndTime(eventEndTime)
         .repoName(repoName)
         .filePath(filePath)
+        .eventIdentifier(eventIdentifier)
+        .eventStatus(eventStatus)
         .build();
   }
 
@@ -180,6 +183,7 @@ public class GitXWebhookMapper {
               gitXWebhookEventResponse.setEventTriggerTime(gitXEventDTO.getEventTriggerTime());
               gitXWebhookEventResponse.setPayload(gitXEventDTO.getPayload());
               gitXWebhookEventResponse.setAuthorName(gitXEventDTO.getAuthorName());
+              gitXWebhookEventResponse.setEventStatus(gitXEventDTO.getEventStatus());
               return gitXWebhookEventResponse;
             })
             .collect(Collectors.toList());
@@ -193,6 +197,7 @@ public class GitXWebhookMapper {
     responseBody.setEventTriggerTime(gitXWebhookEventResponse.getEventTriggerTime());
     responseBody.setPayload(gitXWebhookEventResponse.getPayload());
     responseBody.setAuthorName(gitXWebhookEventResponse.getAuthorName());
+    responseBody.setEventStatus(gitXWebhookEventResponse.getEventStatus());
     return responseBody;
   }
 

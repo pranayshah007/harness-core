@@ -62,8 +62,6 @@ import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
-import io.harness.pms.timeout.SdkTimeoutObtainment;
-import io.harness.pms.utils.StageTimeoutUtils;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
@@ -186,7 +184,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
 
   private ExecutionElementConfig addExtraGitCloneSteps(
       ExecutionElementConfig modifiedExecutionPlan, Workspace workspace) {
-    if (workspace.getTf_var_files() == null) {
+    if (workspace.getTerraform_variable_files() == null) {
       return modifiedExecutionPlan;
     }
     List<ExecutionWrapperConfig> steps = modifiedExecutionPlan.getSteps();
@@ -194,7 +192,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     int stepIndex = 0;
     List<String> processedRepos = new ArrayList<>();
     List<ExecutionWrapperConfig> innerSteps = new ArrayList<>();
-    for (VariablesRepo variablesRepo : workspace.getTf_var_files()) {
+    for (VariablesRepo variablesRepo : workspace.getTerraform_variable_files()) {
       // If the connector is the same as where the main repo is, then it means that we do not need to clone the repo
       // again
       if (Objects.equals(variablesRepo.getRepository_connector(), workspace.getRepository_connector())) {
@@ -481,8 +479,6 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
             .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true));
-    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
-    planNodeBuilder = setStageTimeoutObtainment(sdkTimeoutObtainment, planNodeBuilder);
     return planNodeBuilder.build();
   }
 

@@ -10,12 +10,15 @@ package io.harness.audit.api;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.Action;
 import io.harness.audit.beans.AuditEventDTO;
 import io.harness.audit.beans.AuditFilterPropertiesDTO;
 import io.harness.audit.entities.AuditEvent;
 import io.harness.ng.beans.PageRequest;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -34,4 +37,9 @@ public interface AuditService {
   Set<String> getUniqueAuditedAccounts();
 
   void deleteAuditInfo(String accountId);
+
+  Map<String, Integer> getUniqueActionCount(
+      List<String> accountIds, List<Action> actions, Instant startTime, Instant endTime);
+
+  Map<String, Integer> getUniqueProjectCountPerAccountId(List<String> accountIds, Instant startTime, Instant endTime);
 }

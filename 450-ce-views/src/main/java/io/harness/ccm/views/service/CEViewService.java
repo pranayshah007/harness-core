@@ -12,6 +12,7 @@ import io.harness.ccm.views.dto.DefaultViewIdDto;
 import io.harness.ccm.views.dto.LinkedPerspectives;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.CEViewFolder;
+import io.harness.ccm.views.entities.CloudFilter;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewState;
@@ -26,14 +27,12 @@ import java.util.Set;
 public interface CEViewService {
   CEView save(CEView ceView, boolean clone);
   CEView clone(String accountId, String perspectiveId, String clonePerspectiveName);
-
   double getActualCostForPerspectiveBudget(String accountId, String perspectiveId);
-
   CEView get(String uuid);
   CEView update(CEView ceView);
   Set<String> getPerspectiveFolderIds(String accountId, List<String> ceViewIds);
   HashMap<String, String> getPerspectiveIdAndFolderId(String accountId, List<String> ceViewIds);
-  void updateBusinessMappingName(String accountId, String buinessMappingUuid, String newBusinessMappingName);
+  void updateBusinessMappingName(String accountId, String businessMappingUuid, String newBusinessMappingName);
   CEView updateTotalCost(CEView ceView);
   void updateAllPerspectiveWithPerspectivePreferenceDefaultSettings(
       String accountId, Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings);
@@ -42,21 +41,29 @@ public interface CEViewService {
   List<QLCEView> getAllViews(
       String accountId, String folderId, boolean includeDefault, QLCEViewSortCriteria sortCriteria);
   List<CEView> getAllViews(String accountId);
+  List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria,
+      Integer pageSize, Integer pageNo, String searchKey, List<CEViewFolder> folders, Set<String> allowedFolderIds,
+      List<CloudFilter> cloudFilters);
+  List<QLCEView> getAllPerspectives(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria,
+      Integer pageSize, Integer pageNo, String searchKey, List<CEViewFolder> folders, Set<String> allowedFolderIds,
+      List<CloudFilter> cloudFilters);
+  List<QLCEView> getAllViews(String accountId, String folderId, boolean includeDefault,
+      QLCEViewSortCriteria sortCriteria, Integer pageSize, Integer pageNo, String searchKey,
+      List<CloudFilter> cloudFilters);
   List<CEViewShortHand> getAllViewsShortHand(String accountId);
   List<CEView> getViewByState(String accountId, ViewState viewState);
   List<LinkedPerspectives> getViewsByBusinessMapping(String accountId, List<String> businessMappingUuids);
   void createDefaultView(String accountId, ViewFieldIdentifier viewFieldIdentifier);
   DefaultViewIdDto getDefaultViewIds(String accountId);
-
   Double getLastMonthCostForPerspective(String accountId, String perspectiveId);
   Double getForecastCostForPerspective(String accountId, String perspectiveId);
-
   void updateDefaultClusterViewVisualization(String viewId);
   Map<String, String> getPerspectiveIdToNameMapping(String accountId, List<String> perspectiveIds);
-
   String getDefaultFolderId(String accountId);
   String getSampleFolderId(String accountId);
   boolean setFolderId(
       CEView ceView, Set<String> allowedFolderIds, List<CEViewFolder> ceViewFolders, String defaultFolderId);
+  Long countByAccountIdAndFolderIds(
+      String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters);
   Set<ViewFieldIdentifier> getDataSourcesFromCloudProviderField(ViewIdCondition viewIdCondition, String accountId);
 }

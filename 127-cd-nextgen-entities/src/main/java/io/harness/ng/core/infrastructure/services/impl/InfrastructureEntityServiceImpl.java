@@ -27,7 +27,6 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.customdeployment.helper.CustomDeploymentEntitySetupHelper;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
-import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.visitor.YamlTypes;
@@ -407,7 +406,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
 
     Criteria criteria = getInfrastructureEqualityCriteria(infraEntity);
     Optional<InfrastructureEntity> infraEntityOptional =
-        get(accountId, orgIdentifier, projectIdentifier, envRef, infraIdentifier);
+        getMetadata(accountId, orgIdentifier, projectIdentifier, envRef, infraIdentifier);
 
     if (infraEntityOptional.isPresent()) {
       if (infraEntityOptional.get().getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
@@ -1102,6 +1101,60 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     return serviceRefs;
   }
 
+  @Override
+  public void checkIfInfraIsScopedToService(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceRef, String envRef, String infraRef) {
+    Optional<InfrastructureEntity> infrastructureEntityOptional =
+        get(accountIdentifier, orgIdentifier, projectIdentifier, envRef, infraRef);
+    if (infrastructureEntityOptional.isEmpty()) {
+      return;
+    }
+    List<String> scopedToServices = getScopedToServicesField(infrastructureEntityOptional.get());
+    if (CollectionUtils.isEmpty(scopedToServices) || scopedToServices.contains(serviceRef)) {
+      return;
+    }
+    throw new InvalidRequestException(String.format("Infrastructure: [%s] inside Environment: [%s] doesn't scoped"
+            + "to service: [%s]",
+        infraRef, envRef, serviceRef));
+  }
+
+  @Override
+  public void checkIfInfraIsScopedToService(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      List<String> serviceRefs, Map<String, List<String>> envRefInfraRefsMapping) {
+    if (MapUtils.isEmpty(envRefInfraRefsMapping) || CollectionUtils.isEmpty(serviceRefs)) {
+      return;
+    }
+    // looping over to each env and validating if infras are scoped to given services
+    envRefInfraRefsMapping.forEach((key, value)
+                                       -> checkIfInfraIsScopedToService(accountIdentifier, orgIdentifier,
+                                           projectIdentifier, serviceRefs, key, value));
+  }
+
+  private void checkIfInfraIsScopedToService(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      List<String> serviceRefs, String envRef, List<String> infraRefs) {
+    List<InfrastructureEntity> infrastructureEntities =
+        getAllInfrastructureFromIdentifierList(accountIdentifier, orgIdentifier, projectIdentifier, envRef, infraRefs);
+    if (CollectionUtils.isEmpty(infrastructureEntities)) {
+      return;
+    }
+    for (InfrastructureEntity infrastructureEntity : infrastructureEntities) {
+      List<String> scopedToServices = getScopedToServicesField(infrastructureEntity);
+      // if there is no scoping, then all services are valid
+      if (CollectionUtils.isEmpty(scopedToServices)) {
+        continue;
+      }
+      List<String> unScopedServices = serviceRefs.stream()
+                                          .filter(serviceRef -> !scopedToServices.contains(serviceRef))
+                                          .collect(Collectors.toList());
+
+      if (!CollectionUtils.isEmpty(unScopedServices)) {
+        throw new InvalidRequestException(String.format("Infrastructure: [%s] inside Environment: [%s] doesn't scoped"
+                + " to services: [%s]",
+            infrastructureEntity.getIdentifier(), envRef, unScopedServices));
+      }
+    }
+  }
+
   private void filterServicesForScopedInfra(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<String> serviceRefs, String envRef, List<String> infraRefs) {
     List<InfrastructureEntity> infrastructureEntities =
@@ -1130,8 +1183,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   private List<String> getScopedToServicesField(InfrastructureEntity infrastructureEntity) {
     InfrastructureConfig infrastructureConfig =
         InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
-    Infrastructure infrastructure = infrastructureConfig.getInfrastructureDefinitionConfig().getSpec();
-    return infrastructure.getScopedToServices();
+    return infrastructureConfig.getInfrastructureDefinitionConfig().getScopedServices();
   }
 
   InfrastructureEntity getInfrastructureFromEnvAndInfraIdentifier(

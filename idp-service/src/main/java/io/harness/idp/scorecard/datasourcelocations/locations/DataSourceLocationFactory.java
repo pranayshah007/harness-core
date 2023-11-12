@@ -39,6 +39,30 @@ import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceL
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.scorecard.datasourcelocations.locations.bitbucket.BitbucketIsBranchProtectionSetDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.bitbucket.BitbucketMeanTimeToMergePRDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubContentsDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubFileExistsDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubIsBranchProtectionSetDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubMeanTimeToCompleteSuccessWorkflowRunsDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubMeanTimeToCompleteWorkflowRunsDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubMeanTimeToMergePRDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubOpenCodeScanningAlertsDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubOpenDependabotAlertsDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubOpenPullRequestsByAccountDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubOpenSecretScanningAlertsDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubWorkflowSuccessRateDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubWorkflowsCountDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.gitlab.GitlabFileExistsDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.gitlab.GitlabIsBranchProtectionSetDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.gitlab.GitlabMeanTimeToMergePRDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.harness.HarnessProxyThroughDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.jira.JiraIssuesCountDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.jira.JiraIssuesOpenCloseRatioDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.jira.JiraMeanTimeToResolveDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.kubernetes.KubernetesProxyThroughDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.pagerduty.PagerDutyIncidents;
+import io.harness.idp.scorecard.datasourcelocations.locations.pagerduty.PagerDutyServiceDirectory;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;

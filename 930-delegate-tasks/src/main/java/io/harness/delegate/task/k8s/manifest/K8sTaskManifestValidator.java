@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -106,9 +107,41 @@ public class K8sTaskManifestValidator {
     }
   }
 
+  public List<String> getFilesToApplyInFolder(
+      String absoluteFolderPath, String folderPath, Predicate<Path> fileFilter) {
+    Path folderDirectory = Paths.get(absoluteFolderPath);
+    Set<String> listFiles = listFilesInFolder(folderDirectory, folderPath, fileFilter);
+    if (isEmpty(listFiles)) {
+      throw NestedExceptionUtils.hintWithExplanationException(NO_FILES_FOUND_IN_MANIFEST_DIRECTORY,
+          NO_FILES_EXISTS_IN_MANIFEST_DIRECTORY,
+          new KubernetesTaskException(format(UNABLE_TO_FIND_FILE_IN_MANIFEST_DIRECTORY_FORMAT, folderPath)));
+    }
+
+    return new ArrayList<>(listFiles);
+  }
+
   private Set<String> listFiles(Path basePath, Predicate<Path> fileFilter) {
     try (Stream<Path> paths = Files.walk(basePath, MAX_FILE_WALK_DEPTH)) {
       return paths.filter(fileFilter).map(basePath::relativize).map(Path::toString).collect(Collectors.toSet());
+    } catch (IOException e) {
+      log.warn("Unable to list files in path {}. Exception: {}", basePath, e.getMessage());
+      return Collections.emptySet();
+    }
+  }
+
+  private Set<String> listFilesInFolder(Path basePath, String folderPath, Predicate<Path> fileFilter) {
+    try (Stream<Path> paths = Files.walk(basePath, MAX_FILE_WALK_DEPTH)) {
+      String folderPathWithoutStartingSlash = "";
+      if (!folderPath.isEmpty()) {
+        folderPath = folderPath.startsWith(File.separator) ? folderPath.substring(1) : folderPath;
+        folderPathWithoutStartingSlash = folderPath.endsWith(File.separator) ? folderPath : folderPath + File.separator;
+      }
+
+      String finalFolderPrefix = folderPathWithoutStartingSlash;
+      return paths.filter(fileFilter)
+          .map(basePath::relativize)
+          .map(relativePath -> finalFolderPrefix + relativePath.toString())
+          .collect(Collectors.toSet());
     } catch (IOException e) {
       log.warn("Unable to list files in path {}. Exception: {}", basePath, e.getMessage());
       return Collections.emptySet();

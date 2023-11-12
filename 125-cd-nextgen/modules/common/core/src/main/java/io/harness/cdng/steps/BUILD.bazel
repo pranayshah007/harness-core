@@ -20,6 +20,7 @@ java_library(
         "//:lombok",
         "//953-yaml-commons:module",
         "//979-recaster/src/main/java/io/harness/annotation:module",
+        "//clients/pipeline-service/pms-sdk-core:module",
     ],
 )
 

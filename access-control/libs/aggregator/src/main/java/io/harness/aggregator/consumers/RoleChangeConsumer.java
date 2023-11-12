@@ -68,7 +68,7 @@ public class RoleChangeConsumer implements AccessControlChangeConsumer<RoleChang
     }
 
     List<RoleChangeConsumer.ReProcessRoleAssignmentOnRoleUpdateTask> tasksToExecute =
-        roleAssignmentRepository.findAll(criteria, Pageable.ofSize(10000))
+        roleAssignmentRepository.findAll(criteria, Pageable.ofSize(100000))
             .stream()
             .map((RoleAssignmentDBO roleAssignment)
                      -> new RoleChangeConsumer.ReProcessRoleAssignmentOnRoleUpdateTask(
@@ -103,7 +103,7 @@ public class RoleChangeConsumer implements AccessControlChangeConsumer<RoleChang
   }
 
   @Override
-  public boolean consumeDeleteEvent(String id) {
+  public boolean consumeDeleteEvent(String id, RoleChangeEventData changeEventData) {
     return true;
   }
 

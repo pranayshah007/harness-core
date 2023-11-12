@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	zglob "github.com/mattn/go-zglob"
 )
 
 // WriteHelperFile writes the rspec helper file needed to attach agent.
@@ -26,7 +28,7 @@ import (
 func WriteHelperFile(repoPath string) error {
 	pattern := "**/*spec_helper*.rb"
 
-	matches, err := filepath.Glob(pattern)
+	matches, err := zglob.Glob(pattern)
 	if err != nil {
 		return err
 	}

@@ -33,13 +33,13 @@ public interface RoleAssignmentService {
 
   Optional<RoleAssignment> get(@NotEmpty String identifier, @NotEmpty String scopeIdentifier);
 
-  RoleAssignmentUpdateResult update(@NotNull @Valid RoleAssignment roleAssignment);
+  RoleAssignment update(@NotNull @Valid RoleAssignment roleAssignment);
 
   Optional<RoleAssignment> delete(@NotEmpty String identifier, @NotEmpty String scopeIdentifier);
 
   long deleteMulti(@Valid @NotNull RoleAssignmentFilter roleAssignmentFilter);
 
-  long deleteMulti(String scopeIdentifier, List<String> identifiers);
+  List<RoleAssignment> deleteMulti(String scopeIdentifier, List<String> identifiers);
 
   RoleAssignmentValidationResult validate(@Valid @NotNull RoleAssignmentValidationRequest validationRequest);
 }

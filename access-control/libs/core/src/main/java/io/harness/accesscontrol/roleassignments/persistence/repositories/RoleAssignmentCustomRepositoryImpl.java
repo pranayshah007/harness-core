@@ -64,4 +64,11 @@ public class RoleAssignmentCustomRepositoryImpl implements RoleAssignmentCustomR
     log.info("The current query for deleting multiple role assignment is: {}", query.toString());
     return mongoTemplate.remove(query, RoleAssignmentDBO.class).getDeletedCount();
   }
+
+  @Override
+  public List<RoleAssignmentDBO> findAndRemove(Criteria criteria) {
+    Query query = new Query(criteria);
+    log.info("The current query for deleting multiple role assignment is: {}", query.toString());
+    return mongoTemplate.findAllAndRemove(query, RoleAssignmentDBO.class);
+  }
 }

@@ -7,6 +7,7 @@
 
 package io.harness.plancreator.featureFlag;
 
+import static io.harness.pms.utils.NGPipelineSettingsConstant.MAX_STAGE_TIMEOUT;
 import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,6 +17,8 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cf.pipeline.FeatureFlagStagePlanCreator;
 import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
+import io.harness.pms.contracts.plan.PlanExecutionContext;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
@@ -24,6 +27,8 @@ import io.harness.rule.Owner;
 import io.harness.yaml.core.timeout.Timeout;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -35,7 +40,16 @@ public class FeatureFlagStagePlanCreatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreatePlanForParentNodes() {
     StageElementConfig stageElementConfig1 = new StageElementConfig();
-    PlanCreationContext ctx = PlanCreationContext.builder().yaml("yamlWithUuid").build();
+    Map<String, PlanCreationContextValue> globalContext = new HashMap<>();
+    globalContext.put("metadata",
+        PlanCreationContextValue.newBuilder()
+            .setAccountIdentifier("accountId")
+            .setOrgIdentifier("ORG_IDENTIFIER")
+            .setProjectIdentifier("PROJ_IDENTIFIER")
+            .setExecutionContext(PlanExecutionContext.newBuilder().putAllSettingToValueMap(
+                Collections.singletonMap(MAX_STAGE_TIMEOUT.getName(), "10s")))
+            .build());
+    PlanCreationContext ctx = PlanCreationContext.builder().yaml("yamlWithUuid").globalContext(globalContext).build();
     stageElementConfig1.setTimeout(ParameterField.createValueField(Timeout.builder().timeoutString("10s").build()));
     ctx.setCurrentField(null);
     PlanNode planNode = featureFlagStagePlanCreator.createPlanForParentNode(
@@ -51,8 +65,17 @@ public class FeatureFlagStagePlanCreatorTest extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testCreatePlanForParentNodesForEmptyTimeout() {
+    Map<String, PlanCreationContextValue> globalContext = new HashMap<>();
+    globalContext.put("metadata",
+        PlanCreationContextValue.newBuilder()
+            .setAccountIdentifier("accountId")
+            .setOrgIdentifier("ORG_IDENTIFIER")
+            .setProjectIdentifier("PROJ_IDENTIFIER")
+            .setExecutionContext(PlanExecutionContext.newBuilder().putAllSettingToValueMap(
+                Collections.singletonMap(MAX_STAGE_TIMEOUT.getName(), "10s")))
+            .build());
     StageElementConfig stageElementConfig1 = new StageElementConfig();
-    PlanCreationContext ctx = PlanCreationContext.builder().yaml("yamlWithUuid").build();
+    PlanCreationContext ctx = PlanCreationContext.builder().yaml("yamlWithUuid").globalContext(globalContext).build();
     PlanNode planNode = featureFlagStagePlanCreator.createPlanForParentNode(
         ctx, stageElementConfig1, Collections.singletonList("executionId"));
     assertThat(planNode).isNotNull();

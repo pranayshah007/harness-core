@@ -79,11 +79,11 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
+import io.harness.cvng.servicelevelobjective.beans.slispec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
-import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.Annotation;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
@@ -256,7 +256,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getEvaluationType()).isEqualTo(SLIEvaluationType.WINDOW);
     assertThat(sloDashboardWidget.isTotalErrorBudgetApplicable()).isEqualTo(true);
     assertThat(sloDashboardWidget.getTags()).isEqualTo(serviceLevelObjectiveV2DTO.getTags());
-    assertThat(sloDashboardWidget.getType()).isEqualTo(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType());
     assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(serviceLevelObjectiveV2DTO.getSloTarget().getType());
     assertThat(sloDashboardWidget.getCurrentPeriodLengthDays()).isEqualTo(30);
     assertThat(sloDashboardWidget.getCurrentPeriodStartTime())
@@ -347,7 +346,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getEvaluationType()).isEqualTo(SLIEvaluationType.WINDOW);
     assertThat(sloDashboardWidget.isTotalErrorBudgetApplicable()).isEqualTo(true);
     assertThat(sloDashboardWidget.getTags()).isEqualTo(serviceLevelObjectiveV2DTO.getTags());
-    assertThat(sloDashboardWidget.getType()).isEqualTo(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType());
     assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(serviceLevelObjectiveV2DTO.getSloTarget().getType());
     assertThat(sloDashboardWidget.getCurrentPeriodLengthDays()).isEqualTo(30);
     assertThat(sloDashboardWidget.getCurrentPeriodStartTime())
@@ -418,7 +416,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getEvaluationType()).isEqualTo(SLIEvaluationType.WINDOW);
     assertThat(sloDashboardWidget.isTotalErrorBudgetApplicable()).isEqualTo(true);
     assertThat(sloDashboardWidget.getTags()).isEqualTo(serviceLevelObjectiveV2DTO.getTags());
-    assertThat(sloDashboardWidget.getType()).isEqualTo(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType());
     assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(serviceLevelObjectiveV2DTO.getSloTarget().getType());
     assertThat(sloDashboardWidget.getCurrentPeriodLengthDays()).isEqualTo(30);
     assertThat(sloDashboardWidget.getCurrentPeriodStartTime())
@@ -1992,9 +1989,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     SLOConsumptionBreakdown sloBreakdown = sloConsumptionBreakdownList.get(0);
     assertThat(sloBreakdown.getSloIdentifier()).isEqualTo(serviceLevelObjectiveV2DTO.getIdentifier());
     assertThat(sloBreakdown.getSloName()).isEqualTo(serviceLevelObjectiveV2DTO.getName());
-    assertThat(sloBreakdown.getSliType())
-        .isEqualTo(
-            ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec()).getServiceLevelIndicatorType());
     assertThat(sloBreakdown.getSloTargetPercentage())
         .isEqualTo(serviceLevelObjectiveV2DTO.getSloTarget().getSloTargetPercentage());
     assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(sloGraphData1.getErrorBudgetBurned());
@@ -2005,9 +1999,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     sloBreakdown = sloConsumptionBreakdownList.get(1);
     assertThat(sloBreakdown.getSloIdentifier()).isEqualTo(serviceLevelObjectiveV2DTO2.getIdentifier());
     assertThat(sloBreakdown.getSloName()).isEqualTo(serviceLevelObjectiveV2DTO2.getName());
-    assertThat(sloBreakdown.getSliType())
-        .isEqualTo(
-            ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO2.getSpec()).getServiceLevelIndicatorType());
     assertThat(sloBreakdown.getSloTargetPercentage())
         .isEqualTo(serviceLevelObjectiveV2DTO2.getSloTarget().getSloTargetPercentage());
     assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(sloGraphData2.getErrorBudgetBurned());
@@ -2108,9 +2099,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     SLOConsumptionBreakdown sloBreakdown = sloConsumptionBreakdownList.get(0);
     assertThat(sloBreakdown.getSloIdentifier()).isEqualTo(serviceLevelObjectiveV2DTO.getIdentifier());
     assertThat(sloBreakdown.getSloName()).isEqualTo(serviceLevelObjectiveV2DTO.getName());
-    assertThat(sloBreakdown.getSliType())
-        .isEqualTo(
-            ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec()).getServiceLevelIndicatorType());
     assertThat(sloBreakdown.getSloTargetPercentage())
         .isEqualTo(serviceLevelObjectiveV2DTO.getSloTarget().getSloTargetPercentage());
     assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(sloGraphData1.getErrorBudgetBurned());
@@ -2122,9 +2110,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     sloBreakdown = sloConsumptionBreakdownList.get(1);
     assertThat(sloBreakdown.getSloIdentifier()).isEqualTo(serviceLevelObjectiveV2DTO2.getIdentifier());
     assertThat(sloBreakdown.getSloName()).isEqualTo(serviceLevelObjectiveV2DTO2.getName());
-    assertThat(sloBreakdown.getSliType())
-        .isEqualTo(
-            ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO2.getSpec()).getServiceLevelIndicatorType());
     assertThat(sloBreakdown.getSloTargetPercentage())
         .isEqualTo(serviceLevelObjectiveV2DTO2.getSloTarget().getSloTargetPercentage());
     assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(sloGraphData2.getErrorBudgetBurned());
@@ -2240,9 +2225,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     SLOConsumptionBreakdown sloBreakdown = sloConsumptionBreakdownList.get(0);
     assertThat(sloBreakdown.getSloIdentifier()).isEqualTo(serviceLevelObjectiveV2DTO.getIdentifier());
     assertThat(sloBreakdown.getSloName()).isEqualTo(serviceLevelObjectiveV2DTO.getName());
-    assertThat(sloBreakdown.getSliType())
-        .isEqualTo(
-            ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec()).getServiceLevelIndicatorType());
     assertThat(sloBreakdown.getSloTargetPercentage())
         .isEqualTo(serviceLevelObjectiveV2DTO.getSloTarget().getSloTargetPercentage());
     assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(sloGraphData1.getErrorBudgetBurned());
@@ -2252,9 +2234,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     sloBreakdown = sloConsumptionBreakdownList.get(1);
     assertThat(sloBreakdown.getSloIdentifier()).isEqualTo(serviceLevelObjectiveV2DTO2.getIdentifier());
     assertThat(sloBreakdown.getSloName()).isEqualTo(serviceLevelObjectiveV2DTO2.getName());
-    assertThat(sloBreakdown.getSliType())
-        .isEqualTo(
-            ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO2.getSpec()).getServiceLevelIndicatorType());
     assertThat(sloBreakdown.getSloTargetPercentage())
         .isEqualTo(serviceLevelObjectiveV2DTO2.getSloTarget().getSloTargetPercentage());
     assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(sloGraphData2.getErrorBudgetBurned());

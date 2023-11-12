@@ -463,7 +463,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
         .updatePipelineInfo(pipelineToUpdate, HarnessYamlVersion.V0);
 
     PipelineEntity pipelineEntityUpdated = pipelineToSaveWithUpdatedInfo.withVersion(0L);
-    doReturn(pipelineEntityUpdated).when(pipelineRepository).updatePipelineYaml(pipelineToSaveWithUpdatedInfo);
+    doReturn(pipelineEntityUpdated).when(pipelineRepository).updatePipelineYaml(pipelineToSaveWithUpdatedInfo, false);
 
     PipelineEntity pipelineEntity =
         pipelineService.validateAndUpdatePipeline(pipelineToUpdate, null, true).getPipelineEntity();
@@ -497,7 +497,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
         .updatePipelineInfo(pipelineToUpdate, HarnessYamlVersion.V0);
 
     PipelineEntity pipelineEntityUpdated = pipelineToSaveWithUpdatedInfo.withVersion(0L);
-    doReturn(pipelineEntityUpdated).when(pipelineRepository).updatePipelineYaml(pipelineToSaveWithUpdatedInfo);
+    doReturn(pipelineEntityUpdated).when(pipelineRepository).updatePipelineYaml(pipelineToSaveWithUpdatedInfo, false);
 
     PipelineEntity pipelineEntity =
         pipelineService.validateAndUpdatePipeline(pipelineToUpdate, null, true).getPipelineEntity();
@@ -527,7 +527,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     assertThat(pipelineCRUDResult.getPipelineEntity()).isNull();
     assertThat(pipelineCRUDResult.getGovernanceMetadata().getDeny()).isTrue();
     verify(pipelineServiceHelper, times(0)).updatePipelineInfo(any(), eq(HarnessYamlVersion.V0));
-    verify(pipelineRepository, times(0)).updatePipelineYaml(any());
+    verify(pipelineRepository, times(0)).updatePipelineYaml(any(), anyBoolean());
     verify(pipelineRepository, times(0)).updatePipelineYamlForOldGitSync(any(), any(), any());
   }
 

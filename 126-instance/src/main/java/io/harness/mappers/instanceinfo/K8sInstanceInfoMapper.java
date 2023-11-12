@@ -7,8 +7,11 @@
 
 package io.harness.mappers.instanceinfo;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
 
@@ -16,6 +19,7 @@ import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.DX)
 @UtilityClass
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class K8sInstanceInfoMapper {
   public K8sInstanceInfoDTO toDTO(K8sInstanceInfo k8sInstanceInfo) {
     return K8sInstanceInfoDTO.builder()
@@ -26,6 +30,7 @@ public class K8sInstanceInfoMapper {
         .podName(k8sInstanceInfo.getPodName())
         .releaseName(k8sInstanceInfo.getReleaseName())
         .helmChartInfo(k8sInstanceInfo.getHelmChartInfo())
+        .canary(Boolean.TRUE.equals(k8sInstanceInfo.getCanary()))
         .build();
   }
 
@@ -38,6 +43,7 @@ public class K8sInstanceInfoMapper {
         .podName(k8sInstanceInfoDTO.getPodName())
         .releaseName(k8sInstanceInfoDTO.getReleaseName())
         .helmChartInfo(k8sInstanceInfoDTO.getHelmChartInfo())
+        .canary(k8sInstanceInfoDTO.isCanary())
         .build();
   }
 }

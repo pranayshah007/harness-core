@@ -94,6 +94,7 @@ public class K8sDeleteRequestHandler extends K8sRequestHandler {
     }
 
     K8sDeleteRequest k8sDeleteRequest = (K8sDeleteRequest) k8sDeployRequest;
+    kubernetesConfig = k8SDelegateTaskParams.getKubernetesConfig();
     releaseName = k8sDeleteRequest.getReleaseName();
     manifestFilesDirectory = Paths.get(k8SDelegateTaskParams.getWorkingDirectory(), MANIFEST_FILES_DIR).toString();
     LogCallback executionLogCallback =
@@ -151,9 +152,12 @@ public class K8sDeleteRequestHandler extends K8sRequestHandler {
 
     client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
         k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
-    kubernetesConfig =
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(k8sDeleteRequest.getK8sInfraDelegateConfig(),
-            k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
+    if (kubernetesConfig == null) {
+      log.warn("Kubernetes config passed to task is NULL. Creating it again...");
+      kubernetesConfig =
+          containerDeploymentDelegateBaseHelper.createKubernetesConfig(k8sDeleteRequest.getK8sInfraDelegateConfig(),
+              k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
+    }
 
     if (isEmpty(k8sDeleteRequest.getFilePaths())) {
       executionLogCallback.saveExecutionLog(color("\nNo file specified in the state", Yellow, Bold));
@@ -210,9 +214,12 @@ public class K8sDeleteRequestHandler extends K8sRequestHandler {
     }
     client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
         k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
-    kubernetesConfig =
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(k8sDeleteRequest.getK8sInfraDelegateConfig(),
-            k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
+    if (kubernetesConfig == null) {
+      log.warn("Kubernetes config passed to task is NULL. Creating it again...");
+      kubernetesConfig =
+          containerDeploymentDelegateBaseHelper.createKubernetesConfig(k8sDeleteRequest.getK8sInfraDelegateConfig(),
+              k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
+    }
 
     try {
       resourceIdsToDelete =

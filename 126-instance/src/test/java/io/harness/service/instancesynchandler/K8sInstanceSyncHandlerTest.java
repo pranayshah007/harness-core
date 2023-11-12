@@ -8,6 +8,7 @@
 package io.harness.service.instancesynchandler;
 
 import static io.harness.beans.FeatureName.CDS_EKS_ADD_REGIONAL_PARAM;
+import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
@@ -15,6 +16,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import io.harness.InstancesTestBase;
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,6 +25,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
+import io.harness.delegate.beans.instancesync.DeploymentOutcomeMetadata;
+import io.harness.delegate.beans.instancesync.K8sDeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.delegate.task.helm.HelmChartInfo;
@@ -160,6 +165,41 @@ public class K8sInstanceSyncHandlerTest extends InstancesTestBase {
     assertThat(
         ((K8sDeploymentReleaseDetails) deploymentReleaseDetails.getDeploymentDetails().get(0)).getNamespaces().size())
         .isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testUpdateDeploymentInfoDTO() {
+    K8sDeploymentInfoDTO k8sDeploymentInfoDTO = K8sDeploymentInfoDTO.builder().build();
+    k8sInstanceSyncHandler.updateDeploymentInfoDTO(
+        k8sDeploymentInfoDTO, K8sDeploymentOutcomeMetadata.builder().canary(true).build());
+    assertThat(k8sDeploymentInfoDTO.isCanary()).isTrue();
+
+    k8sInstanceSyncHandler.updateDeploymentInfoDTO(
+        k8sDeploymentInfoDTO, K8sDeploymentOutcomeMetadata.builder().canary(false).build());
+    assertThat(k8sDeploymentInfoDTO.isCanary()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testUpdateDeploymentInfoDTONegativeCases() {
+    DeploymentInfoDTO deploymentInfoDTO = mock(DeploymentInfoDTO.class);
+    K8sDeploymentInfoDTO k8sDeploymentInfoDTO = mock(K8sDeploymentInfoDTO.class);
+    DeploymentOutcomeMetadata deploymentOutcomeMetadata = mock(DeploymentOutcomeMetadata.class);
+
+    k8sInstanceSyncHandler.updateDeploymentInfoDTO(null, null);
+    k8sInstanceSyncHandler.updateDeploymentInfoDTO(deploymentInfoDTO, null);
+    k8sInstanceSyncHandler.updateDeploymentInfoDTO(deploymentInfoDTO, deploymentOutcomeMetadata);
+    k8sInstanceSyncHandler.updateDeploymentInfoDTO(
+        deploymentInfoDTO, K8sDeploymentOutcomeMetadata.builder().canary(true).build());
+    verifyNoInteractions(deploymentInfoDTO);
+    verifyNoInteractions(deploymentOutcomeMetadata);
+
+    k8sInstanceSyncHandler.updateDeploymentInfoDTO(k8sDeploymentInfoDTO, null);
+    k8sInstanceSyncHandler.updateDeploymentInfoDTO(k8sDeploymentInfoDTO, deploymentOutcomeMetadata);
+    verifyNoInteractions(k8sDeploymentInfoDTO);
   }
 
   private List<K8sContainer> getContainerList() {

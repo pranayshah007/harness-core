@@ -15,6 +15,7 @@ import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.helper.K8sCloudConfigMetadata;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.util.InstanceSyncKey;
+import io.harness.util.InstanceSyncKeyConstants;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.LinkedHashSet;
@@ -32,6 +33,7 @@ public class K8sDeploymentInfoDTO extends DeploymentInfoDTO {
   @NotNull private LinkedHashSet<String> namespaces;
   @NotNull private String releaseName;
   private String blueGreenStageColor;
+  private boolean canary;
   @EqualsAndHashCode.Exclude private HelmChartInfo helmChartInfo;
   @EqualsAndHashCode.Exclude private K8sCloudConfigMetadata cloudConfigMetadata;
 
@@ -45,6 +47,15 @@ public class K8sDeploymentInfoDTO extends DeploymentInfoDTO {
     if (isNotEmpty(blueGreenStageColor)) {
       return InstanceSyncKey.builder().part(releaseName).part(blueGreenStageColor).build().toString();
     }
+
+    if (canary) {
+      return InstanceSyncKey.builder()
+          .part(releaseName)
+          .part(InstanceSyncKeyConstants.CanaryDeployment)
+          .build()
+          .toString();
+    }
+
     return InstanceSyncKey.builder().part(releaseName).build().toString();
   }
 }

@@ -37,9 +37,8 @@ public class MultipleInputValuesMigration implements NGMigration {
   @Override
   public void migrate() {
     log.info("Starting the migration for adding input values field in checks collection.");
-    Query<CheckEntity> checkEntityQuery = persistence.createQuery(CheckEntity.class, excludeAuthority)
-                                              .filter(CheckEntity.CheckKeys.isCustom, true)
-                                              .filter(CheckEntity.CheckKeys.isDeleted, false);
+    Query<CheckEntity> checkEntityQuery =
+        persistence.createQuery(CheckEntity.class, excludeAuthority).filter(CheckEntity.CheckKeys.isCustom, true);
     try (HIterator<CheckEntity> checks = new HIterator<>(checkEntityQuery.fetch())) {
       while (checks.hasNext()) {
         migrateCheck(checks.next());
@@ -57,7 +56,7 @@ public class MultipleInputValuesMigration implements NGMigration {
             persistence.createQuery(DataPointEntity.class)
                 .filter(DataPointEntity.DataPointKeys.identifier, rule.getDataPointIdentifier())
                 .filter(DataPointEntity.DataPointKeys.dataSourceIdentifier, rule.getDataSourceIdentifier())
-                .filter(DataPointEntity.DataPointKeys.accountIdentifier, check.getAccountIdentifier());
+                .filter(DataPointEntity.DataPointKeys.accountIdentifier, "__GLOBAL_ACCOUNT_ID__");
         DataPointEntity dataPoint = dataPointEntityQuery.asList().get(0);
 
         Rule updatedRule = new Rule();

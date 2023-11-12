@@ -894,27 +894,6 @@ public class PipelineResourceTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = RAGHAV_GUPTA)
-  @Category(UnitTests.class)
-  public void testUpdateSimplifiedPipelineWithoutYamlNameFailure() {
-    doReturn(HarnessYamlVersion.V1).when(pmsPipelineService).pipelineVersion(ACCOUNT_ID, simplifiedYamlWithoutName);
-    simplifiedEntityWithVersion.setYaml(simplifiedYamlWithoutName);
-    simplifiedEntity.setYaml(simplifiedYamlWithoutName);
-    GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
-    PipelineCRUDResult pipelineCRUDResult = PipelineCRUDResult.builder()
-                                                .governanceMetadata(governanceMetadata)
-                                                .pipelineEntity(simplifiedEntityWithVersion)
-                                                .build();
-    doReturn(pipelineCRUDResult)
-        .when(pmsPipelineService)
-        .validateAndUpdatePipeline(simplifiedEntity, ChangeType.MODIFY, false);
-    assertThatThrownBy(()
-                           -> pipelineResource.updatePipelineV2(null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               PIPELINE_IDENTIFIER, null, null, null, null, simplifiedYamlWithoutName, false))
-        .isInstanceOf(InvalidRequestException.class);
-  }
-
-  @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testGetListRepos() {

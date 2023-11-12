@@ -146,6 +146,34 @@ java_plugin(
     ],
 )
 
+java_plugin(
+    name = "mapstruct_proto_plugin",
+    generates_api = True,
+    processor_class = "no.entur.mapstruct.spi.protobuf.ProcessingEnvOptionsHolder",
+    deps = [
+        "@maven//:no_entur_mapstruct_spi_protobuf_spi_impl",
+        "@maven//:org_mapstruct_mapstruct_processor",
+        "@maven//:org_projectlombok_lombok_mapstruct_binding",
+    ],
+)
+
+java_library(
+    name = "mapstruct_proto",
+    exported_plugins = [
+        ":mapstruct_proto_plugin",
+    ],
+    neverlink = True,
+    visibility = ["//visibility:public"],
+    exports = [
+        "@maven//:no_entur_mapstruct_spi_protobuf_spi_impl",
+        "@maven//:org_mapstruct_mapstruct",
+        "@maven//:org_mapstruct_mapstruct_processor",
+    ],
+    runtime_deps = [
+        "@maven//:org_mapstruct_mapstruct",
+    ],
+)
+
 java_library(
     name = "mapstruct",
     exported_plugins = [

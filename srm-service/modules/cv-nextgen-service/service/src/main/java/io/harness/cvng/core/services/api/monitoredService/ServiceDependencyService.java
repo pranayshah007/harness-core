@@ -21,7 +21,7 @@ import lombok.NonNull;
 
 @OwnedBy(CV)
 public interface ServiceDependencyService {
-  void updateDependencies(ProjectParams projectParams, String toMonitoredServiceIdentifier,
+  int updateDependencies(ProjectParams projectParams, String toMonitoredServiceIdentifier,
       Set<ServiceDependencyDTO> fromMonitoredServiceIdentifiers);
 
   void deleteDependenciesForService(ProjectParams projectParams, String monitoredServiceIdentifier);

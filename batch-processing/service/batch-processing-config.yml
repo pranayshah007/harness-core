@@ -91,8 +91,8 @@ smtp:
   port: 465
   fromAddress: ce-noreply@harness.io
   useSSL: true
-  username: smtp_username_placeholder
-  password: "smtp_password_placeholder"
+  username: ""
+  password: ""
 
 segmentConfig:
   enabled: false
@@ -266,7 +266,7 @@ proxy:
   port: 80
   username: ""
   password: ""
-  protocol: http
+  protocol: https
 
 cliProxy:
   enabled: false

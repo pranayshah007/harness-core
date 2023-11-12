@@ -106,6 +106,7 @@ public class EntityYamlRootNames {
   public static final String SECURITY = "Security";
 
   public static final String ANCHORE = "Anchore";
+  public static final String AQUA_SECURITY = "AquaSecurity";
   public static final String AQUA_TRIVY = "AquaTrivy";
   public static final String AWS_ECR = "AWSECR";
   public static final String AWS_SECURITY_HUB = "AWSSecurityHub";
@@ -206,6 +207,7 @@ public class EntityYamlRootNames {
   public static final String FREEZE = "freeze";
   public static final String CHAOS_STEP = "Chaos";
   public static final String CHAOS_INFRASTRUCTURE = "ChaosInfrastructure";
+  public static final String CHAOS_HUB = "ChaosHub";
   public static final String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   public static final String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
   public static final String IACM_STAGE = "IACMStage";
@@ -248,6 +250,7 @@ public class EntityYamlRootNames {
   public static final String K8S_DRY_RUN_MANIFEST = "K8sDryRun";
   public static final String K8S_BLUE_GREEN_STAGE_SCALE_DOWN = "K8sBlueGreenStageScaleDown";
   public static final String ASG_BLUE_GREEN_SWAP_SERVICE_STEP = "AsgBlueGreenSwapService";
+  public static final String ASG_SHIFT_TRAFFIC = "AsgShiftTraffic";
   public static final String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
   public static final String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
 
@@ -274,4 +277,5 @@ public class EntityYamlRootNames {
   public static final String AWS_CDK_ROLLBACK = "AwsCdkRollback";
 
   public static final String OVERRIDES = "Overrides";
+  public static final String IDP_STAGE = "IdpStage";
 }

@@ -13,18 +13,15 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
-import io.harness.cdng.common.beans.StepDelegateInfo;
-import io.harness.cdng.common.beans.StepDetailsDelegateInfo;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskDetails;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.exception.InvalidRequestException;
-import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
-import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.serializer.KryoSerializer;
+
+import software.wings.beans.SerializationFormat;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -32,7 +29,6 @@ import com.google.inject.name.Named;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Set;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
@@ -40,16 +36,18 @@ import java.util.Set;
 @Singleton
 public class AsyncExecutableTaskHelper {
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer kryoSerializer;
-  @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
   public TaskData extractTaskRequest(TaskDetails taskDetails) {
     Object[] parameters = null;
     byte[] data;
+    SerializationFormat serializationFormat;
     if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.KRYO_PARAMETERS)) {
       data = taskDetails.getKryoParameters().toByteArray();
       parameters = new Object[] {kryoSerializer.asInflatedObject(data)};
+      serializationFormat = SerializationFormat.KRYO;
     } else if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.JSON_PARAMETERS)) {
       data = taskDetails.getJsonParameters().toStringUtf8().getBytes(StandardCharsets.UTF_8);
+      serializationFormat = SerializationFormat.JSON;
     } else {
       throw new InvalidRequestException("Invalid task response type.");
     }
@@ -58,6 +56,9 @@ public class AsyncExecutableTaskHelper {
         .data(data)
         .taskType(taskDetails.getType().getType())
         .timeout(taskDetails.getExecutionTimeout().getSeconds() * 1000)
+        .expressionFunctorToken((int) taskDetails.getExpressionFunctorToken())
+        .parked(taskDetails.getParked())
+        .serializationFormat(serializationFormat)
         .async(true)
         .build();
   }
@@ -77,6 +78,7 @@ public class AsyncExecutableTaskHelper {
         .logStreamingAbstractions(new LinkedHashMap<>(submitTaskRequest.getLogAbstractions().getValuesMap()))
         .forceExecute(submitTaskRequest.getForceExecute())
         .expressionFunctorToken(taskData.getExpressionFunctorToken())
+        .serializationFormat(taskData.getSerializationFormat())
         .eligibleToExecuteDelegateIds(submitTaskRequest.getEligibleToExecuteDelegateIdsList())
         .executeOnHarnessHostedDelegates(submitTaskRequest.getExecuteOnHarnessHostedDelegates())
         .emitEvent(submitTaskRequest.getEmitEvent())
@@ -85,16 +87,5 @@ public class AsyncExecutableTaskHelper {
         .shouldSkipOpenStream(shouldSkipOpenStream)
         .selectionLogsTrackingEnabled(true)
         .build();
-  }
-
-  public void publishStepDelegateInfoStepDetails(Ambiance ambiance, TaskData taskData, String taskName, String taskId) {
-    String stepName = "";
-    if (taskData.getParameters()[0] instanceof K8sDeployRequest) {
-      stepName = ((K8sDeployRequest) taskData.getParameters()[0]).getCommandName();
-    }
-    List<StepDelegateInfo> stepDelegateInfos =
-        List.of(StepDelegateInfo.builder().taskName(taskName).taskId(taskId).build());
-    sdkGraphVisualizationDataService.publishStepDetailInformation(
-        ambiance, StepDetailsDelegateInfo.builder().stepDelegateInfos(stepDelegateInfos).build(), stepName);
   }
 }

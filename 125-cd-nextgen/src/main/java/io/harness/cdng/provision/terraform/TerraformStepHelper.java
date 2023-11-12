@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_SUPPORT_OPTIONAL_VAR_FILE_PATHS_NG;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
@@ -356,15 +357,13 @@ public class TerraformStepHelper {
                                                         .commitId(getParameterFieldValue(gitStoreConfig.getCommitId()))
                                                         .paths(paths)
                                                         .connectorName(connectorDTO.getName())
+                                                        .optional(isVarFileOptional)
                                                         .build();
 
     GitFetchFilesConfigBuilder builder = GitFetchFilesConfig.builder();
 
     if (manifestType != null) {
       builder.manifestType(manifestType);
-    }
-    if (isVarFileOptional) {
-      builder.optional(isVarFileOptional);
     }
     builder.identifier(identifier).succeedIfFileNotFound(false).gitStoreDelegateConfig(gitStoreDelegateConfig);
     return builder.build();
@@ -569,7 +568,8 @@ public class TerraformStepHelper {
     }
 
     if (terraformPassThroughData != null) {
-      builder.varFileConfigs(toTerraformVarFileConfigWithPTD(configuration.getVarFiles(), terraformPassThroughData));
+      builder.varFileConfigs(
+          toTerraformVarFileConfigWithPTD(configuration.getVarFiles(), terraformPassThroughData, ambiance));
     } else {
       builder.varFileConfigs(toTerraformVarFileConfig(configuration.getVarFiles(), terraformTaskNGResponse));
     }
@@ -1052,7 +1052,7 @@ public class TerraformStepHelper {
     }
 
     if (terraformPassThroughData != null) {
-      builder.varFileConfigs(toTerraformVarFileConfigWithPTD(spec.getVarFiles(), terraformPassThroughData));
+      builder.varFileConfigs(toTerraformVarFileConfigWithPTD(spec.getVarFiles(), terraformPassThroughData, ambiance));
     } else {
       builder.varFileConfigs(toTerraformVarFileConfig(spec.getVarFiles(), response));
     }
@@ -1725,7 +1725,7 @@ public class TerraformStepHelper {
   }
 
   public List<TerraformVarFileConfig> toTerraformVarFileConfigWithPTD(
-      Map<String, TerraformVarFile> varFilesMap, TerraformPassThroughData terraformPassThroughData) {
+      Map<String, TerraformVarFile> varFilesMap, TerraformPassThroughData terraformPassThroughData, Ambiance ambiance) {
     if (EmptyPredicate.isNotEmpty(varFilesMap)) {
       List<TerraformVarFileConfig> varFileConfigs = new ArrayList<>();
       for (TerraformVarFile file : varFilesMap.values()) {
@@ -1771,7 +1771,9 @@ public class TerraformStepHelper {
                 }
 
                 boolean isVarFileOptional = false;
-                if (((RemoteTerraformVarFileSpec) spec).getOptional() != null) {
+                if (((RemoteTerraformVarFileSpec) spec).getOptional() != null
+                    && cdFeatureFlagHelper.isEnabled(
+                        AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_SUPPORT_OPTIONAL_VAR_FILE_PATHS_NG)) {
                   isVarFileOptional = ParameterFieldHelper.getBooleanParameterFieldValue(
                       ((RemoteTerraformVarFileSpec) spec).getOptional());
                 }
@@ -2006,7 +2008,9 @@ public class TerraformStepHelper {
               // Retrieve the files from the GIT stores
 
               boolean isVarFileOptional = false;
-              if (((RemoteTerraformVarFileSpec) spec).getOptional() != null) {
+              if (((RemoteTerraformVarFileSpec) spec).getOptional() != null
+                  && cdFeatureFlagHelper.isEnabled(
+                      AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_SUPPORT_OPTIONAL_VAR_FILE_PATHS_NG)) {
                 isVarFileOptional = ParameterFieldHelper.getBooleanParameterFieldValue(
                     ((RemoteTerraformVarFileSpec) spec).getOptional());
               }
@@ -2045,7 +2049,9 @@ public class TerraformStepHelper {
               // Retrieve the files from the GIT stores
 
               boolean isVarFileOptional = false;
-              if (((RemoteTerraformVarFileSpec) spec).getOptional() != null) {
+              if (((RemoteTerraformVarFileSpec) spec).getOptional() != null
+                  && cdFeatureFlagHelper.isEnabled(
+                      AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_SUPPORT_OPTIONAL_VAR_FILE_PATHS_NG)) {
                 isVarFileOptional = ParameterFieldHelper.getBooleanParameterFieldValue(
                     ((RemoteTerraformVarFileSpec) spec).getOptional());
               }

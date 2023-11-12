@@ -20,6 +20,7 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.steps.nodes.security.AnchoreScanNode;
+import io.harness.beans.steps.nodes.security.AquaSecurityScanNode;
 import io.harness.beans.steps.nodes.security.AquaTrivyScanNode;
 import io.harness.beans.steps.nodes.security.AwsEcrScanNode;
 import io.harness.beans.steps.nodes.security.AwsSecurityHubScanNode;
@@ -92,6 +93,8 @@ import lombok.Getter;
 public enum STOStepType {
   ANCHORE("Anchore", null, FeatureName.STO_STEP_PALETTE_ANCHORE_ENTERPRISE, AnchoreScanNode.class, EntityType.ANCHORE,
       new String[] {CONTAINER_SECURITY}),
+  AQUA_SECURITY("AquaSecurity", "Aqua Security", FeatureName.STO_STEP_PALETTE_AQUASEC, AquaSecurityScanNode.class,
+      EntityType.AQUA_SECURITY, new String[] {CONTAINER_SECURITY}),
   AQUA_TRIVY("AquaTrivy", "Aqua Trivy", null, AquaTrivyScanNode.class, EntityType.AQUA_TRIVY,
       new String[] {CONTAINER_SECURITY}),
   AWS_ECR("AWSECR", "AWS ECR Scan", null, AwsEcrScanNode.class, EntityType.AWS_ECR, new String[] {CONTAINER_SECURITY}),
@@ -101,8 +104,7 @@ public enum STOStepType {
   BLACKDUCK("BlackDuck", "Black Duck", null, BlackDuckScanNode.class, EntityType.BLACKDUCK,
       new String[] {SAST, CONTAINER_SECURITY}),
   BRAKEMAN("Brakeman", null, null, BrakemanScanNode.class, EntityType.BRAKEMAN, new String[] {SAST}),
-  BURP("Burp", null, FeatureName.STO_STEP_PALETTE_BURP_ENTERPRISE, BurpScanNode.class, EntityType.BURP,
-      new String[] {DAST}),
+  BURP("Burp", null, null, BurpScanNode.class, EntityType.BURP, new String[] {DAST}),
   CHECKMARX("Checkmarx", null, null, CheckmarxScanNode.class, EntityType.CHECKMARX, new String[] {SAST}),
   CLAIR("Clair", null, FeatureName.STO_STEPS_TEST_MODE, ClairScanNode.class, EntityType.CLAIR,
       new String[] {CONTAINER_SECURITY}),
@@ -114,14 +116,12 @@ public enum STOStepType {
       DockerContentTrustScanNode.class, EntityType.DOCKER_CONTENT_TRUST, new String[] {CONTAINER_SECURITY}),
   CUSTOM_INGEST("CustomIngest", "Custom Ingest", null, CustomIngestScanNode.class, EntityType.CUSTOM_INGEST,
       new String[] {SECURITY}),
-  CODE_QL("CodeQL", null, FeatureName.STO_STEP_PALETTE_CODEQL, CodeqlScanNode.class, EntityType.CODEQL,
-      new String[] {SAST}),
-  FOSSA("Fossa", null, FeatureName.STO_STEP_PALETTE_FOSSA, FossaScanNode.class, EntityType.FOSSA, new String[] {SAST}),
+  CODE_QL("CodeQL", null, null, CodeqlScanNode.class, EntityType.CODEQL, new String[] {SAST}),
+  FOSSA("Fossa", null, null, FossaScanNode.class, EntityType.FOSSA, new String[] {SAST}),
   FORTIFY_ON_DEMAND("FortifyOnDemand", "Fortify On Demand", FeatureName.STO_STEPS_TEST_MODE,
       FortifyOnDemandScanNode.class, EntityType.FORTIFY_ON_DEMAND, new String[] {SECURITY}),
 
-  GIT_LEAKS("Gitleaks", null, FeatureName.STO_STEP_PALETTE_GIT_LEAKS, GitleaksScanNode.class, EntityType.GIT_LEAKS,
-      new String[] {SAST}),
+  GIT_LEAKS("Gitleaks", null, null, GitleaksScanNode.class, EntityType.GIT_LEAKS, new String[] {SAST}),
   GRYPE("Grype", null, null, GrypeScanNode.class, EntityType.GRYPE, new String[] {CONTAINER_SECURITY}),
   JFROG_XRAY("JfrogXray", "Jfrog Xray", FeatureName.STO_STEPS_TEST_MODE, JfrogXrayScanNode.class, EntityType.JFROG_XRAY,
       new String[] {SECURITY}),
@@ -144,16 +144,14 @@ public enum STOStepType {
       new String[] {SECURITY}),
   REAPSAW("Reapsaw", null, FeatureName.STO_STEPS_TEST_MODE, ReapsawScanNode.class, EntityType.REAPSAW,
       new String[] {SECURITY}),
-  SEMGREP("Semgrep", "Semgrep", FeatureName.STO_STEP_PALETTE_SEMGREP, SemgrepScanNode.class, EntityType.SEMGREP,
-      new String[] {SAST, SCA}),
+  SEMGREP("Semgrep", "Semgrep", null, SemgrepScanNode.class, EntityType.SEMGREP, new String[] {SAST, SCA}),
   SHIFT_LEFT("ShiftLeft", "Shift Left", FeatureName.STO_STEPS_TEST_MODE, ShiftLeftScanNode.class, EntityType.SHIFT_LEFT,
       new String[] {SECURITY}),
   SNIPER("Sniper", null, FeatureName.STO_STEPS_TEST_MODE, SniperScanNode.class, EntityType.SNIPER,
       new String[] {SECURITY}),
   SNYK("Snyk", null, null, SnykScanNode.class, EntityType.SNYK, new String[] {SCA, SAST, CONTAINER_SECURITY}),
   SONARQUBE("Sonarqube", null, null, SonarqubeScanNode.class, EntityType.SONARQUBE, new String[] {SAST}),
-  SYSDIG("Sysdig", null, FeatureName.STO_STEP_PALETTE_SYSDIG, SysdigScanNode.class, EntityType.SYSDIG,
-      new String[] {CONTAINER_SECURITY}),
+  SYSDIG("Sysdig", null, null, SysdigScanNode.class, EntityType.SYSDIG, new String[] {CONTAINER_SECURITY}),
   TENABLE(
       "Tenable", null, FeatureName.STO_STEPS_TEST_MODE, TenableScanNode.class, EntityType.TENABLE, new String[] {DAST}),
   VERACODE("Veracode", null, FeatureName.STO_STEPS_TEST_MODE, VeracodeScanNode.class, EntityType.VERACODE,
