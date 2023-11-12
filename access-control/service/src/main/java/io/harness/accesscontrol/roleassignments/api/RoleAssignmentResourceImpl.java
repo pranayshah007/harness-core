@@ -682,8 +682,26 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     Scope scope = fromParams(harnessScopeParams);
     RoleAssignmentFilter roleAssignmentFilter = fromDTO(scope.toString(), roleAssignmentFilterDTO);
     Set<Principal> principals = roleAssignmentFilter.getPrincipalFilter();
-    roleAssignmentApiUtils.sanitizeRoleAssignmentFilterDTOForAccessiblePrincipals(
-        harnessScopeParams, USER_GROUP, principals, roleAssignmentFilter);
+    Set<Principal> userGrouppPrincipals =
+        roleAssignmentApiUtils.sanitizeRoleAssignmentFilterDTOForAccessiblePrincipals(harnessScopeParams, USER_GROUP,
+            principals.stream().filter(x -> x.getPrincipalType().equals(USER_GROUP)).collect(Collectors.toSet()),
+            roleAssignmentFilter);
+    Set<Principal> serviceAccountPrincipals =
+        roleAssignmentApiUtils.sanitizeRoleAssignmentFilterDTOForAccessiblePrincipals(harnessScopeParams,
+            SERVICE_ACCOUNT,
+            principals.stream().filter(x -> x.getPrincipalType().equals(SERVICE_ACCOUNT)).collect(Collectors.toSet()),
+            roleAssignmentFilter);
+    Set<Principal> userPrincipals =
+        roleAssignmentApiUtils.sanitizeRoleAssignmentFilterDTOForAccessiblePrincipals(harnessScopeParams, USER,
+            principals.stream().filter(x -> x.getPrincipalType().equals(USER)).collect(Collectors.toSet()),
+            roleAssignmentFilter);
+
+    Set<Principal> filteredPrincipals = new HashSet<>();
+    filteredPrincipals.addAll(userGrouppPrincipals);
+    filteredPrincipals.addAll(serviceAccountPrincipals);
+    filteredPrincipals.addAll(userPrincipals);
+
+    roleAssignmentFilter.setPrincipalFilter(filteredPrincipals);
     return Optional.of(roleAssignmentFilter);
   }
 }
