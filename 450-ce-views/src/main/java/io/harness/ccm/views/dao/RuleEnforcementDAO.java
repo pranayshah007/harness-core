@@ -23,6 +23,7 @@ import dev.morphia.query.Sort;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -130,7 +131,7 @@ public class RuleEnforcementDAO {
                                                  .field(RuleEnforcementId.name)
                                                  .equal(name)
                                                  .asList();
-    if (ruleEnforcements == null) {
+    if (CollectionUtils.isEmpty(ruleEnforcements)) {
       return true;
     }
     if (ruleEnforcements.size() == 1) {

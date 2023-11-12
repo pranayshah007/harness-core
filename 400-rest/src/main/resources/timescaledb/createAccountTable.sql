@@ -11,6 +11,12 @@ CREATE TABLE IF NOT EXISTS public.accounts (
     created_at bigint
 );
 
+-- drop constraint first if it exists
+ALTER TABLE ONLY public.accounts
+    DROP CONSTRAINT IF EXISTS accounts_pkey;
+
+-- add primary key constraint, this is done to resolve issues in re-running migrations
+-- this query will fail as only one primary key constraint can exist
 ALTER TABLE ONLY public.accounts
     ADD CONSTRAINT accounts_pkey PRIMARY KEY (id);
 

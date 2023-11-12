@@ -7,6 +7,8 @@ syntax = "proto3";
 package io.harness.eventsframework.schemas.entity;
 
 import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/entity_usage_data.proto";
+import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/entity_type.proto";
+import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/identifier_ref.proto";
 import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/pipeline_execution_usage_data.proto";
 
 option java_multiple_files = true;
@@ -18,4 +20,6 @@ message EntityUsageDetailProto {
     io.harness.eventsframework.schemas.entity.EntityUsageDataProto baseUsageData = 2;
     io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto pipelineExecutionUsageData = 3;
   }
+  IdentifierRefProtoDTO identifierRef = 4;
+  EntityTypeProtoEnum entityType = 5;
 }

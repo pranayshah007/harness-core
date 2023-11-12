@@ -11,6 +11,7 @@ import io.harness.common.STOCommonEndpointConstants;
 
 import com.google.gson.JsonObject;
 import retrofit2.Call;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.Path;
@@ -30,6 +31,9 @@ public interface STOServiceClient {
   @GET(STOCommonEndpointConstants.STO_SERVICE_SCANS_ENDPOINT)
   Call<JsonObject> getScans(@Header("Authorization") String token, @Query("accountId") String accountId,
       @Query("executionId") String executionId, @Query("page") String page, @Query("pageSize") String pageSize);
+
+  @DELETE(STOCommonEndpointConstants.STO_SERVICE_DELETE_ACCOUNT_DATA_ENDPOINT)
+  Call<JsonObject> deleteAccountData(@Header("Authorization") String token, @Path("accountId") String accountId);
 
   @GET(STOCommonEndpointConstants.STO_SERVICE_USAGE_ALL_ACCOUNTS_ENDPOINT)
   Call<JsonObject> getUsageAllAccounts(@Header("Authorization") String token, @Query("timestamp") String timestamp);

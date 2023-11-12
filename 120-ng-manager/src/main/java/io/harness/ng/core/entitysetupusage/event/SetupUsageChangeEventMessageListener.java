@@ -10,6 +10,7 @@ package io.harness.ng.core.entitysetupusage.event;
 import static io.harness.NGConstants.BRANCH;
 import static io.harness.NGConstants.REPO;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CHAOS_HUB;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CHAOS_INFRASTRUCTURE;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CONNECTORS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT;
@@ -61,8 +62,9 @@ import lombok.extern.slf4j.Slf4j;
 public class SetupUsageChangeEventMessageListener implements MessageListener {
   EntitySetupUsageService entitySetupUsageService;
   EntitySetupUsageEventDTOMapper entitySetupUsageEventDTOToRestDTOMapper;
-  final Set<EntityTypeProtoEnum> entityTypesSupportedByNGCore = Sets.newHashSet(SECRETS, CONNECTORS, SERVICE,
-      ENVIRONMENT, ENVIRONMENT_GROUP, TEMPLATE, FILES, PIPELINES, INFRASTRUCTURE, TRIGGERS, CHAOS_INFRASTRUCTURE);
+  final Set<EntityTypeProtoEnum> entityTypesSupportedByNGCore =
+      Sets.newHashSet(SECRETS, CONNECTORS, SERVICE, ENVIRONMENT, ENVIRONMENT_GROUP, TEMPLATE, FILES, PIPELINES,
+          INFRASTRUCTURE, TRIGGERS, CHAOS_INFRASTRUCTURE, CHAOS_HUB);
 
   @Inject
   public SetupUsageChangeEventMessageListener(EntitySetupUsageService entitySetupUsageService,

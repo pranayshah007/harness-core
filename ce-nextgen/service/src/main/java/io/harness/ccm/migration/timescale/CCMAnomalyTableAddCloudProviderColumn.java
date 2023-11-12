@@ -5,12 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ng.core.entityusageactivity;
+package io.harness.ccm.migration.timescale;
 
-import lombok.Builder;
+import io.harness.migration.timescale.NGAbstractTimeScaleMigration;
 
-@Builder
-public class PipelineExecutionUsageData extends EntityUsageData {
-  String planExecutionId;
-  String stageExecutionId;
+public class CCMAnomalyTableAddCloudProviderColumn extends NGAbstractTimeScaleMigration {
+  @Override
+  public String getFileName() {
+    return "timescaledb/add_cloudprovider_column_anomaly_table.sql";
+  }
 }

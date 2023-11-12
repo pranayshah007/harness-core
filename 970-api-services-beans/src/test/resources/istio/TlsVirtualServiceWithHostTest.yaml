@@ -1,0 +1,21 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: test-vs
+spec:
+  hosts:
+  - host1
+  - host2
+  tls:
+  - match:
+    - name: istio-http-uri-rule-1
+      sniHosts:
+      - '*.com'
+      - '*.io'
+    route:
+    - destination:
+        host: test-svc
+      weight: 80
+    - destination:
+        host: test-svc-stage
+      weight: 20

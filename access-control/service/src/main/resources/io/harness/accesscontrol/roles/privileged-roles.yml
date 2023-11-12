@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: supportRolesConfiguration
-version: 25
+version: 26
 roles:
   - identifier: _super_account_viewer
     name: Super Account Viewer
@@ -74,3 +74,4 @@ roles:
       - ccm_anomalies_view
       - ccm_recommendations_view
       - ccm_commitmentOrchestrator_view
+      - iac_workspace_view
