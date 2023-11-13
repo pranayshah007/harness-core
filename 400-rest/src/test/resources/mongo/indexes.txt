@@ -8,8 +8,8 @@
 accounts {"name": "accountBackgroundJobCheckIteration_1", "background": true} {"accountBackgroundJobCheckIteration": 1}
 accounts {"name": "accountDeletionIteration_1", "background": true} {"accountDeletionIteration": 1}
 accounts {"name": "accountName_1", "unique": true} {"accountName": 1}
-accounts {"name": "accountStatus_accountType_workflowDataCollectionIteration", "background": true} {"licenseInfo.accountStatus": 1, "licenseInfo.accountType": 1, "workflowDataCollectionIteration": 1}
 accounts {"name": "accountRingInfoIteration_1", "background": true} {"accountRingInfoIteration": 1}
+accounts {"name": "accountStatus_accountType_workflowDataCollectionIteration", "background": true} {"licenseInfo.accountStatus": 1, "licenseInfo.accountType": 1, "workflowDataCollectionIteration": 1}
 accounts {"name": "account_status_deletion_iteration", "background": true} {"licenseInfo.accountStatus": 1, "accountDeletionIteration": 1}
 accounts {"name": "appId_1", "background": true} {"appId": 1}
 accounts {"name": "appId_uuid_accountName_companyName_licenseInfo_encryptedLicenseInfo", "background": true} {"appId": 1, "uuid": 1, "accountName": 1, "companyName": 1, "licenseInfo": 1, "encryptedLicenseInfo": 1}
