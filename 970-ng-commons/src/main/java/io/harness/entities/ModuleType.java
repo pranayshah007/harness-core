@@ -19,8 +19,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
+@Slf4j
 // When adding new module lifecycleStage field should be set to ONBOARDING_IN_PROGRESS unless all the services deploys
 // these changes.
 public enum ModuleType {
@@ -47,7 +49,10 @@ public enum ModuleType {
   // Internal modules which have not been onboarded yet
   @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", INTERNAL, ONBOARDING_IN_PROGRESS),
   // moving SEI to Onboarded for qa
-  @JsonProperty("SEI") SEI("Software Engineering Insights", PUBLIC, ONBOARDING_IN_PROGRESS);
+  @JsonProperty("SEI") SEI("Software Engineering Insights", PUBLIC, ONBOARDING_IN_PROGRESS),
+
+  // Default value for avoiding serialization errors
+  @JsonProperty("UNKNOWN") UNKNOWN("Unknown module type", INTERNAL, ONBOARDED);
 
   String displayName;
   ModuleVisibility visibility;
@@ -82,7 +87,8 @@ public enum ModuleType {
         return moduleEnum;
       }
     }
-    throw new IllegalArgumentException("Invalid value: " + moduleType);
+    log.warn("Invalid value while serializing module type: " + moduleType);
+    return UNKNOWN;
   }
 
   public String getDisplayName() {
