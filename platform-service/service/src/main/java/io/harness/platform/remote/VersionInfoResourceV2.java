@@ -16,8 +16,12 @@ import io.swagger.annotations.ApiOperation;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.MediaType;
 import java.util.Map;
+
+import io.dropwizard.jersey.errors.ErrorMessage;
 
 @PublicApi
 @Path("/api/version")
@@ -31,6 +35,11 @@ public class VersionInfoResourceV2 {
 
   @GET
   public VersionInfoV2 getVersionInfo() {
-    return versionInfoManager.getVersionInfo();
+    try {
+      return versionInfoManager.getVersionInfo();
+    } catch (Exception e) {
+      ErrorMessage errorMessage = new ErrorMessage(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Failed to retrieve version info: " + e.getMessage());
+      throw new WebApplicationException(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorMessage).build());
+    }
   }
 }
