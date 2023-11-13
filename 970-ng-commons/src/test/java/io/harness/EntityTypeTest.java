@@ -274,6 +274,7 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(240, "ASG_SHIFT_TRAFFIC_STEP");
     entityTypeOrdinalMapping.put(241, "AQUA_SECURITY");
     entityTypeOrdinalMapping.put(242, "IDP_STAGE");
+    entityTypeOrdinalMapping.put(243, "CHAOS_HUB");
 
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
