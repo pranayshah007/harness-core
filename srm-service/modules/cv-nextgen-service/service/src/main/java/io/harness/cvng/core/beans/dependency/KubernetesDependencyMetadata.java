@@ -13,6 +13,9 @@ import io.harness.cvng.beans.change.ChangeSourceType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.collect.Sets;
+import de.danielbechler.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -32,6 +35,20 @@ import lombok.experimental.SuperBuilder;
 public class KubernetesDependencyMetadata extends ServiceDependencyMetadata {
   String namespace;
   String workload;
+  List<String> workloads;
+
+  public void setWorkload(String workload) {
+    this.workload = workload;
+    if (!Objects.isNull(workload)) {
+      this.workloads = java.util.Collections.singletonList(workload);
+    }
+  }
+  public String getWorkload() {
+    if (workload == null && !Collections.isEmpty(this.workloads)) {
+      return this.workloads.get(0);
+    }
+    return workload;
+  }
 
   @Override
   public DependencyMetadataType getType() {
