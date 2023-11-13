@@ -348,6 +348,17 @@ public class PerspectiveToAnomalyQueryHelper {
     return true;
   }
 
+  public CCMFilter addIdNullFilter() {
+    List<CCMStringFilter> ccm_stringFilters = new ArrayList<>();
+    String[] emptyArray = new String[0];
+    ccm_stringFilters.add(buildStringFilter(CCMField.ANOMALY_ID, emptyArray, QLCEViewFilterOperator.NULL));
+    return CCMFilter.builder()
+        .stringFilters(ccm_stringFilters)
+        .numericFilters(Collections.emptyList())
+        .timeFilters(Collections.emptyList())
+        .build();
+  }
+
   public boolean isEmptyRuleFilter(List<CCMFilter> ccm_ruleFilters) {
     for (CCMFilter ccm_filter : ccm_ruleFilters) {
       log.info("ccm_filter.getStringFilters() : {}", ccm_filter.getStringFilters());
