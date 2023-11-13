@@ -9,6 +9,8 @@ package io.harness.version;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.OwnedBy;
+
 import org.yaml.snakeyaml.Yaml;
 import lombok.extern.slf4j.Slf4j;
 import java.io.FileInputStream;
@@ -16,7 +18,7 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.Map;
 
-@slf4j
+
 @OwnedBy(PL)
 public class VersionInfoManagerV2 {
   private static final String versionFilePath = "/opt/harness/version.yaml";
