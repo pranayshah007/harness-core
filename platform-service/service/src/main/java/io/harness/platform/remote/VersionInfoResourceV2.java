@@ -20,7 +20,7 @@ import javax.ws.rs.core.MediaType;
 import java.util.Map;
 
 @PublicApi
-@Path("/version")
+@Path("/api/version")
 @Produces(MediaType.APPLICATION_JSON)
 public class VersionInfoResourceV2 {
   private final VersionInfoManagerV2 versionInfoManager;
@@ -30,7 +30,7 @@ public class VersionInfoResourceV2 {
   }
 
   @GET
-  public Map<String, String> getVersionInfo() {
-    return versionInfoManager.getVersionInfo(); // Assuming this method returns a Map
+  public VersionInfoV2 getVersionInfo() {
+    return versionInfoManager.getVersionInfo();
   }
 }

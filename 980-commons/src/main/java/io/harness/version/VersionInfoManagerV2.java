@@ -9,48 +9,41 @@ package io.harness.version;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import org.yaml.snakeyaml.Yaml;
+import lombok.extern.slf4j.Slf4j;
 import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.Map;
 
-import org.apache.commons.io.IOUtils;
-import org.json.JSONObject;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
-@Path("/version")
-@Produces(MediaType.APPLICATION_JSON)
+@slf4j
+@OwnedBy(PL)
 public class VersionInfoManagerV2 {
-  private static final String VERSION_YAML_FILE = "/opt/harness/version.yaml";
+  private static final String versionFilePath = "/opt/harness/version.yaml";
 
-  @GET
-  public String getVersionInfo() {
+  public VersionInfoManager(String versionFilePath) {
+    this.versionFilePath = versionFilePath;
+  }
+
+  public VersionInfoV2 getVersionInfo() {
     try {
-      // Read the content of the version.yaml file
-      FileInputStream fileInputStream = new FileInputStream(VERSION_YAML_FILE);
-      String yamlContent = IOUtils.toString(fileInputStream, StandardCharsets.UTF_8);
+      InputStream inputStream = new FileInputStream(versionFilePath);
 
-      // Parse the YAML content and create a JSON response
-      JSONObject json = new JSONObject();
-      for (String line : yamlContent.split("\n")) {
-        String[] parts = line.split(":");
-        if (parts.length == 2) {
-          String key = parts[0].trim();
-          String value = parts[1].trim();
-          json.put(key, value);
-        }
-      }
+      // Parse YAML file
+      Yaml yaml = new Yaml();
+      Map<String, Object> data = yaml.load(inputStream);
 
-      return json.toString();
-    } catch (IOException e) {
-      e.printStackTrace();
-      // Handle the error and return an appropriate JSON response.
-      JSONObject errorJson = new JSONObject();
-      errorJson.put("error", "Failed to read version.yaml");
-      return errorJson.toString();
+      // Create a VersionInfo object to store the data
+      VersionInfoV2 versionInfo = new VersionInfo();
+      versionInfo.setBuildVersion((String) data.get("BUILD_VERSION"));
+      versionInfo.setBuildTime((Date) data.get("BUILD_TIME")); // Cast to Date
+      versionInfo.setBranchName((String) data.get("BRANCH_NAME"));
+      versionInfo.setCommitSha((String) data.get("COMMIT_SHA"));
+
+      return versionInfo;
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to retrieve version info: " + e.getMessage(), e);
     }
   }
+
 }
