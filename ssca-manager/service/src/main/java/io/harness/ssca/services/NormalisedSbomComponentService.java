@@ -26,9 +26,7 @@ public interface NormalisedSbomComponentService {
   Page<NormalizedSBOMComponentEntity> getNormalizedSbomComponents(String accountId, String orgIdentifier,
       String projectIdentifier, ArtifactEntity artifact, ArtifactComponentViewRequestBody filterBody,
       Pageable pageable);
-  List<String> getOrchestrationIds(
-      String accountId, String orgIdentifier, String projectIdentifier, LicenseFilter licenseFilter);
 
-  List<String> getOrchestrationIds(
-      String accountId, String orgIdentifier, String projectIdentifier, List<ComponentFilter> componentFilter);
+  List<String> getOrchestrationIds(String accountId, String orgIdentifier, String projectIdentifier,
+      LicenseFilter licenseFilter, List<ComponentFilter> componentFilter);
 }

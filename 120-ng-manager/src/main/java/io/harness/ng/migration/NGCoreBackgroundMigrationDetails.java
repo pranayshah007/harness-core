@@ -24,6 +24,7 @@ import io.harness.ng.core.migration.background.CleanupDeploymentSummaryNg;
 import io.harness.ng.core.migration.background.CleanupInfrastructureMappingNg;
 import io.harness.ng.core.migration.background.CleanupInstanceNg;
 import io.harness.ng.core.migration.background.DeleteSoftDeletedConnectorsMigration;
+import io.harness.ng.core.migration.background.PopulateSettingsForHelmSteadyStateCheckFFMigration;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGJiraConnectorMigration;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGServiceNowConnectorMigration;
 import io.harness.ng.core.migration.background.PopulateYamlFieldInNGServiceEntityMigration;
@@ -68,6 +69,7 @@ public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
         .add(Pair.of(17, CleanupDeploymentSummaryNg.class))
         .add(Pair.of(18, CleanupInfrastructureMappingNg.class))
         .add(Pair.of(19, CleanupInstanceNg.class))
+        .add(Pair.of(20, PopulateSettingsForHelmSteadyStateCheckFFMigration.class))
         .build();
   }
 }

@@ -246,28 +246,6 @@ public class ArtifactServiceImpl implements ArtifactService {
     return new PageImpl<>(artifactListingResponses, pageable, total);
   }
 
-  private Criteria getLicenseCriteria(
-      String accountId, String orgIdentifier, String projectIdentifier, LicenseFilter licenseFilter) {
-    Criteria criteria = new Criteria();
-    List<String> orchestrationIds =
-        normalisedSbomComponentService.getOrchestrationIds(accountId, orgIdentifier, projectIdentifier, licenseFilter);
-    if (isNotEmpty(orchestrationIds)) {
-      return Criteria.where(ArtifactEntityKeys.orchestrationId).in(orchestrationIds);
-    }
-    return criteria;
-  }
-
-  private Criteria getComponentFilterCriteria(
-      String accountId, String orgIdentifier, String projectIdentifier, List<ComponentFilter> componentFilter) {
-    Criteria criteria = new Criteria();
-    List<String> orchestrationIds = normalisedSbomComponentService.getOrchestrationIds(
-        accountId, orgIdentifier, projectIdentifier, componentFilter);
-    if (isNotEmpty(orchestrationIds)) {
-      return Criteria.where(ArtifactEntityKeys.orchestrationId).in(orchestrationIds);
-    }
-    return criteria;
-  }
-
   @Override
   public Page<ArtifactListingResponse> listArtifacts(String accountId, String orgIdentifier, String projectIdentifier,
       ArtifactListingRequestBody body, Pageable pageable) {
@@ -280,9 +258,20 @@ public class ArtifactServiceImpl implements ArtifactService {
                             .and(ArtifactEntityKeys.invalid)
                             .is(false);
 
-    criteria.andOperator(getPolicyFilterCriteria(body), getDeploymentFilterCriteria(body),
-        getLicenseCriteria(accountId, orgIdentifier, projectIdentifier, body.getLicenseFilter()),
-        getComponentFilterCriteria(accountId, orgIdentifier, projectIdentifier, body.getComponentFilter()));
+    LicenseFilter licenseFilter = body.getLicenseFilter();
+    List<ComponentFilter> componentFilter = body.getComponentFilter();
+    Criteria filterCriteria = new Criteria();
+    if (Objects.nonNull(licenseFilter) || isNotEmpty(componentFilter)) {
+      List<String> orchestrationIds = normalisedSbomComponentService.getOrchestrationIds(
+          accountId, orgIdentifier, projectIdentifier, licenseFilter, componentFilter);
+      if (isNotEmpty(orchestrationIds)) {
+        filterCriteria = Criteria.where(ArtifactEntityKeys.orchestrationId).in(orchestrationIds);
+      } else {
+        return Page.empty();
+      }
+    }
+
+    criteria.andOperator(getPolicyFilterCriteria(body), getDeploymentFilterCriteria(body), filterCriteria);
 
     Page<ArtifactEntity> artifactEntities = artifactRepository.findAll(criteria, pageable);
 

@@ -345,7 +345,7 @@ public class StrategyUtils {
   /**
    * This function remove <+strategy.identifierPostFix> if present on the passed string
    */
-  private String refineIdentifier(String identifier) {
+  public String refineIdentifier(String identifier) {
     return identifier.replaceAll(STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, "");
   }
 

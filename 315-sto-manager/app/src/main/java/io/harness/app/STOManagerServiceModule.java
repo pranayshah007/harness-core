@@ -16,12 +16,17 @@ import io.harness.app.intfc.STOYamlSchemaService;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.ci.enforcement.CIBuildEnforcer;
 import io.harness.sto.STOBuildEnforcerImpl;
+import io.harness.threading.ThreadPool;
 import io.harness.version.VersionInfoManager;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.inject.name.Names;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import javax.cache.Cache;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
@@ -34,6 +39,11 @@ public class STOManagerServiceModule extends AbstractModule {
   protected void configure() {
     bind(STOYamlSchemaService.class).to(STOYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(CIBuildEnforcer.class).to(STOBuildEnforcerImpl.class);
+
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("stoDataDeletionExecutor"))
+        .toInstance(ThreadPool.create(
+            0, 10, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("Data-Deletion-%d").build()));
   }
 
   @Provides

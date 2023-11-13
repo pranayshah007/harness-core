@@ -1155,6 +1155,10 @@ components:
           type: string
         operator:
           $ref: '#/components/schemas/Operator'
+      required:
+        - field_name
+        - value
+        - operator
     LicenseFilter:
       title: LicenseFilter
       type: object
@@ -1163,6 +1167,9 @@ components:
           type: string
         operator:
           $ref: '#/components/schemas/Operator'
+      required:
+        - value
+        - operator
   parameters:
     OrgParam:
       name: org

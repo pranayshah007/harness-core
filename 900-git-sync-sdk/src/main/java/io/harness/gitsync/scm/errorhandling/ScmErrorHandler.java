@@ -19,6 +19,7 @@ import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmConflictException;
 import io.harness.exception.ScmException;
 import io.harness.exception.ScmInternalServerErrorException;
+import io.harness.exception.ScmRequestTimeoutException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.exceptions.GitErrorMetadataDTO;
@@ -66,6 +67,10 @@ public class ScmErrorHandler {
       case 500:
         throw addMetadata(
             prepareException(new ScmInternalServerErrorException(errorDetails.getErrorMessage()), errorDetails),
+            errorMetadata);
+      case 504:
+        throw addMetadata(
+            prepareException(new ScmRequestTimeoutException(errorDetails.getErrorMessage()), errorDetails),
             errorMetadata);
       default:
         throw addMetadata(

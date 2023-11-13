@@ -20,9 +20,33 @@ public class Constants {
   public static final String IDP_PREFIX = "idp_";
   public static final String IDP_RESOURCE_TYPE = "IDP_SETTINGS";
   public static final String IDP_PERMISSION = "idp_idpsettings_manage";
-  public static final List<String> pluginIds = List.of("circleci", "confluence", "datadog", "firehydrant",
-      "github-actions", "github-catalog-discovery", "github-insights", "github-pull-requests", "grafana",
-      "harness-ci-cd", "harness-feature-flags", "jenkins", "jira", "kubernetes", "pager-duty", "sonarqube", "todo");
+
+  // Plugin identifiers
+  public static final String CIRCLE_CI_PLUGIN = "circleci";
+  public static final String CONFLUENCE_PLUGIN = "confluence";
+  public static final String DATADOG_PLUGIN = "datadog";
+  public static final String FIRE_HYDRANT_PLUGIN = "firehydrant";
+  public static final String GITHUB_ACTIONS_PLUGIN = "github-actions";
+  public static final String GITHUB_CATALOG_DISCOVERY_PLUGIN = "github-catalog-discovery";
+  public static final String GITHUB_INSIGHTS_PLUGIN = "github-insights";
+  public static final String GITHUB_PULL_REQUESTS_PLUGIN = "github-pull-requests";
+  public static final String GRAFANA_PLUGIN = "grafana";
+  public static final String HARNESS_CI_CD_PLUGIN = "harness-ci-cd";
+  public static final String HARNESS_FEATURE_FLAGS_PLUGIN = "harness-feature-flags";
+  public static final String JENKINS_PLUGIN = "jenkins";
+  public static final String JIRA_PLUGIN = "jira";
+  public static final String KAFKA_PLUGIN = "kafka";
+  public static final String KUBERNETES_PLUGIN = "kubernetes";
+  public static final String LIGHTHOUSE_PLUGIN = "lighthouse";
+  public static final String PAGER_DUTY_PLUGIN = "pager-duty";
+  public static final String SYNK_SECURITY_PLUGIN = "snyk-security";
+  public static final String SONARQUBE_PLUGIN = "sonarqube";
+  public static final String TODO_PLUGIN = "todo";
+
+  public static final List<String> pluginIds = List.of(CIRCLE_CI_PLUGIN, CONFLUENCE_PLUGIN, DATADOG_PLUGIN,
+      FIRE_HYDRANT_PLUGIN, GITHUB_ACTIONS_PLUGIN, GITHUB_CATALOG_DISCOVERY_PLUGIN, GITHUB_INSIGHTS_PLUGIN,
+      GITHUB_PULL_REQUESTS_PLUGIN, GRAFANA_PLUGIN, HARNESS_CI_CD_PLUGIN, HARNESS_FEATURE_FLAGS_PLUGIN, JENKINS_PLUGIN,
+      JIRA_PLUGIN, KUBERNETES_PLUGIN, PAGER_DUTY_PLUGIN, SONARQUBE_PLUGIN, TODO_PLUGIN);
   public static final String GITHUB_TOKEN = "HARNESS_GITHUB_TOKEN";
   public static final String GITHUB_APP_ID = "HARNESS_GITHUB_APP_APPLICATION_ID";
   public static final String GITHUB_APP_PRIVATE_KEY_REF = "HARNESS_GITHUB_APP_PRIVATE_KEY_REF";

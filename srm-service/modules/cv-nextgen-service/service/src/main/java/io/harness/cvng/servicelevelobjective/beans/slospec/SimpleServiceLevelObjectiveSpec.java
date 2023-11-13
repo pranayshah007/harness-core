@@ -28,7 +28,7 @@ import lombok.experimental.SuperBuilder;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SimpleServiceLevelObjectiveSpec extends ServiceLevelObjectiveSpec {
   @ApiModelProperty(required = true) @NotNull String monitoredServiceRef;
-  @ApiModelProperty(required = true) @NotNull String healthSourceRef;
+  @ApiModelProperty(required = true) String healthSourceRef;
   @Valid @NotNull List<ServiceLevelIndicatorDTO> serviceLevelIndicators;
 
   @Override

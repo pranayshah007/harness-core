@@ -4,13 +4,14 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
+package io.harness.idp.pipeline;
 
-package io.harness.ng.core.entityusageactivity;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.ci.enforcement.CIBuildEnforcer;
 
-import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
 
-@Builder
-public class PipelineExecutionUsageData extends EntityUsageData {
-  String planExecutionId;
-  String stageExecutionId;
-}
+@OwnedBy(HarnessTeam.STO)
+@Slf4j
+public class IDPBuildEnforcerImpl implements CIBuildEnforcer {}

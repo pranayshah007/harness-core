@@ -11,7 +11,7 @@ import io.harness.idp.scorecard.checks.entity.CheckEntity;
 import io.harness.idp.scorecard.checks.entity.CheckStatusEntity;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.CheckGraph;
-import io.harness.spec.server.idp.v1.model.CheckStats;
+import io.harness.spec.server.idp.v1.model.CheckStatsResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -28,7 +28,7 @@ public interface CheckService {
   void deleteCustomCheck(String accountIdentifier, String identifier, boolean forceDelete);
   CheckDetails getCheckDetails(String accountIdentifier, String identifier, Boolean custom);
   List<CheckEntity> getChecksByAccountIdAndIdentifiers(String accountIdentifier, Set<String> identifiers);
-  List<CheckStats> getCheckStats(String accountIdentifier, String identifier, Boolean custom);
+  CheckStatsResponse getCheckStats(String accountIdentifier, String identifier, Boolean custom);
   List<CheckGraph> getCheckGraph(String accountIdentifier, String identifier, Boolean custom);
   void computeCheckStatus();
   Map<String, CheckStatusEntity> getCheckStatusByAccountIdAndIdentifiers(

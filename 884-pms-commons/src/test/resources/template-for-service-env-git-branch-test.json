@@ -1,0 +1,19 @@
+{
+  "type":"Deployment",
+  "spec":{
+    "environment":{
+      "environmentRef":"<+input>",
+      "environmentInputs":"<+input>",
+      "serviceOverrideInputs":"<+input>",
+      "infrastructureDefinitions":[
+        {
+          "identifier":"infra1"
+        }
+      ]
+    },
+    "service":{
+      "serviceRef":"<+input>",
+      "serviceInputs":"<+input>"
+    }
+  }
+}

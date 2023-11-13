@@ -53,6 +53,7 @@ public class Anomalies implements Serializable {
   private String azuresubscriptionguid;
   private String azureresourcegroup;
   private String azuremetercategory;
+  private String cloudprovider;
 
   public Anomalies() {}
 
@@ -90,6 +91,7 @@ public class Anomalies implements Serializable {
     this.azuresubscriptionguid = value.azuresubscriptionguid;
     this.azureresourcegroup = value.azureresourcegroup;
     this.azuremetercategory = value.azuremetercategory;
+    this.cloudprovider = value.cloudprovider;
   }
 
   public Anomalies(String id, String accountid, Double actualcost, Double expectedcost, OffsetDateTime anomalytime,
@@ -98,7 +100,8 @@ public class Anomalies implements Serializable {
       String gcpskuid, String gcpskudescription, String gcpproject, String awsservice, String awsaccount,
       String awsinstancetype, String awsusagetype, Double anomalyscore, String reportedby, String feedback,
       Boolean slackdailynotification, Boolean slackinstantnotification, Boolean slackweeklynotification,
-      Boolean newentity, String azuresubscriptionguid, String azureresourcegroup, String azuremetercategory) {
+      Boolean newentity, String azuresubscriptionguid, String azureresourcegroup, String azuremetercategory,
+      String cloudprovider) {
     this.id = id;
     this.accountid = accountid;
     this.actualcost = actualcost;
@@ -132,6 +135,7 @@ public class Anomalies implements Serializable {
     this.azuresubscriptionguid = azuresubscriptionguid;
     this.azureresourcegroup = azureresourcegroup;
     this.azuremetercategory = azuremetercategory;
+    this.cloudprovider = cloudprovider;
   }
 
   /**
@@ -628,6 +632,21 @@ public class Anomalies implements Serializable {
     return this;
   }
 
+  /**
+   * Getter for <code>public.anomalies.cloudprovider</code>.
+   */
+  public String getCloudprovider() {
+    return this.cloudprovider;
+  }
+
+  /**
+   * Setter for <code>public.anomalies.cloudprovider</code>.
+   */
+  public Anomalies setCloudprovider(String cloudprovider) {
+    this.cloudprovider = cloudprovider;
+    return this;
+  }
+
   @Override
   public boolean equals(Object obj) {
     if (this == obj)
@@ -802,6 +821,11 @@ public class Anomalies implements Serializable {
         return false;
     } else if (!azuremetercategory.equals(other.azuremetercategory))
       return false;
+    if (cloudprovider == null) {
+      if (other.cloudprovider != null)
+        return false;
+    } else if (!cloudprovider.equals(other.cloudprovider))
+      return false;
     return true;
   }
 
@@ -842,6 +866,7 @@ public class Anomalies implements Serializable {
     result = prime * result + ((this.azuresubscriptionguid == null) ? 0 : this.azuresubscriptionguid.hashCode());
     result = prime * result + ((this.azureresourcegroup == null) ? 0 : this.azureresourcegroup.hashCode());
     result = prime * result + ((this.azuremetercategory == null) ? 0 : this.azuremetercategory.hashCode());
+    result = prime * result + ((this.cloudprovider == null) ? 0 : this.cloudprovider.hashCode());
     return result;
   }
 
@@ -882,6 +907,7 @@ public class Anomalies implements Serializable {
     sb.append(", ").append(azuresubscriptionguid);
     sb.append(", ").append(azureresourcegroup);
     sb.append(", ").append(azuremetercategory);
+    sb.append(", ").append(cloudprovider);
 
     sb.append(")");
     return sb.toString();

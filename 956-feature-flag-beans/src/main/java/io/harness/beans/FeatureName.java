@@ -185,10 +185,11 @@ public enum FeatureName {
   CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG(
       "To encrypt and decrypt terraform and terragrunt plan on manager side instead of delegate side for NG",
       HarnessTeam.CDP),
+  CDS_TERRAFORM_SUPPORT_OPTIONAL_VAR_FILE_PATHS_NG(
+      "Feature flag to support remote optional var file paths", HarnessTeam.CDP),
   CDS_TERRAGRUNT_CLI_OPTIONS_NG("Enable terragrunt CLI Options", HarnessTeam.CDP),
   CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG(
       "Enable unique directory to support terragrunt run in parallel", HarnessTeam.CDP),
-  CDS_TRIGGER_ACTIVITY_PAGE("NG Triggers Activity page", HarnessTeam.CDC),
   CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG(
       "This is to diable checking for the HTTP status code and instead just check for a valid response",
       HarnessTeam.CDP),
@@ -944,7 +945,11 @@ public enum FeatureName {
   CDS_USE_AMBIANCE_IN_EXPRESSION_ENGINE(
       "Uses ambiance in expression engine. Should be enabled only if we see any issues", PIPELINE),
 
-  CDS_PRESERVE_WINRM_WORKING_DIR_FOR_COMMAND_UNITS("Use the correct working directory for WinRm deployments", CDC);
+  CDS_PRESERVE_WINRM_WORKING_DIR_FOR_COMMAND_UNITS("Use the correct working directory for WinRm deployments", CDC),
+  CDS_K8S_APPLY_MANIFEST_WITHOUT_SERVICE_NG(
+      "Allows users to apply manifests from sources that are not related to the service", HarnessTeam.CDP),
+  CDS_APPROVAL_AND_STAGE_NOTIFICATIONS_WITH_CD_METADATA(
+      "Improves approval and stage notifications with cd metadata", HarnessTeam.CDC);
 
   // keep-sorted end
 

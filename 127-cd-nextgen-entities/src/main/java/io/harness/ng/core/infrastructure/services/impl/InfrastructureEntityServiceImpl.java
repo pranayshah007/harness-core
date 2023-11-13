@@ -27,7 +27,6 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.customdeployment.helper.CustomDeploymentEntitySetupHelper;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
-import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.visitor.YamlTypes;
@@ -1184,8 +1183,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   private List<String> getScopedToServicesField(InfrastructureEntity infrastructureEntity) {
     InfrastructureConfig infrastructureConfig =
         InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
-    Infrastructure infrastructure = infrastructureConfig.getInfrastructureDefinitionConfig().getSpec();
-    return infrastructure.getScopedToServices();
+    return infrastructureConfig.getInfrastructureDefinitionConfig().getScopedServices();
   }
 
   InfrastructureEntity getInfrastructureFromEnvAndInfraIdentifier(

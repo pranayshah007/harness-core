@@ -7,10 +7,31 @@
 
 package io.harness.idp.pipeline.filter;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.ci.execution.plan.creator.filter.CIFilter;
 import io.harness.pms.filter.creation.FilterCreationResponse;
 import io.harness.pms.sdk.core.pipeline.filters.FilterCreationResponseMerger;
 
+@OwnedBy(HarnessTeam.IDP)
 public class IdpFilterCreationResponseMerger implements FilterCreationResponseMerger {
   @Override
-  public void mergeFilterCreationResponse(FilterCreationResponse finalResponse, FilterCreationResponse current) {}
+  public void mergeFilterCreationResponse(FilterCreationResponse finalResponse, FilterCreationResponse current) {
+    if (current == null || current.getPipelineFilter() == null) {
+      return;
+    }
+
+    if (finalResponse.getPipelineFilter() == null) {
+      finalResponse.setPipelineFilter(IDPFilter.builder().build());
+    }
+
+    IDPFilter finalIDPFilter = (IDPFilter) finalResponse.getPipelineFilter();
+    IDPFilter currentCIFilter = (IDPFilter) current.getPipelineFilter();
+
+    if (isNotEmpty(currentCIFilter.getRepoNames())) {
+      finalIDPFilter.addRepoNames(currentCIFilter.getRepoNames());
+    }
+  }
 }

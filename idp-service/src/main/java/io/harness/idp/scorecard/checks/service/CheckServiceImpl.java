@@ -13,6 +13,7 @@ import static io.harness.idp.common.CommonUtils.addGlobalAccountIdentifierAlong;
 import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
 import static io.harness.idp.common.DateUtils.getPreviousDay24HourTimeFrame;
+import static io.harness.idp.common.DateUtils.yesterdayInMilliseconds;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
@@ -49,7 +50,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.CheckGraph;
-import io.harness.spec.server.idp.v1.model.CheckStats;
+import io.harness.spec.server.idp.v1.model.CheckStatsResponse;
 import io.harness.spec.server.idp.v1.model.CheckStatus;
 import io.harness.spec.server.idp.v1.model.DataPoint;
 import io.harness.spec.server.idp.v1.model.InputDetails;
@@ -62,6 +63,7 @@ import com.google.inject.name.Named;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -183,7 +185,12 @@ public class CheckServiceImpl implements CheckService {
   }
 
   @Override
-  public List<CheckStats> getCheckStats(String accountIdentifier, String identifier, Boolean custom) {
+  public CheckStatsResponse getCheckStats(String accountIdentifier, String identifier, Boolean custom) {
+    CheckEntity checkEntity = checkRepository.findByAccountIdentifierAndIdentifier(
+        custom ? accountIdentifier : GLOBAL_ACCOUNT_ID, identifier);
+    if (checkEntity == null) {
+      throw new InvalidRequestException(String.format("Check stats not found for checkId [%s]", identifier));
+    }
     List<String> scorecardIdentifiers = scorecardService.getScorecardIdentifiers(accountIdentifier, identifier, custom);
     List<ScorecardFilter> filters = scorecardService.getScorecardFilters(accountIdentifier, scorecardIdentifiers);
     Set<BackstageCatalogEntity> entities = scoreComputerService.getAllEntities(accountIdentifier, null, filters);
@@ -193,9 +200,8 @@ public class CheckServiceImpl implements CheckService {
                 entities.stream().map(entity -> entity.getMetadata().getUid()).collect(Collectors.toList()),
                 scorecardIdentifiers, null, identifier, custom)
             .stream()
-            .collect(Collectors.toMap(
-                EntityIdentifierAndCheckStatus::getEntityIdentifier, EntityIdentifierAndCheckStatus::getStatus));
-    return CheckStatsMapper.toDTO(entities, statusMap);
+            .collect(HashMap::new, (m, v) -> m.put(v.getEntityIdentifier(), v.getStatus()), HashMap::putAll);
+    return CheckStatsMapper.toDTO(entities, statusMap, checkEntity.getName());
   }
 
   @Override
@@ -256,7 +262,7 @@ public class CheckServiceImpl implements CheckService {
         .isCustom(checkEntity.isCustom())
         .passCount(totalPassed)
         .total(total)
-        .timestamp(System.currentTimeMillis())
+        .timestamp(yesterdayInMilliseconds())
         .build();
   }
 

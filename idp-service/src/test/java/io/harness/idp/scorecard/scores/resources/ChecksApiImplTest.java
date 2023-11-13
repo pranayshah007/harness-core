@@ -32,6 +32,7 @@ import io.harness.spec.server.idp.v1.model.CheckGraph;
 import io.harness.spec.server.idp.v1.model.CheckListItem;
 import io.harness.spec.server.idp.v1.model.CheckResponse;
 import io.harness.spec.server.idp.v1.model.CheckStats;
+import io.harness.spec.server.idp.v1.model.CheckStatsResponse;
 import io.harness.spec.server.idp.v1.model.Rule;
 
 import java.util.ArrayList;
@@ -246,7 +247,9 @@ public class ChecksApiImplTest extends CategoryTest {
     return List.of(checkGraph);
   }
 
-  private List<CheckStats> getCheckStatsResponse() {
+  private CheckStatsResponse getCheckStatsResponse() {
+    CheckStatsResponse response = new CheckStatsResponse();
+    response.setName(CHECK_NAME);
     CheckStats checkStats = new CheckStats();
     checkStats.setName("idp-service");
     checkStats.setKind("component");
@@ -254,6 +257,7 @@ public class ChecksApiImplTest extends CategoryTest {
     checkStats.setSystem("Unknown");
     checkStats.setOwner("team-a");
     checkStats.setStatus("PASS");
-    return List.of(checkStats);
+    response.setStats(List.of(checkStats));
+    return response;
   }
 }

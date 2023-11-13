@@ -46,6 +46,7 @@ public class K8sApplyRequest implements K8sDeployRequest {
   boolean useLatestKustomizeVersion;
   boolean useNewKubectlVersion;
   boolean useK8sApiForSteadyStateCheck;
+  boolean useManifestSource;
   @Expression(ALLOW_SECRETS) Map<String, String> k8sCommandFlags;
   @Expression(ALLOW_SECRETS) List<ServiceHookDelegateConfig> serviceHooks;
   @Override

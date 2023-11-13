@@ -7,11 +7,14 @@
 
 package io.harness.ci.execution.utils;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.execution.execution.CIAccountExecutionMetadata;
 import io.harness.ci.execution.validation.CIAccountValidationService;
+import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.core.ci.dashboard.CIOverviewDashboardService;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.licensing.Edition;
@@ -27,6 +30,7 @@ import io.harness.yaml.utils.NGVariablesUtils;
 import com.google.inject.Inject;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.Map;
@@ -38,6 +42,14 @@ public class CIStagePlanCreationUtils {
   @Inject CIAccountValidationService validationService;
   @Inject CILicenseService ciLicenseService;
   @Inject CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
+  @Inject CIOverviewDashboardService ciOverviewDashboardService;
+  @Inject CIFeatureFlagService ciFeatureFlagService;
+  static final String NOT_VERIFIED_ERROR =
+      "We apologize, but your account is not verified for Harness Cloud. To resolve this issue, please use your work email or contact support to request account verification: support@harness.io";
+  static final String CREDIT_CARD_ERROR =
+      "To use Harness Cloud, you must provide a credit card to validate your account";
+  static final String ACCOUNT_LIMIT_ERROR =
+      "You have reached the account build limit. Please contact support: support@harness.io";
 
   public StageElementParametersBuilder getStageParameters(IntegrationStageNode stageNode) {
     TagUtils.removeUuidFromTags(stageNode.getTags());
@@ -76,25 +88,49 @@ public class CIStagePlanCreationUtils {
             accountExecutionMetadataRepository.findByAccountId(accountId);
 
         if (accountExecutionMetadata.isPresent()) {
-          LocalDate startDate = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate();
-          YearMonth yearMonth = YearMonth.of(startDate.getYear(), startDate.getMonth());
-          String day = yearMonth + "-" + startDate.getDayOfMonth();
-          Map<String, Long> countPerDay = accountExecutionMetadata.get().getAccountExecutionInfo().getCountPerDay();
-          if (countPerDay != null) {
-            long maxBuildsPerDay = validationService.getMaxBuildPerDay(accountId);
-            if (countPerDay.getOrDefault(day, 0L) >= maxBuildsPerDay) {
-              if (maxBuildsPerDay == 0) {
-                log.error(
-                    "We apologize, but your account is not verified for Harness Cloud. To resolve this issue, please use your work email or contact support to request account verification: support@harness.io");
-                throw new CIStageExecutionException(
-                    "We apologize, but your account is not verified for Harness Cloud. To resolve this issue, please use your work email or contact support to request account verification: support@harness.io");
-              } else {
-                log.error("You have reached the account limit. Please contact support: support@harness.io");
-                throw new CIStageExecutionException(
-                    "You have reached the account limit. Please contact support: support@harness.io");
-              }
-            }
+          if (ciFeatureFlagService.isEnabled(FeatureName.CI_CREDIT_CARD_ONBOARDING, accountId)) {
+            enforceCreditsCount(accountId, accountExecutionMetadata);
+          } else {
+            enforceBuildsCount(accountId, accountExecutionMetadata);
           }
+        }
+      }
+    }
+  }
+
+  private void enforceCreditsCount(String accountId, Optional<CIAccountExecutionMetadata> accountExecutionMetadata) {
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime startOfMonth = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+    long startOfMonthMillis = startOfMonth.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+    long currentTimeMillis = System.currentTimeMillis();
+    long creditsUsed =
+        ciOverviewDashboardService.getHostedCreditUsage(accountId, startOfMonthMillis, currentTimeMillis);
+    long monthlyLimit = validationService.getMaxCreditsPerMonth(accountId);
+    if (creditsUsed >= monthlyLimit) {
+      if (monthlyLimit == 0) {
+        log.error(CREDIT_CARD_ERROR);
+        throw new CIStageExecutionException(CREDIT_CARD_ERROR);
+      } else {
+        log.error(ACCOUNT_LIMIT_ERROR);
+        throw new CIStageExecutionException(ACCOUNT_LIMIT_ERROR);
+      }
+    }
+  }
+
+  private void enforceBuildsCount(String accountId, Optional<CIAccountExecutionMetadata> accountExecutionMetadata) {
+    LocalDate startDate = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate();
+    YearMonth yearMonth = YearMonth.of(startDate.getYear(), startDate.getMonth());
+    String day = yearMonth + "-" + startDate.getDayOfMonth();
+    Map<String, Long> countPerDay = accountExecutionMetadata.get().getAccountExecutionInfo().getCountPerDay();
+    if (countPerDay != null) {
+      long maxBuildsPerDay = validationService.getMaxBuildPerDay(accountId);
+      if (countPerDay.getOrDefault(day, 0L) >= maxBuildsPerDay) {
+        if (maxBuildsPerDay == 0) {
+          log.error(NOT_VERIFIED_ERROR);
+          throw new CIStageExecutionException(NOT_VERIFIED_ERROR);
+        } else {
+          log.error(ACCOUNT_LIMIT_ERROR);
+          throw new CIStageExecutionException(ACCOUNT_LIMIT_ERROR);
         }
       }
     }
