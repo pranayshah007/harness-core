@@ -39,9 +39,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("tunnel")
 @Persistent
 @OwnedBy(CI)
-public class Tunnel implements UuidAware, PersistentEntity {
-  @Id @dev.morphia.annotations.Id protected String uuid;
-  @NotEmpty @Trimmed protected String accountIdentifier;
+public class Tunnel implements PersistentEntity {
+  @Id @NotEmpty @Trimmed protected String accountIdentifier;
   @NotEmpty protected String port;
   @CreatedDate Long createdAt;
   @LastModifiedDate Long lastModifiedAt;
@@ -49,7 +48,7 @@ public class Tunnel implements UuidAware, PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("tunnelAccountIdIdx")
+                 .name("accountIdentifier")
                  .unique(true)
                  .field(TunnelKeys.accountIdentifier)
                  .build())
