@@ -16,10 +16,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.telemetry.TelemetryReporter;
 
 import java.util.concurrent.CompletableFuture;
-
-import io.harness.telemetry.TelemetryReporter;
 import org.jooq.tools.reflect.Reflect;
 import org.junit.Before;
 import org.junit.Test;
