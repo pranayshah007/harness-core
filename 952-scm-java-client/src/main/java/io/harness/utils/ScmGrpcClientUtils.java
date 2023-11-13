@@ -15,6 +15,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.ConnectException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
+import io.harness.exception.ScmRequestTimeoutException;
 import io.harness.exception.WingsException;
 import io.harness.exception.runtime.SCMRuntimeException;
 
@@ -60,6 +61,10 @@ public class ScmGrpcClientUtils {
           : sre.getMessage();
       if (sre.getStatus().getCode() == Status.Code.UNAVAILABLE) {
         return new ConnectException(errorMessage, WingsException.USER);
+      } else if (sre.getStatus().getCode() == Status.Code.CANCELLED) {
+        return new ScmRequestTimeoutException(ex.getMessage() == null || ex.getMessage().isEmpty()
+                ? "Request to the SCM Server timed out."
+                : ex.getMessage());
       }
       return new SCMRuntimeException("SCM request failed with: " + errorMessage, ErrorCode.SCM_API_ERROR);
     } else {

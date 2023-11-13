@@ -7,16 +7,17 @@
 
 package io.harness.exception;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.PL;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 
-@OwnedBy(HarnessTeam.PL)
-public class ScmUnexpectedException extends ScmException {
+@OwnedBy(PL)
+public class ScmRequestTimeoutException extends ScmException {
   private static final String MESSAGE_ARG = "message";
 
-  public ScmUnexpectedException(String errorMessage) {
-    super(errorMessage, ErrorCode.SCM_UNEXPECTED_ERROR);
+  public ScmRequestTimeoutException(String errorMessage) {
+    super(errorMessage, null, ErrorCode.SCM_REQUEST_TIMEOUT);
     super.param(MESSAGE_ARG, errorMessage);
   }
 }
