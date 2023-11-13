@@ -355,6 +355,6 @@ public class ModuleLicenseHelper {
   }
 
   public boolean isDeveloperLicensingFeatureEnabled(String accountIdentifier) {
-    return featureFlagService.isEnabled(FeatureName.PLG_DEVELOPER_LICENSING, accountIdentifier);
+    return featureFlagService.isEnabled(FeatureName.GTM_DEVELOPER_LICENSING, accountIdentifier);
   }
 }
