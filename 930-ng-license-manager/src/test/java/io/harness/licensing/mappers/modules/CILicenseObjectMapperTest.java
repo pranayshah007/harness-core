@@ -32,7 +32,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 public class CILicenseObjectMapperTest extends CategoryTest {
-  @Mock FeatureFlagService featureFlagService;
   @Mock ModuleLicenseHelper moduleLicenseHelper;
   @InjectMocks CILicenseObjectMapper objectMapper;
   private CIModuleLicense moduleLicense;
@@ -43,7 +42,6 @@ public class CILicenseObjectMapperTest extends CategoryTest {
   @Before
   public void setUp() {
     initMocks(this);
-    when(featureFlagService.isEnabled(eq(FeatureName.PLG_DEVELOPER_LICENSING), any())).thenReturn(true);
     when(moduleLicenseHelper.isDeveloperLicensingFeatureEnabled(any())).thenReturn(true);
 
     moduleLicense = CIModuleLicense.builder()
