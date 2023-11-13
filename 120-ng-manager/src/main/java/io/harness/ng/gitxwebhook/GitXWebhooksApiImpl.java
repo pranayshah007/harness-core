@@ -34,6 +34,7 @@ import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookResponse;
 import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
@@ -127,7 +128,7 @@ public class GitXWebhooksApiImpl implements GitXWebhooksApi {
   @Override
   public Response listGitxWebhookEvents(String harnessAccount, Integer page, @Max(1000L) Integer limit,
       String webhookIdentifier, Long eventStartTime, Long eventEndTime, String repoName, String filePath,
-      String eventIdentifier, String eventStatus) {
+      String eventIdentifier, List<String> eventStatus) {
     GitXEventsListRequestDTO gitXEventsListRequestDTO =
         GitXWebhookMapper.buildEventsListGitXWebhookRequestDTO(harnessAccount, webhookIdentifier, eventStartTime,
             eventEndTime, repoName, filePath, eventIdentifier, eventStatus);
