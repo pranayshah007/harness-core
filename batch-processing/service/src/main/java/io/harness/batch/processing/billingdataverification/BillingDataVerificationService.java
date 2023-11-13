@@ -47,6 +47,13 @@ public class BillingDataVerificationService {
   }
 
   private void verifyAwsBillingDataForAccount(String accountId) {
+    // todo: remove temporary change for testing
+    List<String> enabledAccounts = Arrays.asList(
+        "Z60xsRGoTeqOoAFRCsmlBQ", "kmpySmUISimoRrJL6NL73w", "EfOfrUbHTtupeZjUqxlHBg", "JQ3KKI5yRTGe37OrCiZaTA");
+    if (!enabledAccounts.contains(accountId)) {
+      return;
+    }
+
     if (!configuration.getBillingDataVerificationJobConfig().isAwsBillingDataVerificationEnabled()) {
       log.info("Billing-Data verification is disabled for AWS. Skipping AWS billing-data verification.");
       return;

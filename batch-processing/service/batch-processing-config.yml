@@ -139,7 +139,7 @@ scheduler-jobs-config:
   governanceRecommendationJobCronAzure : "0 0 8 * * *"
   dailyBudgetAlertsJobCron: "0 30 14 * * ?"
   dailyBudgetCostUpdateJobCron: "0 0 14 * * ?"
-  billingDataVerificationJobCron: "0 0 6 * * ?"
+  billingDataVerificationJobCron: "0 */10 * * * ?"
 
 cePythonService:
   pythonServiceUrl: "http://0.0.0.0:8081"
