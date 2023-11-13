@@ -134,6 +134,19 @@ public class AnomalyServiceImpl implements AnomalyService {
     }
     // For other cases
     List<CCMFilter> ruleFilters = perspectiveToAnomalyQueryHelper.getConvertedRulesForPerspective(perspective);
+    if (perspectiveToAnomalyQueryHelper.isEmptyRuleFilter(ruleFilters)) {
+      log.info("Yes here: {}", ruleFilters);
+      String[] emptyArray = new String[0];
+      List<CCMStringFilter> ccm_stringFilters = new ArrayList<>();
+      ccm_stringFilters.add(perspectiveToAnomalyQueryHelper.buildStringFilter(
+          CCMField.ANOMALY_ID, emptyArray, QLCEViewFilterOperator.NULL));
+      log.info("ccm_stringFilters : {}", ccm_stringFilters);
+      ruleFilters.add(CCMFilter.builder()
+                          .stringFilters(ccm_stringFilters)
+                          .numericFilters(Collections.emptyList())
+                          .timeFilters(Collections.emptyList())
+                          .build());
+    }
     CCMFilter filters =
         perspectiveToAnomalyQueryHelper.getConvertedFiltersForPerspective(perspective, perspectiveQuery);
     List<AnomalyData> anomalyData = listAnomalies(accountIdentifier,
@@ -271,6 +284,19 @@ public class AnomalyServiceImpl implements AnomalyService {
 
     for (CEView perspective : allowedPerspectives) {
       List<CCMFilter> ruleFilters = perspectiveToAnomalyQueryHelper.getConvertedRulesForPerspective(perspective);
+      if (perspectiveToAnomalyQueryHelper.isEmptyRuleFilter(ruleFilters)) {
+        log.info("Yes here: {}", ruleFilters);
+        String[] emptyArray = new String[0];
+        List<CCMStringFilter> ccm_stringFilters = new ArrayList<>();
+        ccm_stringFilters.add(perspectiveToAnomalyQueryHelper.buildStringFilter(
+            CCMField.ANOMALY_ID, emptyArray, QLCEViewFilterOperator.NULL));
+        log.info("ccm_stringFilters : {}", ccm_stringFilters);
+        ruleFilters.add(CCMFilter.builder()
+                            .stringFilters(ccm_stringFilters)
+                            .numericFilters(Collections.emptyList())
+                            .timeFilters(Collections.emptyList())
+                            .build());
+      }
       List<AnomalyData> anomalyDataForPerspective = listAnomalies(accountIdentifier,
           AnomalyQueryDTO.builder()
               .filter(filters)
