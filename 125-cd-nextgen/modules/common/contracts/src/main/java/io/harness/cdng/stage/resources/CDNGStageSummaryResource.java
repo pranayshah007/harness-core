@@ -82,7 +82,6 @@ import javax.ws.rs.QueryParam;
 @Hidden
 public interface CDNGStageSummaryResource {
   @GET
-  //  @Hidden
   @Path("/listStageExecutionFormattedSummary")
   @ApiOperation(value = "Lists summary of execution of deployment stages filtered by stage execution identifiers",
       nickname = "listStageExecutionFormattedSummaryByStageExecutionIdentifiers")
@@ -107,7 +106,6 @@ public interface CDNGStageSummaryResource {
           description = STAGE_EXECUTION_IDENTIFIERS_PARAM_MESSAGE) List<String> stageExecutionIdentifiers);
 
   @GET
-  //  @Hidden
   @Path("/listStagePlanCreationFormattedSummary")
   @ApiOperation(value = "Lists summary of deployment stages available at plan creation filtered by stage identifiers",
       nickname = "listStagePlanCreationFormattedSummaryByStageIdentifiers")

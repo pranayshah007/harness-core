@@ -947,7 +947,9 @@ public enum FeatureName {
 
   CDS_PRESERVE_WINRM_WORKING_DIR_FOR_COMMAND_UNITS("Use the correct working directory for WinRm deployments", CDC),
   CDS_K8S_APPLY_MANIFEST_WITHOUT_SERVICE_NG(
-      "Allows users to apply manifests from sources that are not related to the service", HarnessTeam.CDP);
+      "Allows users to apply manifests from sources that are not related to the service", HarnessTeam.CDP),
+  CDS_APPROVAL_AND_STAGE_NOTIFICATIONS_WITH_CD_METADATA(
+      "Improves approval and stage notifications with cd metadata", HarnessTeam.CDC);
 
   // keep-sorted end
 

@@ -46,6 +46,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ScmRequestTimeoutException;
 import io.harness.exception.WingsException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
@@ -1124,11 +1125,15 @@ public class ScmServiceClientImpl implements ScmServiceClient {
           .statusCode(Constants.HTTP_SUCCESS_STATUS_CODE)
           .build();
     } catch (Exception exception) {
-      checkAndRethrowExceptionIfApplicable(exception);
       log.error("Faced exception in getFile operation: ", exception);
+      checkAndRethrowExceptionIfApplicable(exception);
+      int statusCode = Constants.SCM_INTERNAL_SERVER_ERROR_CODE;
+      if (exception instanceof ScmRequestTimeoutException) {
+        statusCode = Constants.SCM_SERVER_TIMEOUT_ERROR_CODE;
+      }
       return GitFileResponse.builder()
           .error(exception.getMessage())
-          .statusCode(Constants.SCM_INTERNAL_SERVER_ERROR_CODE)
+          .statusCode(statusCode)
           .branch(branch)
           .commitId(commitId)
           .build();

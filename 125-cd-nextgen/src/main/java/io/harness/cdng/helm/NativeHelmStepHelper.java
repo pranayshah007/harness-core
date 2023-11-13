@@ -19,6 +19,7 @@ import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
+import static io.harness.ngsettings.SettingIdentifiers.ENABLE_STEADY_STATE_FOR_JOBS_KEY_IDENTIFIER;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -72,6 +73,7 @@ import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.manifest.CustomSourceFile;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -88,6 +90,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
@@ -110,18 +113,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDP)
 @Singleton
+@Slf4j
 public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
   public static final String RELEASE_NAME = "Release Name";
   public static final String RELEASE_NAME_VALIDATION_REGEX =
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
   public static final Pattern releaseNamePattern = Pattern.compile(RELEASE_NAME_VALIDATION_REGEX);
   public static final String RELEASE_HISTORY_PREFIX = "harness.";
+  private static final String ENABLE_STEADY_STATE_FOR_JOBS_TRUE_VALUE = "true";
+  @Inject private NGSettingsClient settingsClient;
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject private CDStepHelper cdStepHelper;
@@ -152,6 +159,10 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
 
   private TaskType getHelmTaskType(HelmCommandRequestNG helmCommandRequest, Ambiance ambiance) {
     ManifestDelegateConfig manifestDelegateConfig = helmCommandRequest.getManifestDelegateConfig();
+    if (helmCommandRequest.isUseSteadyStateCheckForJobs()) {
+      return TaskType.HELM_COMMAND_TASK_NG_JOBS_STEADY_STATE_CHECK;
+    }
+
     if (manifestDelegateConfig != null && manifestDelegateConfig.getStoreDelegateConfig() != null
         && OCI_HELM.equals(manifestDelegateConfig.getStoreDelegateConfig().getType())
         && ((OciHelmStoreDelegateConfig) manifestDelegateConfig.getStoreDelegateConfig()).getAwsConnectorDTO()
@@ -611,6 +622,21 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
         valuesFileContents.addAll(baseValuesFileContent);
       }
     }
+  }
+
+  public boolean isSteadyStateForJobsEnabled(Ambiance ambiance) {
+    String steadyStateForJobsSettingValue = "";
+    try {
+      steadyStateForJobsSettingValue =
+          NGRestUtils
+              .getResponse(settingsClient.getSetting(ENABLE_STEADY_STATE_FOR_JOBS_KEY_IDENTIFIER,
+                  AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+                  AmbianceUtils.getProjectIdentifier(ambiance)))
+              .getValue();
+    } catch (Exception ex) {
+      log.error("Failed to fetch setting value for {}", ENABLE_STEADY_STATE_FOR_JOBS_KEY_IDENTIFIER, ex);
+    }
+    return ENABLE_STEADY_STATE_FOR_JOBS_TRUE_VALUE.equals(steadyStateForJobsSettingValue);
   }
 
   private UnitProgressData getUnitProgressData() {

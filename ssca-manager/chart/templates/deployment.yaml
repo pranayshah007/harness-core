@@ -14,7 +14,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: ssca-manager
+      {{- include "ssca-manager.selectorLabels" . | nindent 6 }}
   strategy:
     type: RollingUpdate
     rollingUpdate:

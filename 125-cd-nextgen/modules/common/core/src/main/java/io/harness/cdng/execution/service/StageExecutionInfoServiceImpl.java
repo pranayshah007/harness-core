@@ -8,7 +8,7 @@
 package io.harness.cdng.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.creator.plan.stage.SingleServiceEnvDeploymentStageDetailsInfo.identityOrElseNAStringIfBlank;
+import static io.harness.cdng.creator.plan.stage.SingleServiceEnvDeploymentStageDetailsInfo.NOT_AVAILABLE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
@@ -58,6 +58,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
@@ -272,9 +273,9 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
     String infra = stageExecutionBasicSummaryProjection.getInfraIdentifier();
 
     return CDStageSummaryResponseDTO.builder()
-        .service(identityOrElseNAStringIfBlank(service))
-        .infra(identityOrElseNAStringIfBlank(infra))
-        .environment(identityOrElseNAStringIfBlank(environment))
+        .service(StringUtils.defaultIfBlank(service, NOT_AVAILABLE))
+        .infra(StringUtils.defaultIfBlank(infra, NOT_AVAILABLE))
+        .environment(StringUtils.defaultIfBlank(environment, NOT_AVAILABLE))
         .build();
   }
 

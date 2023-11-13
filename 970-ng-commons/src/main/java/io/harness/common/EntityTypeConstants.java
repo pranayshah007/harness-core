@@ -204,6 +204,7 @@ public interface EntityTypeConstants {
   String FREEZE = "Freeze";
   String CHAOS_STEP = "Chaos";
   String CHAOS_INFRASTRUCTURE = "ChaosInfrastructure";
+  String CHAOS_HUB = "ChaosHub";
   String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
   String IACM_STAGE = "IACMStage";

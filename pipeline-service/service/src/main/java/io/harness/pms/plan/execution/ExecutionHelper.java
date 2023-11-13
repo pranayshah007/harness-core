@@ -379,13 +379,10 @@ public class ExecutionHelper {
     in pipelineYamlJsonNode will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
     give an error in schema validation. That's why we need a value that doesn't have this validator appended.
      */
-    // We don't have schema validation for V1 yaml as of now.
-    if (HarnessYamlVersion.V0.equals(pipelineEntity.getHarnessVersion())) {
-      JsonNode jsonNodeForValidatingSchema =
-          getPipelineYamlWithUnResolvedTemplates(mergedRuntimeInputJsonNode, pipelineEntity);
-      pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-          pipelineEntity.getProjectIdentifier(), jsonNodeForValidatingSchema);
-    }
+    JsonNode jsonNodeForValidatingSchema =
+        getPipelineYamlWithUnResolvedTemplates(mergedRuntimeInputJsonNode, pipelineEntity);
+    pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+        pipelineEntity.getProjectIdentifier(), jsonNodeForValidatingSchema, pipelineEntity.getHarnessVersion());
   }
 
   private ExecutionMetadata buildExecutionMetadata(@NotNull String pipelineIdentifier, String moduleType,

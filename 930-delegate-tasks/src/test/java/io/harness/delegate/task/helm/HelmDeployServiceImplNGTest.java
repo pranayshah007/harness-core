@@ -531,7 +531,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     assertThat(helmCommandResponseNG.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(helmClient).install(argumentCaptor.capture(), eq(true));
     verify(helmSteadyStateService, never()).readManifestFromHelmRelease(any(HelmCommandData.class));
-    verify(helmSteadyStateService, never()).findEligibleWorkloadIds(anyList());
+    verify(helmSteadyStateService, never()).findEligibleWorkloadIds(anyList(), eq(true));
     verify(k8sTaskHelperBase, never())
         .saveReleaseHistory(any(KubernetesConfig.class), anyString(), anyString(), anyBoolean());
 
@@ -540,7 +540,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     doReturn("1.16").when(kubernetesContainerService).getVersionAsString(eq(kubernetesConfig));
     assertThat(spyHelmDeployService.deploy(helmInstallCommandRequestNG)).isEqualTo(helmCommandResponseNG);
     verify(helmSteadyStateService, never()).readManifestFromHelmRelease(any(HelmCommandData.class));
-    verify(helmSteadyStateService, never()).findEligibleWorkloadIds(anyList());
+    verify(helmSteadyStateService, never()).findEligibleWorkloadIds(anyList(), eq(true));
     verify(k8sTaskHelperBase, times(1))
         .saveReleaseHistory(any(KubernetesConfig.class), anyString(), anyString(), anyBoolean());
 
@@ -1156,7 +1156,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     doReturn(taskProgressCallback).when(k8sTaskHelperBase).getTaskProgressCallback(any(), any());
     doReturn(Collections.emptyList()).when(spyHelmDeployService).printHelmChartKubernetesResources(any());
     doReturn(resources).when(helmSteadyStateService).readManifestFromHelmRelease(any(HelmCommandData.class));
-    doReturn(singletonList(deployment)).when(helmSteadyStateService).findEligibleWorkloadIds(resources);
+    doReturn(singletonList(deployment)).when(helmSteadyStateService).findEligibleWorkloadIds(resources, true);
     doReturn(emptyList())
         .when(spyHelmDeployService)
         .getContainerInfos(eq(helmInstallCommandRequestNG), eq(singletonList(deployment)), eq(true), eq(resources),
@@ -1172,7 +1172,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
         .getContainerInfos(eq(helmInstallCommandRequestNG), eq(singletonList(deployment)), eq(true), eq(resources),
             any(LogCallback.class), anyLong());
     verify(helmSteadyStateService, times(1)).readManifestFromHelmRelease(any(HelmCommandData.class));
-    verify(helmSteadyStateService, times(1)).findEligibleWorkloadIds(resources);
+    verify(helmSteadyStateService, times(1)).findEligibleWorkloadIds(resources, true);
     verify(k8sTaskHelperBase, never())
         .saveReleaseHistory(any(KubernetesConfig.class), anyString(), anyString(), anyBoolean());
   }
@@ -1194,9 +1194,10 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
 
     helmRollbackCommandRequestNG.setK8SteadyStateCheckEnabled(k8sSteadyStateCheckEnabled);
     helmRollbackCommandRequestNG.setUseRefactorSteadyStateCheck(true);
+    helmRollbackCommandRequestNG.setUseSteadyStateCheckForJobs(false);
     doReturn("1.16").when(kubernetesContainerService).getVersionAsString(eq(kubernetesConfig));
     doReturn(resources).when(helmSteadyStateService).readManifestFromHelmRelease(any(HelmCommandData.class));
-    doReturn(singletonList(deployment)).when(helmSteadyStateService).findEligibleWorkloadIds(resources);
+    doReturn(singletonList(deployment)).when(helmSteadyStateService).findEligibleWorkloadIds(resources, false);
     doReturn(emptyList())
         .when(spyHelmDeployService)
         .getContainerInfos(eq(helmRollbackCommandRequestNG), eq(singletonList(deployment)), eq(true), eq(resources),
@@ -1211,7 +1212,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
         .getContainerInfos(eq(helmRollbackCommandRequestNG), eq(singletonList(deployment)), eq(true), eq(resources),
             any(LogCallback.class), anyLong());
     verify(helmSteadyStateService, times(1)).readManifestFromHelmRelease(any(HelmCommandData.class));
-    verify(helmSteadyStateService, times(1)).findEligibleWorkloadIds(resources);
+    verify(helmSteadyStateService, times(1)).findEligibleWorkloadIds(resources, false);
     verify(k8sTaskHelperBase, never()).getReleaseHistoryFromSecret(any(KubernetesConfig.class), anyString());
     verify(k8sTaskHelperBase, never())
         .saveReleaseHistory(any(KubernetesConfig.class), anyString(), anyString(), anyBoolean());
@@ -1355,6 +1356,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
                                               .helmVersion(V3)
                                               .k8SteadyStateCheckEnabled(false)
                                               .sendTaskProgressEvents(true)
+                                              .useSteadyStateCheckForJobs(true)
                                               .build();
 
     return request;
@@ -1375,6 +1377,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
                                                .releaseName("release")
                                                .releaseHistoryPrefix(releaseHistoryPrefix)
                                                .sendTaskProgressEvents(true)
+                                               .useSteadyStateCheckForJobs(true)
                                                .build();
 
     return request;

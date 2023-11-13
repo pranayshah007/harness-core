@@ -524,6 +524,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(484, "AWS_ASG_SHIFT_TRAFFIC_TASK_NG");
     taskTypeOrdinalMapping.put(485, "AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V3");
     taskTypeOrdinalMapping.put(486, "AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V3");
+    taskTypeOrdinalMapping.put(487, "HELM_COMMAND_TASK_NG_JOBS_STEADY_STATE_CHECK");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

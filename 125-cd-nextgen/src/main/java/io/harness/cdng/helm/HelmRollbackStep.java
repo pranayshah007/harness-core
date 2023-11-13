@@ -229,7 +229,8 @@ public class HelmRollbackStep extends CdTaskExecutable<HelmCmdExecResponseNG> {
         .sendTaskProgressEvents(cdFeatureFlagHelper.isEnabled(
             AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG))
         .improvedHelmTracking(cdFeatureFlagHelper.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_IMPROVED_HELM_DEPLOYMENT_TRACKING));
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_IMPROVED_HELM_DEPLOYMENT_TRACKING))
+        .useSteadyStateCheckForJobs(nativeHelmStepHelper.isSteadyStateForJobsEnabled(ambiance));
 
     HelmRollbackCommandRequestNG helmCommandRequest = rollbackCommandRequestNGBuilder.build();
 

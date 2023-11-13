@@ -79,7 +79,7 @@ func TestWrite_Success(t *testing.T) {
 	in := &pb.WriteRequest{Key: key, Lines: jsonLines}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar())
+	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
 	_, err := h.Write(ctx, in)
 	assert.Nil(t, err)
 }
@@ -102,7 +102,7 @@ func TestWrite_Failure_IncorrectLineFormat(t *testing.T) {
 	in := &pb.WriteRequest{Key: key, Lines: lines}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar())
+	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
 	_, err := h.Write(ctx, in)
 	assert.NotNil(t, err)
 }
@@ -125,7 +125,7 @@ func TestWrite_Failure_Client(t *testing.T) {
 	in := &pb.WriteRequest{Key: key, Lines: lines}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar())
+	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
 	_, err := h.Write(ctx, in)
 	assert.NotNil(t, err)
 }
@@ -148,7 +148,7 @@ func Test_UploadLink_Success(t *testing.T) {
 	in := &pb.UploadLinkRequest{Key: key}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar())
+	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
 	resp, err := h.UploadLink(ctx, in)
 	assert.Nil(t, err)
 	assert.Equal(t, resp.GetLink(), strLink)
@@ -170,7 +170,7 @@ func Test_UploadLink_Failure(t *testing.T) {
 	in := &pb.UploadLinkRequest{Key: key}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar())
+	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
 	_, err := h.UploadLink(ctx, in)
 	assert.NotNil(t, err)
 }
@@ -188,7 +188,7 @@ func Test_UploadLink_Failure_Client(t *testing.T) {
 	in := &pb.UploadLinkRequest{Key: key}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar())
+	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
 	_, err := h.UploadLink(ctx, in)
 	assert.NotNil(t, err)
 }
@@ -209,7 +209,7 @@ func Test_Open_Success(t *testing.T) {
 	in := &pb.OpenRequest{Key: key}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar())
+	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
 	_, err := h.Open(ctx, in)
 	assert.Nil(t, err)
 }
@@ -230,7 +230,7 @@ func Test_Open_Failure(t *testing.T) {
 	in := &pb.OpenRequest{Key: key}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar())
+	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
 	_, err := h.Open(ctx, in)
 	assert.NotNil(t, err)
 }
@@ -248,7 +248,7 @@ func Test_Open_Failure_Client(t *testing.T) {
 	in := &pb.OpenRequest{Key: key}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar())
+	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
 	_, err := h.Open(ctx, in)
 	assert.NotNil(t, err)
 }
@@ -269,7 +269,7 @@ func Test_Close_Success(t *testing.T) {
 	in := &pb.CloseRequest{Key: key}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar())
+	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
 	_, err := h.Close(ctx, in)
 	assert.Nil(t, err)
 }
@@ -290,7 +290,7 @@ func Test_Close_Failure(t *testing.T) {
 	in := &pb.CloseRequest{Key: key}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar())
+	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
 	_, err := h.Close(ctx, in)
 	assert.NotNil(t, err)
 }
@@ -308,7 +308,7 @@ func Test_Close_Failure_Client(t *testing.T) {
 	in := &pb.CloseRequest{Key: key}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar())
+	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
 	_, err := h.Close(ctx, in)
 	assert.NotNil(t, err)
 }
@@ -344,7 +344,7 @@ func Test_UploadUsingLink_Success(t *testing.T) {
 	in := NewUploadUsingLinkMock(nil, ctx, req)
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar())
+	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
 	err := h.UploadUsingLink(in)
 	assert.Nil(t, err)
 }
@@ -380,12 +380,11 @@ func Test_UploadUsingLink_Failure(t *testing.T) {
 	in := NewUploadUsingLinkMock(nil, ctx, req)
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar())
+	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
 	err := h.UploadUsingLink(in)
 	assert.NotNil(t, err)
 }
 
-//
 func Test_UploadUsingLink_Failure_Client(t *testing.T) {
 	ctrl, ctx := gomock.WithContext(context.Background(), t)
 	defer ctrl.Finish()
@@ -409,7 +408,7 @@ func Test_UploadUsingLink_Failure_Client(t *testing.T) {
 	in := NewUploadUsingLinkMock(nil, ctx, req)
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar())
+	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
 	err := h.UploadUsingLink(in)
 	assert.NotNil(t, err)
 }

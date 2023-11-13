@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.merger.helpers;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -13,6 +14,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.common.NGExpressionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
@@ -34,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
@@ -47,6 +50,9 @@ public class YamlRefreshHelper {
   public final Set<String> oneOfKeysParent = new HashSet<>(List.of("service", "environment", "services"));
   public final Set<String> ignorableKeysToOneOfAtSameLevel =
       new HashSet<>(List.of("service.serviceInputs", "environment.environmentInputs"));
+
+  public final Map<String, String> nonIgnorableKeysAndSiblings =
+      Map.of("service.gitBranch", "serviceRef", "environment.gitBranch", "environmentRef");
 
   private static final String USE_FROM_STAGE_NODE = "useFromStage";
   private static final String STAGE_NODE = "stage";
@@ -146,12 +152,68 @@ public class YamlRefreshHelper {
       }
     });
 
+    updateNodeToRefreshAndSourceNodeConfigWithNonIgnorableKeys(
+        sourceNodeYamlConfig, sourceNodeFqnToValueMap, nodeToRefreshFqnToValueMap, refreshedFqnToValueMap);
+
     Set<FQN> useFromStageFQNKeysFromInputSet =
         getUseFromStageKeysFromInputSet(sourceNodeFqnToValueMap, nodeToRefreshFqnToValueMap);
     JsonNode modifiedOriginalMap =
         addOneOfKeysParentKeysRemovingOtherParallelChildren(sourceNodeYamlConfig.getYamlMap(), refreshedFqnToValueMap,
             useFromStageFQNKeysFromInputSet, nodeToRefreshYamlConfig.getYamlMap());
+
     return new YamlConfig(refreshedFqnToValueMap, modifiedOriginalMap).getYamlMap();
+  }
+
+  private void updateNodeToRefreshAndSourceNodeConfigWithNonIgnorableKeys(YamlConfig sourceNodeYamlConfig,
+      Map<FQN, Object> sourceNodeFqnToValueMap, Map<FQN, Object> nodeToRefreshFqnToValueMap,
+      Map<FQN, Object> refreshedFqnToValueMap) {
+    Set<FQN> nodeToRefreshKeySet = nodeToRefreshFqnToValueMap.keySet();
+
+    for (FQN fqn : nodeToRefreshKeySet) {
+      if (!refreshedFqnToValueMap.containsKey(fqn)) {
+        Optional<String> nonIgnorableKeyInFQN = getNonIgnorableKeyInFQNOrEmpty(fqn);
+        if (nonIgnorableKeyInFQN.isPresent()) {
+          FQN fqnToSiblingOfNonIgnorableKey = getFqnToSiblingOfNonIgnorableKey(fqn, nonIgnorableKeyInFQN.get());
+          if (doesSourceNodeHaveSiblingRuntime(sourceNodeFqnToValueMap, fqnToSiblingOfNonIgnorableKey)) {
+            refreshedFqnToValueMap.put(fqn, nodeToRefreshFqnToValueMap.get(fqn));
+            putNonIgnorableFQNInSourceNodeYamlConfig(sourceNodeYamlConfig, nodeToRefreshFqnToValueMap, fqn);
+          }
+        }
+      }
+    }
+  }
+
+  private void putNonIgnorableFQNInSourceNodeYamlConfig(
+      YamlConfig sourceNodeYamlConfig, Map<FQN, Object> nodeToRefreshFqnToValueMap, FQN fqn) {
+    JsonNode jsonNodeForParentFQN = YamlSubMapExtractor.getNodeForFQN(sourceNodeYamlConfig, fqn.getParent());
+    ObjectNode objectNodeForParentFQN = (ObjectNode) jsonNodeForParentFQN;
+    objectNodeForParentFQN.putIfAbsent(fqn.getFieldName(), (TextNode) nodeToRefreshFqnToValueMap.get(fqn));
+  }
+
+  private boolean doesSourceNodeHaveSiblingRuntime(
+      Map<FQN, Object> sourceNodeFqnToValueMap, FQN fqnToSiblingOfNonIgnorableKey) {
+    return sourceNodeFqnToValueMap.containsKey(fqnToSiblingOfNonIgnorableKey)
+        && sourceNodeFqnToValueMap.get(fqnToSiblingOfNonIgnorableKey) instanceof TextNode
+        && NGExpressionUtils.matchesInputSetPattern(
+            ((TextNode) sourceNodeFqnToValueMap.get(fqnToSiblingOfNonIgnorableKey)).asText());
+  }
+
+  private FQN getFqnToSiblingOfNonIgnorableKey(FQN fqn, String nonIgnorableKeyInFQN) {
+    FQN parentServiceFQn = fqn.getParent();
+    ArrayList<FQNNode> fqnNodesToCheckInSource = new ArrayList<>(parentServiceFQn.getFqnList());
+    String nonIgnorableKeySibling = nonIgnorableKeysAndSiblings.get(nonIgnorableKeyInFQN);
+    fqnNodesToCheckInSource.add(FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(nonIgnorableKeySibling).build());
+    return FQN.builder().fqnList(fqnNodesToCheckInSource).build();
+  }
+
+  private Optional<String> getNonIgnorableKeyInFQNOrEmpty(FQN fqn) {
+    Set<String> nonIgnorableKeys = nonIgnorableKeysAndSiblings.keySet();
+    for (String key : nonIgnorableKeys) {
+      if (fqn.getExpressionFqn().endsWith(key)) {
+        return Optional.of(key);
+      }
+    }
+    return Optional.empty();
   }
 
   private Set<FQN> getUseFromStageKeysFromInputSet(Map<FQN, Object> sourceYamlFQNMap, Map<FQN, Object> inputSetFQNMap) {
