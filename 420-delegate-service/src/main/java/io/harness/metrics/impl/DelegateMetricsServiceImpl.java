@@ -154,23 +154,23 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
 
   @Override
   public void recordDelegateHeartBeatMetricsPerAccount(String accountId, String accountName, String companyName,
-      DelegateRing delegateRing, String orgId, String projectId, String delegateName, String delegateId,
-      String delegateVersion, String delegateConnectionStatus, String delegateEventType, boolean isNg,
-      boolean isImmutable, long lastHB, String metricName) {
-    try (HeartbeatMetricContext ignore = new HeartbeatMetricContext(accountId, accountName, companyName,
-             delegateRing.getRingName(), delegateRing.getDelegateImageTag(), delegateRing.getUpgraderImageTag(),
-             delegateRing.getWatcherVersions(), delegateRing.getWatcherJREVersion(),
-             delegateRing.getDelegateJREVersion(), orgId, projectId, delegateName, delegateId, delegateVersion,
-             delegateConnectionStatus, delegateEventType, isNg, isImmutable)) {
+      String orgId, String projectId, String delegateName, String delegateId, String delegateVersion,
+      String delegateConnectionStatus, String delegateEventType, boolean isNg, boolean isImmutable, long lastHB,
+      String metricName) {
+    try (HeartbeatMetricContext ignore =
+             new HeartbeatMetricContext(accountId, accountName, companyName, orgId, projectId, delegateName, delegateId,
+                 delegateVersion, delegateConnectionStatus, delegateEventType, isNg, isImmutable)) {
       metricService.recordMetric(metricName, lastHB);
     }
   }
 
   @Override
-  public void recordAccountRingInfoMetric(String accountId, DelegateRing delegateRing, long time, String metricName) {
-    try (AccountRingInfoMetricContext ignore = new AccountRingInfoMetricContext(accountId, delegateRing.getRingName(),
-             delegateRing.getDelegateImageTag(), delegateRing.getUpgraderImageTag(), delegateRing.getWatcherVersions(),
-             delegateRing.getWatcherJREVersion(), delegateRing.getDelegateJREVersion())) {
+  public void recordAccountRingInfoMetric(
+      String accountId, String accountName, DelegateRing delegateRing, long time, String metricName) {
+    try (AccountRingInfoMetricContext ignore = new AccountRingInfoMetricContext(accountId, accountName,
+             delegateRing.getRingName(), delegateRing.getDelegateImageTag(), delegateRing.getUpgraderImageTag(),
+             delegateRing.getWatcherVersions(), delegateRing.getWatcherJREVersion(),
+             delegateRing.getDelegateJREVersion())) {
       metricService.recordMetric(metricName, time);
     }
   }

@@ -32,7 +32,7 @@ public class AccountRingInfoIterator
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(10);
   @Inject private io.harness.iterator.PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MorphiaPersistenceProvider<Account> persistenceProvider;
-  @Inject private DelegateHeartBeatMetricsHelper delegateHeartBeatMetricsHelper;
+  @Inject private AccountRingInfoMetricHelper accountRingInfoMetricHelper;
 
   @Override
   protected void createAndStartIterator(
@@ -77,7 +77,8 @@ public class AccountRingInfoIterator
   @Override
   public void handle(Account account) {
     log.info("Account being handled {}", account.getAccountName());
-    delegateHeartBeatMetricsHelper.addAccountRingInfoMetric(account.getUuid(), account.getRingName());
+    accountRingInfoMetricHelper.addAccountRingInfoMetric(
+        account.getUuid(), account.getAccountName(), account.getRingName());
   }
 
   private MorphiaFilterExpander<Account> getFilterQuery() {

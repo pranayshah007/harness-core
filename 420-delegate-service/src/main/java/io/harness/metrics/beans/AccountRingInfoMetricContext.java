@@ -10,9 +10,10 @@ package io.harness.metrics.beans;
 import io.harness.metrics.AutoMetricContext;
 
 public class AccountRingInfoMetricContext extends AutoMetricContext {
-  public AccountRingInfoMetricContext(String accountId, String ringName, String delegateImageTag,
+  public AccountRingInfoMetricContext(String accountId, String accountName, String ringName, String delegateImageTag,
       String upgraderImageTag, String watcherVersion, String watcherJREVersion, String delegateJREVersion) {
     put("accountId", accountId);
+    put("accountName", accountName);
     put("ringName", ringName);
     put("delegateImageTag", delegateImageTag);
     put("upgraderImageTag", upgraderImageTag);
