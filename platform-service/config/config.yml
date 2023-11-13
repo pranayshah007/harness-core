@@ -135,6 +135,7 @@ auditServiceConfig:
     transactionsEnabled: false
     maxDocumentsToBeFetched: 2147483647
     maxOperationTimeInMillis: 900000
+  publishAccountActivityMetrics: false
 
   enableAuditService: true
   hostname: ${HOSTNAME:-localhost}
