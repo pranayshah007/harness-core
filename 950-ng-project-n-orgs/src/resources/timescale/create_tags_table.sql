@@ -10,6 +10,13 @@ CREATE TABLE IF NOT EXISTS public.tags_info (
     parent_type text,
     tags text[]
 );
+
+-- drop constraint first if it exists
+ALTER TABLE ONLY public.tags_info
+    DROP CONSTRAINT IF EXISTS tags_info_pkey;
+
+-- add primary key constraint, this is done to resolve issues in re-running migrations
+-- this query will fail as only one primary key constraint can exist
 ALTER TABLE ONLY public.tags_info
     ADD CONSTRAINT tags_info_pkey PRIMARY KEY (id);
 

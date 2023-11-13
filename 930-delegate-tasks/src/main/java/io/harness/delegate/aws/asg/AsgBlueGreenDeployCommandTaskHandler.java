@@ -35,7 +35,6 @@ import io.harness.aws.asg.manifest.AsgLaunchTemplateManifestHandler;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
-import io.harness.aws.asg.manifest.request.AsgInstanceCapacity;
 import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
@@ -213,8 +212,8 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
                     .awsInternalConfig(awsInternalConfig)
                     .region(region)
                     .useAlreadyRunningInstances(useAlreadyRunningInstances)
-                    .alreadyRunningInstanceCapacity(getRunningInstanceCapacity(
-                        asgSdkManager, useAlreadyRunningInstances, isFirstDeployment, prodAsgName))
+                    .alreadyRunningInstanceCapacity(asgTaskHelper.getRunningInstanceCapacity(
+                        asgSdkManager, useAlreadyRunningInstances, prodAsgName))
                     .build())
             .addHandler(
                 AsgScalingPolicy, AsgScalingPolicyManifestRequest.builder().manifests(asgScalingPolicyContent).build())
@@ -230,20 +229,5 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
     asgSdkManager.info("Set tag %s=%s for asg %s", AsgSdkManager.BG_VERSION, bgTagValue, asgName);
 
     return asgTaskHelper.mapToAutoScalingGroupContainer(autoScalingGroup);
-  }
-
-  AsgInstanceCapacity getRunningInstanceCapacity(
-      AsgSdkManager asgSdkManager, boolean useAlreadyRunningInstances, boolean isFirstDeployment, String prodAsgName) {
-    if (useAlreadyRunningInstances && !isFirstDeployment && isNotEmpty(prodAsgName)) {
-      AutoScalingGroup prodAutoScalingGroup = asgSdkManager.getASG(prodAsgName);
-      if (prodAutoScalingGroup != null) {
-        return AsgInstanceCapacity.builder()
-            .minCapacity(prodAutoScalingGroup.getMinSize())
-            .desiredCapacity(prodAutoScalingGroup.getDesiredCapacity())
-            .maxCapacity(prodAutoScalingGroup.getMaxSize())
-            .build();
-      }
-    }
-    return AsgInstanceCapacity.builder().build();
   }
 }

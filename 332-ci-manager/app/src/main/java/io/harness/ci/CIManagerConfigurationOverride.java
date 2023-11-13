@@ -11,7 +11,9 @@ import static io.harness.eventsframework.EventsFrameworkConstants.CI_ORCHESTRATI
 
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.beans.execution.license.CILicenseService;
+import io.harness.ci.event.AccountEntityListener;
 import io.harness.ci.license.impl.CILicenseServiceImpl;
+import io.harness.ng.core.event.MessageListener;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,4 +35,6 @@ public class CIManagerConfigurationOverride {
   private String orchestrationEvent = CI_ORCHESTRATION_NOTIFY_EVENT;
 
   private Class<? extends CILicenseService> licenseClass = CILicenseServiceImpl.class;
+
+  private Class<? extends MessageListener> accountEntityListenerClass = AccountEntityListener.class;
 }

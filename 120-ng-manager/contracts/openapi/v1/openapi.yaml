@@ -1636,6 +1636,12 @@ paths:
           name: event_identifier
         - schema:
             type: string
+            enum:
+              - SKIPPED
+              - FAILED
+              - PROCESSING
+              - SUCCESSFUL
+              - QUEUED
           in: query
           name: event_status
       x-internal: true

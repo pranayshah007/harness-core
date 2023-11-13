@@ -10,6 +10,7 @@ package io.harness.cdng.helm;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -149,7 +150,28 @@ public class HelmRollbackStepTest extends CategoryTest {
             .output(NativeHelmDeployOutcome.builder().hasInstallUpgradeStarted(true).releaseName("test").build())
             .build();
 
-    testRollback(releaseOutput, deploymentOutput, "test");
+    HelmRollbackCommandRequestNG requestNG = testRollback(releaseOutput, deploymentOutput, "test");
+    assertThat(requestNG.isUseSteadyStateCheckForJobs()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testRollbackWithAccountSettings() {
+    OptionalSweepingOutput releaseOutput =
+        OptionalSweepingOutput.builder()
+            .found(true)
+            .output(NativeHelmDeployOutcome.builder().hasInstallUpgradeStarted(true).releaseName("test").build())
+            .build();
+    OptionalSweepingOutput deploymentOutput =
+        OptionalSweepingOutput.builder()
+            .found(true)
+            .output(NativeHelmDeployOutcome.builder().hasInstallUpgradeStarted(true).releaseName("test").build())
+            .build();
+
+    doReturn(true).when(nativeHelmStepHelper).isSteadyStateForJobsEnabled(ambiance);
+    HelmRollbackCommandRequestNG requestNG = testRollback(releaseOutput, deploymentOutput, "test");
+    assertThat(requestNG.isUseSteadyStateCheckForJobs()).isTrue();
   }
 
   @Test
@@ -227,7 +249,7 @@ public class HelmRollbackStepTest extends CategoryTest {
     verify(stepHelper, times(2)).sendRollbackTelemetryEvent(any(), any());
   }
 
-  private void testRollback(
+  private HelmRollbackCommandRequestNG testRollback(
       OptionalSweepingOutput releaseOutput, OptionalSweepingOutput deploymentOutput, String expectedReleaseName) {
     String deployFqn = "pipeline.stages.deploy.spec.execution.steps.helmDeployment";
     final HelmRollbackStepParams stepParameters =
@@ -265,5 +287,6 @@ public class HelmRollbackStepTest extends CategoryTest {
     HelmRollbackCommandRequestNG request = (HelmRollbackCommandRequestNG) requestArgumentCaptor.getValue();
     assertThat(request.getReleaseName()).isEqualTo(expectedReleaseName);
     verify(stepHelper, times(0)).sendRollbackTelemetryEvent(any(), any());
+    return request;
   }
 }

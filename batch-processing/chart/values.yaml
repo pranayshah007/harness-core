@@ -87,7 +87,7 @@ global:
                   name: ""
                   property: "" 
     clickhouse:
-      enabled: false 
+      enabled: false
       secrets:
         kubernetesSecrets:
           - secretName: ""
@@ -240,7 +240,7 @@ image:
   repository: harness/batch-processing-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "81101-000"
+  tag: "81103-000"
   digest: ""
 # image pull secrets to use for batch-processing image
   imagePullSecrets: []
@@ -250,7 +250,7 @@ imageClickhouseEnabled:
   repository: harness/batch-processing-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "81101-000"
+  tag: "81103-000"
   digest: ""
 # image pull secrets to use for batch-processing image
   imagePullSecrets: []
@@ -334,6 +334,7 @@ awsAccountTagsCollectionJobConfig:
   enabled: true
 
 clickhouse:
+  socketTimeout: "86400000"
   username: "default"
   password:
     name: clickhouse

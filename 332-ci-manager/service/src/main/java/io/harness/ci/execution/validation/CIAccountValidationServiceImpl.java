@@ -8,10 +8,12 @@
 package io.harness.ci.execution.validation;
 
 import io.harness.account.AccountClient;
+import io.harness.beans.FeatureName;
 import io.harness.beans.execution.license.CILicenseService;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.ExecutionLimitSpec;
 import io.harness.ci.config.ExecutionLimits;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.creditcard.remote.CreditCardClient;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.licensing.Edition;
@@ -40,6 +42,7 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
   @Inject private CILicenseService ciLicenseService;
   @Inject private CreditCardClient creditCardClient;
   @Inject private ExecutionLimits executionLimits;
+  @Inject CIFeatureFlagService ciFeatureFlagService;
 
   public static long APPLY_DAY = 1678368362000L; // 09.3.23 Day to apply the policy. In milliseconds
 
@@ -119,6 +122,45 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
 
   @Override
   public long getMaxBuildPerDay(String accountId) {
+    int trustLevel = obtainTrustLevel(accountId);
+
+    ExecutionLimitSpec freeBasicUserLimits = executionLimits.getFreeBasicUser();
+    ExecutionLimitSpec freeNewUserLimits = executionLimits.getFreeNewUser();
+
+    switch (trustLevel) {
+      case AccountTrustLevel.BASIC_USER:
+        return freeBasicUserLimits.getDailyMaxBuildsCount();
+      case AccountTrustLevel.NEW_USER:
+        if (ciFeatureFlagService.isEnabled(FeatureName.CI_CREDIT_CARD_ONBOARDING, accountId) && hasValidCC(accountId)) {
+          return freeBasicUserLimits.getDailyMaxBuildsCount();
+        }
+        return freeNewUserLimits.getDailyMaxBuildsCount();
+      default:
+        return freeNewUserLimits.getDailyMaxBuildsCount();
+    }
+  }
+
+  @Override
+  public long getMaxCreditsPerMonth(String accountId) {
+    int trustLevel = obtainTrustLevel(accountId);
+
+    ExecutionLimitSpec freeBasicUserLimits = executionLimits.getFreeBasicUser();
+    ExecutionLimitSpec freeNewUserLimits = executionLimits.getFreeNewUser();
+
+    switch (trustLevel) {
+      case AccountTrustLevel.BASIC_USER:
+        return freeBasicUserLimits.getMonthlyMaxCreditsCount();
+      case AccountTrustLevel.NEW_USER:
+        if (ciFeatureFlagService.isEnabled(FeatureName.CI_CREDIT_CARD_ONBOARDING, accountId) && hasValidCC(accountId)) {
+          return freeBasicUserLimits.getMonthlyMaxCreditsCount();
+        }
+        return freeNewUserLimits.getMonthlyMaxCreditsCount();
+      default:
+        return freeNewUserLimits.getMonthlyMaxCreditsCount();
+    }
+  }
+
+  private Integer obtainTrustLevel(String accountId) {
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
     if (licensesWithSummaryDTO == null) {
       throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
@@ -139,21 +181,7 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
     } else {
       trustLevel = getTrustLevel(accountId);
     }
-
-    ExecutionLimitSpec freeBasicUserLimits = executionLimits.getFreeBasicUser();
-    ExecutionLimitSpec freeNewUserLimits = executionLimits.getFreeNewUser();
-
-    switch (trustLevel) {
-      case AccountTrustLevel.BASIC_USER:
-        return freeBasicUserLimits.getDailyMaxBuildsCount();
-      case AccountTrustLevel.NEW_USER:
-        if (hasValidCC(accountId)) {
-          return freeBasicUserLimits.getDailyMaxBuildsCount();
-        }
-        return freeNewUserLimits.getDailyMaxBuildsCount();
-      default:
-        return freeNewUserLimits.getDailyMaxBuildsCount();
-    }
+    return trustLevel;
   }
 
   private boolean hasValidCC(String accountId) {

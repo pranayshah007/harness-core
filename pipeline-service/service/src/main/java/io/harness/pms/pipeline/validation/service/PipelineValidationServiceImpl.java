@@ -47,8 +47,8 @@ public class PipelineValidationServiceImpl implements PipelineValidationService 
     if (harnessVersion.equals(HarnessYamlVersion.V0)) {
       checkIfRootNodeIsPipeline(pipelineYaml);
     }
-    pmsYamlSchemaService.validateYamlSchema(
-        accountIdentifier, orgIdentifier, projectIdentifier, YamlUtils.readAsJsonNode(yamlWithTemplatesResolved));
+    pmsYamlSchemaService.validateYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier,
+        YamlUtils.readAsJsonNode(yamlWithTemplatesResolved), harnessVersion);
     // validate unique fqn in resolveTemplateRefsInPipeline
     pmsYamlSchemaService.validateUniqueFqn(yamlWithTemplatesResolved);
     return true;
@@ -61,7 +61,7 @@ public class PipelineValidationServiceImpl implements PipelineValidationService 
       checkIfRootNodeIsPipeline(pipelineYaml);
     }
     pmsYamlSchemaService.validateYamlSchema(
-        accountIdentifier, orgIdentifier, projectIdentifier, YamlUtils.readAsJsonNode(pipelineYaml));
+        accountIdentifier, orgIdentifier, projectIdentifier, YamlUtils.readAsJsonNode(pipelineYaml), harnessVersion);
     pmsYamlSchemaService.validateUniqueFqn(pipelineYaml);
   }
 

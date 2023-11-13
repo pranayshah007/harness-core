@@ -30,6 +30,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     {
       @JsonSubTypes.Type(value = SingleServiceEnvDeploymentStageDetailsInfo.class,
           name = DeploymentStageTypeConstants.SINGLE_SERVICE_ENVIRONMENT)
+      ,
+          @JsonSubTypes.Type(value = MultiServiceEnvDeploymentStageDetailsInfo.class,
+              name = DeploymentStageTypeConstants.MULTI_SERVICE_ENVIRONMENT)
     })
 public interface DeploymentStageDetailsInfo {
   @JsonIgnore CDStageSummaryResponseDTO getFormattedStageSummary();

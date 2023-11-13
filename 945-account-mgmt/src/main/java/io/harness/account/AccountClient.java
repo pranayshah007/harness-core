@@ -20,6 +20,7 @@ import io.harness.rest.RestResponse;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -48,6 +49,7 @@ public interface AccountClient {
   String UPSERT_DEFAULT = "/default";
   String DEFAULT_ORG_TOKENS = "/default-for-orgs";
   String DEFAULT_PROJECT_TOKENS = "/default-for-projects";
+  String INSTALLATION_COMMAND_INTERNAL = "setup/delegates/internal/installation-command";
 
   @POST(ACCOUNT_API) Call<RestResponse<AccountDTO>> create(@Body AccountDTO dto);
 
@@ -139,4 +141,8 @@ public interface AccountClient {
   @GET(ACCOUNT_API + "/listV2")
   Call<RestResponse<PageResponse<AccountDTO>>> listAccounts(
       @Query("offset") int offset, @Query("pageSize") int pageSize);
+
+  @GET(INSTALLATION_COMMAND_INTERNAL)
+  Call<RestResponse<Map<String, String>>> getInstallationCommand(@Query("accountId") String accountId,
+      @Query("commandType") String commandType, @Query("os") String os, @Query("arch") String arch);
 }

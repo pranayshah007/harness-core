@@ -154,6 +154,14 @@ public class STOServiceUtils {
   }
 
   @NotNull
+  public String deleteAccountData(String accountId) {
+    String token = getSTOServiceToken(null);
+    String accessToken = "ApiKey " + token;
+
+    return makeAPICall(stoServiceClient.deleteAccountData(accessToken, accountId)).get("status").toString();
+  }
+
+  @NotNull
   public String getUsageAllAccounts(long timestamp) {
     String token = getSTOServiceToken(null);
     String accessToken = "ApiKey " + token;
@@ -186,7 +194,7 @@ public class STOServiceUtils {
     }
 
     if (response.body() == null) {
-      throw new GeneralException("Cannot compleete API call to STO service. Response body is null");
+      throw new GeneralException("Cannot complete API call to STO service. Response body is null");
     }
 
     return response.body();
