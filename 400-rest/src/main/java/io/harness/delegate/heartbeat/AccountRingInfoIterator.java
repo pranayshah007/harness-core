@@ -19,6 +19,7 @@ import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 
 import software.wings.beans.Account;
+import software.wings.beans.Account.AccountKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -41,7 +42,7 @@ public class AccountRingInfoIterator
                    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions, Account.class,
                        MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
                            .clazz(Account.class)
-                           .fieldName(Account.AccountKeys.accountRingInfoIteration)
+                           .fieldName(AccountKeys.accountRingInfoIteration)
                            .filterExpander(getFilterQuery())
                            .targetInterval(targetInterval)
                            .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
@@ -59,7 +60,7 @@ public class AccountRingInfoIterator
             persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions, Account.class,
                 MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
                     .clazz(Account.class)
-                    .fieldName(Account.AccountKeys.accountRingInfoIteration)
+                    .fieldName(AccountKeys.accountRingInfoIteration)
                     .filterExpander(getFilterQuery())
                     .targetInterval(targetInterval)
                     .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
@@ -83,7 +84,7 @@ public class AccountRingInfoIterator
 
   private MorphiaFilterExpander<Account> getFilterQuery() {
     return query -> {
-      query.and(query.criteria(Account.AccountKeys.ringName).exists());
+      query.and(query.criteria(AccountKeys.ringName).exists());
     };
   }
 }

@@ -12,6 +12,7 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.ACCOUNT_RING_IN
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateRing;
+import io.harness.delegate.beans.DelegateRing.DelegateRingKeys;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.persistence.HPersistence;
 
@@ -38,7 +39,7 @@ public class AccountRingInfoMetricHelper {
       return delegateRing;
     }
     DelegateRing ringFromDB =
-        persistence.createQuery(DelegateRing.class).filter(DelegateRing.DelegateRingKeys.ringName, ringName).get();
+        persistence.createQuery(DelegateRing.class).filter(DelegateRingKeys.ringName, ringName).get();
     delegateRingCache.put(ringName, ringFromDB);
     return ringFromDB;
   }
