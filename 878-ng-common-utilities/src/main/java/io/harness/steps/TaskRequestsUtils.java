@@ -286,6 +286,8 @@ public class TaskRequestsUtils {
             .addAllSelectors(CollectionUtils.emptyIfNull(selectors))
             .setRunnerType(RunnerType.RUNNER_TYPE_K8S)
             .setAccountId(accountId)
+            .setOrgId(AmbianceUtils.getOrgIdentifier(ambiance))
+            .setProjectId(AmbianceUtils.getProjectIdentifier(ambiance))
             .setExecutionTimeout(Duration.newBuilder().setSeconds(timeout / 1000).build())
             .setSelectionTrackingLogEnabled(true)
             .build();
