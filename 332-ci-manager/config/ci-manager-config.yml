@@ -157,8 +157,10 @@ ciExecutionServiceConfig:
   executionLimits:
     freeNewUser:
       dailyMaxBuildsCount: 0
+      monthlyMaxCreditsCount: 0
     freeBasicUser:
       dailyMaxBuildsCount: 25
+      monthlyMaxCreditsCount: 2000
     free:
       defaultTotalExecutionCount: 21
       defaultMacExecutionCount: 1
