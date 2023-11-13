@@ -9,10 +9,18 @@ package io.harness.cvng.statemachine.services.api;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
 import io.harness.cvng.servicelevelobjective.entities.ErrorBudgetBurnDown;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.ErrorBudgetBurnDownService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
+import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLIMetricAnalysisTransformer;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.SLIMetricLessAnalysisState;
@@ -29,6 +37,12 @@ public class SLIMetricLessAnalysisStateExecutor extends AnalysisStateExecutor<SL
   @Inject private ErrorBudgetBurnDownService errorBudgetBurnDownService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
+  @Inject private SLIDataProcessorService sliDataProcessorService;
+  @Inject private SLIMetricAnalysisTransformer sliMetricAnalysisTransformer;
+  @Inject private SLIRecordService sliRecordService;
+  @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
+
+  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Override
   public AnalysisState execute(SLIMetricLessAnalysisState analysisState) {
     Instant startTime = analysisState.getInputs().getStartTime();
@@ -43,7 +57,15 @@ public class SLIMetricLessAnalysisStateExecutor extends AnalysisStateExecutor<SL
                                       .build();
     List<ErrorBudgetBurnDown> errorBudgetBurnDowns = errorBudgetBurnDownService.getByStartTimeAndEndTime(
         projectParams, serviceLevelIndicator.getIdentifier(), startTime.toEpochMilli(), endTime.toEpochMilli());
-
+    List<SLIAnalyseResponse> sliAnalyseResponseList =
+        sliDataProcessorService.process(errorBudgetBurnDowns, serviceLevelIndicator, startTime, endTime);
+    List<SLIRecordParam> sliRecordList = sliMetricAnalysisTransformer.getSLIAnalyseResponse(sliAnalyseResponseList);
+    sliRecordService.create(
+        sliRecordList, serviceLevelIndicator.getUuid(), verificationTaskId, serviceLevelIndicator.getVersion());
+    SimpleServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getFromSLIIdentifier(projectParams, serviceLevelIndicator.getIdentifier());
+    sloHealthIndicatorService.upsert(serviceLevelObjective);
+    analysisState.setStatus(AnalysisStatus.SUCCESS);
     return analysisState;
   }
 

@@ -17,6 +17,7 @@ import io.harness.cvng.servicelevelobjective.beans.slispec.RequestBasedServiceLe
 import io.harness.cvng.servicelevelobjective.beans.slispec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.ErrorBudgetBurnDown;
 import io.harness.cvng.servicelevelobjective.entities.SLIState;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.SLIAnalyserService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
 import io.harness.exception.InvalidArgumentsException;
@@ -73,7 +74,7 @@ public class SLIDataProcessorServiceImpl implements SLIDataProcessorService {
 
   @Override
   public List<SLIAnalyseResponse> process(List<ErrorBudgetBurnDown> errorBudgetBurnDowns,
-      ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, Instant startTime, Instant endTime) {
+      ServiceLevelIndicator serviceLevelIndicator, Instant startTime, Instant endTime) {
     List<SLIAnalyseResponse> sliAnalyseResponseList = new ArrayList<>();
     Pair<Long, Long> runningCount = Pair.of(0L, 0L);
 
@@ -81,7 +82,7 @@ public class SLIDataProcessorServiceImpl implements SLIDataProcessorService {
       SLIState sliState = SLIState.GOOD;
       long goodCountValue = 0;
       long badCountValue = 0;
-      if (serviceLevelIndicatorDTO.getType() == SLIEvaluationType.WINDOW) {
+      if (serviceLevelIndicator.getSLIEvaluationType() == SLIEvaluationType.WINDOW) {
         if (sliState == SLIState.GOOD) {
           goodCountValue = 1;
         } else if (sliState == SLIState.BAD) {

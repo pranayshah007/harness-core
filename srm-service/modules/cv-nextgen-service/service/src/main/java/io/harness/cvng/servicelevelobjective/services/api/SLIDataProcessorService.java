@@ -11,6 +11,7 @@ import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseRequest;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.ErrorBudgetBurnDown;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 
 import java.time.Instant;
 import java.util.List;
@@ -21,5 +22,5 @@ public interface SLIDataProcessorService {
       ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, Instant startTime, Instant endTime);
 
   List<SLIAnalyseResponse> process(List<ErrorBudgetBurnDown> errorBudgetBurnDowns,
-      ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, Instant startTime, Instant endTime);
+      ServiceLevelIndicator serviceLevelIndicator, Instant startTime, Instant endTime);
 }
