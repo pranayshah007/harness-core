@@ -50,6 +50,13 @@ public class KubernetesDependencyMetadata extends ServiceDependencyMetadata {
     return workload;
   }
 
+  public List<String> getWorkloads() {
+    if (Collections.isEmpty(workloads) && Objects.nonNull(workload)) {
+      return java.util.Collections.singletonList(workload);
+    }
+    return workloads;
+  }
+
   @Override
   public DependencyMetadataType getType() {
     return KUBERNETES;
