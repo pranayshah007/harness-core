@@ -148,9 +148,27 @@ public enum PredefinedTemplate {
   SLACK_CCM_BUDGET_GROUP_ALERT("templates/slack_ccm_budget_group_alert.txt", "slack_ccm_budget_group_alert"),
   IDP_PLUGIN_REQUESTS_NOTIFICATION_SLACK(
       "notification_templates/slack/plugin_requests.txt", "idp_plugin_requests_notification_slack"),
-  DELEGATE_DOWN("templates/email/delegate_disconnected.txt", "delegate_disconnected"),
-  DELEGATE_EXPIRED("templates/email/delegate_expired.txt", "delegate_expired"),
-  DELEGATE_ABOUT_EXPIRE("templates/delegate_about_to_expire.txt", "delegate_about_to_expire");
+  DELEGATE_DOWN_EMAIL("templates/email/delegate_disconnected.txt", "delegate_disconnected"),
+  DELEGATE_EXPIRED_EMAIL("templates/email/delegate_expired.txt", "delegate_expired"),
+  DELEGATE_ABOUT_EXPIRE_EMAIL("templates/email/delegate_about_to_expire.txt", "delegate_about_to_expire"),
+
+  DELEGATE_DOWN_SLACK("templates/slack/delegate_disconnected.txt", "delegate_disconnected"),
+  DELEGATE_EXPIRED_SLACK("templates/slack/delegate_expired.txt", "delegate_expired"),
+  DELEGATE_ABOUT_EXPIRE_SLACK("templates/slack/delegate_about_to_expire.txt", "delegate_about_to_expire"),
+
+
+  DELEGATE_DOWN_PAGERDUTY("templates/pagerduty/delegate_disconnected.txt", "delegate_disconnected"),
+  DELEGATE_EXPIRED_PAGERDUTY("templates/pagerduty/delegate_expired.txt", "delegate_expired"),
+  DELEGATE_ABOUT_EXPIRE_PAGERDUTY("templates/pagerduty/delegate_about_to_expire.txt", "delegate_about_to_expire"),
+
+
+  DELEGATE_DOWN_MSTEAMS("templates/msteams/delegate_disconnected.txt", "delegate_disconnected"),
+  DELEGATE_EXPIRED_MSTEAMS("templates/msteams/delegate_expired.txt", "delegate_expired"),
+  DELEGATE_ABOUT_EXPIRE_MSTEAMS("templates/msteams/delegate_about_to_expire.txt", "delegate_about_to_expire"),
+
+  DELEGATE_DOWN_WEBHOOK("templates/webhook/delegate_disconnected.txt", "delegate_disconnected"),
+  DELEGATE_EXPIRED_WEBHOOK("templates/webhook/delegate_expired.txt", "delegate_expired"),
+  DELEGATE_ABOUT_EXPIRE_WEBHOOK("templates/webhook/delegate_about_to_expire.txt", "delegate_about_to_expire");
 
 
 

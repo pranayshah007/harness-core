@@ -119,6 +119,7 @@ import io.harness.mongo.tracing.TraceMode;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.TraceFilter;
+import io.harness.notifications.NotificationTemplateRegistrar;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
 import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverInformer;
@@ -708,6 +709,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     registerCorrelationFilter(environment, injector);
     registerRequestContextFilter(environment);
     registerDisableFirstGenFilter(environment, injector);
+    registerNotificationTemplates(configuration, injector);
 
     if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
       registerTraceFilter(environment, injector);
@@ -1269,6 +1271,16 @@ public class WingsApplication extends Application<MainConfiguration> {
     if (isManager()) {
       environment.jersey().register(injector.getInstance(DisableFirstGenFilter.class));
     }
+  }
+
+  private void registerNotificationTemplates(MainConfiguration configuration, Injector injector) {
+    if (configuration.isDisableNotificationTemplateRegister()) {
+      return;
+    }
+
+    ExecutorService executorService = injector.getInstance(
+        Key.get(ExecutorService.class, Names.named("notificationTemplateRegisterExecutorService")));
+    executorService.submit(injector.getInstance(NotificationTemplateRegistrar.class));
   }
 
   private void registerQueueListeners(MainConfiguration configuration, Injector injector) {
