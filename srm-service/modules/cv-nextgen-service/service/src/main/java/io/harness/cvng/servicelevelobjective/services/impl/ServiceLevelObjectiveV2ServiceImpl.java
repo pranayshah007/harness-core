@@ -19,6 +19,7 @@ import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAI
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAINING_PERCENTAGE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_NAME;
+import static io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelIndicatorServiceImpl.INTERVAL_HOURS;
 import static io.harness.cvng.utils.ScopedInformation.getScopedInformation;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -61,6 +62,7 @@ import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGen
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetBurnDownDTO;
+import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetBurnDownResponse;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
@@ -94,6 +96,7 @@ import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjectiv
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
+import io.harness.cvng.servicelevelobjective.services.api.ErrorBudgetBurnDownService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOTimeScaleService;
@@ -171,6 +174,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject private PersistentLocker persistentLocker;
 
   @Inject private NextGenService nextGenService;
+  @Inject private ErrorBudgetBurnDownService errorBudgetBurnDownService;
   @Inject
   private Map<ServiceLevelObjectiveType, AbstractServiceLevelObjectiveUpdatableEntity>
       serviceLevelObjectiveTypeUpdatableEntityTransformerMap;
@@ -985,14 +989,35 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   }
 
   @Override
-  public ErrorBudgetBurnDownDTO saveErrorBudgetBurnDown(
+  public ErrorBudgetBurnDownResponse saveErrorBudgetBurnDown(
       ProjectParams projectParams, ErrorBudgetBurnDownDTO errorBudgetBurnDownDTO) {
-    return null;
+    ErrorBudgetBurnDownResponse errorBudgetBurnDownResponse =
+        errorBudgetBurnDownService.save(projectParams, errorBudgetBurnDownDTO);
+    // Trigger recalculation
+    return errorBudgetBurnDownResponse;
   }
 
   @Override
-  public PageResponse<ErrorBudgetBurnDownDTO> get(ProjectPathParams projectPathParams, String identifier) {
-    return null;
+  public PageResponse<ErrorBudgetBurnDownDTO> get(
+      ProjectPathParams projectPathParams, String identifier, PageParams pageParams) {
+    AbstractServiceLevelObjective abstractServiceLevelObjective =
+        getEntity(ProjectParams.fromProjectPathParams(projectPathParams), identifier);
+    LocalDateTime currentLocalDate =
+        LocalDateTime.ofInstant(clock.instant(), abstractServiceLevelObjective.getZoneOffset());
+    TimePeriod timePeriod = abstractServiceLevelObjective.getCurrentTimeRange(currentLocalDate);
+    Instant startTime = timePeriod.getStartTime(ZoneOffset.UTC);
+    List<ErrorBudgetBurnDownDTO> errorBudgetBurnDownDTOs = errorBudgetBurnDownService.getByStartTimeAndEndTimeDto(
+        ProjectParams.fromProjectPathParams(projectPathParams), identifier, startTime.toEpochMilli(), clock.millis());
+    PageResponse<ErrorBudgetBurnDownDTO> errorBudgetBurnDownDTOPageResponse =
+        PageUtils.offsetAndLimit(errorBudgetBurnDownDTOs, pageParams.getPage(), pageParams.getSize());
+    return PageResponse.<ErrorBudgetBurnDownDTO>builder()
+        .pageSize(pageParams.getSize())
+        .pageIndex(pageParams.getPage())
+        .totalPages(errorBudgetBurnDownDTOPageResponse.getTotalPages())
+        .totalItems(errorBudgetBurnDownDTOPageResponse.getTotalItems())
+        .pageItemCount(errorBudgetBurnDownDTOPageResponse.getPageItemCount())
+        .content(errorBudgetBurnDownDTOPageResponse.getContent())
+        .build();
   }
 
   @Override

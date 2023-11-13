@@ -390,6 +390,7 @@ import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndic
 import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
+import io.harness.cvng.servicelevelobjective.services.api.ErrorBudgetBurnDownService;
 import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIAnalyserService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIConsecutiveMinutesProcessorService;
@@ -408,6 +409,7 @@ import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
 import io.harness.cvng.servicelevelobjective.services.impl.AnnotationServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLORecordServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLOServiceImpl;
+import io.harness.cvng.servicelevelobjective.services.impl.ErrorBudgetBurnDownServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.GraphDataServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.RatioAnalyserServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIConsecutiveMinutesProcessorServiceImpl;
@@ -869,6 +871,7 @@ public class CVServiceModule extends AbstractModule {
     bind(DeleteEntityByHandler.class).to(DefaultDeleteEntityByHandler.class);
     bind(TimeSeriesAnomalousPatternsService.class).to(TimeSeriesAnomalousPatternsServiceImpl.class);
     bind(SLOTimeScaleService.class).to(SLOTimeScaleServiceImpl.class);
+    bind(ErrorBudgetBurnDownService.class).to(ErrorBudgetBurnDownServiceImpl.class);
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
