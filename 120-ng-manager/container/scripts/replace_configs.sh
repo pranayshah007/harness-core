@@ -302,8 +302,8 @@ else
   yq -i 'del(.logging.appenders.[] | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
-if [[ "" != "$TIMESCALE_PASSWORD" ]]; then
-  export TIMESCALE_PASSWORD; yq -i '.timescaledb.timescaledbPassword=env(TIMESCALE_PASSWORD)' $CONFIG_FILE
+if [[ "" != "$TIMESCALEDB_PASSWORD" ]]; then
+  export TIMESCALEDB_PASSWORD; yq -i '.timescaledb.timescaledbPassword=env(TIMESCALEDB_PASSWORD)' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALE_URI" ]]; then
