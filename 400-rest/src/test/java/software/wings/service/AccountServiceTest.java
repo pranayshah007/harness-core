@@ -709,6 +709,23 @@ public class AccountServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testUpdateCannyUsernameAbbreviationEnabled() {
+    Account account = anAccount()
+                          .withCompanyName("Harness")
+                          .withAccountName("Harness")
+                          .withWhitelistedDomains(Collections.singleton("mike@harness.io"))
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .build();
+    wingsPersistence.save(account);
+    accountService.updateCannyUsernameAbbreviationEnabled(account.getUuid(), true);
+    Account updatedAccount = wingsPersistence.get(Account.class, account.getUuid());
+
+    assertTrue(updatedAccount.isCannyUsernameAbbreviationEnabled());
+  }
+
+  @Test
   @Owner(developers = BRETT)
   @Category(UnitTests.class)
   public void shouldGetAccountByCompanyName() {

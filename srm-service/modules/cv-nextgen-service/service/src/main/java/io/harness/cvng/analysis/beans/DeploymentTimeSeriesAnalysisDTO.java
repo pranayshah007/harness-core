@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Value;
 
 @Value
@@ -41,7 +42,7 @@ public class DeploymentTimeSeriesAnalysisDTO {
     return hostSummaries;
   }
 
-  @Value
+  @Data
   @Builder
   public static class HostInfo {
     String hostName;
@@ -54,7 +55,7 @@ public class DeploymentTimeSeriesAnalysisDTO {
     Double score;
   }
 
-  @Value
+  @Data
   @Builder
   public static class HostData implements Comparable<HostData> {
     String nearestControlHost;
@@ -83,7 +84,7 @@ public class DeploymentTimeSeriesAnalysisDTO {
     }
   }
 
-  @Value
+  @Data
   @Builder
   public static class TransactionMetricHostData {
     String transactionName;
