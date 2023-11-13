@@ -62,7 +62,7 @@ echo "heartbeatIntervalMs: 50000" >> config.yml
 echo "localDiskPath: /tmp" >> config.yml
 echo "maxCachedArtifacts: 2" >> config.yml
 echo "pollForTasks: ${POLL_FOR_TASKS:-false}" >> config.yml
-echo "grpcServiceEnabled: ${GRPC_SERVICE_ENABLED:-true}" >> config.yml
+echo "grpcServiceEnabled: ${GRPC_SERVICE_ENABLED:-false}" >> config.yml
 echo "grpcServiceConnectorPort: ${GRPC_SERVICE_CONNECTOR_PORT:-8080}" >> config.yml
 echo "doUpgrade: false" >> config.yml
 

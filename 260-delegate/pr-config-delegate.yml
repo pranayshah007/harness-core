@@ -27,7 +27,7 @@ description: description here
 managerTarget: localhost:9880
 managerAuthority: localhost
 queueFilePath: ../eventQueue
-grpcServiceEnabled: true
+grpcServiceEnabled: false
 grpcServiceConnectorPort: 8080
 clientToolsDownloadDisabled: true
 installClientToolsInBackground: true

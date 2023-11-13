@@ -7,39 +7,20 @@
 
 package io.harness.event.client.impl.tailer;
 
-import static io.harness.configuration.DeployMode.DEPLOY_MODE;
-import static io.harness.configuration.DeployMode.isOnPrem;
-
-import io.harness.event.EventPublisherGrpc;
-import io.harness.event.EventPublisherGrpc.EventPublisherBlockingStub;
 import io.harness.event.client.impl.EventPublisherConstants;
 import io.harness.flow.BackoffScheduler;
 import io.harness.govern.ProviderModule;
-import io.harness.grpc.client.HarnessRoutingGrpcInterceptor;
-import io.harness.security.X509KeyManagerBuilder;
-import io.harness.security.X509TrustManagerBuilder;
 
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import io.grpc.CallCredentials;
-import io.grpc.Channel;
-import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
-import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
-import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
-import io.grpc.netty.shaded.io.netty.handler.ssl.SslContextBuilder;
 import java.time.Duration;
-import javax.annotation.Nullable;
-import javax.net.ssl.X509KeyManager;
-import javax.net.ssl.X509TrustManager;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.queue.impl.RollingChronicleQueue;
-import org.apache.commons.lang3.StringUtils;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -61,49 +42,6 @@ public class DelegateTailerModule extends ProviderModule {
   @Named("tailer")
   BackoffScheduler backoffScheduler() {
     return new BackoffScheduler(ChronicleEventTailer.class.getSimpleName(), config.getMinDelay(), config.getMaxDelay());
-  }
-
-  @Named("event-server-channel")
-  @Provides
-  @Singleton
-  @SneakyThrows
-  Channel channel() {
-    String deployMode = System.getenv(DEPLOY_MODE);
-    if (isOnPrem(deployMode)) {
-      log.info("::::::: Not Providing Channel: DeployMode {}", deployMode);
-      return null;
-    }
-
-    X509TrustManager trustManager = new X509TrustManagerBuilder().trustAllCertificates().build();
-    SslContextBuilder sslContextBuilder = GrpcSslContexts.forClient().trustManager(trustManager);
-
-    if (StringUtils.isNotEmpty(config.clientCertificateFilePath)
-        && StringUtils.isNotEmpty(config.clientCertificateKeyFilePath)) {
-      X509KeyManager keyManager =
-          new X509KeyManagerBuilder()
-              .withClientCertificateFromFile(config.clientCertificateFilePath, config.clientCertificateKeyFilePath)
-              .build();
-      sslContextBuilder.keyManager(keyManager);
-    }
-
-    SslContext sslContext = sslContextBuilder.build();
-    return NettyChannelBuilder.forTarget(config.publishTarget)
-        .overrideAuthority(config.publishAuthority)
-        .sslContext(sslContext)
-        .intercept(HarnessRoutingGrpcInterceptor.EVENTS)
-        .build();
-  }
-
-  @Provides
-  @Singleton
-  EventPublisherBlockingStub eventPublisherBlockingStub(
-      @Nullable @Named("event-server-channel") Channel channel, CallCredentials callCredentials) {
-    final String deployMode = System.getenv(DEPLOY_MODE);
-    if (isOnPrem(deployMode)) {
-      log.info("::::::: Not Providing EventPublisherBlockingStub : DeployMode {}", deployMode);
-      return null;
-    }
-    return EventPublisherGrpc.newBlockingStub(channel).withCallCredentials(callCredentials);
   }
 
   @Value
