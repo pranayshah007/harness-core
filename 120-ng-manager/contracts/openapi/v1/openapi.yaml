@@ -1642,6 +1642,7 @@ paths:
               - PROCESSING
               - SUCCESSFUL
               - QUEUED
+              - UNKNOWN
           in: query
           name: event_status
       x-internal: true
