@@ -8,6 +8,7 @@
 package io.harness.cvng.servicelevelobjective.resources;
 
 import static io.harness.cvng.core.beans.params.ProjectParams.fromProjectPathParams;
+import static io.harness.cvng.core.beans.params.ProjectParams.fromResourcePathParams;
 import static io.harness.cvng.core.services.CVNextGenConstants.ERROR_BUDGET_BURN_DOWN_PROJECT_PATH;
 import static io.harness.cvng.core.services.CVNextGenConstants.RESOURCE_IDENTIFIER_PATH;
 
@@ -33,15 +34,18 @@ import io.swagger.annotations.ApiOperation;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import retrofit.http.Body;
 
 @Api("annotation")
 @Path(ERROR_BUDGET_BURN_DOWN_PROJECT_PATH)
 @Produces("application/json")
 @ExposeInternalException
+@NextGenManagerAuth
 @OwnedBy(HarnessTeam.CV)
 public class ErrorBudgetBurnDownResource {
   @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
@@ -50,9 +54,11 @@ public class ErrorBudgetBurnDownResource {
   @Timed
   @NextGenManagerAuth
   @ExceptionMetered
+  @Consumes("application/json")
+  @Path("")
   @ApiOperation(value = "saves error budget burn down", nickname = "saveErrorBudgetBurnDown")
-  public RestResponse<ErrorBudgetBurnDownResponse> saveAnnotation(
-      @Valid ProjectPathParams projectPathParams, @NotNull @Valid ErrorBudgetBurnDownDTO errorBudgetBurnDownDTO) {
+  public RestResponse<ErrorBudgetBurnDownResponse> saveAnnotation(@Valid @BeanParam ProjectPathParams projectPathParams,
+      @NotNull @Valid @Body ErrorBudgetBurnDownDTO errorBudgetBurnDownDTO) {
     ProjectParams projectParams = fromProjectPathParams(projectPathParams);
     return new RestResponse<>(
         serviceLevelObjectiveV2Service.saveErrorBudgetBurnDown(projectParams, errorBudgetBurnDownDTO));
@@ -65,9 +71,8 @@ public class ErrorBudgetBurnDownResource {
   @ApiOperation(value = "get error budget burn down", nickname = "getErrorBudgetBurnDown")
   @Path(RESOURCE_IDENTIFIER_PATH)
   public RestResponse<PageResponse<ErrorBudgetBurnDownDTO>> getErrorBudgetBurnDown(
-      @Valid ProjectPathParams projectPathParams, @Valid ResourcePathParams resourcePathParams,
-      @BeanParam PageParams pageParams) {
-    ProjectParams projectParams = fromProjectPathParams(projectPathParams);
+      @Valid @BeanParam ResourcePathParams resourcePathParams, @BeanParam PageParams pageParams) {
+    ProjectParams projectParams = fromResourcePathParams(resourcePathParams);
     return new RestResponse<>(
         serviceLevelObjectiveV2Service.get(projectParams, resourcePathParams.getIdentifier(), pageParams));
   }
