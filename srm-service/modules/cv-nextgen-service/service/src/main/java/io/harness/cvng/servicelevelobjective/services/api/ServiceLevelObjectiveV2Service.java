@@ -125,6 +125,5 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
   ErrorBudgetBurnDownResponse saveErrorBudgetBurnDown(
       ProjectParams projectParams, ErrorBudgetBurnDownDTO errorBudgetBurnDownDTO);
 
-  PageResponse<ErrorBudgetBurnDownDTO> get(
-      ProjectPathParams projectPathParams, String identifier, PageParams pageParams);
+  PageResponse<ErrorBudgetBurnDownDTO> get(ProjectParams projectParams, String identifier, PageParams pageParams);
 }

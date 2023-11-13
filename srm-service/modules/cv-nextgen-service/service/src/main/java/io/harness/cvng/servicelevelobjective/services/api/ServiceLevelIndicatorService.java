@@ -49,6 +49,8 @@ public interface ServiceLevelIndicatorService {
 
   List<CVConfig> fetchCVConfigForSLI(String sliId);
 
+  void recalculate(ServiceLevelIndicator serviceLevelIndicator, TimePeriod timePeriod);
+
   ServiceLevelIndicator getServiceLevelIndicator(ProjectParams projectParams, String identifier);
 
   List<String> getSLIsWithMetrics(ProjectParams projectParams, String monitoredServiceIdentifier,

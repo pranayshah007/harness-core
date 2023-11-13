@@ -993,20 +993,29 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     ErrorBudgetBurnDownResponse errorBudgetBurnDownResponse =
         errorBudgetBurnDownService.save(projectParams, errorBudgetBurnDownDTO);
     // Trigger recalculation
+    LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        getEntity(projectParams, errorBudgetBurnDownDTO.getSloIdentifier());
+    TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
+    String serviceLevelIndicatorIdentifier =
+        ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0);
+    ServiceLevelIndicator serviceLevelIndicator =
+        serviceLevelIndicatorService.getServiceLevelIndicator(projectParams, serviceLevelIndicatorIdentifier);
+    serviceLevelIndicatorService.recalculate(
+        serviceLevelIndicator, serviceLevelObjective.getCurrentTimeRange(currentLocalDate));
     return errorBudgetBurnDownResponse;
   }
 
   @Override
   public PageResponse<ErrorBudgetBurnDownDTO> get(
-      ProjectPathParams projectPathParams, String identifier, PageParams pageParams) {
-    AbstractServiceLevelObjective abstractServiceLevelObjective =
-        getEntity(ProjectParams.fromProjectPathParams(projectPathParams), identifier);
+      ProjectParams projectParams, String identifier, PageParams pageParams) {
+    AbstractServiceLevelObjective abstractServiceLevelObjective = getEntity(projectParams, identifier);
     LocalDateTime currentLocalDate =
         LocalDateTime.ofInstant(clock.instant(), abstractServiceLevelObjective.getZoneOffset());
     TimePeriod timePeriod = abstractServiceLevelObjective.getCurrentTimeRange(currentLocalDate);
     Instant startTime = timePeriod.getStartTime(ZoneOffset.UTC);
     List<ErrorBudgetBurnDownDTO> errorBudgetBurnDownDTOs = errorBudgetBurnDownService.getByStartTimeAndEndTimeDto(
-        ProjectParams.fromProjectPathParams(projectPathParams), identifier, startTime.toEpochMilli(), clock.millis());
+        projectParams, identifier, startTime.toEpochMilli(), clock.millis());
     PageResponse<ErrorBudgetBurnDownDTO> errorBudgetBurnDownDTOPageResponse =
         PageUtils.offsetAndLimit(errorBudgetBurnDownDTOs, pageParams.getPage(), pageParams.getSize());
     return PageResponse.<ErrorBudgetBurnDownDTO>builder()

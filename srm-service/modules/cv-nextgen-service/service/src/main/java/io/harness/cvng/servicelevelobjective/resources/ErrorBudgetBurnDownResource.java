@@ -67,7 +67,8 @@ public class ErrorBudgetBurnDownResource {
   public RestResponse<PageResponse<ErrorBudgetBurnDownDTO>> getErrorBudgetBurnDown(
       @Valid ProjectPathParams projectPathParams, @Valid ResourcePathParams resourcePathParams,
       @BeanParam PageParams pageParams) {
+    ProjectParams projectParams = fromProjectPathParams(projectPathParams);
     return new RestResponse<>(
-        serviceLevelObjectiveV2Service.get(projectPathParams, resourcePathParams.getIdentifier(), pageParams));
+        serviceLevelObjectiveV2Service.get(projectParams, resourcePathParams.getIdentifier(), pageParams));
   }
 }
