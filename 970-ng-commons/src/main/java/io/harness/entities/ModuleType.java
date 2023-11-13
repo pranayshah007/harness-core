@@ -19,10 +19,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
-@Slf4j
 // When adding new module lifecycleStage field should be set to ONBOARDING_IN_PROGRESS unless all the services deploys
 // these changes.
 public enum ModuleType {
@@ -87,7 +85,6 @@ public enum ModuleType {
         return moduleEnum;
       }
     }
-    log.warn("Invalid value while serializing module type: " + moduleType);
     return UNKNOWN;
   }
 
