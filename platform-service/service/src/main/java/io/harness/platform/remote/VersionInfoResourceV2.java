@@ -10,6 +10,7 @@ package io.harness.platform.remote;
 
 import io.harness.security.annotations.PublicApi;
 import io.harness.version.VersionInfoManagerV2;
+import io.harness.version.VersionInfoV2;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
