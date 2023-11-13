@@ -48,7 +48,6 @@ import io.harness.ccm.views.dto.PerspectiveQueryDTO;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewType;
-import io.harness.ccm.views.graphql.QLCEViewFilterOperator;
 import io.harness.ccm.views.helper.PerspectiveToAnomalyQueryHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.exception.WingsException;
