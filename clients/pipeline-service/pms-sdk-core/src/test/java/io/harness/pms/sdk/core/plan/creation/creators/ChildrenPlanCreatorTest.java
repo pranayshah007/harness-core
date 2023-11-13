@@ -17,6 +17,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -84,7 +85,7 @@ public class ChildrenPlanCreatorTest extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testCreatePlanForFieldTimeout() {
-    PlanNode.PlanNodeBuilder planNodeBuilder = testChildrenPlanCreator.setStageTimeoutObtainment(
+    PlanNodeBuilder planNodeBuilder = testChildrenPlanCreator.setStageTimeoutObtainment(
         ParameterField.createValueField(Timeout.builder().timeoutString("10m").build()), PlanNode.builder());
     assertThat(planNodeBuilder).isNotNull();
     assertThat(planNodeBuilder.build()
