@@ -20,6 +20,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.google.inject.Singleton;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -36,10 +37,10 @@ public class BillingDataVerificationService {
   @Autowired private AccountShardService accountShardService;
   @Autowired private AwsBillingDataVerificationUtils awsBillingDataVerificationUtils;
   @Autowired private NGConnectorHelper ngConnectorHelper;
-  @Inject
+  @Autowired
   io.harness.ccm.service.billingDataVerification.service
       .BillingDataVerificationSQLService billingDataVerificationSQLService;
-  @Inject io.harness.batch.processing.config.BatchMainConfig configuration;
+  @Autowired io.harness.batch.processing.config.BatchMainConfig configuration;
 
   public void verifyBillingData() {
     List<String> accountIds = accountShardService.getCeEnabledAccountIds();
