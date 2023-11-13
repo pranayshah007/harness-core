@@ -38,13 +38,11 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.experimental.UtilityClass;
 
-@UtilityClass
 @Singleton
 public class ModuleLicenseHelper {
-  @Inject private FeatureFlagService featureFlagService;
-  private final String MODULE_NOT_SUPPORTED_ERROR = "Module %s is not supported for recommendations.";
+  @Inject FeatureFlagService featureFlagService;
+  private static final String MODULE_NOT_SUPPORTED_ERROR = "Module %s is not supported for recommendations.";
 
   public static Map<ModuleType, ModuleLicense> getLastExpiredLicenseForEachModuleType(
       List<ModuleLicense> allModuleLicenses) {
@@ -356,7 +354,7 @@ public class ModuleLicenseHelper {
     return current;
   }
 
-  public static boolean isDeveloperLicensingFeatureEnabled(String accountIdentifier) {
+  public boolean isDeveloperLicensingFeatureEnabled(String accountIdentifier) {
     return featureFlagService.isEnabled(FeatureName.PLG_DEVELOPER_LICENSING, accountIdentifier);
   }
 }

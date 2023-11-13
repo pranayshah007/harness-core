@@ -7,20 +7,22 @@
 
 package io.harness.licensing.mappers.modules;
 
-import static io.harness.licensing.helpers.ModuleLicenseHelper.isDeveloperLicensingFeatureEnabled;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.beans.modules.IDPModuleLicenseDTO;
 import io.harness.licensing.entities.modules.IDPModuleLicense;
+import io.harness.licensing.helpers.ModuleLicenseHelper;
 import io.harness.licensing.mappers.LicenseObjectMapper;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.IDP)
 @Singleton
 public class IDPLicenseObjectMapper implements LicenseObjectMapper<IDPModuleLicense, IDPModuleLicenseDTO> {
+  @Inject private ModuleLicenseHelper moduleLicenseHelper;
+
   @Override
   public IDPModuleLicenseDTO toDTO(IDPModuleLicense moduleLicense) {
     return IDPModuleLicenseDTO.builder().numberOfDevelopers(moduleLicense.getNumberOfDevelopers()).build();
@@ -35,7 +37,7 @@ public class IDPLicenseObjectMapper implements LicenseObjectMapper<IDPModuleLice
 
   @Override
   public void validateModuleLicenseDTO(IDPModuleLicenseDTO idpModuleLicenseDTO) {
-    if (!isDeveloperLicensingFeatureEnabled(idpModuleLicenseDTO.getAccountIdentifier())) {
+    if (!moduleLicenseHelper.isDeveloperLicensingFeatureEnabled(idpModuleLicenseDTO.getAccountIdentifier())) {
       if (idpModuleLicenseDTO.getDeveloperLicenseCount() != null) {
         throw new InvalidRequestException("New Developer Licensing feature is not enabled for this account!");
       }

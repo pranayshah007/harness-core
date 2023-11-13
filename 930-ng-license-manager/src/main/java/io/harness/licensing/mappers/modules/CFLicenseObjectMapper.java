@@ -7,20 +7,22 @@
 
 package io.harness.licensing.mappers.modules;
 
-import static io.harness.licensing.helpers.ModuleLicenseHelper.isDeveloperLicensingFeatureEnabled;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.entities.modules.CFModuleLicense;
+import io.harness.licensing.helpers.ModuleLicenseHelper;
 import io.harness.licensing.mappers.LicenseObjectMapper;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.GTM)
 @Singleton
 public class CFLicenseObjectMapper implements LicenseObjectMapper<CFModuleLicense, CFModuleLicenseDTO> {
+  @Inject private ModuleLicenseHelper moduleLicenseHelper;
+
   @Override
   public CFModuleLicenseDTO toDTO(CFModuleLicense entity) {
     return CFModuleLicenseDTO.builder()
@@ -41,7 +43,7 @@ public class CFLicenseObjectMapper implements LicenseObjectMapper<CFModuleLicens
 
   @Override
   public void validateModuleLicenseDTO(CFModuleLicenseDTO cfModuleLicenseDTO) {
-    if (!isDeveloperLicensingFeatureEnabled(cfModuleLicenseDTO.getAccountIdentifier())) {
+    if (!moduleLicenseHelper.isDeveloperLicensingFeatureEnabled(cfModuleLicenseDTO.getAccountIdentifier())) {
       if (cfModuleLicenseDTO.getDeveloperLicenseCount() != null) {
         throw new InvalidRequestException("New Developer Licensing feature is not enabled for this account!");
       }

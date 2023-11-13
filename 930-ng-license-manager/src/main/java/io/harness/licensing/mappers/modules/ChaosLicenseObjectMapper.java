@@ -7,15 +7,12 @@
 
 package io.harness.licensing.mappers.modules;
 
-import static io.harness.licensing.helpers.ModuleLicenseHelper.isDeveloperLicensingFeatureEnabled;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.beans.modules.ChaosModuleLicenseDTO;
 import io.harness.licensing.entities.modules.ChaosModuleLicense;
+import io.harness.licensing.helpers.ModuleLicenseHelper;
 import io.harness.licensing.mappers.LicenseObjectMapper;
 
 import com.google.inject.Inject;
@@ -24,6 +21,8 @@ import com.google.inject.Singleton;
 @OwnedBy(HarnessTeam.CHAOS)
 @Singleton
 public class ChaosLicenseObjectMapper implements LicenseObjectMapper<ChaosModuleLicense, ChaosModuleLicenseDTO> {
+  @Inject private ModuleLicenseHelper moduleLicenseHelper;
+
   @Override
   public ChaosModuleLicenseDTO toDTO(ChaosModuleLicense entity) {
     return ChaosModuleLicenseDTO.builder()
@@ -44,7 +43,7 @@ public class ChaosLicenseObjectMapper implements LicenseObjectMapper<ChaosModule
 
   @Override
   public void validateModuleLicenseDTO(ChaosModuleLicenseDTO chaosModuleLicenseDTO) {
-    if (!isDeveloperLicensingFeatureEnabled(chaosModuleLicenseDTO.getAccountIdentifier())) {
+    if (!moduleLicenseHelper.isDeveloperLicensingFeatureEnabled(chaosModuleLicenseDTO.getAccountIdentifier())) {
       if (chaosModuleLicenseDTO.getDeveloperLicenseCount() != null) {
         throw new InvalidRequestException("New Developer Licensing feature is not enabled for this account!");
       }
