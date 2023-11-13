@@ -14,6 +14,7 @@ import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.CVNGTaskMetadataUtils;
 import io.harness.cvng.core.utils.DateTimeUtils;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
@@ -21,6 +22,7 @@ import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.cvng.statemachine.entities.SLIMetricAnalysisState;
+import io.harness.cvng.statemachine.entities.SLIMetricLessAnalysisState;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -44,7 +46,12 @@ public class SLIAnalysisStateMachineServiceImpl extends AnalysisStateMachineServ
     String sliId = verificationTaskService.getSliId(inputForAnalysis.getVerificationTaskId());
     ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.get(sliId);
     Preconditions.checkNotNull(serviceLevelIndicator, "Service Level Indicator can't be null");
-    AnalysisState firstState = SLIMetricAnalysisState.builder().build();
+    AnalysisState firstState;
+    if (serviceLevelIndicator.getSLIEvaluationType().equals(SLIEvaluationType.METRIC_LESS)) {
+      firstState = SLIMetricLessAnalysisState.builder().build();
+    } else {
+      firstState = SLIMetricAnalysisState.builder().build();
+    }
     firstState.setStatus(AnalysisStatus.CREATED);
     firstState.setInputs(inputForAnalysis);
     stateMachine.setAccountId(serviceLevelIndicator.getAccountId());

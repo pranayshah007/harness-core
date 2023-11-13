@@ -19,7 +19,6 @@ import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAI
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAINING_PERCENTAGE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_NAME;
-import static io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelIndicatorServiceImpl.INTERVAL_HOURS;
 import static io.harness.cvng.utils.ScopedInformation.getScopedInformation;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
