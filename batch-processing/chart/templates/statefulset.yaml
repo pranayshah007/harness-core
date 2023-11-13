@@ -83,6 +83,10 @@ spec:
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "CE_NG_SERVICE_SECRET" "defaultKubernetesSecretName" "batch-processing" "defaultKubernetesSecretKey" "CE_NG_SERVICE_SECRET") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "S3_SYNC_CONFIG_ACCESSKEY" "defaultKubernetesSecretName" "batch-processing" "defaultKubernetesSecretKey" "S3_SYNC_CONFIG_ACCESSKEY") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "S3_SYNC_CONFIG_SECRETKEY" "defaultKubernetesSecretName" "batch-processing" "defaultKubernetesSecretKey" "S3_SYNC_CONFIG_SECRETKEY") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "HARNESS_CE_AZURE_CLIENTSECRET" "defaultKubernetesSecretName" "batch-processing" "defaultKubernetesSecretKey" "HARNESS_CE_AZURE_CLIENTSECRET") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "HARNESS_CE_AZURE_SAS" "defaultKubernetesSecretName" "batch-processing" "defaultKubernetesSecretKey" "HARNESS_CE_AZURE_SAS") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "HARNESS_CE_AZURE_CLIENTID" "defaultKubernetesSecretName" "batch-processing" "defaultKubernetesSecretKey" "HARNESS_CE_AZURE_CLIENTID") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "HARNESS_CE_AZURE_TENANTID" "defaultKubernetesSecretName" "batch-processing" "defaultKubernetesSecretKey" "HARNESS_CE_AZURE_TENANTID") | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" .) | indent 12 }}
             - name: MONGO_URI
               value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "harness" ) }}
