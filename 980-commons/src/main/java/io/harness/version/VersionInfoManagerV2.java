@@ -21,7 +21,7 @@ import java.util.Map;
 
 @OwnedBy(PL)
 public class VersionInfoManagerV2 {
-  private static final String versionFilePath = "/opt/harness/version.yaml";
+  private String versionFilePath = "/opt/harness/version.yaml";
 
   public VersionInfoManagerV2(String versionFilePath) {
     this.versionFilePath = versionFilePath;
@@ -36,7 +36,7 @@ public class VersionInfoManagerV2 {
       Map<String, Object> data = yaml.load(inputStream);
 
       // Create a VersionInfo object to store the data
-      VersionInfoV2 versionInfo = new VersionInfo();
+      VersionInfoV2 versionInfo = new VersionInfoV2();
       versionInfo.setBuildVersion((String) data.get("BUILD_VERSION"));
       versionInfo.setBuildTime((Date) data.get("BUILD_TIME")); // Cast to Date
       versionInfo.setBranchName((String) data.get("BRANCH_NAME"));
