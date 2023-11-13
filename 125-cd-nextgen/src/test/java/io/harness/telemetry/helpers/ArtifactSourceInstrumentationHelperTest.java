@@ -37,7 +37,7 @@ public class ArtifactSourceInstrumentationHelperTest extends CategoryTest {
   @Test
   @Owner(developers = SARTHAK_KASAT)
   @Category(UnitTests.class)
-  public void testCreateConnectorTrackSend() {
+  public void testLastPublishedTagTrackSend() {
     DockerHubArtifactConfig dockerHubArtifactConfig =
         DockerHubArtifactConfig.builder().imagePath(ParameterField.createValueField("IMAGE")).build();
     CompletableFuture telemetryTask =
