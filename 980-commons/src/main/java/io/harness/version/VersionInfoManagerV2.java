@@ -23,10 +23,6 @@ import java.util.Map;
 public class VersionInfoManagerV2 {
   private String versionFilePath = "/opt/harness/version.yaml";
 
-//  public VersionInfoManagerV2(String versionFilePath) {
-//    this.versionFilePath = versionFilePath;
-//  }
-
   public VersionInfoV2 getVersionInfo() {
     try {
       InputStream inputStream = new FileInputStream(versionFilePath);
@@ -36,11 +32,12 @@ public class VersionInfoManagerV2 {
       Map<String, Object> data = yaml.load(inputStream);
 
       // Create a VersionInfo object to store the data
-      VersionInfoV2 versionInfo = new VersionInfoV2();
-      versionInfo.setBuildVersion((String) data.get("BUILD_VERSION"));
-      versionInfo.setBuildTime((Date) data.get("BUILD_TIME")); // Cast to Date
-      versionInfo.setBranchName((String) data.get("BRANCH_NAME"));
-      versionInfo.setCommitSha((String) data.get("COMMIT_SHA"));
+      VersionInfoV2 versionInfo = VersionInfoV2.builder()
+              .buildVersion((String) data.get("BUILD_VERSION"))
+              .buildTime((Date) data.get("BUILD_TIME")) // Cast to Date
+              .branchName((String) data.get("BRANCH_NAME"))
+              .commitSha((String) data.get("COMMIT_SHA"))
+              .build(); // Build the VersionInfoV2 instance
 
       return versionInfo;
     } catch (Exception e) {
