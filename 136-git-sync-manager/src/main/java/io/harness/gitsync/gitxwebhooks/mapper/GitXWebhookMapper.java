@@ -29,6 +29,7 @@ import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookResponseDTO;
 import io.harness.spec.server.ng.v1.model.CreateGitXWebhookRequest;
 import io.harness.spec.server.ng.v1.model.CreateGitXWebhookResponse;
 import io.harness.spec.server.ng.v1.model.GitXWebhookEventResponse;
+import io.harness.spec.server.ng.v1.model.GitXWebhookEventResponse.EventStatusEnum;
 import io.harness.spec.server.ng.v1.model.GitXWebhookResponse;
 import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookRequest;
 import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookResponse;
@@ -183,11 +184,26 @@ public class GitXWebhookMapper {
               gitXWebhookEventResponse.setEventTriggerTime(gitXEventDTO.getEventTriggerTime());
               gitXWebhookEventResponse.setPayload(gitXEventDTO.getPayload());
               gitXWebhookEventResponse.setAuthorName(gitXEventDTO.getAuthorName());
-              gitXWebhookEventResponse.setEventStatus(gitXEventDTO.getEventStatus());
+              gitXWebhookEventResponse.setEventStatus(getEventStatus(gitXEventDTO.getEventStatus()));
               return gitXWebhookEventResponse;
             })
             .collect(Collectors.toList());
     return PageUtils.getPage(eventResponseList, page, limit);
+  }
+
+  private EventStatusEnum getEventStatus(String eventStatus) {
+    if (EventStatusEnum.FAILED.value().equals(eventStatus)) {
+      return EventStatusEnum.FAILED;
+    } else if (EventStatusEnum.PROCESSING.value().equals(eventStatus)) {
+      return EventStatusEnum.PROCESSING;
+    } else if (EventStatusEnum.SKIPPED.value().equals(eventStatus)) {
+      return EventStatusEnum.SKIPPED;
+    } else if (EventStatusEnum.QUEUED.value().equals(eventStatus)) {
+      return EventStatusEnum.QUEUED;
+    } else if (EventStatusEnum.SUCCESSFUL.value().equals(eventStatus)) {
+      return EventStatusEnum.SUCCESSFUL;
+    }
+    return EventStatusEnum.UNKNOWN;
   }
 
   public GitXWebhookEventResponse buildGitXWebhookEventResponse(GitXWebhookEventResponse gitXWebhookEventResponse) {

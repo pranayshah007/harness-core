@@ -2834,6 +2834,13 @@ components:
           type: string
         event_status:
           type: string
+          enum:
+            - SKIPPED
+            - FAILED
+            - QUEUED
+            - SUCCESSFUL
+            - PROCESSING
+            - UNKNOWN
     ReleaseDetailsResponse:
       title: ReleaseDetailsResponse
       x-stoplight:
