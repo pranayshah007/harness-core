@@ -34,9 +34,9 @@ public class CELicenseObjectMapper implements LicenseObjectMapper<CEModuleLicens
   @Override
   public void validateModuleLicenseDTO(CEModuleLicenseDTO ceModuleLicenseDTO) {
     // CCM will never have primary entitlements
-    if (ceModuleLicenseDTO.getDeveloperLicenses() != null) {
+    if (ceModuleLicenseDTO.getDeveloperLicenseCount() != null) {
       throw new InvalidRequestException(
-          "Cloud Cost Management License will never have primary entitlements i.e. developerLicenses");
+          "Cloud Cost Management License cannot have primary entitlements i.e. developerLicenseCount");
     }
   }
 }

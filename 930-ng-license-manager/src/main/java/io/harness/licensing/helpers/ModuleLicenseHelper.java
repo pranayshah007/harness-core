@@ -10,7 +10,9 @@ package io.harness.licensing.helpers;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.ModuleType;
+import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
@@ -28,6 +30,7 @@ import io.harness.licensing.entities.modules.SRMModuleLicense;
 import io.harness.licensing.entities.modules.STOModuleLicense;
 import io.harness.subscription.params.UsageKey;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.time.Instant;
@@ -40,6 +43,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @Singleton
 public class ModuleLicenseHelper {
+  @Inject private FeatureFlagService featureFlagService;
   private final String MODULE_NOT_SUPPORTED_ERROR = "Module %s is not supported for recommendations.";
 
   public static Map<ModuleType, ModuleLicense> getLastExpiredLicenseForEachModuleType(
@@ -231,9 +235,9 @@ public class ModuleLicenseHelper {
       current.setSelfService(update.isSelfService());
     }
 
-    if (update.getDeveloperLicenses() != null
-        && !update.getDeveloperLicenses().equals(current.getDeveloperLicenses())) {
-      current.setDeveloperLicenses(update.getDeveloperLicenses());
+    if (update.getDeveloperLicenseCount() != null
+        && !update.getDeveloperLicenseCount().equals(current.getDeveloperLicenseCount())) {
+      current.setDeveloperLicenseCount(update.getDeveloperLicenseCount());
     }
 
     switch (update.getModuleType()) {
@@ -350,5 +354,9 @@ public class ModuleLicenseHelper {
         break;
     }
     return current;
+  }
+
+  public static boolean isDeveloperLicensingFeatureEnabled(String accountIdentifier) {
+    return featureFlagService.isEnabled(FeatureName.PLG_DEVELOPER_LICENSING, accountIdentifier);
   }
 }

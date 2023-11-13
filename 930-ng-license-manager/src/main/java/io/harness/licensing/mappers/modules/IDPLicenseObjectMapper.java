@@ -7,22 +7,20 @@
 
 package io.harness.licensing.mappers.modules;
 
+import static io.harness.licensing.helpers.ModuleLicenseHelper.isDeveloperLicensingFeatureEnabled;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.beans.modules.IDPModuleLicenseDTO;
 import io.harness.licensing.entities.modules.IDPModuleLicense;
 import io.harness.licensing.mappers.LicenseObjectMapper;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.IDP)
 @Singleton
 public class IDPLicenseObjectMapper implements LicenseObjectMapper<IDPModuleLicense, IDPModuleLicenseDTO> {
-  @Inject private FeatureFlagService featureFlagService;
   @Override
   public IDPModuleLicenseDTO toDTO(IDPModuleLicense moduleLicense) {
     return IDPModuleLicenseDTO.builder().numberOfDevelopers(moduleLicense.getNumberOfDevelopers()).build();
@@ -37,21 +35,20 @@ public class IDPLicenseObjectMapper implements LicenseObjectMapper<IDPModuleLice
 
   @Override
   public void validateModuleLicenseDTO(IDPModuleLicenseDTO idpModuleLicenseDTO) {
-    if (featureFlagService.isEnabled(FeatureName.PLG_DEVELOPER_LICENSING, idpModuleLicenseDTO.getAccountIdentifier())) {
-      if (idpModuleLicenseDTO.getDeveloperLicenses() != null) {
-        if (idpModuleLicenseDTO.getNumberOfDevelopers() != null) {
-          throw new InvalidRequestException(
-              "Both developerLicenses and numberOfDevelopers cannot be part of the input!");
-        }
-
-        // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
-        Integer mappingRatio = 1;
-        idpModuleLicenseDTO.setNumberOfDevelopers(mappingRatio * idpModuleLicenseDTO.getDeveloperLicenses());
-      }
-    } else {
-      if (idpModuleLicenseDTO.getDeveloperLicenses() != null) {
+    if (!isDeveloperLicensingFeatureEnabled(idpModuleLicenseDTO.getAccountIdentifier())) {
+      if (idpModuleLicenseDTO.getDeveloperLicenseCount() != null) {
         throw new InvalidRequestException("New Developer Licensing feature is not enabled for this account!");
       }
+    }
+
+    if (idpModuleLicenseDTO.getDeveloperLicenseCount() != null) {
+      if (idpModuleLicenseDTO.getNumberOfDevelopers() != null) {
+        throw new InvalidRequestException("Both developerLicenses and numberOfDevelopers cannot be part of the input!");
+      }
+
+      // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
+      Integer mappingRatio = 1;
+      idpModuleLicenseDTO.setNumberOfDevelopers(mappingRatio * idpModuleLicenseDTO.getDeveloperLicenseCount());
     }
   }
 }

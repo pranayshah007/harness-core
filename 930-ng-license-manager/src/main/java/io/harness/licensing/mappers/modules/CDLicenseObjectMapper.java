@@ -7,23 +7,21 @@
 
 package io.harness.licensing.mappers.modules;
 
+import static io.harness.licensing.helpers.ModuleLicenseHelper.isDeveloperLicensingFeatureEnabled;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cd.CDLicenseType;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.entities.modules.CDModuleLicense;
 import io.harness.licensing.mappers.LicenseObjectMapper;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.GTM)
 @Singleton
 public class CDLicenseObjectMapper implements LicenseObjectMapper<CDModuleLicense, CDModuleLicenseDTO> {
-  @Inject private FeatureFlagService featureFlagService;
   @Override
   public CDModuleLicenseDTO toDTO(CDModuleLicense entity) {
     CDModuleLicenseDTO dto = CDModuleLicenseDTO.builder().build();
@@ -46,26 +44,26 @@ public class CDLicenseObjectMapper implements LicenseObjectMapper<CDModuleLicens
 
   @Override
   public void validateModuleLicenseDTO(CDModuleLicenseDTO cdModuleLicenseDTO) {
-    if (featureFlagService.isEnabled(FeatureName.PLG_DEVELOPER_LICENSING, cdModuleLicenseDTO.getAccountIdentifier())) {
-      if (cdModuleLicenseDTO.getDeveloperLicenses() != null) {
-        if (cdModuleLicenseDTO.getWorkloads() != null || cdModuleLicenseDTO.getServiceInstances() != null) {
-          throw new InvalidRequestException(
-              "Both developerLicenses and workloads/serviceInstances cannot be part of the input!");
-        }
-
-        // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
-        Integer mappingRatio = 1;
-        if (cdModuleLicenseDTO.getCdLicenseType().equals(CDLicenseType.SERVICES)) {
-          cdModuleLicenseDTO.setWorkloads(mappingRatio * cdModuleLicenseDTO.getDeveloperLicenses());
-        } else if (cdModuleLicenseDTO.getCdLicenseType().equals(CDLicenseType.SERVICE_INSTANCES)) {
-          cdModuleLicenseDTO.setServiceInstances(mappingRatio * cdModuleLicenseDTO.getDeveloperLicenses());
-        } else {
-          throw new InvalidRequestException("CDLicenseType has to be either SERVICES or SERVICE_INSTANCES");
-        }
-      }
-    } else {
-      if (cdModuleLicenseDTO.getDeveloperLicenses() != null) {
+    if (!isDeveloperLicensingFeatureEnabled(cdModuleLicenseDTO.getAccountIdentifier())) {
+      if (cdModuleLicenseDTO.getDeveloperLicenseCount() != null) {
         throw new InvalidRequestException("New Developer Licensing feature is not enabled for this account!");
+      }
+    }
+
+    if (cdModuleLicenseDTO.getDeveloperLicenseCount() != null) {
+      if (cdModuleLicenseDTO.getWorkloads() != null || cdModuleLicenseDTO.getServiceInstances() != null) {
+        throw new InvalidRequestException(
+            "Both developerLicenses and workloads/serviceInstances cannot be part of the input!");
+      }
+
+      // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
+      Integer mappingRatio = 1;
+      if (CDLicenseType.SERVICES.equals(cdModuleLicenseDTO.getCdLicenseType())) {
+        cdModuleLicenseDTO.setWorkloads(mappingRatio * cdModuleLicenseDTO.getDeveloperLicenseCount());
+      } else if (CDLicenseType.SERVICE_INSTANCES.equals(cdModuleLicenseDTO.getCdLicenseType())) {
+        cdModuleLicenseDTO.setServiceInstances(mappingRatio * cdModuleLicenseDTO.getDeveloperLicenseCount());
+      } else {
+        throw new InvalidRequestException("CDLicenseType has to be either SERVICES or SERVICE_INSTANCES");
       }
     }
   }

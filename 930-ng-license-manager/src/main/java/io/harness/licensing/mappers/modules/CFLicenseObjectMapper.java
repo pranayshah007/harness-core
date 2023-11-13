@@ -7,22 +7,20 @@
 
 package io.harness.licensing.mappers.modules;
 
+import static io.harness.licensing.helpers.ModuleLicenseHelper.isDeveloperLicensingFeatureEnabled;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.mappers.LicenseObjectMapper;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.GTM)
 @Singleton
 public class CFLicenseObjectMapper implements LicenseObjectMapper<CFModuleLicense, CFModuleLicenseDTO> {
-  @Inject private FeatureFlagService featureFlagService;
   @Override
   public CFModuleLicenseDTO toDTO(CFModuleLicense entity) {
     return CFModuleLicenseDTO.builder()
@@ -43,22 +41,22 @@ public class CFLicenseObjectMapper implements LicenseObjectMapper<CFModuleLicens
 
   @Override
   public void validateModuleLicenseDTO(CFModuleLicenseDTO cfModuleLicenseDTO) {
-    if (featureFlagService.isEnabled(FeatureName.PLG_DEVELOPER_LICENSING, cfModuleLicenseDTO.getAccountIdentifier())) {
-      if (cfModuleLicenseDTO.getDeveloperLicenses() != null) {
-        if (cfModuleLicenseDTO.getNumberOfUsers() != null || cfModuleLicenseDTO.getNumberOfClientMAUs() != null) {
-          throw new InvalidRequestException(
-              "Both developerLicenses and numberOfUsers/numberOfClientMAUs cannot be part of the input!");
-        }
-
-        // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
-        Integer mappingRatio = 1;
-        cfModuleLicenseDTO.setNumberOfUsers(mappingRatio * cfModuleLicenseDTO.getDeveloperLicenses());
-        cfModuleLicenseDTO.setNumberOfClientMAUs(((long) mappingRatio * cfModuleLicenseDTO.getDeveloperLicenses()));
-      }
-    } else {
-      if (cfModuleLicenseDTO.getDeveloperLicenses() != null) {
+    if (!isDeveloperLicensingFeatureEnabled(cfModuleLicenseDTO.getAccountIdentifier())) {
+      if (cfModuleLicenseDTO.getDeveloperLicenseCount() != null) {
         throw new InvalidRequestException("New Developer Licensing feature is not enabled for this account!");
       }
+    }
+
+    if (cfModuleLicenseDTO.getDeveloperLicenseCount() != null) {
+      if (cfModuleLicenseDTO.getNumberOfUsers() != null || cfModuleLicenseDTO.getNumberOfClientMAUs() != null) {
+        throw new InvalidRequestException(
+            "Both developerLicenses and numberOfUsers/numberOfClientMAUs cannot be part of the input!");
+      }
+
+      // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
+      Integer mappingRatio = 1;
+      cfModuleLicenseDTO.setNumberOfUsers(mappingRatio * cfModuleLicenseDTO.getDeveloperLicenseCount());
+      cfModuleLicenseDTO.setNumberOfClientMAUs(((long) mappingRatio * cfModuleLicenseDTO.getDeveloperLicenseCount()));
     }
   }
 }

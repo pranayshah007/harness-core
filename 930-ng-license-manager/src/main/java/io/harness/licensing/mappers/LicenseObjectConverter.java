@@ -37,7 +37,7 @@ public class LicenseObjectConverter {
     moduleLicenseDTO.setCreatedAt(moduleLicense.getCreatedAt());
     moduleLicenseDTO.setLastModifiedAt(moduleLicense.getLastUpdatedAt());
     moduleLicenseDTO.setTrialExtended(moduleLicense.getTrialExtended());
-    moduleLicenseDTO.setDeveloperLicenses(moduleLicense.getDeveloperLicenses());
+    moduleLicenseDTO.setDeveloperLicenseCount(moduleLicense.getDeveloperLicenseCount());
     return (T) moduleLicenseDTO;
   }
 
@@ -54,7 +54,7 @@ public class LicenseObjectConverter {
     moduleLicense.setStartTime(moduleLicenseDTO.getStartTime());
     moduleLicense.setExpiryTime(moduleLicenseDTO.getExpiryTime());
     moduleLicense.setTrialExtended(moduleLicenseDTO.getTrialExtended());
-    moduleLicense.setDeveloperLicenses(moduleLicenseDTO.getDeveloperLicenses());
+    moduleLicense.setDeveloperLicenseCount(moduleLicenseDTO.getDeveloperLicenseCount());
     return (T) moduleLicense;
   }
 }

@@ -7,10 +7,11 @@
 
 package io.harness.licensing.mappers.modules;
 
+import static io.harness.licensing.helpers.ModuleLicenseHelper.isDeveloperLicensingFeatureEnabled;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
-import io.harness.cd.CDLicenseType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
@@ -23,7 +24,6 @@ import com.google.inject.Singleton;
 @OwnedBy(HarnessTeam.GTM)
 @Singleton
 public class CILicenseObjectMapper implements LicenseObjectMapper<CIModuleLicense, CIModuleLicenseDTO> {
-  @Inject private FeatureFlagService featureFlagService;
   @Override
   public CIModuleLicenseDTO toDTO(CIModuleLicense entity) {
     return CIModuleLicenseDTO.builder()
@@ -46,21 +46,21 @@ public class CILicenseObjectMapper implements LicenseObjectMapper<CIModuleLicens
 
   @Override
   public void validateModuleLicenseDTO(CIModuleLicenseDTO ciModuleLicenseDTO) {
-    if (featureFlagService.isEnabled(FeatureName.PLG_DEVELOPER_LICENSING, ciModuleLicenseDTO.getAccountIdentifier())) {
-      if (ciModuleLicenseDTO.getDeveloperLicenses() != null) {
-        if (ciModuleLicenseDTO.getNumberOfCommitters() != null) {
-          throw new InvalidRequestException(
-              "Both developerLicenses and workloads/serviceInstances cannot be part of the input!");
-        }
-
-        // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
-        Integer mappingRatio = 1;
-        ciModuleLicenseDTO.setNumberOfCommitters(mappingRatio * ciModuleLicenseDTO.getDeveloperLicenses());
-      }
-    } else {
-      if (ciModuleLicenseDTO.getDeveloperLicenses() != null) {
+    if (!isDeveloperLicensingFeatureEnabled(ciModuleLicenseDTO.getAccountIdentifier())) {
+      if (ciModuleLicenseDTO.getDeveloperLicenseCount() != null) {
         throw new InvalidRequestException("New Developer Licensing feature is not enabled for this account!");
       }
+    }
+
+    if (ciModuleLicenseDTO.getDeveloperLicenseCount() != null) {
+      if (ciModuleLicenseDTO.getNumberOfCommitters() != null) {
+        throw new InvalidRequestException(
+            "Both developerLicenses and workloads/serviceInstances cannot be part of the input!");
+      }
+
+      // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
+      Integer mappingRatio = 1;
+      ciModuleLicenseDTO.setNumberOfCommitters(mappingRatio * ciModuleLicenseDTO.getDeveloperLicenseCount());
     }
   }
 }
