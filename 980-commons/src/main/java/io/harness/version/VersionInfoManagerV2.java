@@ -23,9 +23,9 @@ import java.util.Map;
 public class VersionInfoManagerV2 {
   private String versionFilePath = "/opt/harness/version.yaml";
 
-  public VersionInfoManagerV2(String versionFilePath) {
-    this.versionFilePath = versionFilePath;
-  }
+//  public VersionInfoManagerV2(String versionFilePath) {
+//    this.versionFilePath = versionFilePath;
+//  }
 
   public VersionInfoV2 getVersionInfo() {
     try {
