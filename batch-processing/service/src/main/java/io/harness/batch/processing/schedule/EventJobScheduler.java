@@ -23,6 +23,7 @@ import io.harness.batch.processing.billing.timeseries.service.impl.K8sUtilizatio
 import io.harness.batch.processing.billing.timeseries.service.impl.PodCountComputationServiceImpl;
 import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDataServiceImpl;
 import io.harness.batch.processing.billing.timeseries.service.impl.WeeklyReportServiceImpl;
+import io.harness.batch.processing.billingdataverification.BillingDataVerificationService;
 import io.harness.batch.processing.budgets.service.impl.BudgetAlertsServiceImpl;
 import io.harness.batch.processing.budgets.service.impl.BudgetCostUpdateService;
 import io.harness.batch.processing.ccm.BatchJobBucket;
@@ -96,6 +97,7 @@ public class EventJobScheduler {
   @Autowired private ProductMetricsService productMetricsService;
   @Autowired private BudgetAlertsServiceImpl budgetAlertsService;
   @Autowired private BudgetCostUpdateService budgetCostUpdateService;
+  @Autowired private BillingDataVerificationService billingDataVerificationService;
   @Autowired private AccountExpiryCleanupService accountExpiryCleanupService;
   @Autowired private HarnessServiceInfoFetcher harnessServiceInfoFetcher;
   @Autowired private InstanceDataServiceImpl instanceDataService;
@@ -377,6 +379,16 @@ public class EventJobScheduler {
       log.info("Costs updated for daily budgets & budget groups");
     } catch (Exception ex) {
       log.error("Exception while running dailyBudgetCostUpdateJob", ex);
+    }
+  }
+
+  @Scheduled(cron = "${scheduler-jobs-config.billingDataVerificationJobCron}")
+  public void runBillingDataVerificationJob() {
+    try {
+      billingDataVerificationService.verifyBillingData();
+      log.info("Billing-data verification completed for all accounts across all cloud providers.");
+    } catch (Exception ex) {
+      log.error("Exception while running billingDataVerificationJob", ex);
     }
   }
 

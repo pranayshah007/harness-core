@@ -67,7 +67,9 @@ import io.harness.ccm.msp.service.intf.MarginDetailsBqService;
 import io.harness.ccm.msp.service.intf.MarginDetailsService;
 import io.harness.ccm.msp.service.intf.MspValidationService;
 import io.harness.ccm.scheduler.SchedulerClientModule;
+import io.harness.ccm.service.billingDataVerification.service.BillingDataVerificationSQLService;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
+import io.harness.ccm.service.impl.BillingDataVerificationBigQueryServiceImpl;
 import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.ccm.serviceNow.CCMServiceNowHelper;
 import io.harness.ccm.serviceNow.CCMServiceNowHelperImpl;
@@ -281,9 +283,12 @@ public class BatchProcessingModule extends AbstractModule {
     if (batchMainConfig.isClickHouseEnabled()) {
       bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);
       bind(DataResponseService.class).to(ClickHouseDataResponseServiceImpl.class);
+      // todo: create a separate implementation of BillingDataVerificationSQLService for ClickHouse
+      bind(BillingDataVerificationSQLService.class).to(BillingDataVerificationBigQueryServiceImpl.class);
     } else {
       bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
       bind(DataResponseService.class).to(BigQueryDataResponseServiceImpl.class);
+      bind(BillingDataVerificationSQLService.class).to(BillingDataVerificationBigQueryServiceImpl.class);
     }
 
     bindPricingServices();

@@ -24,4 +24,5 @@ public class SchedulerJobsConfig {
   private String governanceRecommendationJobCronAzure;
   private String dailyBudgetAlertsJobCron;
   private String dailyBudgetCostUpdateJobCron;
+  private String billingDataVerificationJobCron;
 }

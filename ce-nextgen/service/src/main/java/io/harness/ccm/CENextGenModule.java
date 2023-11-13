@@ -95,11 +95,13 @@ import io.harness.ccm.remote.mapper.anomaly.AnomalyFilterPropertiesMapper;
 import io.harness.ccm.remote.mapper.governance.ExecutionFilterPropertyMapper;
 import io.harness.ccm.remote.mapper.recommendation.CCMRecommendationFilterPropertiesMapper;
 import io.harness.ccm.scheduler.SchedulerClientModule;
+import io.harness.ccm.service.billingDataVerification.service.BillingDataVerificationSQLService;
 import io.harness.ccm.service.impl.AWSBucketPolicyHelperServiceImpl;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.impl.AnomalyServiceImpl;
 import io.harness.ccm.service.impl.AwsEntityChangeEventServiceImpl;
 import io.harness.ccm.service.impl.AzureEntityChangeEventServiceImpl;
+import io.harness.ccm.service.impl.BillingDataVerificationBigQueryServiceImpl;
 import io.harness.ccm.service.impl.CCMActiveSpendServiceImpl;
 import io.harness.ccm.service.impl.CCMConnectorDetailsServiceImpl;
 import io.harness.ccm.service.impl.CCMNotificationServiceImpl;
@@ -461,9 +463,12 @@ public class CENextGenModule extends AbstractModule {
     if (configuration.isClickHouseEnabled()) {
       bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);
       bind(DataResponseService.class).to(ClickHouseDataResponseServiceImpl.class);
+      // todo: create a separate implementation of BillingDataVerificationSQLService for ClickHouse
+      bind(BillingDataVerificationSQLService.class).to(BillingDataVerificationBigQueryServiceImpl.class);
     } else {
       bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
       bind(DataResponseService.class).to(BigQueryDataResponseServiceImpl.class);
+      bind(BillingDataVerificationSQLService.class).to(BillingDataVerificationBigQueryServiceImpl.class);
     }
 
     try {

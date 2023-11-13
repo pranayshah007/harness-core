@@ -22,6 +22,8 @@ public class BigQueryHelper {
   @Inject @Nullable @Named("gcpConfig") GcpConfig config;
 
   public static final String UNIFIED_TABLE = "unifiedTable";
+  public static final String AWS_BILLING_RAW_TABLE = "awsBilling_%s_%s";
+  public static final String CCM_BILLING_DATA_VERIFICATION_TABLE = "ccmBillingDataVerificationTable";
   private static final String DATA_SET_NAME_TEMPLATE = "BillingReport_%s";
   private static final String INFORMATION_SCHEMA = "INFORMATION_SCHEMA";
   private static final String AWS_RAW_TABLE = "awscur*";
