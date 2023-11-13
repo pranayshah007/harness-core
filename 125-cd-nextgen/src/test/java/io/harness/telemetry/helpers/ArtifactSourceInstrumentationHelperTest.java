@@ -18,10 +18,14 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import java.util.concurrent.CompletableFuture;
+
+import io.harness.telemetry.TelemetryReporter;
+import org.jooq.tools.reflect.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class ArtifactSourceInstrumentationHelperTest extends CategoryTest {
@@ -29,9 +33,11 @@ public class ArtifactSourceInstrumentationHelperTest extends CategoryTest {
   private static final String ORG = "org";
   private static final String PROJECT = "project";
   @InjectMocks ArtifactSourceInstrumentationHelper instrumentationHelper;
+  @Mock TelemetryReporter telemetryReporter;
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
+    Reflect.on(instrumentationHelper).set("telemetryReporter", telemetryReporter);
   }
 
   @Test
@@ -40,7 +46,7 @@ public class ArtifactSourceInstrumentationHelperTest extends CategoryTest {
   public void testLastPublishedTagTrackSend() {
     DockerHubArtifactConfig dockerHubArtifactConfig =
         DockerHubArtifactConfig.builder().imagePath(ParameterField.createValueField("IMAGE")).build();
-    CompletableFuture telemetryTask =
+    CompletableFuture<Void> telemetryTask =
         instrumentationHelper.sendLastPublishedTagExpressionEvent(dockerHubArtifactConfig, ACCOUNT, ORG, PROJECT);
     telemetryTask.join();
     assertTrue(telemetryTask.isDone());
