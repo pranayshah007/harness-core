@@ -1,0 +1,10 @@
+{
+  "@type": "MessageCard",
+  "themeColor": "#FFFFFF",
+  "summary": "Delegate ${DELEGATE_ID} Expired",
+  "sections": [
+    {
+      "activityTitle": "The delegate ${DELEGATE_ID} got expired on ${EXPIRY_TIME}. Please upgrade your delegate"
+    }
+  ]
+}

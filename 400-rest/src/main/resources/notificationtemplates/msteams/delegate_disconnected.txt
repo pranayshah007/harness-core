@@ -1,0 +1,10 @@
+{
+  "@type": "MessageCard",
+  "themeColor": "#FFFFFF",
+  "summary": "Delegate ${DELEGATE_ID} Disconnected",
+  "sections": [
+    {
+      "activityTitle": "The delegate ${DELEGATE_ID} detected as disconnected. Please check your delegate is in healthy state."
+    }
+  ]
+}
