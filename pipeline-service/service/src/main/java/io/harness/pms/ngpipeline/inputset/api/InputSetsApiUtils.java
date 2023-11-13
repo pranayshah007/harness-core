@@ -21,6 +21,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncConstants;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.gitx.USER_FLOW;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.inputset.InputSetErrorDTOPMS;
 import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
@@ -41,6 +42,7 @@ import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetUpdateRequestBody;
 import io.harness.utils.ApiUtils;
 import io.harness.utils.PmsFeatureFlagHelper;
+import io.harness.utils.ThreadOperationContextHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -208,6 +210,12 @@ public class InputSetsApiUtils {
   public String inputSetVersion(String accountId, String yaml) {
     boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
     return NGYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
+  }
+
+  public void checkIfGetOnlyFileContentIsEnabled(String accountId, boolean getOnlyFileContent) {
+    if (getOnlyFileContent && pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.PIE_GET_FILE_CONTENT_ONLY)) {
+      ThreadOperationContextHelper.setUserFlow(USER_FLOW.EXECUTION);
+    }
   }
 
   public boolean isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(String accountId) {
