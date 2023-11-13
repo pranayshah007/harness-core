@@ -34,6 +34,7 @@ import io.harness.accesscontrol.commons.events.EntityCrudEventListenerService;
 import io.harness.accesscontrol.commons.events.UserMembershipEventListenerService;
 import io.harness.accesscontrol.commons.migration.AccessControlMigrationProvider;
 import io.harness.accesscontrol.commons.version.VersionInfoResource;
+import io.harness.accesscontrol.commons.version.VersionInfoResourceV2;
 import io.harness.accesscontrol.principals.serviceaccounts.iterators.ServiceAccountReconciliationIterator;
 import io.harness.accesscontrol.principals.usergroups.iterators.UserGroupReconciliationIterator;
 import io.harness.accesscontrol.principals.users.iterators.UserReconciliationIterator;
@@ -278,6 +279,7 @@ public class AccessControlApplication extends Application<AccessControlConfigura
       environment.jersey().register(injector.getInstance(resource));
     }
     environment.jersey().register(injector.getInstance(VersionInfoResource.class));
+    environment.jersey().register(injector.getInstance(VersionInfoResourceV2.class));
   }
 
   private void registerManagedBeans(
