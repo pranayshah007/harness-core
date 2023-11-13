@@ -296,10 +296,12 @@ public class AnomalyServiceImpl implements AnomalyService {
       List<CCMFilter> ruleFilters = perspectiveToAnomalyQueryHelper.getConvertedRulesForPerspective(perspective);
       log.info("ruleFilters 1: {}", ruleFilters);
       if (perspectiveToAnomalyQueryHelper.isEmptyRuleFilter(ruleFilters)) {
+        log.info("Yes here: {}", ruleFilters);
         String[] emptyArray = new String[0];
         List<CCMStringFilter> ccm_stringFilters = new ArrayList<>();
         ccm_stringFilters.add(perspectiveToAnomalyQueryHelper.buildStringFilter(
             CCMField.ANOMALY_ID, emptyArray, QLCEViewFilterOperator.NULL));
+        log.info("ccm_stringFilters : {}", ccm_stringFilters);
         ruleFilters.add(CCMFilter.builder()
                             .stringFilters(ccm_stringFilters)
                             .numericFilters(Collections.emptyList())
