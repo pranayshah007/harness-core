@@ -77,7 +77,11 @@ public class UserGroupReconciliationIterator implements Handler<UserGroupDBO> {
 
   @Override
   public void handle(UserGroupDBO entity) {
-    harnessUserGroupService.sync(
-        entity.getIdentifier(), scopeService.buildScopeFromScopeIdentifier(entity.getScopeIdentifier()));
+    try {
+      harnessUserGroupService.sync(
+          entity.getIdentifier(), scopeService.buildScopeFromScopeIdentifier(entity.getScopeIdentifier()));
+    } catch (Exception ex) {
+      log.error("UserGroupReconciliationIterator: Could not sync user group {} ", entity, ex);
+    }
   }
 }

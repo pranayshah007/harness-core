@@ -42,7 +42,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -509,7 +508,11 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
-  public void testToggleConfigForAccount() throws Exception {
+  public void testToggleConfigForAccount() {
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     AppConfigEntity appConfigEntity = getTestAppConfigEntity();
     when(appConfigRepository.updateConfigEnablement(any(), any(), any(), any())).thenReturn(null);
     when(appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(any(), any(), any()))
@@ -547,7 +550,11 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
-  public void testToggleConfigForK8s() throws ExecutionException {
+  public void testToggleConfigForK8s() {
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     AppConfigEntity appConfigEntity = getAppConfigEntityForK8s();
     when(appConfigRepository.findByAccountIdentifierAndConfigId(any(), any())).thenReturn(appConfigEntity);
     when(appConfigRepository.updateConfigEnablement(any(), any(), any(), any())).thenReturn(appConfigEntity);
@@ -561,7 +568,11 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   @Test(expected = InvalidRequestException.class)
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
-  public void testToggleConfigForK8sThrowsException() throws ExecutionException {
+  public void testToggleConfigForK8sThrowsException() {
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     AppConfigEntity appConfigEntity = getAppConfigEntityForK8s();
     when(appConfigRepository.findByAccountIdentifierAndConfigId(any(), any())).thenReturn(appConfigEntity);
     when(appConfigRepository.updateConfigEnablement(any(), any(), any(), any())).thenReturn(appConfigEntity);
@@ -578,7 +589,11 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
-  public void testToggleConfigForGithubInsights() throws ExecutionException {
+  public void testToggleConfigForGithubInsights() {
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     AppConfigEntity appConfigEntity = getAppConfigEntityForGithubInsights();
     when(appConfigRepository.findByAccountIdentifierAndConfigId(any(), any())).thenReturn(appConfigEntity);
     when(appConfigRepository.updateConfigEnablement(any(), any(), any(), any())).thenReturn(appConfigEntity);
@@ -592,7 +607,11 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   @Test(expected = InvalidRequestException.class)
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
-  public void testToggleConfigForGithubInsightsThrowsException() throws ExecutionException {
+  public void testToggleConfigForGithubInsightsThrowsException() {
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     AppConfigEntity appConfigEntity = getAppConfigEntityForGithubInsights();
     when(appConfigRepository.findByAccountIdentifierAndConfigId(any(), any())).thenReturn(appConfigEntity);
     when(appConfigRepository.updateConfigEnablement(any(), any(), any(), any())).thenReturn(appConfigEntity);
