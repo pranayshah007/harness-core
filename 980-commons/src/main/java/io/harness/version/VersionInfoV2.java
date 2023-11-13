@@ -10,15 +10,18 @@ package io.harness.version;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Value;
+import java.util.Date;
 
 @Value
 @Builder
 @OwnedBy(HarnessTeam.PL)
 public class VersionInfoV2 {
-  private String BUILD_VERSION;
-  private String BUILD_TIME;
-  private String BRANCH_NAME;
-  private String COMMIT_SHA;
+  private String buildVersion;
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+  private Date buildTime;
+  private String branchName;
+  private String commitSha;
 }
