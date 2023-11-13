@@ -15,6 +15,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 import io.harness.cvng.servicelevelobjective.beans.slispec.RequestBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slispec.WindowBasedServiceLevelIndicatorSpec;
+import io.harness.cvng.servicelevelobjective.entities.ErrorBudgetBurnDown;
 import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.services.api.SLIAnalyserService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
@@ -22,6 +23,7 @@ import io.harness.exception.InvalidArgumentsException;
 
 import com.google.inject.Inject;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,6 +59,38 @@ public class SLIDataProcessorServiceImpl implements SLIDataProcessorService {
       }
       countValues = getCountValues(serviceLevelIndicatorDTO, singleSLIAnalysisRequest, sliState);
       runningCount = getRunningCount(runningCount, countValues.getKey(), countValues.getValue());
+      sliAnalyseResponseList.add(SLIAnalyseResponse.builder()
+                                     .sliState(sliState)
+                                     .timeStamp(i)
+                                     .runningGoodCount(runningCount.getKey())
+                                     .runningBadCount(runningCount.getValue())
+                                     .goodEventCount(countValues.getKey())
+                                     .badEventCount(countValues.getValue())
+                                     .build());
+    }
+    return sliAnalyseResponseList;
+  }
+
+  @Override
+  public List<SLIAnalyseResponse> process(List<ErrorBudgetBurnDown> errorBudgetBurnDowns,
+      ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, Instant startTime, Instant endTime) {
+    List<SLIAnalyseResponse> sliAnalyseResponseList = new ArrayList<>();
+    Pair<Long, Long> runningCount = Pair.of(0L, 0L);
+
+    for (Instant i = startTime; i.isBefore(endTime); i.plus(1, ChronoUnit.MINUTES)) {
+      SLIState sliState = SLIState.GOOD;
+      long goodCountValue = 0;
+      long badCountValue = 0;
+      if (serviceLevelIndicatorDTO.getType() == SLIEvaluationType.WINDOW) {
+        if (sliState == SLIState.GOOD) {
+          goodCountValue = 1;
+        } else if (sliState == SLIState.BAD) {
+          badCountValue = 1;
+        }
+      }
+      Pair<Long, Long> countValues = Pair.of(goodCountValue, badCountValue);
+      runningCount = getRunningCount(runningCount, countValues.getKey(), countValues.getValue());
+
       sliAnalyseResponseList.add(SLIAnalyseResponse.builder()
                                      .sliState(sliState)
                                      .timeStamp(i)
