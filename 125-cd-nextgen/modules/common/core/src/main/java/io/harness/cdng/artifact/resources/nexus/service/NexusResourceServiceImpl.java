@@ -131,10 +131,10 @@ public class NexusResourceServiceImpl implements NexusResourceService {
     if (StringUtils.isBlank(classifier)) {
       classifier = null;
     }
-    NexusArtifactDelegateRequest nexusRequest =
-        ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(repositoryName, repositoryPort, artifactPath,
-            repositoryFormat, artifactRepositoryUrl, null, null, null, connector, encryptionDetails,
-            ArtifactSourceType.NEXUS3_REGISTRY, groupId, artifactId, extension, classifier, packageName, group);
+    NexusArtifactDelegateRequest nexusRequest = ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(
+        repositoryName, repositoryPort, artifactPath, repositoryFormat, artifactRepositoryUrl, null, null, null,
+        connector, encryptionDetails, ArtifactSourceType.NEXUS3_REGISTRY, groupId, artifactId,
+        StringUtils.defaultIfBlank(extension, null), StringUtils.defaultIfBlank(classifier, null), packageName, group);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(nexusRequest,
           ArtifactTaskType.GET_BUILDS, baseNGAccess, "Nexus Artifact Get Builds task failure due to error");

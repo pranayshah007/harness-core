@@ -678,17 +678,12 @@ public class ArtifactConfigToDelegateReqMapper {
       extension = (String) nexusRegistryMavenConfig.getExtension().fetchFinalValue();
       classifier = (String) nexusRegistryMavenConfig.getClassifier().fetchFinalValue();
     }
-    if (StringUtils.isBlank(extension)) {
-      extension = null;
-    }
-    if (StringUtils.isBlank(classifier)) {
-      classifier = null;
-    }
+
     return ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(
         (String) artifactConfig.getRepository().fetchFinalValue(), port, artifactId,
         (String) artifactConfig.getRepositoryFormat().fetchFinalValue(), artifactRepositoryUrl, tag, tagRegex,
         connectorRef, nexusConnectorDTO, encryptedDataDetails, ArtifactSourceType.NEXUS3_REGISTRY, groupId, artifactId,
-        extension, classifier, packageName, group);
+        StringUtils.defaultIfBlank(extension, null), StringUtils.defaultIfBlank(classifier, null), packageName, group);
   }
 
   public NexusArtifactDelegateRequest getNexus2ArtifactDelegateRequest(Nexus2RegistryArtifactConfig artifactConfig,
