@@ -25,12 +25,7 @@ import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_VIEW;
 import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.ccm.commons.constants.AnomalyFieldConstants;
 import io.harness.ccm.commons.dao.anomaly.AnomalyDao;
-import io.harness.ccm.commons.entities.CCMAggregation;
-import io.harness.ccm.commons.entities.CCMField;
-import io.harness.ccm.commons.entities.CCMFilter;
-import io.harness.ccm.commons.entities.CCMGroupBy;
-import io.harness.ccm.commons.entities.CCMSort;
-import io.harness.ccm.commons.entities.CCMSortOrder;
+import io.harness.ccm.commons.entities.*;
 import io.harness.ccm.commons.entities.anomaly.AnomalyData;
 import io.harness.ccm.commons.entities.anomaly.AnomalyFeedbackDTO;
 import io.harness.ccm.commons.entities.anomaly.AnomalyQueryDTO;
@@ -48,6 +43,7 @@ import io.harness.ccm.views.dto.PerspectiveQueryDTO;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewType;
+import io.harness.ccm.views.graphql.QLCEViewFilterOperator;
 import io.harness.ccm.views.helper.PerspectiveToAnomalyQueryHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.exception.WingsException;
@@ -298,9 +294,19 @@ public class AnomalyServiceImpl implements AnomalyService {
 
     for (CEView perspective : allowedPerspectives) {
       List<CCMFilter> ruleFilters = perspectiveToAnomalyQueryHelper.getConvertedRulesForPerspective(perspective);
-      //      if(perspectiveToAnomalyQueryHelper.isEmptyRuleFilter(ruleFilters)){
-      //
-      //      }
+      log.info("ruleFilters 1: {}", ruleFilters);
+      if (perspectiveToAnomalyQueryHelper.isEmptyRuleFilter(ruleFilters)) {
+        String[] emptyArray = new String[0];
+        List<CCMStringFilter> ccm_stringFilters = new ArrayList<>();
+        ccm_stringFilters.add(perspectiveToAnomalyQueryHelper.buildStringFilter(
+            CCMField.ANOMALY_ID, emptyArray, QLCEViewFilterOperator.NULL));
+        ruleFilters.add(CCMFilter.builder()
+                            .stringFilters(ccm_stringFilters)
+                            .numericFilters(Collections.emptyList())
+                            .timeFilters(Collections.emptyList())
+                            .build());
+      }
+      log.info("ruleFilters 2: {}", ruleFilters);
       List<AnomalyData> anomalyDataForPerspective = listAnomalies(accountIdentifier,
           AnomalyQueryDTO.builder()
               .filter(filters)
