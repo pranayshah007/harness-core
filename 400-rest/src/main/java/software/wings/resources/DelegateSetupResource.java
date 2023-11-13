@@ -52,6 +52,7 @@ import io.harness.k8s.KubernetesConvention;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.rest.RestResponse;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.LearningEngineAuth;
 import io.harness.security.annotations.PublicApi;
 import io.harness.service.intfc.DelegateCache;
@@ -807,12 +808,13 @@ public class DelegateSetupResource {
   @ExceptionMetered
   public RestResponse<Map<String, String>> getInstallationCommand(@Context HttpServletRequest request,
       @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("orgId") String orgId,
-      @QueryParam("projectId") String projectId, @QueryParam("commandType") @NotEmpty String commandType)
-      throws IOException {
+      @QueryParam("projectId") String projectId, @QueryParam("commandType") @NotEmpty String commandType,
+      @QueryParam("os") String os, @QueryParam("arch") String arch) throws IOException {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       final String managerUrl = subdomainUrlHelper.getManagerUrl(request, accountId);
       final DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgId, projectId);
-      final String command = delegateInstallationCommandService.getCommand(commandType, managerUrl, accountId, owner);
+      final String command =
+          delegateInstallationCommandService.getCommand(commandType, managerUrl, accountId, owner, os, arch);
       ImmutableMap.Builder<String, String> commandResponseBuilder =
           ImmutableMap.<String, String>builder().put("command", command);
       if (commandType.equals(HELM)) {
@@ -821,6 +823,18 @@ public class DelegateSetupResource {
       }
       return new RestResponse(commandResponseBuilder.build());
     }
+  }
+
+  @GET
+  @Path("internal/installation-command")
+  @Timed
+  @InternalApi
+  @ExceptionMetered
+  public RestResponse<Map<String, String>> getInstallationCommandInternal(@Context HttpServletRequest request,
+      @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("orgId") String orgId,
+      @QueryParam("projectId") String projectId, @QueryParam("commandType") @NotEmpty String commandType,
+      @QueryParam("os") String os, @QueryParam("arch") String arch) throws IOException {
+    return getInstallationCommand(request, accountId, orgId, projectId, commandType, os, arch);
   }
 
   private String getVerificationUrl(HttpServletRequest request) {
