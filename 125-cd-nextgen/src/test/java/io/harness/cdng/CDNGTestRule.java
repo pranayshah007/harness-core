@@ -106,6 +106,7 @@ import io.harness.serializer.ManagerRegistrars;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.springdata.HTransactionTemplate;
+import io.harness.telemetry.TelemetryReporter;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
@@ -337,6 +338,7 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(ExecutorService.class)
             .annotatedWith(Names.named("deployment-stage-plan-creation-info-executor"))
             .toInstance(mock(ExecutorService.class));
+        bind(TelemetryReporter.class).toInstance(mock(TelemetryReporter.class));
       }
     });
 
