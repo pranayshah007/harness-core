@@ -16,6 +16,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.gitops.steps.ClusterAgentRef;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.beans.Environment;
@@ -52,7 +53,10 @@ public class EnvGroupPlanCreatorHelperTest extends CategoryTest {
     EnvGroupPlanCreatorHelper envGroupPlanCreatorHelper = new EnvGroupPlanCreatorHelper();
     List<EnvironmentPlanCreatorConfig> envConfigs = new ArrayList<>();
     Environment environment = getEnvironment();
-    List<String> clusterRefs = Arrays.asList("c1", "c2", "c3");
+    List<ClusterAgentRef> clusterRefs =
+        Arrays.asList(ClusterAgentRef.builder().clusterId("c1").agentId("agent").build(),
+            ClusterAgentRef.builder().clusterId("c2").agentId("agent").build(),
+            ClusterAgentRef.builder().clusterId("c3").agentId("agent").build());
     envGroupPlanCreatorHelper.createEnvConfigsForFiltersFlow(envConfigs, environment, clusterRefs);
     assertThat(envConfigs.size()).isNotZero();
     assertThat(envConfigs.get(0)).isNotNull();
@@ -78,11 +82,16 @@ public class EnvGroupPlanCreatorHelperTest extends CategoryTest {
         .environmentRef(ParameterField.<String>builder().value("envId").build())
         .deployToAll(ParameterField.createValueField(false))
         .environmentInputs(ParameterField.createValueField(Map.of("k1", "v1")))
-        .gitOpsClusters(
-            ParameterField.<List<ClusterYaml>>builder()
-                .value(asList(ClusterYaml.builder().identifier(ParameterField.createValueField("c1")).build(),
-                    ClusterYaml.builder().identifier(ParameterField.createValueField("c2")).build()))
-                .build())
+        .gitOpsClusters(ParameterField.<List<ClusterYaml>>builder()
+                            .value(asList(ClusterYaml.builder()
+                                              .identifier(ParameterField.createValueField("c1"))
+                                              .agentIdentifier(ParameterField.createValueField(null))
+                                              .build(),
+                                ClusterYaml.builder()
+                                    .identifier(ParameterField.createValueField("c2"))
+                                    .agentIdentifier(ParameterField.createValueField(null))
+                                    .build()))
+                            .build())
         .build();
   }
 }

@@ -36,6 +36,7 @@ public class MetricLessServiceLevelIndicatorSpec extends ServiceLevelIndicatorSp
   @Override
   public void generateNameAndIdentifier(
       String serviceLevelObjectiveIdentifier, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO) {
+    serviceLevelIndicatorDTO.setIdentifier(serviceLevelObjectiveIdentifier + "_" + METRIC_LESS_SLI_IDENTIFIER);
     serviceLevelIndicatorDTO.setName(serviceLevelObjectiveIdentifier + "_" + METRIC_LESS_SLI_IDENTIFIER);
   }
 }

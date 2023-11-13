@@ -695,6 +695,13 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                     handleClose(o);
                   }
                 })
+            .on(Event.REOPENED,
+                new Function<Object>() { // Do not change this, wasync doesn't like lambdas
+                  @Override
+                  public void on(Object o) {
+                    handleReopen(o);
+                  }
+                })
             .on(new Function<IOException>() {
               @Override
               public void on(IOException ioe) {
@@ -886,6 +893,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private void handleClose(Object o) {
     log.info("Event:{}, trying to reconnect, message:[{}]", Event.CLOSE.name(), o);
     metricRegistry.recordGaugeValue(DELEGATE_CONNECTED.getMetricName(), new String[] {DELEGATE_NAME}, 0.0);
+  }
+
+  private void handleReopen(Object o) {
+    log.info("Event:{}, socket reconnected, message:[{}]", Event.REOPENED.name(), o.toString());
+    metricRegistry.recordGaugeValue(DELEGATE_CONNECTED.getMetricName(), new String[] {DELEGATE_NAME}, 1.0);
   }
 
   private void handleError(final Exception e) {
@@ -1849,7 +1861,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void sendHeartbeat(final DelegateParamsBuilder builder) {
-    if (!shouldContactManager() || !acquireTasks.get() || frozen.get()) {
+    if (!shouldContactManager() || frozen.get()) {
       return;
     }
     log.info("Last heartbeat received at {} and sent to manager at {}", lastHeartbeatReceivedAt.get(),
@@ -1905,7 +1917,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void sendHttpHeartbeat(DelegateParamsBuilder builder) {
-    if (!shouldContactManager() || !acquireTasks.get() || frozen.get()) {
+    if (!shouldContactManager() || frozen.get()) {
       return;
     }
     try {
@@ -2092,6 +2104,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         if (frozen.get()) {
           log.info(
               "Delegate process with detected time out of sync or with revoked token is running. Won't acquire tasks.");
+          return;
+        }
+
+        if (rejectRequest.get()) {
+          log.info("Delegate running out of resources, dropping this request");
           return;
         }
 

@@ -8,11 +8,19 @@
 package io.harness.cvng.core.services.api;
 
 import io.harness.cvng.core.entities.EntityDisableTime;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket;
 
 import java.util.List;
+import org.apache.commons.lang3.tuple.Pair;
 
 public interface EntityDisabledTimeService {
   void save(EntityDisableTime entityDisableTime);
 
   List<EntityDisableTime> get(String entityId, String accountId);
+
+  Pair<Long, Long> getDisabledMinBetweenRecords(
+      long startTime, long endTime, int currentRange, List<EntityDisableTime> disableTimes);
+
+  boolean isMinuteEnabled(
+      List<EntityDisableTime> disableTimes, int currentDisabledRangeIndex, SLIRecordBucket sliRecordBucket);
 }

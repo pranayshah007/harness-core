@@ -20,6 +20,7 @@ java_library(
         "//:lombok",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/creator/plan/stage:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/repositories/executions:module",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/cdstage:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_google_inject_guice",
         "@maven//:javax_validation_validation_api",

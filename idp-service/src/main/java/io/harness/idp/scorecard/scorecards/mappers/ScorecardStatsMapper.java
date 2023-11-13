@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.backstagebeans.BackstageCatalogEntityTypes;
 import io.harness.spec.server.idp.v1.model.ScorecardStats;
+import io.harness.spec.server.idp.v1.model.ScorecardStatsResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,10 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
 public class ScorecardStatsMapper {
-  public List<ScorecardStats> toDTO(Set<BackstageCatalogEntity> entities, Map<String, Integer> scoreMap) {
+  public ScorecardStatsResponse toDTO(
+      Set<BackstageCatalogEntity> entities, Map<String, Integer> scoreMap, String name) {
+    ScorecardStatsResponse response = new ScorecardStatsResponse();
+    response.setName(name);
     List<ScorecardStats> scorecardStats = new ArrayList<>();
     for (BackstageCatalogEntity entity : entities) {
       ScorecardStats stats = new ScorecardStats();
@@ -36,6 +40,7 @@ public class ScorecardStatsMapper {
       }
       scorecardStats.add(stats);
     }
-    return scorecardStats;
+    response.setStats(scorecardStats);
+    return response;
   }
 }

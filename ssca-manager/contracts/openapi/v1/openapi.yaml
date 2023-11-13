@@ -982,6 +982,8 @@ components:
           type: string
         tag:
           type: string
+        url:
+          type: string
         components_count:
           type: integer
         allow_list_violation_count:
@@ -1021,6 +1023,8 @@ components:
         id:
           type: string
         name:
+          type: string
+        url:
           type: string
         tag:
           type: string
@@ -1151,6 +1155,10 @@ components:
           type: string
         operator:
           $ref: '#/components/schemas/Operator'
+      required:
+        - field_name
+        - value
+        - operator
     LicenseFilter:
       title: LicenseFilter
       type: object
@@ -1159,6 +1167,9 @@ components:
           type: string
         operator:
           $ref: '#/components/schemas/Operator'
+      required:
+        - value
+        - operator
   parameters:
     OrgParam:
       name: org

@@ -28,7 +28,6 @@ import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.util.List;
-import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -68,7 +67,7 @@ public class DeploymentStagePlanCreationInfo implements PersistentEntity, UuidAw
 
   @NotNull private DeploymentStageType stageType;
   @JsonTypeInfo(use = NAME, property = "stageType", include = EXTERNAL_PROPERTY, visible = true)
-  @Nullable
+  @NotNull
   private DeploymentStageDetailsInfo deploymentStageDetailsInfo;
 
   public static List<MongoIndex> mongoIndexes() {

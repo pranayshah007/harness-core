@@ -33,6 +33,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.engine.observers.StepDetailsUpdateObserver;
 import io.harness.observer.Subject;
+import io.harness.plancreator.strategy.StrategyConstants;
+import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
@@ -371,5 +373,132 @@ public class NodeExecutionInfoServiceImplTest extends OrchestrationTestBase {
     byNodeExecutionId = nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId);
     assertThat(byNodeExecutionId).isPresent();
     assertThat(byNodeExecutionId.get().getValidUntil()).isEqualTo(ttlExpiry);
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testFetchStrategyMetadataWithNull() {
+    on(pmsGraphStepDetailsService).set("nodeExecutionsInfoRepository", nodeExecutionsInfoRepository);
+    String nodeExecutionId = generateUuid();
+    NodeExecutionsInfo nodeExecutionsInfo = NodeExecutionsInfo.builder()
+                                                .nodeExecutionId(nodeExecutionId)
+                                                .uuid(generateUuid())
+                                                .planExecutionId(generateUuid())
+                                                .build();
+    mongoTemplate.save(nodeExecutionsInfo);
+
+    Optional<NodeExecutionsInfo> byNodeExecutionId =
+        nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId);
+    assertThat(byNodeExecutionId).isPresent();
+
+    Map<String, Object> result = pmsGraphStepDetailsService.fetchStrategyObjectMap(nodeExecutionId, false);
+    assertThat(result.keySet().size()).isEqualTo(3);
+    assertThat(result.get(StrategyConstants.TOTAL_ITERATIONS)).isEqualTo(1);
+    assertThat(result.get(StrategyConstants.ITERATION)).isEqualTo(0);
+    assertThat(result.get(StrategyConstants.ITERATIONS)).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testFetchStrategyMetadataWithMatrixStrategyMetadata() {
+    on(pmsGraphStepDetailsService).set("nodeExecutionsInfoRepository", nodeExecutionsInfoRepository);
+    String nodeExecutionId = generateUuid();
+    NodeExecutionsInfo nodeExecutionsInfo =
+        NodeExecutionsInfo.builder()
+            .nodeExecutionId(nodeExecutionId)
+            .uuid(generateUuid())
+            .planExecutionId(generateUuid())
+            .strategyMetadata(
+                StrategyMetadata.newBuilder()
+                    .setMatrixMetadata(
+                        MatrixMetadata.newBuilder().putMatrixValues("a", "test").addMatrixCombination(0).build())
+                    .setCurrentIteration(0)
+                    .setTotalIterations(1)
+                    .build())
+            .build();
+    mongoTemplate.save(nodeExecutionsInfo);
+
+    Optional<NodeExecutionsInfo> byNodeExecutionId =
+        nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId);
+    assertThat(byNodeExecutionId).isPresent();
+
+    Map<String, Object> result = pmsGraphStepDetailsService.fetchStrategyObjectMap(nodeExecutionId, false);
+    assertThat(result.keySet().size()).isEqualTo(6);
+    assertThat(result.get(StrategyConstants.TOTAL_ITERATIONS)).isEqualTo(1);
+    assertThat(result.get(StrategyConstants.ITERATION)).isEqualTo(0);
+    assertThat(result.get(StrategyConstants.ITERATIONS)).isEqualTo(1);
+    assertThat(result.get(StrategyConstants.REPEAT)).isEqualTo(new HashMap<>());
+    assertThat(result.get(StrategyConstants.MATRIX)).isEqualTo(Map.of("a", "test"));
+    assertThat(result.get("identifierPostFix")).isEqualTo("_0");
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testFetchStrategyMetadataWithMatrixStrategyMetadataEnableMatrixName() {
+    on(pmsGraphStepDetailsService).set("nodeExecutionsInfoRepository", nodeExecutionsInfoRepository);
+    String nodeExecutionId = generateUuid();
+    NodeExecutionsInfo nodeExecutionsInfo =
+        NodeExecutionsInfo.builder()
+            .nodeExecutionId(nodeExecutionId)
+            .uuid(generateUuid())
+            .planExecutionId(generateUuid())
+            .strategyMetadata(
+                StrategyMetadata.newBuilder()
+                    .setMatrixMetadata(
+                        MatrixMetadata.newBuilder().putMatrixValues("a", "test").addMatrixCombination(0).build())
+                    .setCurrentIteration(0)
+                    .setTotalIterations(1)
+                    .build())
+            .build();
+    mongoTemplate.save(nodeExecutionsInfo);
+
+    Optional<NodeExecutionsInfo> byNodeExecutionId =
+        nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId);
+    assertThat(byNodeExecutionId).isPresent();
+
+    Map<String, Object> result = pmsGraphStepDetailsService.fetchStrategyObjectMap(nodeExecutionId, true);
+    assertThat(result.keySet().size()).isEqualTo(6);
+    assertThat(result.get(StrategyConstants.TOTAL_ITERATIONS)).isEqualTo(1);
+    assertThat(result.get(StrategyConstants.ITERATION)).isEqualTo(0);
+    assertThat(result.get(StrategyConstants.ITERATIONS)).isEqualTo(1);
+    assertThat(result.get(StrategyConstants.REPEAT)).isEqualTo(new HashMap<>());
+    assertThat(result.get(StrategyConstants.MATRIX)).isEqualTo(Map.of("a", "test"));
+    assertThat(result.get("identifierPostFix")).isEqualTo("_test");
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testFetchStrategyMetadataWithMatrixStrategyMetadataMatrixnull() {
+    on(pmsGraphStepDetailsService).set("nodeExecutionsInfoRepository", nodeExecutionsInfoRepository);
+    String nodeExecutionId = generateUuid();
+    NodeExecutionsInfo nodeExecutionsInfo =
+        NodeExecutionsInfo.builder()
+            .nodeExecutionId(nodeExecutionId)
+            .uuid(generateUuid())
+            .planExecutionId(generateUuid())
+            .strategyMetadata(StrategyMetadata.newBuilder()
+                                  .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(0).build())
+                                  .setCurrentIteration(0)
+                                  .setTotalIterations(1)
+                                  .build())
+            .build();
+    mongoTemplate.save(nodeExecutionsInfo);
+
+    Optional<NodeExecutionsInfo> byNodeExecutionId =
+        nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId);
+    assertThat(byNodeExecutionId).isPresent();
+
+    Map<String, Object> result = pmsGraphStepDetailsService.fetchStrategyObjectMap(nodeExecutionId, true);
+    assertThat(result.keySet().size()).isEqualTo(6);
+    assertThat(result.get(StrategyConstants.TOTAL_ITERATIONS)).isEqualTo(1);
+    assertThat(result.get(StrategyConstants.ITERATION)).isEqualTo(0);
+    assertThat(result.get(StrategyConstants.ITERATIONS)).isEqualTo(1);
+    assertThat(result.get(StrategyConstants.REPEAT)).isEqualTo(new HashMap<>());
+    assertThat(result.get(StrategyConstants.MATRIX)).isEqualTo(new HashMap<>());
+    assertThat(result.get("identifierPostFix")).isEqualTo("_");
   }
 }

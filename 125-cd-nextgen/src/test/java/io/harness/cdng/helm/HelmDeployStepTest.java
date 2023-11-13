@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -89,6 +90,28 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
     assertThat(request.getManifestDelegateConfig()).isEqualTo(manifestDelegateConfig);
     assertThat(request.getAccountId()).isEqualTo(accountId);
     assertThat(request.getTimeoutInMillis()).isEqualTo(NGTimeConversionHelper.convertTimeStringToMilliseconds("30m"));
+    assertThat(request.isUseSteadyStateCheckForJobs()).isFalse();
+
+    ArgumentCaptor<String> releaseNameCaptor = ArgumentCaptor.forClass(String.class);
+    verify(nativeHelmStepHelper, times(1)).publishReleaseNameStepDetails(eq(ambiance), releaseNameCaptor.capture());
+    assertThat(releaseNameCaptor.getValue()).isEqualTo(releaseName);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testExecuteHelmTaskWithAccountSettings() {
+    HelmDeployStepParams stepParameters = HelmDeployStepParams.infoBuilder().build();
+    final StepElementParameters stepElementParameters =
+        StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.createValueField("30m")).build();
+
+    doReturn(true).when(nativeHelmStepHelper).isSteadyStateForJobsEnabled(ambiance);
+    HelmInstallCommandRequestNG request = executeTask(stepElementParameters, HelmInstallCommandRequestNG.class);
+    assertThat(request.getK8sInfraDelegateConfig()).isEqualTo(infraDelegateConfig);
+    assertThat(request.getManifestDelegateConfig()).isEqualTo(manifestDelegateConfig);
+    assertThat(request.getAccountId()).isEqualTo(accountId);
+    assertThat(request.getTimeoutInMillis()).isEqualTo(NGTimeConversionHelper.convertTimeStringToMilliseconds("30m"));
+    assertThat(request.isUseSteadyStateCheckForJobs()).isTrue();
 
     ArgumentCaptor<String> releaseNameCaptor = ArgumentCaptor.forClass(String.class);
     verify(nativeHelmStepHelper, times(1)).publishReleaseNameStepDetails(eq(ambiance), releaseNameCaptor.capture());

@@ -6358,7 +6358,6 @@ plain_artifacts = [
     "no.entur.mapstruct.spi:protobuf-spi-impl:1.44",
     "org.antlr:antlr4-runtime:4.7.2",
     "org.apache.avro:avro:1.9.2",
-    "org.apache.avro:avro:1.9.2",
     "org.apache.commons:commons-collections4:4.1",
     "org.apache.commons:commons-compress:1.21",
     "org.apache.commons:commons-csv:1.5",

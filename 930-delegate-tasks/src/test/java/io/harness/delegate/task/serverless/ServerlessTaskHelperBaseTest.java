@@ -185,7 +185,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
                                                                      .build();
 
     doNothing().when(serverlessGitFetchTaskHelper).decryptGitStoreConfig(gitStoreDelegateConfig);
-    doReturn(null).when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback);
+    doReturn(null).when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback, false);
     doReturn("fileLog")
         .when(serverlessTaskHelperBase)
         .getManifestFileNamesInLogFormat(serverlessDelegateTaskParams.getWorkingDirectory());
@@ -222,7 +222,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
                                                                      .build();
 
     doNothing().when(serverlessGitFetchTaskHelper).decryptGitStoreConfig(gitStoreDelegateConfig);
-    doReturn(null).when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback);
+    doReturn(null).when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback, false);
     doReturn("fileLog")
         .when(serverlessTaskHelperBase)
         .getManifestFileNamesInLogFormat(serverlessDelegateTaskParams.getWorkingDirectory());
@@ -231,7 +231,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
         .decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
     doNothing()
         .when(ngGitService)
-        .downloadFiles(gitStoreDelegateConfig, "/dir/", "acoountId", sshSessionConfig, gitConfigDTO);
+        .downloadFiles(gitStoreDelegateConfig, "/dir/", "acoountId", sshSessionConfig, gitConfigDTO, false);
     serverlessTaskHelperBase.fetchManifestFilesAndWriteToDirectory(
         serverlessManifestConfig, "accountId", logCallback, serverlessDelegateTaskParams);
   }
@@ -257,7 +257,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
                                                                      .build();
 
     doNothing().when(serverlessGitFetchTaskHelper).decryptGitStoreConfig(gitStoreDelegateConfig);
-    doReturn(null).when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback);
+    doReturn(null).when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback, false);
     doReturn("fileLog")
         .when(serverlessTaskHelperBase)
         .getManifestFileNamesInLogFormat(serverlessDelegateTaskParams.getWorkingDirectory());
@@ -271,7 +271,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
 
     doThrow(IOException.class)
         .when(ngGitService)
-        .downloadFiles(gitStoreDelegateConfig, "/dir/", "accountId", sshSessionConfig, gitConfigDTO);
+        .downloadFiles(gitStoreDelegateConfig, "/dir/", "accountId", sshSessionConfig, gitConfigDTO, false);
 
     serverlessTaskHelperBase.fetchManifestFilesAndWriteToDirectory(
         serverlessManifestConfig, "accountId", logCallback, serverlessDelegateTaskParams);

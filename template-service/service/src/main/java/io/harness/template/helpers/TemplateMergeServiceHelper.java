@@ -774,6 +774,7 @@ public class TemplateMergeServiceHelper {
     TemplateEntityGetResponse templateEntityGetResponse =
         getLinkedTemplateEntity(accountId, orgId, projectId, template, templateCacheMap, loadFromCache, yamlVersion);
     TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
+    validateTemplateEntity(templateEntity.getHarnessVersion(), yamlVersion);
     String templateYaml = templateEntity.getYaml();
     // If entity version is V1 then we will use the InputsExpressionEvaluator to merge the inputs instead of doing the
     // Yaml-merge.
@@ -1092,6 +1093,14 @@ public class TemplateMergeServiceHelper {
     } catch (IOException e) {
       log.error("Could not read template yaml", e);
       throw new NGTemplateException("Could not read template yaml: " + e.getMessage());
+    }
+  }
+
+  private void validateTemplateEntity(String templateEntityVersion, String entityVersion) {
+    if (!(HarnessYamlVersion.isV1(entityVersion))) {
+      if (HarnessYamlVersion.isV1(templateEntityVersion)) {
+        throw new NGTemplateException("V1 templates cannot be linked with V0 pipelines/templates");
+      }
     }
   }
 }

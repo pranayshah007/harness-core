@@ -28,6 +28,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.beans.InputSetValidatorType;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
@@ -67,8 +68,10 @@ import io.harness.cdng.artifact.resources.nexus.dtos.NexusBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusRequestDTO;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusResponseDTO;
 import io.harness.cdng.artifact.resources.nexus.service.NexusResourceService;
+import io.harness.cdng.buckets.resources.s3.S3ResourceService;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
+import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.algorithm.HashGenerator;
@@ -84,6 +87,9 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.ng.core.artifacts.resources.custom.CustomScriptInfo;
+import io.harness.ng.core.buckets.resources.BucketsResourceUtils;
+import io.harness.ng.core.buckets.resources.s3.BucketResponseDTO;
+import io.harness.ng.core.buckets.resources.s3.FilePathDTO;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -154,6 +160,8 @@ public class ArtifactResourceUtils {
   @Inject ArtifactoryResourceService artifactoryResourceService;
   @Inject AccessControlClient accessControlClient;
   @Inject CustomResourceService customResourceService;
+  @Inject S3ResourceService s3ResourceService;
+  @Inject BucketsResourceUtils bucketsResourceUtils;
 
   public final String SERVICE_GIT_BRANCH = "serviceGitBranch";
   public final String ENV_GIT_BRANCH = "envGitBranch";
@@ -1779,6 +1787,207 @@ public class ArtifactResourceUtils {
         azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
     return azureResourceService.getSubscriptions(connectorRef, orgIdentifier, projectIdentifier);
+  }
+
+  public List<FilePathDTO> getFilePathsForServiceV2S3(String region, String awsConnectorIdentifier, String bucketName,
+      String filePathRegex, String fileFilter, String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String fqnPath, String runtimeInputYaml, String serviceRef,
+      GitEntityFindInfoDTO gitEntityBasicInfo) {
+    if (StringUtils.isNotBlank(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+
+      AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactSpecFromService;
+
+      if (StringUtils.isBlank(region)) {
+        region = (String) amazonS3ArtifactConfig.getRegion().fetchFinalValue();
+      }
+
+      if (StringUtils.isBlank(awsConnectorIdentifier)) {
+        awsConnectorIdentifier = (String) amazonS3ArtifactConfig.getConnectorRef().fetchFinalValue();
+      }
+
+      if (StringUtils.isBlank(bucketName)) {
+        bucketName = (String) amazonS3ArtifactConfig.getBucketName().fetchFinalValue();
+      }
+      if (StringUtils.isBlank(fileFilter) && ParameterField.isNotNull(amazonS3ArtifactConfig.getFileFilter())) {
+        fileFilter = (String) amazonS3ArtifactConfig.getFileFilter().fetchFinalValue();
+      }
+    }
+
+    // Getting the resolved region in case of expressions
+    String resolvedRegion = getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                .getValue();
+
+    // Getting the resolved awsConnectorIdentifier in case of expressions
+    String resolvedAwsConnectorIdentifier =
+        getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, runtimeInputYaml, awsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
+
+    // Getting the resolved bucketName in case of expressions
+    String resolvedBucketName =
+        getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, runtimeInputYaml, bucketName, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
+    // Getting the resolved fileFilter in case of expressions
+    fileFilter = getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, fileFilter, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                     .getValue();
+
+    // Common logic in case of ServiceV1 and ServiceV2
+    IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
+        resolvedAwsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    List<BuildDetails> s3ArtifactPaths = s3ResourceService.getFilePaths(
+        connectorRef, resolvedRegion, resolvedBucketName, fileFilter, orgIdentifier, projectIdentifier);
+
+    List<FilePathDTO> artifactPathDTOS = new ArrayList<>();
+
+    for (BuildDetails s : s3ArtifactPaths) {
+      FilePathDTO artifactPathDTO = FilePathDTO.builder().buildDetails(s).build();
+      artifactPathDTOS.add(artifactPathDTO);
+    }
+
+    return artifactPathDTOS;
+  }
+
+  public List<FilePathDTO> getFilePathsS3(String region, String awsConnectorIdentifier, String bucketName,
+      String filePathRegex, String fileFilter, String accountId, String orgIdentifier, String projectIdentifier) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    List<BuildDetails> s3ArtifactPaths =
+        s3ResourceService.getFilePaths(connectorRef, region, bucketName, fileFilter, orgIdentifier, projectIdentifier);
+
+    List<FilePathDTO> artifactPathDTOS = new ArrayList<>();
+
+    for (BuildDetails s : s3ArtifactPaths) {
+      FilePathDTO artifactPathDTO = FilePathDTO.builder().buildDetails(s).build();
+      artifactPathDTOS.add(artifactPathDTO);
+    }
+
+    return artifactPathDTOS;
+  }
+
+  public List<BucketResponseDTO> getBucketsV2WithServiceV2S3(String region, String awsConnectorIdentifier,
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String fqnPath,
+      String runtimeInputYaml, String serviceRef, GitEntityFindInfoDTO gitEntityBasicInfo) {
+    if (StringUtils.isNotBlank(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+
+      AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactSpecFromService;
+
+      if (StringUtils.isBlank(region)) {
+        region = (String) amazonS3ArtifactConfig.getRegion().fetchFinalValue();
+      }
+
+      if (StringUtils.isBlank(awsConnectorIdentifier)) {
+        awsConnectorIdentifier = (String) amazonS3ArtifactConfig.getConnectorRef().fetchFinalValue();
+      }
+    }
+
+    // Getting the resolved region in case of expressions
+    String resolvedRegion = getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                .getValue();
+
+    // Getting the resolved awsConnectorIdentifier in case of expressions
+    String resolvedAwsConnectorIdentifier =
+        getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, runtimeInputYaml, awsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
+
+    // Common logic in case of ServiceV1 and ServiceV2
+    IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
+        resolvedAwsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    Map<String, String> s3Buckets =
+        s3ResourceService.getBuckets(connectorRef, resolvedRegion, orgIdentifier, projectIdentifier);
+
+    List<String> bucketList = new ArrayList<>(s3Buckets.values());
+
+    List<BucketResponseDTO> bucketResponse = new ArrayList<>();
+
+    for (String s : bucketList) {
+      BucketResponseDTO bucket = BucketResponseDTO.builder().bucketName(s).build();
+      bucketResponse.add(bucket);
+    }
+
+    return bucketResponse;
+  }
+
+  public List<BucketResponseDTO> getBucketsV2S3(
+      String region, String awsConnectorIdentifier, String accountId, String orgIdentifier, String projectIdentifier) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    Map<String, String> s3Buckets =
+        s3ResourceService.getBuckets(connectorRef, region, orgIdentifier, projectIdentifier);
+
+    List<String> bucketList = new ArrayList<>(s3Buckets.values());
+
+    List<BucketResponseDTO> bucketResponse = new ArrayList<>();
+
+    for (String s : bucketList) {
+      BucketResponseDTO bucket = BucketResponseDTO.builder().bucketName(s).build();
+
+      bucketResponse.add(bucket);
+    }
+
+    return bucketResponse;
+  }
+
+  public Map<String, String> getBucketsInManifestsS3(String region, String awsConnectorIdentifier, String accountId,
+      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String fqnPath,
+      String runtimeInputYaml, String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      S3StoreConfig storeConfig = (S3StoreConfig) bucketsResourceUtils.locateStoreConfigInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+
+      if (StringUtils.isBlank(region)) {
+        region = storeConfig.getRegion().getValue();
+      }
+
+      if (StringUtils.isBlank(awsConnectorIdentifier)) {
+        awsConnectorIdentifier = storeConfig.getConnectorRef().getValue();
+      }
+    }
+
+    // Getting the resolved region in case of expressions
+    String resolvedRegion = getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, runtimeInputYaml, region, fqnPath, null, serviceRef, null)
+                                .getValue();
+
+    // Getting the resolved region in case of expressions
+    String resolvedConnectorIdentifier =
+        getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, runtimeInputYaml, awsConnectorIdentifier, fqnPath, null, serviceRef, null)
+            .getValue();
+
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(resolvedConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    return s3ResourceService.getBuckets(connectorRef, resolvedRegion, orgIdentifier, projectIdentifier);
+  }
+
+  public Map<String, String> getBucketsS3(String region, String awsConnectorIdentifier, String accountId,
+      String orgIdentifier, String projectIdentifier, String fqnPath, String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      S3StoreConfig storeConfig = (S3StoreConfig) bucketsResourceUtils.locateStoreConfigInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      if (isEmpty(region)) {
+        region = storeConfig.getRegion().getValue();
+      }
+      if (isEmpty(awsConnectorIdentifier)) {
+        awsConnectorIdentifier = storeConfig.getConnectorRef().getValue();
+      }
+    }
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    return s3ResourceService.getBuckets(connectorRef, region, orgIdentifier, projectIdentifier);
   }
 
   @Data

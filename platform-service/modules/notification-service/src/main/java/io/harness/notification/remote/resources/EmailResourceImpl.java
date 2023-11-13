@@ -33,4 +33,8 @@ public class EmailResourceImpl implements EmailResource {
     NotificationTaskResponse result = mailService.sendEmail(emailDTO);
     return ResponseDTO.newResponse(result);
   }
+
+  public ResponseDTO<Boolean> isDefaultSMTPPresent(String accountId) {
+    return ResponseDTO.newResponse(mailService.isDefaultSMTPPresent(accountId));
+  }
 }

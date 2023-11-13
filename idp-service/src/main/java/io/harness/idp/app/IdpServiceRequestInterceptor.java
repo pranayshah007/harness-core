@@ -25,10 +25,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class IdpServiceRequestInterceptor implements ContainerRequestFilter {
+  public static final String REQUEST_START_TIME = "requestStartTime";
   @Inject IDPModuleLicenseUsage idpModuleLicenseUsage;
 
   @Override
   public void filter(ContainerRequestContext containerRequestContext) throws IOException {
+    containerRequestContext.setProperty(REQUEST_START_TIME, System.currentTimeMillis());
     captureLicenseUsageIfApplicable(containerRequestContext);
   }
 

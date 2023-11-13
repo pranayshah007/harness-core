@@ -1,0 +1,21 @@
+name: IDP Service API Metrics
+identifier: IdpServiceApiMetrics
+metricGroup: IdpServiceApiMetricsGroup
+metrics:
+  - metricName: idp_service_api_4xx
+    metricDefinition: IDP Service number of 4xx error responses
+    type: Count
+    unit: "1"
+  - metricName: idp_service_api_5xx
+    metricDefinition: IDP Service number of 5xx error responses
+    type: Count
+    unit: "1"
+  - metricName: idp_service_api_all
+    metricDefinition: IDP Service total number of responses
+    type: Count
+    unit: "1"
+  - metricName: idp_service_api_duration
+    metricDefinition: Time taken to complete the request.
+    type: Duration
+    distribution: [ 0m, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m]
+    unit: "ms"

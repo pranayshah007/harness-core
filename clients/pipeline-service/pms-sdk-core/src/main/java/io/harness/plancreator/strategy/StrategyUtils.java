@@ -61,7 +61,6 @@ import io.harness.strategy.StrategyValidationUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
@@ -345,25 +344,8 @@ public class StrategyUtils {
   /**
    * This function remove <+strategy.identifierPostFix> if present on the passed string
    */
-  private String refineIdentifier(String identifier) {
+  public String refineIdentifier(String identifier) {
     return identifier.replaceAll(STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, "");
-  }
-
-  /**
-   * This is used to fetch strategy object map at a given level
-   * @param level
-   * @return
-   */
-  @Deprecated
-  public Map<String, Object> fetchStrategyObjectMap(Level level, boolean useMatrixFieldName) {
-    Map<String, Object> strategyObjectMap = new HashMap<>();
-    if (AmbianceUtils.hasStrategyMetadata(level)) {
-      return fetchStrategyObjectMap(Lists.newArrayList(level), useMatrixFieldName);
-    }
-    strategyObjectMap.put(ITERATION, 0);
-    strategyObjectMap.put(ITERATIONS, 1);
-    strategyObjectMap.put(TOTAL_ITERATIONS, 1);
-    return strategyObjectMap;
   }
 
   /**

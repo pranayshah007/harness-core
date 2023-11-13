@@ -112,11 +112,16 @@ public class ConnectorDisconnectHandler implements MongoPersistenceIterator.Hand
         NotificationTriggerRequest.newBuilder()
             .setId(notificationTriggerRequestId)
             .setAccountId(connector.getAccountIdentifier())
-            .setOrgId(connector.getOrgIdentifier())
-            .setProjectId(connector.getProjectIdentifier())
             .setEventEntity(NotificationEntity.CONNECTOR.name())
             .setEvent(NotificationEvent.CONNECTOR_DOWN.name())
             .putAllTemplateData(templateData);
+    if (connector.getOrgIdentifier() != null) {
+      notificationTriggerRequestBuilder.setOrgId(connector.getOrgIdentifier());
+    }
+    if (connector.getProjectIdentifier() != null) {
+      notificationTriggerRequestBuilder.setProjectId(connector.getProjectIdentifier());
+    }
+
     log.info("Sending connector disconnect notification for {}", connector.getIdentifier());
     NotificationResult notificationResult =
         notificationClient.sendNotificationTrigger(notificationTriggerRequestBuilder.build());

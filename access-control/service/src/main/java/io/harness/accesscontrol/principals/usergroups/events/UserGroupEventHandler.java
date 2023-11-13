@@ -75,7 +75,7 @@ public class UserGroupEventHandler implements EventHandler {
         harnessUserGroupService.sync(stripToNull(entityChangeDTO.getIdentifier().getValue()), scope);
       }
     } catch (Exception e) {
-      log.error("Could not process the resource group change event {} due to error", entityChangeDTO, e);
+      log.error("Could not process the user group change event {} due to error", entityChangeDTO, e);
       return false;
     } finally {
       long eventProcessingTime = System.nanoTime() - eventReadTime;

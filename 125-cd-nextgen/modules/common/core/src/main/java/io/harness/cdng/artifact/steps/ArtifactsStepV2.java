@@ -49,7 +49,9 @@ import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
+import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
 import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto;
 import io.harness.exception.ArtifactServerException;
@@ -319,6 +321,10 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
                                                .setStageExecutionId(ambiance.getStageExecutionId())
                                                .build())
             .setUsageType(PIPELINE_EXECUTION)
+            .setEntityType(EntityTypeProtoEnum.PIPELINES)
+            .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+                AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+                AmbianceUtils.getProjectIdentifier(ambiance), AmbianceUtils.getPipelineIdentifier(ambiance)))
             .build());
   }
 

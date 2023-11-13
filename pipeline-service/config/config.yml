@@ -624,11 +624,11 @@ featureFlagConfig:
 
 sscaServiceConfig:
   httpClientConfig:
-    baseUrl: http://localhost:8186
+    baseUrl: http://localhost:8188
     connectTimeOutSeconds: 40
     readTimeOutSeconds: 40
-  sscaManagerEnabled: ${SSCA_MANAGER_ENABLED:-false}
-  serviceSecret: secret
+  sscaManagerEnabled: ${SSCA_MANAGER_ENABLED:-true}
+  serviceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
 pipelineAsyncValidationPoolConfig:
   corePoolSize: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_CORE_SIZE:-2}

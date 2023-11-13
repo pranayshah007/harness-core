@@ -9,7 +9,6 @@ package io.harness.grpc.scheduler.mapper;
 
 import io.harness.delegate.ComputingResource;
 import io.harness.delegate.core.beans.ResourceRequirements;
-import io.harness.mapstruct.IgnoreProtobufFields;
 
 import org.mapstruct.CollectionMappingStrategy;
 import org.mapstruct.Mapper;
@@ -22,8 +21,6 @@ import org.mapstruct.factory.Mappers;
 public interface ComputeMapper {
   ComputeMapper INSTANCE = Mappers.getMapper(ComputeMapper.class);
 
-  @IgnoreProtobufFields
-  @Mapping(target = "mergeTimeout", ignore = true)
   @Mapping(target = "timeout", ignore = true)
   @Mapping(target = "replicas", ignore = true)
   ResourceRequirements map(ComputingResource compute);

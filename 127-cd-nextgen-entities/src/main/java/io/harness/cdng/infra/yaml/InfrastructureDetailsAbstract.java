@@ -14,7 +14,6 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
 
 import io.swagger.annotations.ApiModelProperty;
-import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -29,9 +28,6 @@ public abstract class InfrastructureDetailsAbstract {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> provisioner;
 
   @ApiModelProperty(hidden = true) public Boolean skipInstances;
-
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH, notes = "specifies list of serviceRefs")
-  public List<String> scopedToServices;
 
   public String getInfraIdentifier() {
     return infraIdentifier;
@@ -67,13 +63,5 @@ public abstract class InfrastructureDetailsAbstract {
 
   public void setProvisioner(ParameterField<String> provisioner) {
     this.provisioner = provisioner;
-  }
-
-  public List<String> getScopedToServices() {
-    return scopedToServices;
-  }
-
-  public void setScopedToServices(List<String> scopedToServices) {
-    this.scopedToServices = scopedToServices;
   }
 }

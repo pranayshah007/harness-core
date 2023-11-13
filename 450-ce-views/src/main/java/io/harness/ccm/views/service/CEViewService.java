@@ -27,14 +27,12 @@ import java.util.Set;
 public interface CEViewService {
   CEView save(CEView ceView, boolean clone);
   CEView clone(String accountId, String perspectiveId, String clonePerspectiveName);
-
   double getActualCostForPerspectiveBudget(String accountId, String perspectiveId);
-
   CEView get(String uuid);
   CEView update(CEView ceView);
   Set<String> getPerspectiveFolderIds(String accountId, List<String> ceViewIds);
   HashMap<String, String> getPerspectiveIdAndFolderId(String accountId, List<String> ceViewIds);
-  void updateBusinessMappingName(String accountId, String buinessMappingUuid, String newBusinessMappingName);
+  void updateBusinessMappingName(String accountId, String businessMappingUuid, String newBusinessMappingName);
   CEView updateTotalCost(CEView ceView);
   void updateAllPerspectiveWithPerspectivePreferenceDefaultSettings(
       String accountId, Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings);
@@ -46,10 +44,12 @@ public interface CEViewService {
   List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria,
       Integer pageSize, Integer pageNo, String searchKey, List<CEViewFolder> folders, Set<String> allowedFolderIds,
       List<CloudFilter> cloudFilters);
+  List<QLCEView> getAllPerspectives(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria,
+      Integer pageSize, Integer pageNo, String searchKey, List<CEViewFolder> folders, Set<String> allowedFolderIds,
+      List<CloudFilter> cloudFilters);
   List<QLCEView> getAllViews(String accountId, String folderId, boolean includeDefault,
       QLCEViewSortCriteria sortCriteria, Integer pageSize, Integer pageNo, String searchKey,
       List<CloudFilter> cloudFilters);
-
   List<CEViewShortHand> getAllViewsShortHand(String accountId);
   List<CEView> getViewByState(String accountId, ViewState viewState);
   List<LinkedPerspectives> getViewsByBusinessMapping(String accountId, List<String> businessMappingUuids);
@@ -63,7 +63,7 @@ public interface CEViewService {
   String getSampleFolderId(String accountId);
   boolean setFolderId(
       CEView ceView, Set<String> allowedFolderIds, List<CEViewFolder> ceViewFolders, String defaultFolderId);
-  Long countByAccountIdAndFolderId(
+  Long countByAccountIdAndFolderIds(
       String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters);
   Set<ViewFieldIdentifier> getDataSourcesFromCloudProviderField(ViewIdCondition viewIdCondition, String accountId);
 }
