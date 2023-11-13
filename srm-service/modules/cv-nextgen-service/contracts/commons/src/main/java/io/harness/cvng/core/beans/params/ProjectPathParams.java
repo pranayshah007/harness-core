@@ -16,7 +16,6 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.Parameter;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
