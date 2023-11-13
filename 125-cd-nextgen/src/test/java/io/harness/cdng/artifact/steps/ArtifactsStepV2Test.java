@@ -188,7 +188,8 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock ServiceEntityService serviceEntityService;
   @Mock ArtifactSourceInstrumentationHelper instrumentationHelper;
-  private ArtifactConfigToDelegateReqMapper artifactConfigToDelegateReqMapper = new ArtifactConfigToDelegateReqMapper(instrumentationHelper);
+  private ArtifactConfigToDelegateReqMapper artifactConfigToDelegateReqMapper =
+      new ArtifactConfigToDelegateReqMapper(instrumentationHelper);
   private final EmptyStepParameters stepParameters = new EmptyStepParameters();
   private EmptyStepParameters stepParametersWithDelegateSelector = new EmptyStepParameters();
   private final StepInputPackage inputPackage = StepInputPackage.builder().build();
