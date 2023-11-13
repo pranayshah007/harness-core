@@ -348,6 +348,17 @@ public class PerspectiveToAnomalyQueryHelper {
     return true;
   }
 
+  //  public boolean isEmptyRuleFilter(List<CCMFilter> ccm_ruleFilters) {
+  //    for (CCMFilter ccm_filter : ccm_ruleFilters) {
+  //      if(ccm_filter.getStringFilters() != null || ccm_filter.getNumericFilters() != null ||
+  //      ccm_filter.getTimeFilters() != null){
+  //
+  //      }
+  //
+  //
+  //    }
+  //
+  //  }
   private CCMFilter combineFilters(List<CCMFilter> filters) {
     List<CCMStringFilter> stringFilters = new ArrayList<>();
     List<CCMNumberFilter> numberFilters = new ArrayList<>();
