@@ -47,6 +47,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionBuilder;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.notification.PipelineEventType;
 import io.harness.notification.bean.NotificationRules;
@@ -334,21 +335,27 @@ public class NotificationHelperTest extends CategoryTest {
     when(pipelineExpressionHelper.generateUrl(any())).thenReturn(executionUrl);
     when(pipelineExpressionHelper.generatePipelineUrl(any())).thenReturn("pipelineUrl");
     when(pmsExecutionService.getPipelineExecutionSummaryEntity(any(), any(), any(), any()))
-        .thenReturn(PipelineExecutionSummaryEntity.builder()
-                        .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
-                                                  .setTriggerType(TriggerType.MANUAL)
-                                                  .setTriggeredBy(TriggeredBy.newBuilder()
-                                                                      .setIdentifier("user")
-                                                                      .putExtraInfo("email", "user@harness.io")
-                                                                      .build())
-                                                  .build())
-                        .build());
+        .thenReturn(
+            PipelineExecutionSummaryEntity.builder()
+                .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
+                                          .setTriggerType(TriggerType.MANUAL)
+                                          .setTriggeredBy(TriggeredBy.newBuilder()
+                                                              .setIdentifier("user")
+                                                              .putExtraInfo("email", "user@harness.io")
+                                                              .build())
+                                          .build())
+                .tags(Collections.singleton(NGTag.builder().key("<+pipeline.variables.testTag>").value("").build()))
+                .build());
     ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor =
         ArgumentCaptor.forClass(NotificationChannel.class);
     doReturn(webhookNotificationRulesMap).when(pmsEngineExpressionService).resolve(eq(ambiance), any(), eq(true));
 
     notificationHelper.sendNotification(ambiance, PipelineEventType.PIPELINE_SUCCESS, nodeExecution, 1L);
     verify(notificationClient, times(1)).sendNotificationAsync(notificationChannelArgumentCaptor.capture());
+    verify(pmsEngineExpressionService, times(1))
+        .resolve(ambiance,
+            Collections.singletonList(NGTag.builder().key("<+pipeline.variables.testTag>").value("").build()),
+            ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
     WebhookChannel webhookChannel = (WebhookChannel) notificationChannelArgumentCaptor.getValue();
     assertThat(webhookChannel.getWebhookUrls().size()).isEqualTo(1);
     assertThat(webhookChannel.getWebhookUrls().get(0)).isEqualTo("https://www.google.com");

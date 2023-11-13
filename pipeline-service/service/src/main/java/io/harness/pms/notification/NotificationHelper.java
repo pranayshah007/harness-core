@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionService;
@@ -22,7 +23,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.core.common.beans.NGTag;
 import io.harness.notification.PipelineEventType;
 import io.harness.notification.PipelineEventTypeConstants;
 import io.harness.notification.TriggerExecutionInfo;
@@ -362,7 +365,22 @@ public class NotificationHelper {
     webhookNotificationEvent.nodeStatus(nodeStatus);
     webhookNotificationEvent.pipelineUrl(pipelineUrl);
     webhookNotificationEvent.executionUrl(executionUrl);
-    webhookNotificationEvent.tag(pipelineExecutionSummaryEntity.getTags());
+
+    List<NGTag> resolvedTags = pipelineExecutionSummaryEntity.getTags();
+    boolean isTagsContainExpression = false;
+    if (resolvedTags != null) {
+      for (NGTag tag : resolvedTags) {
+        if (NGExpressionUtils.isExpressionField(tag.getKey()) || NGExpressionUtils.isExpressionField(tag.getValue())) {
+          isTagsContainExpression = true;
+          break;
+        }
+      }
+    }
+    if (isTagsContainExpression) {
+      resolvedTags = (List<NGTag>) pmsEngineExpressionService.resolve(
+          ambiance, resolvedTags, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+    }
+    webhookNotificationEvent.tag(resolvedTags);
     webhookNotificationEvent.pipelineName(pipelineName);
     webhookNotificationEvent.stepName(nodeName);
     webhookNotificationEvent.stageName(stageName);
