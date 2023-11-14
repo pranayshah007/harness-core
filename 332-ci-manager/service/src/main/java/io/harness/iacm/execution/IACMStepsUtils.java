@@ -106,7 +106,7 @@ public class IACMStepsUtils {
   }
 
   public String generateVariableFileBasePath(String hashedGitRepoInfo) {
-    return String.format("/harness/.iacm/%s");
+    return String.format("/harness/.iacm/%s", hashedGitRepoInfo);
   }
 
   public String populatePipelineIds(Ambiance ambiance, String json) {
