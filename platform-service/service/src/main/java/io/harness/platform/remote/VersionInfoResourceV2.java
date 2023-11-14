@@ -26,7 +26,7 @@ import java.util.Map;
 import io.dropwizard.jersey.errors.ErrorMessage;
 
 @PublicApi
-@Path("/platform-service/version")
+@Path("/v2/version")
 @Produces({"application/json", "application/yaml"})
 @Consumes({"application/json", "application/yaml"})
 @Slf4j
