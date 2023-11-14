@@ -25,11 +25,12 @@ import javax.ws.rs.WebApplicationException;
 import java.util.Map;
 import io.dropwizard.jersey.errors.ErrorMessage;
 
-@PublicApi
+@Api("version")
 @Path("/v2/version")
-@Produces({"application/json", "application/yaml"})
+@Produces(MediaType.APPLICATION_JSON)
 @Consumes({"application/json", "application/yaml"})
 @Slf4j
+@PublicApi
 public class VersionInfoResourceV2 {
 
   private final VersionInfoManagerV2 versionInfoManager;
