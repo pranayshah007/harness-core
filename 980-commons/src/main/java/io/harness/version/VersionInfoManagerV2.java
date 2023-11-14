@@ -27,7 +27,7 @@ public class VersionInfoManagerV2 {
   public VersionInfoV2 getVersionInfo() {
     try {
       InputStream inputStream = new FileInputStream(versionFilePath);
-      log.info("Reading version file...");
+      log.info("Reading version info from: " + versionFilePath);
       // Parse YAML file
       Yaml yaml = new Yaml();
       Map<String, Object> data = yaml.load(inputStream);
