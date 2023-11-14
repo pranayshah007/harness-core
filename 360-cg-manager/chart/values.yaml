@@ -297,9 +297,9 @@ timescaledb:
 database:
   mongo:
     dmsharness:
-      enabled: true
+      enabled: false
       protocol: ""
-      hosts: [abc.com]
+      hosts: []
       extraArgs: ""
       secrets:
         kubernetesSecrets:
@@ -310,14 +310,14 @@ database:
         secretManagement: 
           externalSecretsOperator:
             - secretStore:
-                name: "a"
-                kind: "b"
+                name: ""
+                kind: ""
               remoteKeys:
                 MONGO_USER:
-                  name: "c"
+                  name: ""
                   property: ""
                 MONGO_PASSWORD:
-                  name: "d"
+                  name: ""
                   property: ""
     notifications:
       enabled: false
