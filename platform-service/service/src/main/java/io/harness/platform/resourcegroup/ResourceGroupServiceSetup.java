@@ -32,6 +32,7 @@ import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.platform.remote.ResourceGroupOpenApiResource;
 import io.harness.platform.remote.VersionInfoResource;
+import io.harness.platform.remote.VersionInfoResourceV2;
 import io.harness.remote.CharsetResponseFilter;
 import io.harness.resourcegroup.ResourceGroupServiceConfig;
 import io.harness.resourcegroup.ResourceGroupsManagementJob;
@@ -132,6 +133,7 @@ public class ResourceGroupServiceSetup {
       }
     }
     environment.jersey().register(injector.getInstance(VersionInfoResource.class));
+    environment.jersey().register(injector.getInstance(VersionInfoResourceV2.class));
   }
 
   private void registerCharsetResponseFilter(Environment environment, Injector injector) {

@@ -8,9 +8,20 @@ FROM us.gcr.io/platform-205701/ubi/cie-agents/java-go-cie-agent:java-17.0.7_7 as
 RUN mkdir -p /app
 ARG GCP_KEY
 ENV SERVICE_NAME="template-service"
+
+ARG BUILD_VERSION
+ARG BUILD_TIME
+ARG BRANCH_NAME
+ARG COMMIT_SHA
+
 COPY . /app
 
 WORKDIR /app
+
+RUN echo "BUILD_VERSION: $BUILD_VERSION" > version.yaml \
+    && echo "BUILD_TIME: $BUILD_TIME" >> version.yaml \
+    && echo "BRANCH_NAME: $BRANCH_NAME" >> version.yaml \
+    && echo "COMMIT_SHA: $COMMIT_SHA" >> version.yaml
 
 ENV BUILD_PURPOSE=DEVELOPMENT
 
@@ -33,6 +44,7 @@ COPY --chown=65534:65534  --from=builder \
   /app/dist/template-service/default.jfc \
   /app/dist/template-service/scripts \
   /app/dockerization/base-images/apm/*.sh \
+  /app/version.yaml \
   /opt/harness/
 
 

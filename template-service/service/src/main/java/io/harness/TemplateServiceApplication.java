@@ -59,6 +59,7 @@ import io.harness.outbox.OutboxEventPollService;
 import io.harness.pms.serializer.json.PmsBeansJacksonModule;
 import io.harness.request.RequestContextFilter;
 import io.harness.resource.VersionInfoResource;
+import io.harness.resource.VersionInfoResourceV2;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.serializer.jackson.TemplateServiceJacksonModule;
@@ -290,6 +291,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
       environment.jersey().register(injector.getInstance(resource));
     }
     environment.jersey().register(injector.getInstance(VersionInfoResource.class));
+    environment.jersey().register(injector.getInstance(VersionInfoResourceV2.class));
   }
 
   private void registerScheduledJobs(Injector injector) {
