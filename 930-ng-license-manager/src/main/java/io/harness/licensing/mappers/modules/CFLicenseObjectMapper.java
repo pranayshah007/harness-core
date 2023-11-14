@@ -58,7 +58,7 @@ public class CFLicenseObjectMapper implements LicenseObjectMapper<CFModuleLicens
       // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
       Integer mappingRatio = 1;
       cfModuleLicenseDTO.setNumberOfUsers(mappingRatio * cfModuleLicenseDTO.getDeveloperLicenseCount());
-      cfModuleLicenseDTO.setNumberOfClientMAUs(((long) mappingRatio * cfModuleLicenseDTO.getDeveloperLicenseCount()));
+      cfModuleLicenseDTO.setNumberOfClientMAUs((long) mappingRatio * cfModuleLicenseDTO.getDeveloperLicenseCount());
     }
   }
 }

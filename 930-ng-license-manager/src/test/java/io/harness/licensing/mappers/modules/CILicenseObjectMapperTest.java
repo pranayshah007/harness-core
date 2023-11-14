@@ -9,14 +9,11 @@ package io.harness.licensing.mappers.modules;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
-import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.entities.modules.CIModuleLicense;
