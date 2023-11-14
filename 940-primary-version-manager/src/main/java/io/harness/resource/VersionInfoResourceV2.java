@@ -11,6 +11,7 @@ import io.harness.security.annotations.PublicApi;
 import io.harness.version.VersionInfoManagerV2;
 import io.harness.version.VersionInfoV2;
 
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import javax.ws.rs.GET;
