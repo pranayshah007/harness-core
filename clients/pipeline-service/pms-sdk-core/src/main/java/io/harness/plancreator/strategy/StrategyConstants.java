@@ -21,4 +21,5 @@ public class StrategyConstants {
   public static final String TOTAL_ITERATIONS = "totalIterations";
   public static final String CURRENT_GLOBAL_ITERATION = "currentGlobalIteration";
   public static final String TOTAL_GLOBAL_ITERATIONS = "totalGlobalIteration";
+  public static final String IDENTIFIER_POSTFIX = "identifierPostFix";
 }

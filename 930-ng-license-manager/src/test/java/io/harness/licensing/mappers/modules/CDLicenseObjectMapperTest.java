@@ -10,6 +10,8 @@ package io.harness.licensing.mappers.modules;
 import static io.harness.rule.OwnerRule.ZHUO;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
@@ -19,14 +21,17 @@ import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.entities.modules.CDModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
+import io.harness.licensing.helpers.ModuleLicenseHelper;
 import io.harness.rule.Owner;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 public class CDLicenseObjectMapperTest extends CategoryTest {
+  @Mock ModuleLicenseHelper moduleLicenseHelper;
   @InjectMocks CDLicenseObjectMapper objectMapper;
   private CDModuleLicense servicesModuleLicense;
   private CDModuleLicense serviceInstancesModuleLicense;
@@ -38,6 +43,8 @@ public class CDLicenseObjectMapperTest extends CategoryTest {
   @Before
   public void setUp() {
     initMocks(this);
+    when(moduleLicenseHelper.isDeveloperLicensingFeatureEnabled(any())).thenReturn(true);
+
     servicesModuleLicense =
         CDModuleLicense.builder().cdLicenseType(CDLicenseType.SERVICES).workloads(DEFAULT_MAX_WORK_LOAD).build();
     servicesModuleLicenseDTO =

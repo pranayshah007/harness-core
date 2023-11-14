@@ -392,7 +392,7 @@ public class NodeExecutionInfoServiceImplTest extends OrchestrationTestBase {
         nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId);
     assertThat(byNodeExecutionId).isPresent();
 
-    Map<String, Object> result = pmsGraphStepDetailsService.fetchStrategyObjectMap(nodeExecutionId, false);
+    Map<String, Object> result = pmsGraphStepDetailsService.fetchStrategyObjectMap(nodeExecutionId);
     assertThat(result.keySet().size()).isEqualTo(3);
     assertThat(result.get(StrategyConstants.TOTAL_ITERATIONS)).isEqualTo(1);
     assertThat(result.get(StrategyConstants.ITERATION)).isEqualTo(0);
@@ -416,6 +416,7 @@ public class NodeExecutionInfoServiceImplTest extends OrchestrationTestBase {
                         MatrixMetadata.newBuilder().putMatrixValues("a", "test").addMatrixCombination(0).build())
                     .setCurrentIteration(0)
                     .setTotalIterations(1)
+                    .setIdentifierPostFix("_0")
                     .build())
             .build();
     mongoTemplate.save(nodeExecutionsInfo);
@@ -424,7 +425,7 @@ public class NodeExecutionInfoServiceImplTest extends OrchestrationTestBase {
         nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId);
     assertThat(byNodeExecutionId).isPresent();
 
-    Map<String, Object> result = pmsGraphStepDetailsService.fetchStrategyObjectMap(nodeExecutionId, false);
+    Map<String, Object> result = pmsGraphStepDetailsService.fetchStrategyObjectMap(nodeExecutionId);
     assertThat(result.keySet().size()).isEqualTo(6);
     assertThat(result.get(StrategyConstants.TOTAL_ITERATIONS)).isEqualTo(1);
     assertThat(result.get(StrategyConstants.ITERATION)).isEqualTo(0);
@@ -451,6 +452,7 @@ public class NodeExecutionInfoServiceImplTest extends OrchestrationTestBase {
                         MatrixMetadata.newBuilder().putMatrixValues("a", "test").addMatrixCombination(0).build())
                     .setCurrentIteration(0)
                     .setTotalIterations(1)
+                    .setIdentifierPostFix("_test")
                     .build())
             .build();
     mongoTemplate.save(nodeExecutionsInfo);
@@ -459,7 +461,7 @@ public class NodeExecutionInfoServiceImplTest extends OrchestrationTestBase {
         nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId);
     assertThat(byNodeExecutionId).isPresent();
 
-    Map<String, Object> result = pmsGraphStepDetailsService.fetchStrategyObjectMap(nodeExecutionId, true);
+    Map<String, Object> result = pmsGraphStepDetailsService.fetchStrategyObjectMap(nodeExecutionId);
     assertThat(result.keySet().size()).isEqualTo(6);
     assertThat(result.get(StrategyConstants.TOTAL_ITERATIONS)).isEqualTo(1);
     assertThat(result.get(StrategyConstants.ITERATION)).isEqualTo(0);
@@ -484,6 +486,7 @@ public class NodeExecutionInfoServiceImplTest extends OrchestrationTestBase {
                                   .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(0).build())
                                   .setCurrentIteration(0)
                                   .setTotalIterations(1)
+                                  .setIdentifierPostFix("_")
                                   .build())
             .build();
     mongoTemplate.save(nodeExecutionsInfo);
@@ -492,7 +495,7 @@ public class NodeExecutionInfoServiceImplTest extends OrchestrationTestBase {
         nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId);
     assertThat(byNodeExecutionId).isPresent();
 
-    Map<String, Object> result = pmsGraphStepDetailsService.fetchStrategyObjectMap(nodeExecutionId, true);
+    Map<String, Object> result = pmsGraphStepDetailsService.fetchStrategyObjectMap(nodeExecutionId);
     assertThat(result.keySet().size()).isEqualTo(6);
     assertThat(result.get(StrategyConstants.TOTAL_ITERATIONS)).isEqualTo(1);
     assertThat(result.get(StrategyConstants.ITERATION)).isEqualTo(0);
