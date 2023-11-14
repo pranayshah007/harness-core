@@ -30,6 +30,8 @@ public class VersionInfoResourceV2 {
   private final VersionInfoManagerV2 versionInfoManager;
 
   public VersionInfoResourceV2(VersionInfoManagerV2 versionInfoManager) {
+    this.versionInfoManager = versionInfoManager;
+  }
 
   @GET
   public VersionInfoV2 getVersionInfo() {
