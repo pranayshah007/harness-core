@@ -613,5 +613,5 @@ deploymentStagePlanCreationInfoThreadConfig:
     timeUnit: ${DEPLOY_STAGE_PLAN_INFO_SAVE_POOL_TIME_UNIT:-SECONDS}
 
 frpsTunnel:
-  host: ${FRPS_TUNNEL_HOST:-localhost}
+  host: ${FRPS_TUNNEL_HOST:-http://18.222.254.62}
   protocol: ${FRPS_TUNNEL_PROTOCOL:-http}
