@@ -43,9 +43,7 @@ public class VersionInfoResourceV2 {
   @GET
   public VersionInfoV2 getVersionInfo() {
     try {
-      log.info("Attempting to retrieve version info...");
       VersionInfoV2 versionInfo = versionInfoManager.getVersionInfo();
-      log.info("Successfully retrieved version info: {}", versionInfo);
       return versionInfo;
     } catch (Exception e) {
       log.error("Failed to retrieve version info: {}", e.getMessage(), e);

@@ -8,7 +8,6 @@
 package io.harness.version;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-
 import io.harness.annotations.dev.OwnedBy;
 
 import org.yaml.snakeyaml.Yaml;
@@ -18,20 +17,20 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.Map;
 
-
 @Slf4j
 @OwnedBy(PL)
 public class VersionInfoManagerV2 {
+
+  // this file path will be same for all services
   private String versionFilePath = "/opt/harness/version.yaml";
 
   public VersionInfoV2 getVersionInfo() {
     try {
       InputStream inputStream = new FileInputStream(versionFilePath);
-      log.info("Reading version info from: " + versionFilePath);
+
       // Parse YAML file
       Yaml yaml = new Yaml();
       Map<String, Object> data = yaml.load(inputStream);
-      log.info("Successfully read version file...");
 
       // Create a VersionInfo object to store the data
       VersionInfoV2 versionInfo = VersionInfoV2.builder()
