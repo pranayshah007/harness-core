@@ -25,7 +25,7 @@ import java.util.Map;
 import io.dropwizard.jersey.errors.ErrorMessage;
 
 @PublicApi
-@Path("/platform-service/version")
+@Path("/version")
 @Produces(MediaType.APPLICATION_JSON)
 @Slf4j
 public class VersionInfoResourceV2 {

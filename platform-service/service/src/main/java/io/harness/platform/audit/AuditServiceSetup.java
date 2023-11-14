@@ -24,6 +24,7 @@ import io.harness.ng.core.TraceFilter;
 import io.harness.persistence.HPersistence;
 import io.harness.platform.remote.AuditOpenApiResource;
 import io.harness.platform.remote.VersionInfoResource;
+import io.harness.platform.remote.VersionInfoResourceV2;
 import io.harness.remote.CharsetResponseFilter;
 
 import com.google.inject.Injector;
@@ -81,6 +82,7 @@ public class AuditServiceSetup {
       }
     }
     environment.jersey().register(injector.getInstance(VersionInfoResource.class));
+    environment.jersey().register(injector.getInstance(VersionInfoResourceV2.class));
   }
 
   private void registerCharsetResponseFilter(Environment environment, Injector injector) {
