@@ -344,7 +344,6 @@ database:
                   property: ""
     harness:
       enabled: false
-      database: "harness"
       protocol: ""
       hosts: []
       extraArgs: ""
