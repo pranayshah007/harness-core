@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-
 /*
  * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
