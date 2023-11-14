@@ -49,6 +49,10 @@ public class DeploymentStageConfigV1 implements Visitable {
   EnvironmentGroupYaml environmentGroup;
   String desc;
 
+  public boolean getGitOpsEnabled() {
+    return gitOpsEnabled == Boolean.TRUE;
+  }
+
   @Override
   public VisitableChildren getChildrenToWalk() {
     List<VisitableChild> children = new ArrayList<>();

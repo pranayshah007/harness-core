@@ -18,6 +18,8 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
+import io.harness.cdng.creator.plan.stage.v1.DeploymentStageConfigV1;
+import io.harness.cdng.creator.plan.stage.v1.DeploymentStageNodeV1;
 import io.harness.cdng.environment.helper.EnvironmentStepsUtils;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
@@ -143,8 +145,30 @@ public class MultiDeploymentSpawnerUtils {
     return node.getUuid();
   }
 
+  public String getUuidForMultiDeployment(DeploymentStageNodeV1 node) {
+    DeploymentStageConfigV1 config = node.getSpec();
+    if (config.getServices() != null) {
+      return config.getServices().getUuid();
+    }
+
+    if (!config.getGitOpsEnabled()) {
+      if (config.getEnvironments() != null) {
+        return config.getEnvironments().getUuid();
+      }
+      if (config.getEnvironmentGroup() != null) {
+        return config.getEnvironmentGroup().getUuid();
+      }
+    }
+    return node.getUuid();
+  }
+
   public boolean hasMultiDeploymentConfigured(DeploymentStageNode node) {
     DeploymentStageConfig config = node.getDeploymentStageConfig();
+    return hasMultiDeploymentConfigured(config);
+  }
+
+  public boolean hasMultiDeploymentConfigured(DeploymentStageNodeV1 node) {
+    DeploymentStageConfigV1 config = node.getSpec();
     return hasMultiDeploymentConfigured(config);
   }
 
@@ -155,7 +179,67 @@ public class MultiDeploymentSpawnerUtils {
     return config.getServices() != null || config.getEnvironments() != null || config.getEnvironmentGroup() != null;
   }
 
+  public boolean hasMultiDeploymentConfigured(DeploymentStageConfigV1 config) {
+    if (config.getGitOpsEnabled()) {
+      return config.getServices() != null;
+    }
+    return config.getServices() != null || config.getEnvironments() != null || config.getEnvironmentGroup() != null;
+  }
+
   public void validateMultiServiceInfra(DeploymentStageConfig stageConfig) {
+    if (stageConfig.getServices() == null && stageConfig.getEnvironments() == null
+        && stageConfig.getEnvironmentGroup() == null) {
+      return;
+    }
+    if (stageConfig.getServices() != null
+        && (ParameterField.isNull(stageConfig.getServices().getValues())
+            || (!stageConfig.getServices().getValues().isExpression()
+                && isEmpty(stageConfig.getServices().getValues().getValue())))) {
+      throw new InvalidRequestException("No value of services provided, please provide at least one value of service");
+    }
+    if (stageConfig.getEnvironments() != null && ParameterField.isNotNull(stageConfig.getEnvironments().getValues())
+        && !stageConfig.getEnvironments().getValues().isExpression()) {
+      if (ParameterField.isNotNull(stageConfig.getEnvironments().getFilters())
+          && EmptyPredicate.isNotEmpty(stageConfig.getEnvironments().getFilters().getValue())) {
+        return;
+      }
+      if (isEmpty(stageConfig.getEnvironments().getValues().getValue())) {
+        throw new InvalidRequestException(
+            "No value of environments provided, please provide at least one value of environment");
+      }
+      for (EnvironmentYamlV2 environmentYamlV2 : stageConfig.getEnvironments().getValues().getValue()) {
+        if (ParameterField.isNotNull(environmentYamlV2.getFilters())
+            && isNotEmpty(environmentYamlV2.getFilters().getValue())) {
+          return;
+        }
+        if (ParameterField.isNull(environmentYamlV2.getInfrastructureDefinitions())) {
+          if (environmentYamlV2.getEnvironmentRef().getValue() != null) {
+            throw new InvalidRequestException(
+                String.format("No value of infrastructures provided for infrastructure [%s], please provide"
+                        + " at least one value of environment",
+                    environmentYamlV2.getEnvironmentRef().getValue()));
+          } else {
+            throw new InvalidRequestException(
+                "No value of infrastructures provided for infrastructure, please provide at least one value of environment");
+          }
+        }
+        if (!environmentYamlV2.getInfrastructureDefinitions().isExpression()
+            && isEmpty(environmentYamlV2.getInfrastructureDefinitions().getValue())) {
+          if (environmentYamlV2.getEnvironmentRef().getValue() != null) {
+            throw new InvalidRequestException(
+                String.format("No value of infrastructures provided for infrastructure [%s], please provide"
+                        + " at least one value of environment",
+                    environmentYamlV2.getEnvironmentRef().getValue()));
+          } else {
+            throw new InvalidRequestException(
+                "No value of infrastructures provided for infrastructure, please provide at least one value of environment");
+          }
+        }
+      }
+    }
+  }
+
+  public void validateMultiServiceInfra(DeploymentStageConfigV1 stageConfig) {
     if (stageConfig.getServices() == null && stageConfig.getEnvironments() == null
         && stageConfig.getEnvironmentGroup() == null) {
       return;

@@ -26,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
+import io.harness.plancreator.stages.stage.v1.AbstractStageNodeV1;
 import io.harness.plancreator.steps.v1.FailureStrategiesUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -43,11 +44,14 @@ import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviser;
 import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviserParameters;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviser;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameters;
+import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
+import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.failurestrategy.manualintervention.v1.ManualInterventionFailureActionConfigV1;
 import io.harness.yaml.core.failurestrategy.retry.v1.RetryFailureActionConfigV1;
@@ -98,6 +102,17 @@ public class PlanCreatorUtilsV1 {
       adviserObtainments.add(nextStepAdviser);
     }
     return adviserObtainments;
+  }
+
+  public SdkTimeoutObtainment getTimeoutObtainmentForStage(AbstractStageNodeV1 stageNode) {
+    if (ParameterField.isNotNull(stageNode.getTimeout())) {
+      return SdkTimeoutObtainment.builder()
+          .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
+          .parameters(AbsoluteSdkTimeoutTrackerParameters.builder().timeout(stageNode.getTimeout()).build())
+          .build();
+    }
+
+    return null;
   }
 
   public String getNextNodeUuid(KryoSerializer kryoSerializer, Dependency dependency) {

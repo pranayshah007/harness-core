@@ -27,6 +27,7 @@ import io.harness.yaml.core.failurestrategy.retry.v1.RetrySGFailureActionConfigV
 import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
 import io.harness.yaml.core.failurestrategy.v1.FailureStrategyActionConfigV1;
 import io.harness.yaml.core.failurestrategy.v1.NGFailureActionTypeV1;
+import io.harness.yaml.core.failurestrategy.v1.NGFailureTypeConstantsV1;
 import io.harness.yaml.core.failurestrategy.v1.NGFailureTypeV1;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -217,5 +218,16 @@ public class FailureStrategiesUtilsV1 {
 
   public OnFailPipelineRollbackParameters buildOnFailPipelineRollbackParameters(Set<FailureType> failureTypes) {
     return OnFailPipelineRollbackParameters.builder().applicableFailureTypes(failureTypes).build();
+  }
+
+  public boolean containsOnlyAllErrorsInSomeConfig(ParameterField<List<FailureConfigV1>> stageFailureStrategies) {
+    boolean containsOnlyAllErrors = false;
+    for (FailureConfigV1 failureConfig : stageFailureStrategies.getValue()) {
+      if (failureConfig.getErrors().size() == 1
+          && failureConfig.getErrors().get(0).getYamlName().contentEquals(NGFailureTypeConstantsV1.ALL_ERRORS)) {
+        containsOnlyAllErrors = true;
+      }
+    }
+    return containsOnlyAllErrors;
   }
 }

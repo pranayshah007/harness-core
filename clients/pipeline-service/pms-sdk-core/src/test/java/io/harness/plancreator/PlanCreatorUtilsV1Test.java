@@ -8,6 +8,7 @@
 package io.harness.plancreator;
 
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
@@ -16,6 +17,7 @@ import static org.mockito.Mockito.doReturn;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.category.element.UnitTests;
+import io.harness.plancreator.stages.stage.v1.AbstractStageNodeV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.plan.Dependency;
@@ -24,11 +26,14 @@ import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
+import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
+import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.yaml.core.failurestrategy.abort.v1.AbortFailureActionConfigV1;
 import io.harness.yaml.core.failurestrategy.ignore.v1.IgnoreFailureActionConfigV1;
 import io.harness.yaml.core.failurestrategy.manualintervention.v1.ManualFailureSpecConfigV1;
@@ -49,7 +54,9 @@ import java.util.List;
 import java.util.Objects;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Answers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 
 public class PlanCreatorUtilsV1Test extends PmsSdkCoreTestBase {
   @Mock KryoSerializer kryoSerializer;
@@ -135,5 +142,26 @@ public class PlanCreatorUtilsV1Test extends PmsSdkCoreTestBase {
                 .errors(List.of(NGFailureTypeV1.ALL_ERRORS))
                 .action(MarkAsSuccessFailureActionConfigV1.builder().build())
                 .build()));
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetTimeoutObtainmentForStage() {
+    AbstractStageNodeV1 stageNode = Mockito.mock(AbstractStageNodeV1.class, Answers.CALLS_REAL_METHODS);
+    SdkTimeoutObtainment sdkTimeoutObtainment = PlanCreatorUtilsV1.getTimeoutObtainmentForStage(stageNode);
+    assertThat(sdkTimeoutObtainment).isNull();
+
+    stageNode.setTimeout(ParameterField.createValueField("10m"));
+    sdkTimeoutObtainment = PlanCreatorUtilsV1.getTimeoutObtainmentForStage(stageNode);
+    assertThat(sdkTimeoutObtainment).isNotNull();
+    assertThat(sdkTimeoutObtainment.getDimension()).isNotNull();
+    assertThat(sdkTimeoutObtainment.getDimension().getType())
+        .isEqualTo(AbsoluteTimeoutTrackerFactory.DIMENSION.getType());
+    assertThat(sdkTimeoutObtainment.getParameters()).isNotNull();
+    assertThat(sdkTimeoutObtainment.getParameters()).isInstanceOf(AbsoluteSdkTimeoutTrackerParameters.class);
+    assertThat(
+        ((AbsoluteSdkTimeoutTrackerParameters) sdkTimeoutObtainment.getParameters()).getTimeout().fetchFinalValue())
+        .isEqualTo("10m");
   }
 }
