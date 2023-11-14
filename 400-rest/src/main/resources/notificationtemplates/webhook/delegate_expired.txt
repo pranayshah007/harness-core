@@ -1,3 +1,3 @@
 {
-    "text": "Harness delegate ${delegateId} is expired."
+    "text": "Harness Delegate ${DELEGATE_ID} expired on ${EXPIRY_TIME}. Upgrade the delegate"
 }

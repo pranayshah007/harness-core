@@ -1,3 +1,3 @@
 {
-    "text": "Harness delegate ${delegateId} is about to expire on ${expireOn}."
+    "text": "Harness Delegate ${DELEGATE_ID} expires on ${EXPIRY_TIME}. Make sure auto upgrade is ON to get the latest image."
 }

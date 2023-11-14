@@ -4,7 +4,7 @@
   "summary": "Delegate ${DELEGATE_ID} Disconnected",
   "sections": [
     {
-      "activityTitle": "The delegate ${DELEGATE_ID} detected as disconnected. Please check your delegate is in healthy state."
+      "activityTitle": "Harness Delegate ${DELEGATE_ID} has been detected as disconnected. Check to ensure the delegate is in a healthy state."
     }
   ]
 }
