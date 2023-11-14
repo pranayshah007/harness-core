@@ -1,0 +1,86 @@
+kind: pipeline
+spec:
+  options:
+    envs:
+      BUILD_PURPOSE: RELEASE
+  stages:
+  - name: gobuild
+    spec:
+      clone: {}
+      platform:
+        arch: amd64
+        os: linux
+      runtime:
+        spec: {}
+        type: cloud
+      steps:
+      - name: Building expression service code
+        spec:
+          run: |
+            touch bazel-credentials.bzl
+            touch test-util.bzl
+            echo "JFROG_USERNAME=\"foo\"" >> bazel-credentials.bzl
+            echo "JFROG_PASSWORD=\"bar\"" >> bazel-credentials.bzl
+            echo "DISTRIBUTE_TESTING_WORKER=0" >> test-util.bzl
+            echo "DISTRIBUTE_TESTING_WORKERS=1" >> test-util.bzl
+            echo "OPTIMIZED_PACKAGE_TESTS=0" >> test-util.bzl
+
+            echo "Building golang expression service protobuf using bazel..."
+            bazel build //960-expression-service/src/main/proto/... --javacopt=' -XepDisableAllChecks'
+        type: script
+      - name: Building commons code
+        spec:
+          run: |
+            echo "Building golang commons code using bazel..."
+            bazel build //commons/...
+        type: script
+      - name: Building product code
+        spec:
+          run: |
+            echo "Building golang product code using bazel..."
+            bazel build //product/... --javacopt=' -XepDisableAllChecks'
+        type: script
+      - name: Building gopath
+        spec:
+          run: |
+            echo "Building gopath"
+            bazel build :gopath --javacopt=' -XepDisableAllChecks'
+        type: script
+      - name: Building queue-service code
+        spec:
+          run: "echo \"Building golang queue-service code using bazel...\"\nbazel
+            build //queue-service/... --javacopt=' -XepDisableAllChecks'    \n"
+        type: script
+      - name: Testing commons
+        spec:
+          run: |
+            echo "Testing golang commons code using bazel..."
+            bazel test --test_output=all //commons/...
+        type: script
+      - name: Testing product
+        spec:
+          run: |
+            echo "Testing golang product code using bazel..."
+            bazel test --test_output=all //product/... --javacopt=' -XepDisableAllChecks'
+        type: script
+      - name: Testing queue-service
+        spec:
+          run: "echo \"Testing golang queue-service code using bazel...\"\nbazel test
+            --test_output=all //queue-service/... --javacopt=' -XepDisableAllChecks'
+            \   \n"
+        type: script
+      - name: Coverage
+        spec:
+          run: |
+            export GOPATH=$(go env GOPATH)
+            export PATH=$PATH:$GOPATH/bin
+            echo $PATH
+            echo $GOPATH
+            echo "Adding gocovmerge package... "
+            go install github.com/wadey/gocovmerge@latest
+            tools/go/generate_coverage.sh func
+        type: script
+    type: ci
+    when: =~ github.event.pull_request.labels.*.name, 'go') || =~ github.event.pull_request.labels.*.name,
+      'gojava')
+version: 1

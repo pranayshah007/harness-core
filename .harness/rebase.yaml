@@ -1,0 +1,22 @@
+kind: pipeline
+spec:
+  stages:
+  - name: rebase
+    spec:
+      clone: {}
+      platform:
+        arch: amd64
+        os: linux
+      runtime:
+        spec: {}
+        type: cloud
+      steps:
+      - name: Automatic Rebase
+        spec:
+          envs:
+            GITHUB_TOKEN: ${{ secrets.GITHUB }}
+          uses: cirrus-actions/rebase@1.7
+        type: action
+    type: ci
+    when: github.event.issue.pull_request != '' && =~ github.event.comment.body, '/rebase')
+version: 1

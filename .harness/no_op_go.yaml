@@ -1,0 +1,135 @@
+kind: pipeline
+spec:
+  stages:
+  - name: no_op_go
+    spec:
+      platform:
+        arch: amd64
+        os: linux
+      runtime:
+        spec: {}
+        type: cloud
+      steps:
+      - name: Complete ti0
+        spec:
+          uses: Sibz/github-status-action@v1
+          with:
+            authToken: ${{secrets.GITHUB_TOKEN}}
+            context: SmartPRChecks-tin0
+            description: Mark ti0 as success
+            sha: ${{github.event.pull_request.head.sha || github.sha}}
+            state: success
+        type: action
+      - name: Complete ti1
+        spec:
+          uses: Sibz/github-status-action@v1
+          with:
+            authToken: ${{secrets.GITHUB_TOKEN}}
+            context: SmartPRChecks-tin1
+            description: Mark ti1 as success
+            sha: ${{github.event.pull_request.head.sha || github.sha}}
+            state: success
+        type: action
+      - name: Complete ti2
+        spec:
+          uses: Sibz/github-status-action@v1
+          with:
+            authToken: ${{secrets.GITHUB_TOKEN}}
+            context: SmartPRChecks-ti2
+            description: Mark ti2 as success
+            sha: ${{github.event.pull_request.head.sha || github.sha}}
+            state: success
+        type: action
+      - name: Complete ti3
+        spec:
+          uses: Sibz/github-status-action@v1
+          with:
+            authToken: ${{secrets.GITHUB_TOKEN}}
+            context: SmartPRChecks-tin3
+            description: Mark ti3 as success
+            sha: ${{github.event.pull_request.head.sha || github.sha}}
+            state: success
+        type: action
+      - name: Complete ti4
+        spec:
+          uses: Sibz/github-status-action@v1
+          with:
+            authToken: ${{secrets.GITHUB_TOKEN}}
+            context: SmartPRChecks-tin4
+            description: Mark ti4 as success
+            sha: ${{github.event.pull_request.head.sha || github.sha}}
+            state: success
+        type: action
+      - name: Complete functionalTests1
+        spec:
+          uses: Sibz/github-status-action@v1
+          with:
+            authToken: ${{secrets.GITHUB_TOKEN}}
+            context: SmartPRChecks-Functional_tests
+            description: Mark functionalTests1 as success
+            sha: ${{github.event.pull_request.head.sha || github.sha}}
+            state: success
+        type: action
+      - name: Complete functionalTests2
+        spec:
+          uses: Sibz/github-status-action@v1
+          with:
+            authToken: ${{secrets.GITHUB_TOKEN}}
+            context: SmartPRChecks-Functional_tests1
+            description: Mark functionalTests2  as success
+            sha: ${{github.event.pull_request.head.sha || github.sha}}
+            state: success
+        type: action
+      - name: Complete pmd checks
+        spec:
+          uses: Sibz/github-status-action@v1
+          with:
+            authToken: ${{secrets.GITHUB_TOKEN}}
+            context: PMD-PMDCheck
+            description: Mark PMD checks as success
+            sha: ${{github.event.pull_request.head.sha || github.sha}}
+            state: success
+        type: action
+      - name: Complete maven build
+        spec:
+          uses: Sibz/github-status-action@v1
+          with:
+            authToken: ${{secrets.GITHUB_TOKEN}}
+            context: Compile-mavenbuild
+            description: Mark maven build as success
+            sha: ${{github.event.pull_request.head.sha || github.sha}}
+            state: success
+        type: action
+      - name: Complete check-style
+        spec:
+          uses: Sibz/github-status-action@v1
+          with:
+            authToken: ${{secrets.GITHUB_TOKEN}}
+            context: CheckStyle-checkstylecheck
+            description: Mark check-style as success
+            sha: ${{github.event.pull_request.head.sha || github.sha}}
+            state: success
+        type: action
+      - name: Complete code base hash
+        spec:
+          uses: Sibz/github-status-action@v1
+          with:
+            authToken: ${{secrets.GITHUB_TOKEN}}
+            context: CodeBaseHash-codebasehashcheck
+            description: Mark codebase hash as success
+            sha: ${{github.event.pull_request.head.sha || github.sha}}
+            state: success
+        type: action
+      - name: Complete aeriform check
+        spec:
+          uses: Sibz/github-status-action@v1
+          with:
+            authToken: ${{secrets.GITHUB_TOKEN}}
+            context: runAeriformCheck-AeriformCheck
+            description: Mark aeriform-check as success
+            sha: ${{github.event.pull_request.head.sha || github.sha}}
+            state: success
+        type: action
+    type: ci
+    when: =~ github.event.pull_request.labels.*.name, 'go')
+version: 1
