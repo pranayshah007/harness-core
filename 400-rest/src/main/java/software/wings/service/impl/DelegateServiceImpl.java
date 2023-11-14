@@ -2635,6 +2635,7 @@ public class DelegateServiceImpl implements DelegateService {
             .delegateType(delegateParams.getDelegateType())
             .tags(isNotEmpty(delegateParams.getTags()) ? new HashSet<>(delegateParams.getTags()) : null)
             .tokenName(delegateTokenName.orElse(null))
+            .version(delegateParams.getVersion())
             .build();
 
     String delegateGroupId = delegateParams.getDelegateGroupId();
@@ -3263,6 +3264,12 @@ public class DelegateServiceImpl implements DelegateService {
     if (sizeDetails != null) {
       setUnset(updateOperations, DelegateGroupKeys.sizeDetails, sizeDetails);
     }
+    if (delegateSetupDetails != null && isNotEmpty(delegateSetupDetails.getVersion())) {
+      long delegateExpiry = delegateSetupService.getDelegateExpirationTime(
+          delegateSetupDetails.getVersion(), delegateSetupDetails.getHostName());
+      setUnset(updateOperations, DelegateGroupKeys.delegatesExpireOn, delegateExpiry);
+    }
+
     DelegateGroup updatedDelegateGroup =
         persistence.upsert(query, updateOperations, HPersistence.upsertReturnNewOptions);
     DelegateSetupDetails delegateSetupDetailsOld = null;

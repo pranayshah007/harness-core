@@ -91,6 +91,22 @@ NEXT_GEN_MANAGER_SECRET: '{{ .ctx.Values.secrets.default.NEXT_GEN_MANAGER_SECRET
     {{- $hasAtleastOneSecret = true }}
 CE_NG_SERVICE_SECRET: '{{ .ctx.Values.secrets.default.CE_NG_SERVICE_SECRET | b64enc }}'
     {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "HARNESS_CE_AZURE_CLIENTSECRET")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+HARNESS_CE_AZURE_CLIENTSECRET: '{{ .ctx.Values.secrets.default.HARNESS_CE_AZURE_CLIENTSECRET | b64enc }}'
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "HARNESS_CE_AZURE_SAS")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+HARNESS_CE_AZURE_SAS: '{{ .ctx.Values.secrets.default.HARNESS_CE_AZURE_SAS | b64enc }}'
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "HARNESS_CE_AZURE_CLIENTID")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+HARNESS_CE_AZURE_CLIENTID: '{{ .ctx.Values.secrets.default.HARNESS_CE_AZURE_CLIENTID | b64enc }}'
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "HARNESS_CE_AZURE_TENANTID")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+HARNESS_CE_AZURE_TENANTID: '{{ .ctx.Values.secrets.default.HARNESS_CE_AZURE_TENANTID | b64enc }}'
+    {{- end }}
     {{- if not $hasAtleastOneSecret }}
 {}
     {{- end }}

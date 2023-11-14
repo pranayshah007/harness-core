@@ -330,6 +330,11 @@ cloudProviderConfig:
   S3_SYNC_CONFIG_BUCKET_NAME: "ccm-service-data-bucket"
   S3_SYNC_CONFIG_REGION: "us-east-1"
 
+azureConfig:
+  HARNESS_CE_AZURE_CONTAINER_NAME: ""
+  HARNESS_CE_AZURE_STORAGE_NAME: ""
+  HARNESS_CE_AZURE_IS_SYNC_JOB_DISABLED: ""
+
 awsAccountTagsCollectionJobConfig:
   enabled: true
 
@@ -389,6 +394,10 @@ secrets:
   default:
     NEXT_GEN_MANAGER_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
     CE_NG_SERVICE_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+    HARNESS_CE_AZURE_CLIENTSECRET: ""
+    HARNESS_CE_AZURE_SAS: ""
+    HARNESS_CE_AZURE_CLIENTID: ""
+    HARNESS_CE_AZURE_TENANTID: ""
   kubernetesSecrets:
     - secretName: ""
       keys:
@@ -396,6 +405,10 @@ secrets:
         CE_NG_SERVICE_SECRET: ""
         S3_SYNC_CONFIG_ACCESSKEY: ""
         S3_SYNC_CONFIG_SECRETKEY: ""
+        HARNESS_CE_AZURE_CLIENTSECRET: ""
+        HARNESS_CE_AZURE_SAS: ""
+        HARNESS_CE_AZURE_CLIENTID: ""
+        HARNESS_CE_AZURE_TENANTID: ""
   secretManagement:
     externalSecretsOperator:
       - secretStore:
@@ -414,3 +427,17 @@ secrets:
           S3_SYNC_CONFIG_SECRETKEY:
             name: ""
             property: ""
+          HARNESS_CE_AZURE_CLIENTSECRET:
+            name: ""
+            property: ""
+          HARNESS_CE_AZURE_SAS:
+            name: ""
+            property: ""
+          HARNESS_CE_AZURE_CLIENTID:
+            name: ""
+            property: ""
+          HARNESS_CE_AZURE_TENANTID:
+            name: ""
+            property: ""
+
+

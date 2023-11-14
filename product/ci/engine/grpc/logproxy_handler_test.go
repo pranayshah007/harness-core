@@ -68,10 +68,6 @@ func TestWrite_Success(t *testing.T) {
 	mLogClient := mock.NewMockClient(ctrl)
 	mLogClient.EXPECT().Write(ctx, key, lines).Return(nil)
 
-	oldLogHTTPClient := remoteLogClient
-	defer func() { remoteLogClient = oldLogHTTPClient }()
-	remoteLogClient = func() (client.Client, error) { return mLogClient, nil }
-
 	var jsonLines []string
 	jsonLines = append(jsonLines, string(json1))
 	jsonLines = append(jsonLines, string(json2))
@@ -79,7 +75,7 @@ func TestWrite_Success(t *testing.T) {
 	in := &pb.WriteRequest{Key: key, Lines: jsonLines}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
+	h := NewLogProxyHandler(log.Sugar(), mLogClient)
 	_, err := h.Write(ctx, in)
 	assert.Nil(t, err)
 }
@@ -92,43 +88,17 @@ func TestWrite_Failure_IncorrectLineFormat(t *testing.T) {
 
 	mLogClient := mock.NewMockClient(ctrl)
 
-	oldLogHTTPClient := remoteLogClient
-	defer func() { remoteLogClient = oldLogHTTPClient }()
-	remoteLogClient = func() (client.Client, error) { return mLogClient, nil }
-
 	var lines []string
 	lines = append(lines, "incorrect format")
 
 	in := &pb.WriteRequest{Key: key, Lines: lines}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
+	h := NewLogProxyHandler(log.Sugar(), mLogClient)
 	_, err := h.Write(ctx, in)
 	assert.NotNil(t, err)
 }
 
-func TestWrite_Failure_Client(t *testing.T) {
-	ctrl, ctx := gomock.WithContext(context.Background(), t)
-	defer ctrl.Finish()
-
-	key := "key"
-
-	oldLogHTTPClient := remoteLogClient
-	defer func() { remoteLogClient = oldLogHTTPClient }()
-	remoteLogClient = func() (client.Client, error) { return nil, errors.New("couldn't create log HTTP client") }
-
-	l1 := &stream.Line{Level: "info", Message: "test", Args: map[string]string{"k1": "v1"}}
-	json1, _ := json.Marshal(l1)
-	var lines []string
-	lines = append(lines, string(json1))
-
-	in := &pb.WriteRequest{Key: key, Lines: lines}
-
-	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
-	_, err := h.Write(ctx, in)
-	assert.NotNil(t, err)
-}
 
 func Test_UploadLink_Success(t *testing.T) {
 	ctrl, ctx := gomock.WithContext(context.Background(), t)
@@ -141,14 +111,10 @@ func Test_UploadLink_Success(t *testing.T) {
 	mLogClient := mock.NewMockClient(ctrl)
 	mLogClient.EXPECT().UploadLink(ctx, key).Return(link, nil)
 
-	oldLogHTTPClient := remoteLogClient
-	defer func() { remoteLogClient = oldLogHTTPClient }()
-	remoteLogClient = func() (client.Client, error) { return mLogClient, nil }
-
 	in := &pb.UploadLinkRequest{Key: key}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
+	h := NewLogProxyHandler(log.Sugar(), mLogClient)
 	resp, err := h.UploadLink(ctx, in)
 	assert.Nil(t, err)
 	assert.Equal(t, resp.GetLink(), strLink)
@@ -163,32 +129,10 @@ func Test_UploadLink_Failure(t *testing.T) {
 	mLogClient := mock.NewMockClient(ctrl)
 	mLogClient.EXPECT().UploadLink(ctx, key).Return(nil, errors.New("upload link failure"))
 
-	oldLogHTTPClient := remoteLogClient
-	defer func() { remoteLogClient = oldLogHTTPClient }()
-	remoteLogClient = func() (client.Client, error) { return mLogClient, nil }
-
 	in := &pb.UploadLinkRequest{Key: key}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
-	_, err := h.UploadLink(ctx, in)
-	assert.NotNil(t, err)
-}
-
-func Test_UploadLink_Failure_Client(t *testing.T) {
-	ctrl, ctx := gomock.WithContext(context.Background(), t)
-	defer ctrl.Finish()
-
-	key := "key"
-
-	oldLogHTTPClient := remoteLogClient
-	defer func() { remoteLogClient = oldLogHTTPClient }()
-	remoteLogClient = func() (client.Client, error) { return nil, errors.New("couldn't create client") }
-
-	in := &pb.UploadLinkRequest{Key: key}
-
-	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
+	h := NewLogProxyHandler(log.Sugar(), mLogClient)
 	_, err := h.UploadLink(ctx, in)
 	assert.NotNil(t, err)
 }
@@ -202,14 +146,10 @@ func Test_Open_Success(t *testing.T) {
 	mLogClient := mock.NewMockClient(ctrl)
 	mLogClient.EXPECT().Open(ctx, key).Return(nil)
 
-	oldLogHTTPClient := remoteLogClient
-	defer func() { remoteLogClient = oldLogHTTPClient }()
-	remoteLogClient = func() (client.Client, error) { return mLogClient, nil }
-
 	in := &pb.OpenRequest{Key: key}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
+	h := NewLogProxyHandler(log.Sugar(), mLogClient)
 	_, err := h.Open(ctx, in)
 	assert.Nil(t, err)
 }
@@ -223,32 +163,10 @@ func Test_Open_Failure(t *testing.T) {
 	mLogClient := mock.NewMockClient(ctrl)
 	mLogClient.EXPECT().Open(ctx, key).Return(errors.New("failed to open stream"))
 
-	oldLogHTTPClient := remoteLogClient
-	defer func() { remoteLogClient = oldLogHTTPClient }()
-	remoteLogClient = func() (client.Client, error) { return mLogClient, nil }
-
 	in := &pb.OpenRequest{Key: key}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
-	_, err := h.Open(ctx, in)
-	assert.NotNil(t, err)
-}
-
-func Test_Open_Failure_Client(t *testing.T) {
-	ctrl, ctx := gomock.WithContext(context.Background(), t)
-	defer ctrl.Finish()
-
-	key := "key"
-
-	oldLogHTTPClient := remoteLogClient
-	defer func() { remoteLogClient = oldLogHTTPClient }()
-	remoteLogClient = func() (client.Client, error) { return nil, errors.New("could not create client") }
-
-	in := &pb.OpenRequest{Key: key}
-
-	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
+	h := NewLogProxyHandler(log.Sugar(), mLogClient)
 	_, err := h.Open(ctx, in)
 	assert.NotNil(t, err)
 }
@@ -262,14 +180,10 @@ func Test_Close_Success(t *testing.T) {
 	mLogClient := mock.NewMockClient(ctrl)
 	mLogClient.EXPECT().Close(ctx, key).Return(nil)
 
-	oldLogHTTPClient := remoteLogClient
-	defer func() { remoteLogClient = oldLogHTTPClient }()
-	remoteLogClient = func() (client.Client, error) { return mLogClient, nil }
-
 	in := &pb.CloseRequest{Key: key}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
+	h := NewLogProxyHandler(log.Sugar(), mLogClient)
 	_, err := h.Close(ctx, in)
 	assert.Nil(t, err)
 }
@@ -283,32 +197,10 @@ func Test_Close_Failure(t *testing.T) {
 	mLogClient := mock.NewMockClient(ctrl)
 	mLogClient.EXPECT().Close(ctx, key).Return(errors.New("failed to open stream"))
 
-	oldLogHTTPClient := remoteLogClient
-	defer func() { remoteLogClient = oldLogHTTPClient }()
-	remoteLogClient = func() (client.Client, error) { return mLogClient, nil }
-
 	in := &pb.CloseRequest{Key: key}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
-	_, err := h.Close(ctx, in)
-	assert.NotNil(t, err)
-}
-
-func Test_Close_Failure_Client(t *testing.T) {
-	ctrl, ctx := gomock.WithContext(context.Background(), t)
-	defer ctrl.Finish()
-
-	key := "key"
-
-	oldLogHTTPClient := remoteLogClient
-	defer func() { remoteLogClient = oldLogHTTPClient }()
-	remoteLogClient = func() (client.Client, error) { return nil, errors.New("could not create client") }
-
-	in := &pb.CloseRequest{Key: key}
-
-	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
+	h := NewLogProxyHandler(log.Sugar(), mLogClient)
 	_, err := h.Close(ctx, in)
 	assert.NotNil(t, err)
 }
@@ -336,15 +228,11 @@ func Test_UploadUsingLink_Success(t *testing.T) {
 	mLogClient := mock.NewMockClient(ctrl)
 	mLogClient.EXPECT().UploadUsingLink(ctx, link, data).Return(nil)
 
-	oldLogHTTPClient := remoteLogClient
-	defer func() { remoteLogClient = oldLogHTTPClient }()
-	remoteLogClient = func() (client.Client, error) { return mLogClient, nil }
-
 	req := &pb.UploadUsingLinkRequest{Link: link, Lines: jsonLines}
 	in := NewUploadUsingLinkMock(nil, ctx, req)
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
+	h := NewLogProxyHandler(log.Sugar(), mLogClient)
 	err := h.UploadUsingLink(in)
 	assert.Nil(t, err)
 }
@@ -372,43 +260,11 @@ func Test_UploadUsingLink_Failure(t *testing.T) {
 	mLogClient := mock.NewMockClient(ctrl)
 	mLogClient.EXPECT().UploadUsingLink(ctx, link, data).Return(errors.New("upload using link failure"))
 
-	oldLogHTTPClient := remoteLogClient
-	defer func() { remoteLogClient = oldLogHTTPClient }()
-	remoteLogClient = func() (client.Client, error) { return mLogClient, nil }
-
 	req := &pb.UploadUsingLinkRequest{Link: link, Lines: jsonLines}
 	in := NewUploadUsingLinkMock(nil, ctx, req)
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
-	err := h.UploadUsingLink(in)
-	assert.NotNil(t, err)
-}
-
-func Test_UploadUsingLink_Failure_Client(t *testing.T) {
-	ctrl, ctx := gomock.WithContext(context.Background(), t)
-	defer ctrl.Finish()
-
-	link := "http://minio:9000"
-
-	l1 := &stream.Line{Level: "info", Message: "test", Args: map[string]string{"k1": "v1"}}
-	json1, _ := json.Marshal(l1)
-	l2 := &stream.Line{Level: "info", Message: "test2", Args: map[string]string{"k2": "v2"}}
-	json2, _ := json.Marshal(l2)
-
-	var jsonLines []string
-	jsonLines = append(jsonLines, string(json1))
-	jsonLines = append(jsonLines, string(json2))
-
-	oldLogHTTPClient := remoteLogClient
-	defer func() { remoteLogClient = oldLogHTTPClient }()
-	remoteLogClient = func() (client.Client, error) { return nil, errors.New("error while creating client") }
-
-	req := &pb.UploadUsingLinkRequest{Link: link, Lines: jsonLines}
-	in := NewUploadUsingLinkMock(nil, ctx, req)
-
-	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	h := NewLogProxyHandler(log.Sugar(), remoteLogClient)
+	h := NewLogProxyHandler(log.Sugar(), mLogClient)
 	err := h.UploadUsingLink(in)
 	assert.NotNil(t, err)
 }

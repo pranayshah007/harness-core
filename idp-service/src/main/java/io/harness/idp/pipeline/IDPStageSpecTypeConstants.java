@@ -17,5 +17,5 @@ import lombok.NoArgsConstructor;
 @OwnedBy(IDP)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class IDPStageSpecTypeConstants {
-  public static final String IDP_STAGE = "IDPStage";
+  public static final String IDP_STAGE = "IDP";
 }

@@ -417,13 +417,14 @@ public class NGTriggerRepositoryCustomImplTest extends CategoryTest {
                                                                     .detailedMessage("")
                                                                     .lastPolled(List.of("1.0"))
                                                                     .lastPollingUpdate(123L)
+                                                                    .errorStatusValidUntil(100L)
                                                                     .build();
     update.set(NGTriggerEntityKeys.triggerStatus + "." + TriggerStatusKeys.pollingSubscriptionStatus,
         pollingSubscriptionStatusUpdate);
     when(mongoTemplate.updateMulti(any(Query.class), any(Update.class), eq(NGTriggerEntity.class)))
         .thenReturn(UpdateResult.acknowledged(1, 1L, new BsonBoolean(true)));
     boolean result = ngTriggerRepositoryCustom.updateManyTriggerPollingSubscriptionStatusBySignatures(
-        "account", List.of("sig"), true, "", List.of("1.0"), 123L);
+        "account", List.of("sig"), true, "", List.of("1.0"), 123L, 100L);
     assertThat(result).isTrue();
     verify(mongoTemplate, times(1)).updateMulti(any(Query.class), eq(update), eq(NGTriggerEntity.class));
   }
@@ -484,12 +485,47 @@ public class NGTriggerRepositoryCustomImplTest extends CategoryTest {
                                .pollingSubscriptionStatus(PollingSubscriptionStatus.builder()
                                                               .statusResult(StatusResult.FAILED)
                                                               .lastPollingUpdate(timestamp)
+                                                              .errorStatusValidUntil(null)
                                                               .build())
                                .status(StatusResult.SUCCESS)
                                .build())
             .build();
     NGTriggerRepositoryCustomImpl.updateTriggerStatus(List.of(ngTriggerEntity));
     assertThat(ngTriggerEntity.getTriggerStatus().getStatus()).isEqualTo(StatusResult.FAILED);
+    assertThat(ngTriggerEntity.getTriggerStatus().getLastPollingUpdate()).isEqualTo(timestamp);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testUpdateTriggerStatusPollingSubscriptionFailureExpiredShouldShowSuccess() {
+    /* Since there is an expiry time for polling subscription failure state, here we test whether after this expiry
+       time we are showing pollingSubscriptionStatus as SUCCESS. */
+    Long timestamp = 123L;
+    NGTriggerEntity ngTriggerEntity =
+        NGTriggerEntity.builder()
+            .name(name)
+            .type(NGTriggerType.ARTIFACT)
+            .accountId(accountId)
+            .identifier(identifier)
+            .projectIdentifier(projectId)
+            .orgIdentifier(orgId)
+            .targetIdentifier(pipelineId)
+            .triggerStatus(TriggerStatus.builder()
+                               .webhookAutoRegistrationStatus(WebhookAutoRegistrationStatus.builder()
+                                                                  .registrationResult(WebhookRegistrationStatus.SUCCESS)
+                                                                  .build())
+                               .validationStatus(ValidationStatus.builder().statusResult(StatusResult.SUCCESS).build())
+                               .pollingSubscriptionStatus(PollingSubscriptionStatus.builder()
+                                                              .statusResult(StatusResult.FAILED)
+                                                              .errorStatusValidUntil(100L)
+                                                              .lastPollingUpdate(timestamp)
+                                                              .build())
+                               .status(StatusResult.SUCCESS)
+                               .build())
+            .build();
+    NGTriggerRepositoryCustomImpl.updateTriggerStatus(List.of(ngTriggerEntity));
+    assertThat(ngTriggerEntity.getTriggerStatus().getStatus()).isEqualTo(StatusResult.SUCCESS);
     assertThat(ngTriggerEntity.getTriggerStatus().getLastPollingUpdate()).isEqualTo(timestamp);
   }
 

@@ -1274,7 +1274,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLO);
 
     PageResponse<MonitoredServiceListItemDTO> msPageResponse =
-        monitoredServiceService.list(builderFactory.getProjectParams(), null, 0, 10, null, null, false);
+        monitoredServiceService.list(builderFactory.getProjectParams(), null, null, 0, 10, null, null, false);
     assertThat(msPageResponse.getPageItemCount()).isEqualTo(2);
     assertThat(msPageResponse.getTotalItems()).isEqualTo(2);
 
@@ -1346,7 +1346,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLO);
 
     PageResponse<MonitoredServiceListItemDTO> msPageResponse =
-        monitoredServiceService.list(builderFactory.getProjectParams(), null, 0, 10, null, null, false);
+        monitoredServiceService.list(builderFactory.getProjectParams(), null, null, 0, 10, null, null, false);
     assertThat(msPageResponse.getPageItemCount()).isEqualTo(2);
     assertThat(msPageResponse.getTotalItems()).isEqualTo(2);
 
@@ -1558,7 +1558,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLO);
 
     PageResponse<MonitoredServiceListItemDTO> msPageResponse =
-        monitoredServiceService.list(builderFactory.getProjectParams(), null, 0, 10, null, null, false);
+        monitoredServiceService.list(builderFactory.getProjectParams(), null, null, 0, 10, null, null, false);
     assertThat(msPageResponse.getPageItemCount()).isEqualTo(2);
     assertThat(msPageResponse.getTotalItems()).isEqualTo(2);
 
@@ -1679,7 +1679,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLO);
 
     PageResponse<MonitoredServiceListItemDTO> msPageResponse =
-        monitoredServiceService.list(builderFactory.getProjectParams(), null, 0, 10, null, null, false);
+        monitoredServiceService.list(builderFactory.getProjectParams(), null, null, 0, 10, null, null, false);
     assertThat(msPageResponse.getPageItemCount()).isEqualTo(2);
     assertThat(msPageResponse.getTotalItems()).isEqualTo(2);
 

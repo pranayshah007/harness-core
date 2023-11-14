@@ -198,10 +198,11 @@ public class TerraformCloudClientImpl implements TerraformCloudClient {
   private <T> T executeRestCall(Call<T> call) throws IOException {
     Response<T> response = null;
     try {
-      log.info("Requesting: {}", call.request().url().url());
+      String url = call.request().url().url().toString();
+      log.info("Requesting: {}", url);
       response = call.execute();
       if (!response.isSuccessful() && response.errorBody() != null) {
-        throw new TerraformCloudApiException(response.errorBody().string(), response.code());
+        throw new TerraformCloudApiException(response.errorBody().string(), response.code(), url);
       }
       return response.body();
     } catch (Exception e) {
@@ -226,7 +227,8 @@ public class TerraformCloudClientImpl implements TerraformCloudClient {
       if (response.getStatusLine().getStatusCode() == 200) {
         content = EntityUtils.toString(entity);
       } else {
-        throw new TerraformCloudApiException(EntityUtils.toString(entity), response.getStatusLine().getStatusCode());
+        throw new TerraformCloudApiException(
+            EntityUtils.toString(entity), response.getStatusLine().getStatusCode(), url);
       }
     } catch (IOException e) {
       log.error("Error executing http call", e);
