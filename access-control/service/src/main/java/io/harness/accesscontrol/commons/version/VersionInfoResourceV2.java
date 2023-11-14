@@ -11,6 +11,7 @@ import io.harness.security.annotations.PublicApi;
 import io.harness.version.VersionInfoManagerV2;
 import io.harness.version.VersionInfoV2;
 
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import javax.ws.rs.GET;
@@ -30,6 +31,7 @@ import io.dropwizard.jersey.errors.ErrorMessage;
 public class VersionInfoResourceV2 {
   private final VersionInfoManagerV2 versionInfoManager;
 
+  @Inject
   public VersionInfoResourceV2(VersionInfoManagerV2 versionInfoManager) {
     this.versionInfoManager = versionInfoManager;
   }
