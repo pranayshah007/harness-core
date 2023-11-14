@@ -101,7 +101,7 @@ public class IACMStepsUtils {
    return DigestUtils.md5Hex(String.format("%s_%s_%s_%s", repo, connector, branch, commit, path));
   }
   public String generateFilePath(String hashedGitRepoInfo, String filePath) {
-    return String.format("/harnes/.iacm/%s/%s", hashedGitRepoInfo, filePath);
+    return String.format("/harness/.iacm/%s/%s", hashedGitRepoInfo, filePath);
   }
 
   public String populatePipelineIds(Ambiance ambiance, String json) {
