@@ -28,9 +28,10 @@ import io.dropwizard.jersey.errors.ErrorMessage;
 @Path("/version")
 @Produces(MediaType.APPLICATION_JSON)
 public class VersionInfoResourceV2 {
-  @Inject
+
   private VersionInfoManagerV2 versionInfoManager;
 
+  @Inject
   public VersionInfoResourceV2(VersionInfoManagerV2 versionInfoManager) {
     this.versionInfoManager = versionInfoManager;
   }
