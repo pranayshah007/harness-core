@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.Map;
 
 
+@Slf4j
 @OwnedBy(PL)
 public class VersionInfoManagerV2 {
   private String versionFilePath = "/opt/harness/version.yaml";
@@ -26,10 +27,11 @@ public class VersionInfoManagerV2 {
   public VersionInfoV2 getVersionInfo() {
     try {
       InputStream inputStream = new FileInputStream(versionFilePath);
-
+      log.info("Reading version file...");
       // Parse YAML file
       Yaml yaml = new Yaml();
       Map<String, Object> data = yaml.load(inputStream);
+      log.info("Successfully read version file...");
 
       // Create a VersionInfo object to store the data
       VersionInfoV2 versionInfo = VersionInfoV2.builder()
@@ -41,6 +43,7 @@ public class VersionInfoManagerV2 {
 
       return versionInfo;
     } catch (Exception e) {
+      log.error("Failed to retrieve version info: " + e.getMessage(), e);
       throw new RuntimeException("Failed to retrieve version info: " + e.getMessage(), e);
     }
   }
