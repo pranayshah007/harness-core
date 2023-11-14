@@ -18,7 +18,6 @@ import io.swagger.annotations.ApiOperation;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.MediaType;
 import java.util.Map;
@@ -26,7 +25,8 @@ import io.dropwizard.jersey.errors.ErrorMessage;
 
 @PublicApi
 @Path("/version")
-@Produces(MediaType.APPLICATION_JSON)
+@Produces({"application/json", "application/yaml"})
+@Consumes({"application/json", "application/yaml"})
 @Slf4j
 public class VersionInfoResourceV2 {
 
