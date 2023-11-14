@@ -1277,10 +1277,9 @@ public class WingsApplication extends Application<MainConfiguration> {
     if (configuration.isDisableNotificationTemplateRegister()) {
       return;
     }
-
-    ExecutorService executorService = injector.getInstance(
-        Key.get(ExecutorService.class, Names.named("notificationTemplateRegisterExecutorService")));
-    executorService.submit(injector.getInstance(NotificationTemplateRegistrar.class));
+    final ExecutorService notificationTemplateExecutor =
+        Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("notificationTemplateRegister").build());
+    notificationTemplateExecutor.execute(injector.getInstance(NotificationTemplateRegistrar.class));
   }
 
   private void registerQueueListeners(MainConfiguration configuration, Injector injector) {
