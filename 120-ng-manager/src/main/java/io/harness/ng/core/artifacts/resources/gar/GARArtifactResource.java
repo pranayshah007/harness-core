@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARRepositoryDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
@@ -139,6 +140,43 @@ public class GARArtifactResource {
     GARBuildDetailsDTO buildDetails = artifactResourceUtils.getLastSuccessfulBuildV2GAR(gcpConnectorIdentifier, region,
         repositoryName, project, pkg, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, garRequestDTO,
         fqnPath, serviceRef, gitEntityBasicInfo);
+    return ResponseDTO.newResponse(buildDetails);
+  }
+
+  @GET
+  @Path("getRepositories")
+  @ApiOperation(
+      value = "Gets Repositories google artifact registry", nickname = "getRepositoriesForGoogleArtifactRegistry")
+  public ResponseDTO<GARRepositoryDTO>
+  getBuildDetails(@QueryParam("connectorRef") String GCPConnectorIdentifier, @QueryParam("region") String region,
+      @QueryParam("project") String project, @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(GCPConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    GARRepositoryDTO buildDetails =
+        gARResourceService.getRepositories(connectorRef, region, project, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(buildDetails);
+  }
+
+  @POST
+  @Path("v2/getRepositories")
+  @ApiOperation(
+      value = "Gets Repositories google artifact registry", nickname = "getRepositoriesForGoogleArtifactRegistry")
+  public ResponseDTO<GARRepositoryDTO>
+  getBuildDetailsV2(@QueryParam("connectorRef") String GCPConnectorIdentifier, @QueryParam("region") String region,
+      @QueryParam("project") String project, @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @NotNull @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(GCPConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    GARRepositoryDTO buildDetails =
+        gARResourceService.getRepositories(connectorRef, region, project, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);
   }
 

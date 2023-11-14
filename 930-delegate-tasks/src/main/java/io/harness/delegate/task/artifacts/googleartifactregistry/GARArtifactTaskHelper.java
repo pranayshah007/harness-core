@@ -67,6 +67,13 @@ public class GARArtifactTaskHelper {
               "Fetched Artifact details \n  type: Google Artifact Registry \n  Version: "
                   + garDelegateResponse.getVersion());
           break;
+        case GET_GAR_REPOSITORIES:
+          saveLogs(executionLogCallback, "Fetching artifact details");
+          artifactTaskResponse = getSuccessTaskResponse(garArtifactTaskHandler.getRepositories(attributes));
+          saveLogs(executionLogCallback,
+              "Fetched " + artifactTaskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().size()
+                  + " artifacts");
+          break;
         default:
           saveLogs(executionLogCallback,
               "No corresponding Google Artifact Registry artifact task type [{}]: "

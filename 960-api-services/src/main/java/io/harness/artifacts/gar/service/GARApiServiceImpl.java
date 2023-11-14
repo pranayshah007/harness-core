@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.comparator.BuildDetailsInternalTimeComparator;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.artifacts.docker.service.ArtifactUtils;
@@ -26,6 +27,7 @@ import io.harness.artifacts.gar.GarRestClient;
 import io.harness.artifacts.gar.beans.GarInternalConfig;
 import io.harness.artifacts.gar.beans.GarPackageVersionResponse;
 import io.harness.artifacts.gar.beans.GarVersions;
+import io.harness.artifacts.gar.beans.GarRepositoryResponse;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactServerException;
@@ -114,6 +116,18 @@ public class GARApiServiceImpl implements GarApiService {
   }
 
   @Override
+  public List<BuildDetailsInternal> getRepository(GarInternalConfig garInternalConfig, String region) {
+    try {
+      GarRestClient garRestClient = getGarRestClient(garInternalConfig);
+      return getRepositories(garInternalConfig, garRestClient, region);
+    } catch (IOException e) {
+      throw NestedExceptionUtils.hintWithExplanationException("Could not fetch versions for the package",
+          "Please check if the package exists and if the permissions are scoped for the authenticated user",
+          new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
+    }
+  }
+
+  @Override
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(
       GarInternalConfig garinternalConfig, String versionRegex) {
     List<BuildDetailsInternal> builds = getBuilds(garinternalConfig, versionRegex, garinternalConfig.getMaxBuilds());
@@ -181,6 +195,42 @@ public class GARApiServiceImpl implements GarApiService {
         .metadata(metadata)
         .artifactMetaInfo(artifactMetaInfo)
         .build();
+  }
+
+  private List<BuildDetailsInternal> getRepositories(GarInternalConfig garinternalConfig, GarRestClient garRestClient,
+      String region) throws WingsException, IOException {
+    List<BuildDetailsInternal> details = new ArrayList<>();
+    String project = garinternalConfig.getProject();
+    String nextPage = "";
+    do {
+      Response<GarRepositoryResponse> response =
+          garRestClient.getRepository(garinternalConfig.getBearerToken(), project, region, 1000, nextPage).execute();
+
+      if (response == null) {
+        throw NestedExceptionUtils.hintWithExplanationException("Response Is Null",
+            "Please Check Whether Artifact exists or not",
+            new InvalidArtifactServerException(response.errorBody().toString(), USER));
+      }
+      if (!response.isSuccessful()) {
+        log.error("Request not successful. Reason: {}", response);
+        if (!isSuccessful(response.code(), response.errorBody().toString())) {
+          throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the versions for the package",
+              "Please check region field", new InvalidArtifactServerException(response.message(), USER));
+        }
+      }
+
+      GarRepositoryResponse page = response.body();
+      List<BuildDetailsInternal> pageDetails = processPage(page, null, garinternalConfig);
+      details.addAll(pageDetails);
+
+      if (page == null || StringUtils.isBlank(page.getNextPageToken())) {
+        break;
+      }
+
+      nextPage = StringUtils.isBlank(page.getNextPageToken()) ? null : page.getNextPageToken();
+    } while (StringUtils.isNotBlank(nextPage));
+
+    return details.stream().sorted(new BuildDetailsInternalComparatorDescending()).collect(Collectors.toList());
   }
 
   private List<BuildDetailsInternal> paginate(GarInternalConfig garinternalConfig, GarRestClient garRestClient,
@@ -293,6 +343,41 @@ public class GARApiServiceImpl implements GarApiService {
 
     } else {
       if (versionsPage == null) {
+        log.warn("Google Artifact Registry Package version response was null.");
+      } else {
+        log.warn("Google Artifact Registry Package version response had an empty or missing tag list.");
+      }
+      return Collections.emptyList();
+    }
+  }
+
+  public List<BuildDetailsInternal> processPage(
+      GarRepositoryResponse RepositoryPage, String versionRegex, GarInternalConfig garinternalConfig) {
+    if (RepositoryPage != null && EmptyPredicate.isNotEmpty(RepositoryPage.getRepositories())) {
+      int index = RepositoryPage.getRepositories().get(0).getName().lastIndexOf("/");
+      List<BuildDetailsInternal> buildDetails =
+          RepositoryPage.getRepositories()
+              .stream()
+              .map(tag -> {
+                String RepoName = tag.getName().substring(index + 1);
+                Map<String, String> metadata = new HashMap();
+                metadata.put(ArtifactMetadataKeys.artifactPackage, RepoName);
+                metadata.put(ArtifactMetadataKeys.artifactProject, garinternalConfig.getProject());
+                metadata.put(ArtifactMetadataKeys.artifactRegion, garinternalConfig.getRegion());
+                return BuildDetailsInternal.builder()
+                    .uiDisplayName("Repository# " + RepoName)
+                    .number(RepoName)
+                    .metadata(metadata)
+                    .build();
+              })
+              .filter(build
+                  -> StringUtils.isBlank(versionRegex) || new RegexFunctor().match(versionRegex, build.getNumber()))
+              .collect(toList());
+
+      return buildDetails.stream().sorted(new BuildDetailsInternalComparatorDescending()).collect(toList());
+
+    } else {
+      if (RepositoryPage == null) {
         log.warn("Google Artifact Registry Package version response was null.");
       } else {
         log.warn("Google Artifact Registry Package version response had an empty or missing tag list.");

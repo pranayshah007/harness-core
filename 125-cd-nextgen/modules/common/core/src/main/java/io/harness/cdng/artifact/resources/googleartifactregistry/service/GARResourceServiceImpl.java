@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.artifact.resources.googleartifactregistry.service;
+import static io.harness.cdng.artifact.resources.googleartifactregistry.mappers.GARResourceMapper.toGarRepository;
 import static io.harness.cdng.artifact.resources.googleartifactregistry.mappers.GARResourceMapper.toGarResponse;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.exception.WingsException.USER;
@@ -20,6 +21,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARRepositoryDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
@@ -99,6 +101,32 @@ public class GARResourceServiceImpl implements GARResourceService {
       SecretManagerClientService secretManagerClientService) {
     this.connectorService = connectorService;
     this.secretManagerClientService = secretManagerClientService;
+  }
+
+  @Override
+  public GARRepositoryDTO getRepositories(IdentifierRef googleArtifactRegistryRef, String region, String project,
+      String orgIdentifier, String projectIdentifier) {
+    ArtifactUtils.validateIfAllValuesAssigned(
+        MutablePair.of(NGArtifactConstants.REGION, region), MutablePair.of(NGArtifactConstants.PROJECT, project));
+    GcpConnectorDTO connector = getConnector(googleArtifactRegistryRef);
+    BaseNGAccess baseNGAccess =
+        getBaseNGAccess(googleArtifactRegistryRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+    List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
+    GarDelegateRequest googleArtifactDelegateRequest =
+        ArtifactDelegateRequestUtils.getGoogleArtifactDelegateRequest(region, null, project, null, null, null,
+            connector, encryptionDetails, ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY, MAXBUILDS);
+    try {
+      ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+          executeSyncTask(googleArtifactDelegateRequest, ArtifactTaskType.GET_GAR_REPOSITORIES, baseNGAccess,
+              "Google Artifact Registry Get Repositories task failure due to error");
+      return getGarRepositoryDTOList(artifactTaskExecutionResponse);
+    } catch (DelegateServiceDriverException ex) {
+      throw new HintException(
+          String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
+          new DelegateNotAvailableException(ex.getCause().getMessage(), WingsException.USER));
+    } catch (ExplanationException e) {
+      throw new HintException(HintException.HINT_GCP_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
+    }
   }
 
   @Override
@@ -212,7 +240,7 @@ public class GARResourceServiceImpl implements GARResourceService {
     } else if (responseData instanceof RemoteMethodReturnValueData) {
       RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
       if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
-        throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
+        throw (InvalidRequestException) (remoteMethodReturnValueData.getException());
       } else {
         throw new ArtifactServerException("Unexpected error during authentication to Google Artifact Registry server "
                 + remoteMethodReturnValueData.getReturnValue(),
@@ -257,5 +285,14 @@ public class GARResourceServiceImpl implements GARResourceService {
             .map(delegateResponse -> (GarDelegateResponse) delegateResponse)
             .collect(Collectors.toList());
     return toGarResponse(garDelegateResponses);
+  }
+
+  private GARRepositoryDTO getGarRepositoryDTOList(ArtifactTaskExecutionResponse artifactTaskExecutionResponse) {
+    List<GarDelegateResponse> garDelegateResponses =
+        artifactTaskExecutionResponse.getArtifactDelegateResponses()
+            .stream()
+            .map(delegateResponse -> (GarDelegateResponse) delegateResponse)
+            .collect(Collectors.toList());
+    return toGarRepository(garDelegateResponses);
   }
 }

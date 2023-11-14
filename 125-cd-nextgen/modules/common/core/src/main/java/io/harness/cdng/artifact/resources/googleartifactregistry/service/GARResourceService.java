@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARRepositoryDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
 
@@ -21,4 +22,6 @@ public interface GARResourceService {
   GARBuildDetailsDTO getLastSuccessfulBuild(IdentifierRef googleArtifactRegistryRef, String region,
       String repositoryName, String project, String pkg, GarRequestDTO garRequestDTO, String orgIdentifier,
       String projectIdentifier);
+  GARRepositoryDTO getRepositories(IdentifierRef GoogleArtifactRegistryRef, String region, String project,
+      String orgIdentifier, String projectIdentifier);
 }
