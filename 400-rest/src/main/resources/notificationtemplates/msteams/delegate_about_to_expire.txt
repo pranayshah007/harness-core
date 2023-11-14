@@ -1,7 +1,7 @@
 {
   "@type": "MessageCard",
   "themeColor": "#FFFFFF",
-  "summary": "Delegate ${DELEGATE_ID} is about to expire",
+  "summary": " Harness Delegate ${DELEGATE_ID} is about to expire",
   "sections": [
     {
       "activityTitle": "Harness Delegate ${DELEGATE_ID} expires on ${EXPIRY_TIME}. Make sure auto upgrade is ON to get the latest image."

@@ -1,7 +1,7 @@
 {
   "@type": "MessageCard",
   "themeColor": "#FFFFFF",
-  "summary": "Delegate ${DELEGATE_ID} Expired",
+  "summary": " Harness Delegate ${DELEGATE_ID} Expired",
   "sections": [
     {
       "activityTitle": "Harness Delegate ${DELEGATE_ID} expired on ${EXPIRY_TIME}. Upgrade the delegate."
