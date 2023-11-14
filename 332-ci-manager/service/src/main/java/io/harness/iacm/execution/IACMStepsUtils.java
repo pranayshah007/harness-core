@@ -100,8 +100,13 @@ public class IACMStepsUtils {
   public String generateHashedGitRepoInfo(String repo, String connector, String branch, String commit, String path) {
    return DigestUtils.md5Hex(String.format("%s_%s_%s_%s", repo, connector, branch, commit, path));
   }
-  public String generateFilePath(String hashedGitRepoInfo, String filePath) {
-    return String.format("/harness/.iacm/%s/%s", hashedGitRepoInfo, filePath);
+
+  public String generateVariableFilePath(String basePath, String filePath) {
+    return String.format("%s/%s", basePath, filePath);
+  }
+
+  public String generateVariableFileBasePath(String hashedGitRepoInfo) {
+    return String.format("/harness/.iacm/%s");
   }
 
   public String populatePipelineIds(Ambiance ambiance, String json) {
@@ -153,7 +158,6 @@ public class IACMStepsUtils {
       for (VariablesRepo variablesRepo : workspaceInfo.getTerraform_variable_files()) {
         String hashedGitInfo = this.generateHashedGitRepoInfo(variablesRepo.getRepository(), variablesRepo.getRepository_connector(),
                 variablesRepo.getRepository_branch(), variablesRepo.getRepository_commit(),variablesRepo.getRepository_path());
-        String filePathWithHash = this.generateFilePath(hashedGitInfo, variablesRepo.getRepository_path());
 
         if (Objects.equals(variablesRepo.getRepository_connector(), workspaceInfo.getRepository_connector()) &&
                 Objects.equals(variablesRepo.getRepository(), workspaceInfo.getRepository()) &&
@@ -162,7 +166,8 @@ public class IACMStepsUtils {
           pluginEnvs.put(String.format("PLUGIN_VARIABLE_CONNECTOR_%s", hashedGitInfo), variablesRepo.getRepository_path());
           continue;
         }
-         pluginEnvs.put(String.format("PLUGIN_VARIABLE_CONNECTOR_%s", hashedGitInfo), filePathWithHash);
+        String variableFilePath = this.generateVariableFilePath(this.generateVariableFileBasePath(hashedGitInfo), hashedGitInfo);
+        pluginEnvs.put(String.format("PLUGIN_VARIABLE_CONNECTOR_%s", hashedGitInfo), variableFilePath);
       }
     }
     for (WorkspaceVariables variable : variables) {

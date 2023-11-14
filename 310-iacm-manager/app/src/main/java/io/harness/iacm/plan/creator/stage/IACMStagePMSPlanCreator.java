@@ -206,7 +206,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
       if (processedRepos.contains(variablesRepo.getRepository_connector())) {
         continue;
       }
-      
+
       BuildBuilder buildObject = builder();
       if (!Objects.equals(variablesRepo.getRepository_branch(), "")) {
         buildObject.type(BuildType.BRANCH);
@@ -228,7 +228,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
               .depth(ParameterField.<Integer>builder().value(50).build())
               .build(ParameterField.<Build>builder().value(buildObject.build()).build())
               .repoName(ParameterField.<String>builder().value(variablesRepo.getRepository()).build())
-                  .cloneDirectory(ParameterField.<String>builder().value(iacmStepsUtils.generateFilePath(hashedGitRepoInfo, variablesRepo.getRepository_path())).build())
+                  .cloneDirectory(ParameterField.<String>builder().value(iacmStepsUtils.generateVariableFileBasePath(hashedGitRepoInfo)).build())
               .build();
       String uuid = generateUuid();
       try {
