@@ -62,9 +62,9 @@ public class CDLicenseObjectMapper implements LicenseObjectMapper<CDModuleLicens
       // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
       Integer mappingRatio = 1;
       if (cdModuleLicenseDTO.getCdLicenseType().equals(CDLicenseType.SERVICES)) {
-        cdModuleLicenseDTO.setWorkloads(mappingRatio * cdModuleLicenseDTO.getDeveloperLicenses());
+        cdModuleLicenseDTO.setWorkloads(mappingRatio * cdModuleLicenseDTO.getDeveloperLicenseCount());
       } else {
-        cdModuleLicenseDTO.setServiceInstances(mappingRatio * cdModuleLicenseDTO.getDeveloperLicenses());
+        cdModuleLicenseDTO.setServiceInstances(mappingRatio * cdModuleLicenseDTO.getDeveloperLicenseCount());
       }
     }
   }
