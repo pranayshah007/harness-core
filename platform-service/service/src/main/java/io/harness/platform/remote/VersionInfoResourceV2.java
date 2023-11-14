@@ -29,6 +29,7 @@ import io.dropwizard.jersey.errors.ErrorMessage;
 @Produces(MediaType.APPLICATION_JSON)
 public class VersionInfoResourceV2 {
 
+  @Inject
   private final VersionInfoManagerV2 versionInfoManager;
 
   @Inject
