@@ -203,8 +203,8 @@ public class AdminAccountResource {
   @GET
   @Path("recently-updated-accounts")
   public RestResponse<List<AccountSummary>> getRecentlyUpdatedAccounts(@QueryParam("timestamp") long timestamp) {
-    List<Account> updatedAccountsIds = adminAccountService.getAccountsUpdatedSinceTimestamp(timestamp);
-    return new RestResponse<>(accountSummaryHelper.getAccountSummariesFromAccounts(updatedAccountsIds));
+    List<Account> updatedAccounts = adminAccountService.getAccountsUpdatedSinceTimestamp(timestamp);
+    return new RestResponse<>(accountSummaryHelper.getAccountSummariesFromAccounts(updatedAccounts));
   }
 
   @PUT
