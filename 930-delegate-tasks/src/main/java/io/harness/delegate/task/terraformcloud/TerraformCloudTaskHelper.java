@@ -34,12 +34,16 @@ import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionCon
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.POLICY_CHECK_HARD_FAILURE_HINT;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.POLICY_CHECK_ISSUE_WITH_POLICIES;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.RELATIONSHIP_DATA_EMPTY;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.RESPONSE_401_EXPLANATION;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.RESPONSE_404_EXPLANATION;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_PLAN;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_PLAN_STATUS;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_POLICY;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_RUN;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_TFC_CONFIG;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CONTACT_HARNESS;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.RESPONSE_401_HINT;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.RESPONSE_404_HINT;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.CANT_PROCESS_TFC_RESPONSE;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_APPLY;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_APPLYING;
@@ -78,11 +82,14 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.FileBucket;
+import io.harness.exception.HintException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.TerraformCloudException;
+import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import io.harness.terraformcloud.TerraformCloudApiException;
 import io.harness.terraformcloud.TerraformCloudApiTokenCredentials;
 import io.harness.terraformcloud.TerraformCloudClient;
 import io.harness.terraformcloud.TerraformCloudConfig;
@@ -131,6 +138,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
@@ -184,9 +192,8 @@ public class TerraformCloudTaskHelper {
         pageNumber++;
       } while (response.getLinks().hasNonNull("next"));
     } catch (Exception e) {
-      throw NestedExceptionUtils.hintWithExplanationException(PLEASE_CHECK_TFC_CONFIG,
-          format(COULD_NOT_GET_WORKSPACE, credentials.getUrl(), organization),
-          new TerraformCloudException(ERROR_GETTING_WORKSPACE, e));
+      throw getHandledException(e, PLEASE_CHECK_TFC_CONFIG,
+          format(COULD_NOT_GET_WORKSPACE, credentials.getUrl(), organization), ERROR_GETTING_WORKSPACE);
     }
     return workspacesData;
   }
@@ -202,8 +209,8 @@ public class TerraformCloudTaskHelper {
         pageNumber++;
       } while (response.getLinks().hasNonNull("next"));
     } catch (Exception e) {
-      throw NestedExceptionUtils.hintWithExplanationException(PLEASE_CHECK_TFC_CONFIG,
-          format(COULD_NOT_GET_ORG, credentials.getUrl()), new TerraformCloudException(ERROR_GETTING_ORG, e));
+      throw getHandledException(
+          e, PLEASE_CHECK_TFC_CONFIG, format(COULD_NOT_GET_ORG, credentials.getUrl()), ERROR_GETTING_ORG);
     }
     return organizationsData;
   }
@@ -259,8 +266,7 @@ public class TerraformCloudTaskHelper {
       runId = runData.getId();
       logCallback.saveExecutionLog(format("Run: %s has been created", runId), INFO, CommandExecutionStatus.RUNNING);
     } catch (Exception e) {
-      throw NestedExceptionUtils.hintWithExplanationException(
-          PLEASE_CHECK_TFC_CONFIG, COULD_NOT_CREATE_RUN, new TerraformCloudException(ERROR_CREATING_RUN, e));
+      throw getHandledException(e, PLEASE_CHECK_TFC_CONFIG, COULD_NOT_CREATE_RUN, ERROR_CREATING_RUN);
     }
 
     if (forceExecute && getRunStatus(url, token, runId) == RunStatus.PENDING) {
@@ -295,8 +301,8 @@ public class TerraformCloudTaskHelper {
             new TerraformCloudException(ERROR_APPLYING));
       }
     } catch (Exception e) {
-      throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runData.getId()),
-          format(COULD_NOT_GET_APPLY_LOGS, applyId), new TerraformCloudException(ERROR_STREAMING_APPLY_LOGS, e));
+      throw getHandledException(e, format(PLEASE_CHECK_RUN, runData.getId()), format(COULD_NOT_GET_APPLY_LOGS, applyId),
+          ERROR_STREAMING_APPLY_LOGS);
     }
   }
 
@@ -373,8 +379,8 @@ public class TerraformCloudTaskHelper {
                 .collect(Collectors.joining(",")));
       }
     } catch (Exception e) {
-      throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runData.getId()),
-          COULD_NOT_GET_APPLY_OUTPUT, new TerraformCloudException(ERROR_GETTING_APPLY_OUTPUT, e));
+      throw getHandledException(
+          e, format(PLEASE_CHECK_RUN, runData.getId()), COULD_NOT_GET_APPLY_OUTPUT, ERROR_GETTING_APPLY_OUTPUT);
     }
     return null;
   }
@@ -383,8 +389,8 @@ public class TerraformCloudTaskHelper {
     try {
       return terraformCloudClient.getPlanJsonOutput(url, token, getRelationshipId(runData, PLAN));
     } catch (Exception e) {
-      throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runData.getId()),
-          COULD_NOT_GET_PLAN_JSON, new TerraformCloudException(ERROR_GETTING_JSON_PLAN, e));
+      throw getHandledException(
+          e, format(PLEASE_CHECK_RUN, runData.getId()), COULD_NOT_GET_PLAN_JSON, ERROR_GETTING_JSON_PLAN);
     }
   }
 
@@ -399,8 +405,7 @@ public class TerraformCloudTaskHelper {
       streamApplyLogs(url, token, runData, logCallback);
       return getApplyOutput(url, token, runData);
     } catch (Exception e) {
-      throw NestedExceptionUtils.hintWithExplanationException(
-          format(PLEASE_CHECK_RUN, runId), COULD_NOT_APPLY, new TerraformCloudException(ERROR_APPLY, e));
+      throw getHandledException(e, format(PLEASE_CHECK_RUN, runId), COULD_NOT_APPLY, ERROR_APPLY);
     }
   }
 
@@ -408,8 +413,7 @@ public class TerraformCloudTaskHelper {
     try {
       return terraformCloudClient.getRun(url, token, runId).getData();
     } catch (Exception e) {
-      throw NestedExceptionUtils.hintWithExplanationException(
-          format(PLEASE_CHECK_RUN, runId), COULD_NOT_GET_RUN, new TerraformCloudException(ERROR_GETTING_RUN, e));
+      throw getHandledException(e, format(PLEASE_CHECK_RUN, runId), COULD_NOT_GET_RUN, ERROR_GETTING_RUN);
     }
   }
 
@@ -467,8 +471,8 @@ public class TerraformCloudTaskHelper {
       try {
         response = terraformCloudClient.listPolicyChecks(url, token, runId, pageNumber);
       } catch (Exception e) {
-        throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runId),
-            COULD_NOT_GET_POLICY_DATA, new TerraformCloudException(ERROR_GETTING_POLICY_DATA, e));
+        throw getHandledException(
+            e, format(PLEASE_CHECK_RUN, runId), COULD_NOT_GET_POLICY_DATA, ERROR_GETTING_POLICY_DATA);
       }
       policyCheckData.addAll(response.getData());
       pageNumber++;
@@ -485,8 +489,8 @@ public class TerraformCloudTaskHelper {
         try {
           terraformCloudClient.overridePolicyChecks(url, token, policyCheckId);
         } catch (Exception e) {
-          throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_POLICY, policyCheckId),
-              COULD_NOT_OVERRIDE_POLICY, new TerraformCloudException(ERROR_OVERRIDE_POLICY, e));
+          throw getHandledException(
+              e, format(PLEASE_CHECK_POLICY, policyCheckId), COULD_NOT_OVERRIDE_POLICY, ERROR_OVERRIDE_POLICY);
         }
         logCallback.saveExecutionLog(
             format("Policy check: %s is overridden", policyCheckId), INFO, CommandExecutionStatus.RUNNING);
@@ -499,9 +503,8 @@ public class TerraformCloudTaskHelper {
       List<RunData> appliedRuns = terraformCloudClient.getAppliedRuns(url, token, workspace).getData();
       return isEmpty(appliedRuns) ? null : appliedRuns.get(0).getId();
     } catch (Exception e) {
-      throw NestedExceptionUtils.hintWithExplanationException(PLEASE_CHECK_TFC_CONFIG,
-          format(COULD_NOT_GET_LAST_APPLIED, workspace),
-          new TerraformCloudException(ERROR_GETTING_APPLIED_POLICIES, e));
+      throw getHandledException(
+          e, PLEASE_CHECK_TFC_CONFIG, format(COULD_NOT_GET_LAST_APPLIED, workspace), ERROR_GETTING_APPLIED_POLICIES);
     }
   }
 
@@ -576,8 +579,8 @@ public class TerraformCloudTaskHelper {
       // check status after logs are streamed
       status = terraformCloudClient.getPlan(url, token, planId).getData().getAttributes().getStatus();
     } catch (Exception e) {
-      throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_PLAN_STATUS, planId),
-          format(COULD_NOT_GET_PLAN, planId), new TerraformCloudException(ERROR_STREAMING_PLAN_LOGS, e));
+      throw getHandledException(
+          e, format(PLEASE_CHECK_PLAN_STATUS, planId), format(COULD_NOT_GET_PLAN, planId), ERROR_STREAMING_PLAN_LOGS);
     }
     if (status != null && status != Status.FINISHED) {
       logCallback.saveExecutionLog(
@@ -586,5 +589,34 @@ public class TerraformCloudTaskHelper {
           format(PLEASE_CHECK_PLAN_STATUS, planId), ERROR_PLAN, new TerraformCloudException(FAILED_TO_PLAN));
     }
     logCallback.saveExecutionLog("Plan finished", INFO, CommandExecutionStatus.SUCCESS);
+  }
+
+  private WingsException getHandledException(
+      Exception e, String predefinedHint, String explanation, String errorTitle) {
+    if (e instanceof TerraformCloudApiException) {
+      Pair<String, String> hintAndExplanation = getHintAndExplanation((TerraformCloudApiException) e);
+      if (isNotEmpty(hintAndExplanation.getKey())) {
+        return new HintException(hintAndExplanation.getKey(),
+            NestedExceptionUtils.hintWithExplanationsException(predefinedHint,
+                new TerraformCloudException(
+                    String.format("%s. URL: %s", errorTitle, ((TerraformCloudApiException) e).getUrl()), e),
+                hintAndExplanation.getValue(), explanation));
+      }
+    }
+    return NestedExceptionUtils.hintWithExplanationException(
+        predefinedHint, explanation, new TerraformCloudException(errorTitle, e));
+  }
+
+  private static Pair<String, String> getHintAndExplanation(TerraformCloudApiException exception) {
+    String hint = null;
+    String explanation = null;
+    if (exception.getStatusCode() == 401) {
+      hint = RESPONSE_401_HINT;
+      explanation = RESPONSE_401_EXPLANATION;
+    } else if (exception.getStatusCode() == 404) {
+      hint = RESPONSE_404_HINT;
+      explanation = RESPONSE_404_EXPLANATION;
+    }
+    return Pair.of(hint, explanation);
   }
 }

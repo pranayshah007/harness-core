@@ -8,6 +8,7 @@
 package io.harness.cvng.analysis.services.impl;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KAPIL;
@@ -44,12 +45,15 @@ import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
+import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.models.VerificationType;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -64,6 +68,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -116,6 +121,255 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     FieldUtils.writeField(deploymentTimeSeriesAnalysisService, "nextGenService", nextGenService, true);
     when(nextGenService.get(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(Optional.of(ConnectorInfoDTO.builder().name("AppDynamics Connector").build()));
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testUpdateNoAnalysisMetricsAsFailureAndGetAnalysisStatus_withoutCustomMetric() {
+    VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
+    verificationJobInstance.getResolvedJob().setFailIfAnyCustomMetricInNoAnalysis("true", false);
+    CVConfig cvConfig = verificationJobInstance.getCvConfigMap().values().iterator().next();
+    String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
+    String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
+        accountId, cvConfig.getUuid(), verificationJobInstanceId, cvConfig.getType());
+
+    deploymentTimeSeriesAnalysisService.save(createDeploymentTimeSeriesAnalysis(verificationTaskId));
+
+    List<DeploymentTimeSeriesAnalysis> deploymentTimeSeriesAnalysisServices =
+        deploymentTimeSeriesAnalysisService.getAnalysisResults(verificationTaskId);
+
+    deploymentTimeSeriesAnalysisService.updateNoAnalysisMetricsAsFailureIfRequired(
+        AnalysisInput.builder()
+            .verificationTaskId(verificationTaskId)
+            .testHosts(new HashSet<>(Arrays.asList("host1")))
+            .build());
+
+    assertThat(deploymentTimeSeriesAnalysisServices.get(0).getRisk()).isEqualTo(Risk.OBSERVE);
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testUpdateNoAnalysisMetricsAsFailureAndGetAnalysisStatus_withMetricNotPresentInResult() {
+    VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
+    CVConfig cvConfig =
+        builderFactory.prometheusCVConfigBuilder()
+            .groupName("g1")
+            .metricInfoList(Arrays.asList(
+                PrometheusCVConfig.MetricInfo.builder()
+                    .metricName("m1")
+                    .identifier("m1")
+                    .deploymentVerification(AnalysisInfo.DeploymentVerification.builder().enabled(true).build())
+                    .build()))
+            .uuid("promUUID")
+            .build();
+    verificationJobInstance.getCvConfigMap().put(cvConfig.getUuid(), cvConfig);
+
+    verificationJobInstance.getResolvedJob().setFailIfAnyCustomMetricInNoAnalysis("true", false);
+    String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
+    String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
+        accountId, cvConfig.getUuid(), verificationJobInstanceId, cvConfig.getType());
+
+    deploymentTimeSeriesAnalysisService.save(createDeploymentTimeSeriesAnalysis(verificationTaskId));
+
+    deploymentTimeSeriesAnalysisService.updateNoAnalysisMetricsAsFailureIfRequired(
+        AnalysisInput.builder()
+            .verificationTaskId(verificationTaskId)
+            .testHosts(new HashSet<>(Arrays.asList("host1")))
+            .build());
+
+    List<DeploymentTimeSeriesAnalysis> deploymentTimeSeriesAnalysisList =
+        deploymentTimeSeriesAnalysisService.getAnalysisResults(verificationTaskId);
+
+    assertThat(deploymentTimeSeriesAnalysisList.get(0).getRisk()).isEqualTo(Risk.UNHEALTHY);
+    assertThat(deploymentTimeSeriesAnalysisList.get(0)
+                   .getTransactionMetricSummaries()
+                   .stream()
+                   .filter(tms -> tms.getMetricName().equals("m1"))
+                   .findAny()
+                   .isPresent())
+        .isTrue();
+    assertThat(deploymentTimeSeriesAnalysisList.get(0)
+                   .getTransactionMetricSummaries()
+                   .stream()
+                   .filter(tms -> tms.getMetricName().equals("m1"))
+                   .findAny()
+                   .get()
+                   .getRisk())
+        .isEqualTo(Risk.UNHEALTHY);
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void
+  testUpdateNoAnalysisMetricsAsFailureAndGetAnalysisStatus_withMetricNotPresentButFailOnCustomMetricNotConfigured() {
+    VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
+    CVConfig cvConfig =
+        builderFactory.prometheusCVConfigBuilder()
+            .groupName("g1")
+            .metricInfoList(Arrays.asList(
+                PrometheusCVConfig.MetricInfo.builder()
+                    .metricName("m1")
+                    .identifier("m1")
+                    .deploymentVerification(AnalysisInfo.DeploymentVerification.builder().enabled(true).build())
+                    .build()))
+            .uuid("promUUID")
+            .build();
+    verificationJobInstance.getCvConfigMap().put(cvConfig.getUuid(), cvConfig);
+
+    verificationJobInstance.getResolvedJob().setFailIfAnyCustomMetricInNoAnalysis("false", false);
+    String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
+    String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
+        accountId, cvConfig.getUuid(), verificationJobInstanceId, cvConfig.getType());
+
+    deploymentTimeSeriesAnalysisService.save(createDeploymentTimeSeriesAnalysis(verificationTaskId));
+
+    deploymentTimeSeriesAnalysisService.updateNoAnalysisMetricsAsFailureIfRequired(
+        AnalysisInput.builder()
+            .verificationTaskId(verificationTaskId)
+            .testHosts(new HashSet<>(Arrays.asList("host1")))
+            .build());
+
+    List<DeploymentTimeSeriesAnalysis> deploymentTimeSeriesAnalysisList =
+        deploymentTimeSeriesAnalysisService.getAnalysisResults(verificationTaskId);
+
+    assertThat(deploymentTimeSeriesAnalysisList.get(0).getRisk()).isEqualTo(Risk.OBSERVE);
+    assertThat(deploymentTimeSeriesAnalysisList.get(0)
+                   .getTransactionMetricSummaries()
+                   .stream()
+                   .filter(tms -> tms.getMetricName().equals("m1"))
+                   .findAny()
+                   .isPresent())
+        .isFalse();
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testUpdateNoAnalysisMetricsAsFailureAndGetAnalysisStatus_withNoMetricInNoAnalysisButHostNotFound() {
+    VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
+    CVConfig cvConfig =
+        builderFactory.prometheusCVConfigBuilder()
+            .groupName("/todolist/inside")
+            .metricInfoList(Arrays.asList(
+                PrometheusCVConfig.MetricInfo.builder()
+                    .metricName("Errors per Minute")
+                    .identifier("Errors per Minute")
+                    .deploymentVerification(AnalysisInfo.DeploymentVerification.builder().enabled(true).build())
+                    .build()))
+            .uuid("promUUID")
+            .build();
+    verificationJobInstance.getCvConfigMap().put(cvConfig.getUuid(), cvConfig);
+
+    verificationJobInstance.getResolvedJob().setFailIfAnyCustomMetricInNoAnalysis("true", false);
+    String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
+    String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
+        accountId, cvConfig.getUuid(), verificationJobInstanceId, cvConfig.getType());
+
+    deploymentTimeSeriesAnalysisService.save(createDeploymentTimeSeriesAnalysis(verificationTaskId));
+
+    deploymentTimeSeriesAnalysisService.updateNoAnalysisMetricsAsFailureIfRequired(
+        AnalysisInput.builder()
+            .verificationTaskId(verificationTaskId)
+            .testHosts(new HashSet<>(Arrays.asList("host1")))
+            .build());
+
+    List<DeploymentTimeSeriesAnalysis> deploymentTimeSeriesAnalysisList =
+        deploymentTimeSeriesAnalysisService.getAnalysisResults(verificationTaskId);
+
+    assertThat(deploymentTimeSeriesAnalysisList.get(0).getRisk()).isEqualTo(Risk.UNHEALTHY);
+    DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData transactionMetricHostData =
+        deploymentTimeSeriesAnalysisList.get(0)
+            .getTransactionMetricSummaries()
+            .stream()
+            .filter(tms -> tms.getMetricName().equals("Errors per Minute"))
+            .filter(tms -> tms.getTransactionName().equals("/todolist/inside"))
+            .findAny()
+            .get();
+    assertThat(transactionMetricHostData.getRisk()).isEqualTo(Risk.UNHEALTHY);
+    assertThat(transactionMetricHostData.getHostData()
+                   .stream()
+                   .filter(hd -> hd.getHostName().get().equals("host1"))
+                   .findAny()
+                   .isPresent())
+        .isTrue();
+    assertThat(transactionMetricHostData.getHostData()
+                   .stream()
+                   .filter(hd -> hd.getHostName().get().equals("host1"))
+                   .findAny()
+                   .get()
+                   .getRisk())
+        .isEqualTo(Risk.UNHEALTHY);
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testUpdateNoAnalysisMetricsAsFailureAndGetAnalysisStatus_withNoMetricInNoAnalysis() {
+    VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
+    CVConfig cvConfig =
+        builderFactory.prometheusCVConfigBuilder()
+            .groupName("/todolist/inside")
+            .metricInfoList(Arrays.asList(
+                PrometheusCVConfig.MetricInfo.builder()
+                    .metricName("Errors per Minute")
+                    .identifier("Errors per Minute")
+                    .deploymentVerification(AnalysisInfo.DeploymentVerification.builder().enabled(true).build())
+                    .build()))
+            .uuid("promUUID")
+            .build();
+    verificationJobInstance.getCvConfigMap().put(cvConfig.getUuid(), cvConfig);
+
+    verificationJobInstance.getResolvedJob().setFailIfAnyCustomMetricInNoAnalysis("true", false);
+    String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
+    String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
+        accountId, cvConfig.getUuid(), verificationJobInstanceId, cvConfig.getType());
+
+    DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis = createDeploymentTimeSeriesAnalysis(verificationTaskId);
+    deploymentTimeSeriesAnalysis.setRisk(Risk.HEALTHY);
+    deploymentTimeSeriesAnalysis.setTransactionMetricSummaries(Arrays.asList(
+        DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData.builder()
+            .risk(Risk.HEALTHY.riskValueForTimeSeriesDeploymentAnalysis())
+            .transactionName("/todolist/inside")
+            .metricName("Errors per Minute")
+            .hostData(Arrays.asList(DeploymentTimeSeriesAnalysisDTO.HostData.builder().hostName("host1").build()))
+            .build()));
+    deploymentTimeSeriesAnalysisService.save(deploymentTimeSeriesAnalysis);
+
+    deploymentTimeSeriesAnalysisService.updateNoAnalysisMetricsAsFailureIfRequired(
+        AnalysisInput.builder()
+            .verificationTaskId(verificationTaskId)
+            .testHosts(new HashSet<>(Arrays.asList("host1")))
+            .build());
+
+    List<DeploymentTimeSeriesAnalysis> deploymentTimeSeriesAnalysisList =
+        deploymentTimeSeriesAnalysisService.getAnalysisResults(verificationTaskId);
+
+    assertThat(deploymentTimeSeriesAnalysisList.get(0).getRisk()).isEqualTo(Risk.HEALTHY);
+    DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData transactionMetricHostData =
+        deploymentTimeSeriesAnalysisList.get(0)
+            .getTransactionMetricSummaries()
+            .stream()
+            .filter(tms -> tms.getMetricName().equals("Errors per Minute"))
+            .filter(tms -> tms.getTransactionName().equals("/todolist/inside"))
+            .findAny()
+            .get();
+    assertThat(transactionMetricHostData.getRisk()).isEqualTo(Risk.HEALTHY);
+    assertThat(transactionMetricHostData.getHostData()
+                   .stream()
+                   .filter(hd -> hd.getHostName().get().equals("host1"))
+                   .findAny()
+                   .isPresent())
+        .isTrue();
+    assertThat(transactionMetricHostData.getHostData()
+                   .stream()
+                   .filter(hd -> hd.getHostName().get().equals("host1"))
+                   .findAny()
+                   .get()
+                   .getRisk())
+        .isEqualTo(Risk.HEALTHY);
   }
 
   @Test

@@ -11,6 +11,7 @@ import io.harness.batch.processing.anomalydetection.AnomalyDetectionTimeSeries;
 import io.harness.batch.processing.anomalydetection.TimeSeriesMetaData;
 import io.harness.batch.processing.anomalydetection.helpers.AnomalyDetectionHelper;
 import io.harness.batch.processing.anomalydetection.helpers.TimeSeriesUtils;
+import io.harness.ccm.anomaly.entities.AnomalyCloudProvider;
 import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -117,6 +118,7 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
     if (groupByList.contains(QLCCMEntityGroupBy.Cluster)) {
       currentTimeSeries.setClusterId(resultSet.getString(tableSchema.getClusterId().getColumnNameSQL()));
       currentTimeSeries.setClusterName(resultSet.getString(tableSchema.getClusterName().getColumnNameSQL()));
+      currentTimeSeries.setCloudProvider(AnomalyCloudProvider.CLUSTER);
     }
     if (groupByList.contains(QLCCMEntityGroupBy.Namespace)) {
       currentTimeSeries.setNamespace(resultSet.getString(tableSchema.getNamespace().getColumnNameSQL()));

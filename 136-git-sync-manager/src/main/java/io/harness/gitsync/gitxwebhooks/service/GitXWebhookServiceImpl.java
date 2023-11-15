@@ -102,13 +102,15 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         }
         return CreateGitXWebhookResponseDTO.builder().webhookIdentifier(createdGitXWebhook.getIdentifier()).build();
       } catch (DuplicateKeyException ex) {
+        log.error(format(DUP_KEY_EXP_FORMAT_STRING, createGitXWebhookRequestDTO.getWebhookIdentifier(),
+                      createGitXWebhookRequestDTO.getRepoName(), createGitXWebhookRequestDTO.getAccountIdentifier()),
+            USER_SRE);
         throw new DuplicateFieldException(
             format(DUP_KEY_EXP_FORMAT_STRING, createGitXWebhookRequestDTO.getWebhookIdentifier(),
                 createGitXWebhookRequestDTO.getRepoName(), createGitXWebhookRequestDTO.getAccountIdentifier()),
             USER_SRE, ex);
-      } catch (InternalServerErrorException exception) {
-        throw exception;
       } catch (Exception exception) {
+        log.error(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, CREATING), exception);
         throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, CREATING));
       }
     }
@@ -130,14 +132,16 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         }
         List<GetGitXWebhookResponseDTO> getGitXWebhookResponseList = prepareGitXWebhooks(gitXWebhookList);
         if (getGitXWebhookResponseList.size() > 1) {
+          log.error(String.format(
+              "For the given key with accountIdentifier %s and gitXWebhookIdentifier %s found more than one unique record.",
+              getGitXWebhookRequestDTO.getAccountIdentifier(), getGitXWebhookRequestDTO.getWebhookIdentifier()));
           throw new InternalServerErrorException(String.format(
               "For the given key with accountIdentifier %s and gitXWebhookIdentifier %s found more than one unique record.",
               getGitXWebhookRequestDTO.getAccountIdentifier(), getGitXWebhookRequestDTO.getWebhookIdentifier()));
         }
         return Optional.of(getGitXWebhookResponseList.get(0));
-      } catch (InternalServerErrorException exception) {
-        throw exception;
       } catch (Exception exception) {
+        log.error(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, FETCHING), exception);
         throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, FETCHING));
       }
     }
@@ -190,8 +194,11 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         }
         return UpdateGitXWebhookResponseDTO.builder().webhookIdentifier(updatedGitXWebhook.getIdentifier()).build();
       } catch (InternalServerErrorException exception) {
+        log.error("Unexpected error occurred while updating the GitX webhook {}",
+            updateGitXWebhookCriteriaDTO.getWebhookIdentifier(), exception);
         throw exception;
       } catch (Exception exception) {
+        log.error(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, UPDATING), exception);
         throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, UPDATING));
       }
     }
@@ -207,6 +214,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         List<GitXWebhook> gitXWebhookList = gitXWebhookRepository.list(criteria);
         return ListGitXWebhookResponseDTO.builder().gitXWebhooksList(prepareGitXWebhooks(gitXWebhookList)).build();
       } catch (Exception exception) {
+        log.error(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, LISTING_WEBHOOKS), exception);
         throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, LISTING_WEBHOOKS));
       }
     }
@@ -223,6 +231,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         DeleteResult deleteResult = gitXWebhookRepository.delete(criteria);
         return DeleteGitXWebhookResponseDTO.builder().successfullyDeleted(deleteResult.getDeletedCount() == 1).build();
       } catch (Exception exception) {
+        log.error(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, DELETING), exception);
         throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, DELETING));
       }
     }

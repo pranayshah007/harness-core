@@ -316,17 +316,21 @@ public class PollingServiceImpl implements PollingService {
 
   @Override
   public boolean updateTriggerPollingStatus(String accountId, List<String> signatures, boolean success,
-      String errorMessage, List<String> lastCollectedVersions) {
+      String errorMessage, List<String> lastCollectedVersions, Long validityIntervalForErrorStatusMillis) {
     // Truncate `lastCollectedVersions` list to at most 10 items, in order to avoid large payloads.
     if (lastCollectedVersions != null && lastCollectedVersions.size() > MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS) {
       lastCollectedVersions = lastCollectedVersions.subList(0, MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS);
     }
+    long currentTime = System.currentTimeMillis();
     PollingTriggerStatusUpdateDTO statusUpdate = PollingTriggerStatusUpdateDTO.builder()
                                                      .signatures(signatures)
                                                      .success(success)
                                                      .errorMessage(errorMessage)
                                                      .lastCollectedVersions(lastCollectedVersions)
-                                                     .lastCollectedTime(System.currentTimeMillis())
+                                                     .lastCollectedTime(currentTime)
+                                                     .errorStatusValidUntil(validityIntervalForErrorStatusMillis != null
+                                                             ? currentTime + validityIntervalForErrorStatusMillis
+                                                             : null)
                                                      .build();
     try {
       return getResponse(triggersClient.updateTriggerPollingStatus(accountId, statusUpdate));

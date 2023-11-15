@@ -230,7 +230,7 @@ public class TerraformCloudTaskHelperTest {
     when(terraformCloudClient.getLogs(any(), anyInt(), anyInt()))
         .thenReturn("logLine1\nlogLine2\nlog")
         .thenReturn("Line3\nlogLine4\nlog")
-        .thenThrow(new TerraformCloudApiException("errorMessage", 400))
+        .thenThrow(new TerraformCloudApiException("errorMessage", 400, "url"))
         .thenReturn("line5" + (char) 3);
 
     taskHelper.streamLogs(logCallback, URL);
@@ -246,11 +246,11 @@ public class TerraformCloudTaskHelperTest {
     when(terraformCloudClient.getLogs(any(), anyInt(), anyInt()))
         .thenReturn("logLine1\nlogLine2\nlog")
         .thenReturn("Line3\nlogLine4\nlog")
-        .thenThrow(new TerraformCloudApiException("errorMessage1", 400))
-        .thenThrow(new TerraformCloudApiException("errorMessage2", 400))
-        .thenThrow(new TerraformCloudApiException("errorMessage3", 400))
-        .thenThrow(new TerraformCloudApiException("errorMessage4", 400))
-        .thenThrow(new TerraformCloudApiException("errorMessage5", 400))
+        .thenThrow(new TerraformCloudApiException("errorMessage1", 400, "url"))
+        .thenThrow(new TerraformCloudApiException("errorMessage2", 400, "url"))
+        .thenThrow(new TerraformCloudApiException("errorMessage3", 400, "url"))
+        .thenThrow(new TerraformCloudApiException("errorMessage4", 400, "url"))
+        .thenThrow(new TerraformCloudApiException("errorMessage5", 400, "url"))
         .thenReturn("line5" + (char) 3);
 
     assertThatThrownBy(() -> taskHelper.streamLogs(logCallback, URL))

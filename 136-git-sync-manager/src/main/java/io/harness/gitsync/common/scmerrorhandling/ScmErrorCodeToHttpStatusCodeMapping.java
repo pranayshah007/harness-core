@@ -18,6 +18,7 @@ import lombok.experimental.UtilityClass;
 public class ScmErrorCodeToHttpStatusCodeMapping {
   public static final int HTTP_200 = 200;
   public static final int HTTP_500 = 500;
+  public static final int HTTP_504 = 504;
 
   public int getHttpStatusCode(ErrorCode errorCode) {
     switch (errorCode) {
@@ -27,6 +28,8 @@ public class ScmErrorCodeToHttpStatusCodeMapping {
         return 401;
       case SCM_CONFLICT_ERROR_V2:
         return 409;
+      case SCM_REQUEST_TIMEOUT:
+        return HTTP_504;
       default:
         return HTTP_500;
     }

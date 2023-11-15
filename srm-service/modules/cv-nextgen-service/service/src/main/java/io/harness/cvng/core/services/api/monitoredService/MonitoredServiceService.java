@@ -93,8 +93,8 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   List<MonitoredService> listWithFilter(@NonNull ProjectParams projectParams, List<String> identifiers, String filter);
 
   PageResponse<MonitoredServiceListItemDTO> list(ProjectParams projectParams, List<String> environmentIdentifiers,
-      Integer offset, Integer pageSize, String filter, MonitoredServiceType monitoredServiceType,
-      boolean servicesAtRiskFilter);
+      String serviceIdentifier, Integer offset, Integer pageSize, String filter,
+      MonitoredServiceType monitoredServiceType, boolean servicesAtRiskFilter);
 
   List<String> listConnectorRefs(MonitoredServiceDTO monitoredServiceDTO);
 

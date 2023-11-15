@@ -22,7 +22,7 @@ public class AccountActivityMetricsPublisherService implements Managed {
 
   @Override
   public void start() {
-    executorService.scheduleWithFixedDelay(accountActivityMetricsPublisherJob, 0L, 2, TimeUnit.SECONDS);
+    executorService.scheduleWithFixedDelay(accountActivityMetricsPublisherJob, 0L, 12, TimeUnit.HOURS);
   }
 
   @Override

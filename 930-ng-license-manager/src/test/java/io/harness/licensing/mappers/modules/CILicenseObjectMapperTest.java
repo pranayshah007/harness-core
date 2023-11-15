@@ -8,6 +8,8 @@
 package io.harness.licensing.mappers.modules;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
@@ -16,6 +18,7 @@ import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.entities.modules.CIModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
+import io.harness.licensing.helpers.ModuleLicenseHelper;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
@@ -23,8 +26,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 public class CILicenseObjectMapperTest extends CategoryTest {
+  @Mock ModuleLicenseHelper moduleLicenseHelper;
   @InjectMocks CILicenseObjectMapper objectMapper;
   private CIModuleLicense moduleLicense;
   private CIModuleLicenseDTO moduleLicenseDTO;
@@ -34,6 +39,8 @@ public class CILicenseObjectMapperTest extends CategoryTest {
   @Before
   public void setUp() {
     initMocks(this);
+    when(moduleLicenseHelper.isDeveloperLicensingFeatureEnabled(any())).thenReturn(true);
+
     moduleLicense = CIModuleLicense.builder()
                         .numberOfCommitters(DEFAULT_NUMBER_OF_COMMITTERS)
                         .hostingCredits(DEFAULT_HOSTING_CREDITS)

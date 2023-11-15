@@ -10,6 +10,8 @@ package io.harness.licensing.mappers.modules;
 import static io.harness.rule.OwnerRule.ZHUO;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
@@ -18,14 +20,17 @@ import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
+import io.harness.licensing.helpers.ModuleLicenseHelper;
 import io.harness.rule.Owner;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 public class CFLicenseObjectMapperTest extends CategoryTest {
+  @Mock ModuleLicenseHelper moduleLicenseHelper;
   @InjectMocks CFLicenseObjectMapper objectMapper;
   private CFModuleLicense moduleLicense;
   private CFModuleLicenseDTO moduleLicenseDTO;
@@ -35,6 +40,8 @@ public class CFLicenseObjectMapperTest extends CategoryTest {
   @Before
   public void setUp() {
     initMocks(this);
+    when(moduleLicenseHelper.isDeveloperLicensingFeatureEnabled(any())).thenReturn(true);
+
     moduleLicense =
         CFModuleLicense.builder().numberOfUsers(DEFAULT_USER_NUMBER).numberOfClientMAUs(DEFAULT_CLIENT_MAU).build();
     moduleLicenseDTO =

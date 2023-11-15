@@ -1635,7 +1635,16 @@ paths:
           in: query
           name: event_identifier
         - schema:
-            type: string
+            type: array
+            items:
+              type: string
+              enum:
+                - SKIPPED
+                - FAILED
+                - PROCESSING
+                - SUCCESSFUL
+                - QUEUED
+                - UNKNOWN
           in: query
           name: event_status
       x-internal: true
@@ -2828,6 +2837,13 @@ components:
           type: string
         event_status:
           type: string
+          enum:
+            - SKIPPED
+            - FAILED
+            - QUEUED
+            - SUCCESSFUL
+            - PROCESSING
+            - UNKNOWN
     ReleaseDetailsResponse:
       title: ReleaseDetailsResponse
       x-stoplight:

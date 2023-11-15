@@ -185,7 +185,7 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
       criteria.and(GitXWebhookEventKeys.eventIdentifier).is(gitXEventsListRequestDTO.getEventIdentifier());
     }
     if (isNotEmpty(gitXEventsListRequestDTO.getEventStatus())) {
-      criteria.and(GitXWebhookEventKeys.eventStatus).is(gitXEventsListRequestDTO.getEventStatus());
+      criteria.and(GitXWebhookEventKeys.eventStatus).in(gitXEventsListRequestDTO.getEventStatus());
     }
     return criteria;
   }
