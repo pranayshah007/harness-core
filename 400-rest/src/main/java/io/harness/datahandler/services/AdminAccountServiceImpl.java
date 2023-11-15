@@ -227,4 +227,14 @@ public class AdminAccountServiceImpl implements AdminAccountService {
     }
     return createAccount(account, adminUserEmail);
   }
+
+  @Override
+  public List<Account> getAccountsUpdatedSinceTimestamp(long timestamp) {
+    return accountService.getByLastUpdated(timestamp);
+  }
+  @Override
+  public List<AccountSummary> getAccountSummaries(List<String> accountId) {
+    List<Account> accounts = accountService.getAccounts(accountId);
+    return accountSummaryHelper.getAccountSummariesFromAccounts(accounts);
+  }
 }
