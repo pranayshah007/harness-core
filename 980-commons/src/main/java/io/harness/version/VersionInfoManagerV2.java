@@ -36,8 +36,7 @@ public class VersionInfoManagerV2 {
       log.info("Returning cached version info.");
       return cachedVersionInfo;
     }
-    try {
-      InputStream inputStream = new FileInputStream(versionFilePath);
+    try (InputStream inputStream = new FileInputStream(versionFilePath)) {
 
       // Parse YAML file
       Yaml yaml = new Yaml();
