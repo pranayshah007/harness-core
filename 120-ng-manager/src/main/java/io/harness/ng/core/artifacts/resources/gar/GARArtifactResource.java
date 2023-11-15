@@ -170,13 +170,12 @@ public class GARArtifactResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @NotNull @QueryParam("fqnPath") String fqnPath,
-      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, @NotNull String runtimeInputYaml,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(GCPConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     GARRepositoryDTO buildDetails =
-        gARResourceService.getRepositories(connectorRef, region, project, orgIdentifier, projectIdentifier);
+        artifactResourceUtils.getRepositoriesV2GAR(GCPConnectorIdentifier, region, project, accountId, orgIdentifier,
+            pipelineIdentifier, fqnPath, serviceRef, runtimeInputYaml, projectIdentifier, gitEntityBasicInfo);
     return ResponseDTO.newResponse(buildDetails);
   }
 
