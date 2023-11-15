@@ -148,7 +148,7 @@ public class GARArtifactResource {
   @ApiOperation(
       value = "Gets Repositories google artifact registry", nickname = "getRepositoriesForGoogleArtifactRegistry")
   public ResponseDTO<GARRepositoryDTO>
-  getBuildDetails(@QueryParam("connectorRef") String GCPConnectorIdentifier, @QueryParam("region") String region,
+  getRepositories(@QueryParam("connectorRef") String GCPConnectorIdentifier, @QueryParam("region") String region,
       @QueryParam("project") String project, @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
@@ -165,7 +165,7 @@ public class GARArtifactResource {
   @ApiOperation(
       value = "Gets Repositories google artifact registry", nickname = "getRepositoriesForGoogleArtifactRegistry")
   public ResponseDTO<GARRepositoryDTO>
-  getBuildDetailsV2(@QueryParam("connectorRef") String GCPConnectorIdentifier, @QueryParam("region") String region,
+  getRepositoriesV2(@QueryParam("connectorRef") String GCPConnectorIdentifier, @QueryParam("region") String region,
       @QueryParam("project") String project, @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,

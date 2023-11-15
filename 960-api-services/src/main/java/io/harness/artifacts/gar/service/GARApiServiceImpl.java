@@ -358,17 +358,16 @@ public class GARApiServiceImpl implements GarApiService {
       List<BuildDetailsInternal> buildDetails =
           RepositoryPage.getRepositories()
               .stream()
-              .map(tag -> {
-                String RepoName = tag.getName().substring(index + 1);
+              .map(repo -> {
+                String RepoName = repo.getName().substring(index + 1);
+                String RepoFormat = repo.getFormat();
+                String createTime = repo.getCreateTime();
+                String UpdateTime = repo.getUpdateTime();
                 Map<String, String> metadata = new HashMap();
-                metadata.put(ArtifactMetadataKeys.artifactPackage, RepoName);
-                metadata.put(ArtifactMetadataKeys.artifactProject, garinternalConfig.getProject());
-                metadata.put(ArtifactMetadataKeys.artifactRegion, garinternalConfig.getRegion());
-                return BuildDetailsInternal.builder()
-                    .uiDisplayName("Repository# " + RepoName)
-                    .number(RepoName)
-                    .metadata(metadata)
-                    .build();
+                metadata.put("Format", RepoFormat);
+                metadata.put("createTime", createTime);
+                metadata.put("updateTime", UpdateTime);
+                return BuildDetailsInternal.builder().uiDisplayName(RepoName).metadata(metadata).build();
               })
               .filter(build
                   -> StringUtils.isBlank(versionRegex) || new RegexFunctor().match(versionRegex, build.getNumber()))

@@ -40,10 +40,15 @@ public class GARResourceMapper {
     List<GarRepositoryDTOList> detailsDTOList = garDelegateResponses.stream()
                                                     .map(response -> toGarRepositoryDTOList(response.getBuildDetails()))
                                                     .collect(Collectors.toList());
-    return GARRepositoryDTO.builder().repositories(detailsDTOList).build();
+    return GARRepositoryDTO.builder().garRepositoryDTOLists(detailsDTOList).build();
   }
 
   public static GarRepositoryDTOList toGarRepositoryDTOList(ArtifactBuildDetailsNG artifactBuildDetailsNG) {
-    return GarRepositoryDTOList.builder().repository(artifactBuildDetailsNG.getUiDisplayName()).build();
+    return GarRepositoryDTOList.builder()
+        .repository(artifactBuildDetailsNG.getUiDisplayName())
+        .format(artifactBuildDetailsNG.getMetadata().get("Format"))
+        .createTime(artifactBuildDetailsNG.getMetadata().get("createTime"))
+        .updateTime(artifactBuildDetailsNG.getMetadata().get("updateTime"))
+        .build();
   }
 }
