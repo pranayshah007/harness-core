@@ -95,7 +95,8 @@ public class ScmGitProviderMapper {
     if (GitClientHelper.isBitBucketSAAS(bitbucketConnector.getUrl())) {
       builder.setBitbucketCloud(createBitbucketCloudProvider(bitbucketConnector));
     } else {
-      builder.setBitbucketServer(createBitbucketServerProvider(bitbucketConnector));
+      builder.setBitbucketServer(createBitbucketServerProvider(bitbucketConnector))
+          .setProxy(bitbucketConnector.getProxyUrl());
     }
     return builder.setSkipVerify(skipVerify).setAdditionalCertsPath(getAdditionalCertsPath()).build();
   }

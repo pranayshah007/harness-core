@@ -26,6 +26,7 @@ import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsConnector;
 import io.harness.connector.entities.embedded.gcpkmsconnector.GcpKmsConnector;
 import io.harness.connector.entities.embedded.localconnector.LocalConnector;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -208,6 +209,18 @@ public class ConnectorMapper {
           githubConnectorDTO.setProxyUrl("");
         } else {
           githubConnectorDTO.setProxyUrl(tunnelResponseDTO.getServerUrl() + ":" + tunnelResponseDTO.getPort());
+        }
+      }
+    }
+
+    if (connectorDTO instanceof BitbucketConnectorDTO) {
+      BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) connectorDTO;
+      if (tunnelService != null && bitbucketConnectorDTO.getProxy()) {
+        TunnelResponseDTO tunnelResponseDTO = tunnelService.getTunnel(connector.getAccountIdentifier());
+        if (tunnelResponseDTO.getServerUrl().isEmpty() || tunnelResponseDTO.getPort().isEmpty()) {
+          bitbucketConnectorDTO.setProxyUrl("");
+        } else {
+          bitbucketConnectorDTO.setProxyUrl(tunnelResponseDTO.getServerUrl() + ":" + tunnelResponseDTO.getPort());
         }
       }
     }

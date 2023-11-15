@@ -55,6 +55,7 @@ public class BitbucketDTOToEntity implements ConnectorDTOToEntityMapper<Bitbucke
         .bitbucketApiAccess(bitbucketApiAccess)
         .url(configDTO.getUrl())
         .validationRepo(configDTO.getValidationRepo())
+        .proxy(configDTO.getProxy())
         .build();
   }
 

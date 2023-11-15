@@ -41,6 +41,7 @@ public class BitbucketToGitMapper {
           usernamePasswordDTO.getUsername(), usernamePasswordDTO.getUsernameRef(), usernamePasswordDTO.getPasswordRef(),
           bitbucketConnectorDTO.getDelegateSelectors());
       gitConfigForHttp.setExecuteOnDelegate(bitbucketConnectorDTO.getExecuteOnDelegate());
+      gitConfigForHttp.setProxyUrl(bitbucketConnectorDTO.getProxyUrl());
       return gitConfigForHttp;
     } else if (authType == GitAuthType.SSH) {
       final BitbucketSshCredentialsDTO sshCredentials =

@@ -50,6 +50,7 @@ public class BitbucketEntityToDTO implements ConnectorEntityToDTOMapper<Bitbucke
         .authentication(bitbucketAuthenticationDTO)
         .url(connector.getUrl())
         .validationRepo(connector.getValidationRepo())
+        .proxy(connector.getProxy() != null && connector.getProxy())
         .build();
   }
 

@@ -72,11 +72,13 @@ public class BitbucketConnectorDTO
   private Set<String> delegateSelectors;
   Boolean executeOnDelegate = true;
   private String gitConnectionUrl;
+  Boolean proxy;
+  String proxyUrl = "";
 
   @Builder
   public BitbucketConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,
       BitbucketAuthenticationDTO authentication, BitbucketApiAccessDTO apiAccess, Set<String> delegateSelectors,
-      Boolean executeOnDelegate) {
+      Boolean executeOnDelegate, boolean proxy) {
     this.connectionType = connectionType;
     this.url = url;
     this.validationRepo = validationRepo;
@@ -84,6 +86,7 @@ public class BitbucketConnectorDTO
     this.apiAccess = apiAccess;
     this.delegateSelectors = delegateSelectors;
     this.executeOnDelegate = executeOnDelegate;
+    this.proxy = proxy;
   }
 
   @Override
@@ -263,5 +266,10 @@ public class BitbucketConnectorDTO
         .delegateSelectors(this.delegateSelectors)
         .executeOnDelegate(this.executeOnDelegate)
         .build();
+  }
+
+  @Override
+  public String getProxyUrl() {
+    return proxyUrl;
   }
 }
