@@ -13,16 +13,21 @@ import static io.harness.persistence.HQuery.excludeAuthorityCount;
 
 import io.harness.SRMPersistence;
 import io.harness.annotations.retry.RetryOnException;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLIValue;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket.SLIRecordBucketKeys;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordBucketService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.utils.SLOGraphUtils;
 
 import com.google.common.base.Preconditions;
@@ -36,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.ConcurrentModificationException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,6 +55,9 @@ import org.apache.commons.lang3.tuple.Pair;
 public class SLIRecordBucketServiceImpl implements SLIRecordBucketService {
   private static final int RETRY_COUNT = 3;
 
+  public static final int SLI_RECORD_BUCKET_SIZE = 5;
+  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
+  @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject SRMPersistence hPersistence;
   @Override
   public void create(List<SLIRecordParam> sliRecordParamList, String sliId, int sliVersion) {
@@ -325,5 +334,67 @@ public class SLIRecordBucketServiceImpl implements SLIRecordBucketService {
       }
       return Pair.of(baselineSLIRecordBucket.getRunningGoodCount(), baselineSLIRecordBucket.getRunningBadCount());
     }
+  }
+
+  @Override
+  public org.apache.commons.math3.util
+      .Pair<Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecordBucket>>,
+          Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>>
+      getSLODetailsSLIRecordsAndSLIMissingDataType(
+          List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,
+          Instant startTime, Instant endTime) {
+    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecordBucket>>
+        serviceLevelObjectivesDetailSLIRecordMap = new HashMap<>();
+    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>
+        objectivesDetailSLIMissingDataTypeMap = new HashMap<>();
+    for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail objectivesDetail :
+        serviceLevelObjectivesDetailList) {
+      ProjectParams projectParams = ProjectParams.builder()
+                                        .projectIdentifier(objectivesDetail.getProjectIdentifier())
+                                        .orgIdentifier(objectivesDetail.getOrgIdentifier())
+                                        .accountIdentifier(objectivesDetail.getAccountId())
+                                        .build();
+      SimpleServiceLevelObjective simpleServiceLevelObjective =
+          (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+              projectParams, objectivesDetail.getServiceLevelObjectiveRef());
+      Preconditions.checkState(simpleServiceLevelObjective.getServiceLevelIndicators().size() == 1,
+          "Only one service level indicator is supported");
+      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+          ProjectParams.builder()
+              .accountIdentifier(simpleServiceLevelObjective.getAccountId())
+              .orgIdentifier(simpleServiceLevelObjective.getOrgIdentifier())
+              .projectIdentifier(simpleServiceLevelObjective.getProjectIdentifier())
+              .build(),
+          simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
+      String sliId = serviceLevelIndicator.getUuid();
+      int sliVersion = serviceLevelIndicator.getVersion();
+      if (serviceLevelIndicator.getSLIEvaluationType().equals(SLIEvaluationType.WINDOW)
+          && serviceLevelIndicator.getConsiderConsecutiveMinutes() != null
+          && serviceLevelIndicator.getConsiderConsecutiveMinutes() > 1) {
+        SLIRecordBucket lastSLIRecordBucket = getLatestSLIRecordSLIVersion(sliId, sliVersion);
+        if (lastSLIRecordBucket != null) {
+          // TODO check again, we are adjusting endtime here
+          Instant timeOfLastRecordWhichIsFixed = lastSLIRecordBucket.getBucketStartTime().minus(
+              serviceLevelIndicator.getConsiderConsecutiveMinutes() - 2, ChronoUnit.MINUTES);
+          endTime = timeOfLastRecordWhichIsFixed.isBefore(endTime) ? timeOfLastRecordWhichIsFixed : endTime;
+        }
+      }
+      List<SLIRecordBucket> sliRecordBuckets = getSLIRecordsWithSLIVersion(sliId, startTime, endTime, sliVersion);
+      if (!sliRecordBuckets.isEmpty()) {
+        serviceLevelObjectivesDetailSLIRecordMap.put(objectivesDetail, sliRecordBuckets);
+        objectivesDetailSLIMissingDataTypeMap.put(objectivesDetail, serviceLevelIndicator.getSliMissingDataType());
+      }
+    }
+    return org.apache.commons.math3.util.Pair.create(
+        serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap);
+  }
+
+  private SLIRecordBucket getLatestSLIRecordSLIVersion(String sliId, int sliVersion) {
+    return hPersistence.createQuery(SLIRecordBucket.class, excludeAuthorityCount)
+        .filter(SLIRecordBucketKeys.sliId, sliId)
+        .field(SLIRecordBucketKeys.sliVersion)
+        .equal(sliVersion)
+        .order(Sort.descending(SLIRecordBucketKeys.bucketStartTime))
+        .get();
   }
 }

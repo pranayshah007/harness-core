@@ -24,6 +24,5 @@ public interface CompositeSLORecordService {
   CompositeSLORecord getLastCompositeSLORecord(String sloId, Instant startTimeStamp);
   List<CompositeSLORecord> getSLORecords(String sloId, Instant startTimeStamp, Instant endTimeStamp);
   List<CompositeSLORecord> getLatestCountSLORecords(String sloId, int count);
-
   List<CompositeSLORecord> getSLORecordsOfMinutes(String sloId, List<Instant> minutes);
 }

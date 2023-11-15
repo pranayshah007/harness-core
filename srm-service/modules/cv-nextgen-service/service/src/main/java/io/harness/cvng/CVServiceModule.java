@@ -389,6 +389,7 @@ import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjectiv
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator.ThresholdServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.resources.ServiceLevelObjectiveResourceApiImpl;
 import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
+import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordBucketService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
@@ -408,6 +409,7 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorS
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
 import io.harness.cvng.servicelevelobjective.services.impl.AnnotationServiceImpl;
+import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLORecordBucketServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLORecordServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLOServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.GraphDataServiceImpl;
@@ -641,6 +643,7 @@ public class CVServiceModule extends AbstractModule {
     bind(SplunkService.class).to(SplunkServiceImpl.class);
     bind(CVConfigService.class).to(CVConfigServiceImpl.class);
     bind(CompositeSLORecordService.class).to(CompositeSLORecordServiceImpl.class);
+    bind(CompositeSLORecordBucketService.class).to(CompositeSLORecordBucketServiceImpl.class);
     bind(TicketServiceRestClientService.class).to(TicketServiceRestClientServiceImpl.class);
     bind(SRMTelemetrySentStatusService.class).to(SRMTelemetrySentStatusServiceImpl.class);
     bind(TicketService.class).to(TicketServiceImpl.class);

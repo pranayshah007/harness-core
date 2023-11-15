@@ -7,10 +7,13 @@
 
 package io.harness.cvng.statemachine.services.api;
 
+import io.harness.beans.FeatureName;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.beans.SLOMetricContext;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordBucketService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
 import io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelObjectiveV2ServiceImpl;
 import io.harness.cvng.statemachine.beans.AnalysisState;
@@ -29,9 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CompositeSLORestoreMetricAnalysisStateExecutor
     extends AnalysisStateExecutor<CompositeSLORestoreMetricAnalysisState> {
   @Inject private ServiceLevelObjectiveV2ServiceImpl serviceLevelObjectiveV2Service;
-
   @Inject private CompositeSLORecordService compositeSLORecordService;
-
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private Clock clock;
 
@@ -51,7 +52,9 @@ public class CompositeSLORestoreMetricAnalysisStateExecutor
     startTime = startTime.isAfter(analysisState.getInputs().getStartTime()) ? startTime
                                                                             : analysisState.getInputs().getStartTime();
     Instant endTime = analysisState.getInputs().getEndTime();
-    compositeSLORecordService.create(compositeServiceLevelObjective, startTime, endTime, verificationTaskId);
+    if (endTime.isAfter(startTime)) {
+      compositeSLORecordService.create(compositeServiceLevelObjective, startTime, endTime, verificationTaskId);
+    }
     try (SLOMetricContext sloMetricContext = new SLOMetricContext(compositeServiceLevelObjective)) {
       metricService.recordDuration(CVNGMetricsUtils.SLO_DATA_ANALYSIS_METRIC,
           Duration.between(analysisState.getInputs().getStartTime(), clock.instant()));
