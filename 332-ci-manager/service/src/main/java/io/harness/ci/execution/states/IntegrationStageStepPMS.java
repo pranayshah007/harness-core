@@ -28,6 +28,7 @@ import io.harness.app.beans.entities.StepExecutionParameters;
 import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.WebhookExecutionSource;
+import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.outcome.CIStepArtifactOutcome;
@@ -380,7 +381,7 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
     if (codeBase == null) {
       return null;
     }
-    if (integrationStageStepParametersPMS.getEnableCloneRepo().getValue()
+    if (RunTimeInputHandler.resolveBooleanParameter(integrationStageStepParametersPMS.getEnableCloneRepo(), false)
         && ParameterField.isNull(codeBase.getBuild())) {
       throw new CIStageExecutionException(" build properties must be defined when codebase is enabled");
     }
