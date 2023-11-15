@@ -28,16 +28,16 @@ import retrofit2.Call;
 public class DockerRunnerResourceImpl implements DockerRunnerResource {
   @Inject private AccountClient accountClient;
 
-  public String get(String accountId, String os, String arch) throws Exception {
+  public RestResponse<String> get(String accountId, String os, String arch) throws Exception {
     Call<RestResponse<Map<String, String>>> req =
         accountClient.getInstallationCommand(accountId, DelegateType.DOCKER, os, arch);
     Map<String, String> res = CGRestUtils.getResponse(req);
-    String command = res.get("command") + "\n\n";
+    String command = res.get("command") + " \\\n ";
     command +=
-        "wget -q https://github.com/harness/harness-docker-runner/releases/latest/download/harness-docker-runner-linux-amd64 \n"
-        + "sudo chmod +x harness-docker-runner-linux-amd64 \n"
-        + "sudo ./harness-docker-runner-linux-amd64 server \n";
+        "wget -q https://github.com/harness/harness-docker-runner/releases/latest/download/harness-docker-runner-linux-amd64 \\\n "
+        + "sudo chmod +x harness-docker-runner-linux-amd64 \\\n "
+        + "sudo ./harness-docker-runner-linux-amd64 server";
 
-    return command;
+    return new RestResponse(command);
   }
 }

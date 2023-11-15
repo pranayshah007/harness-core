@@ -58,6 +58,8 @@ import io.harness.ff.FeatureFlagConfig;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ff.FeatureFlagServiceImpl;
 import io.harness.filestore.service.FileStoreService;
+import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.gitsync.persistance.NoOpGitSyncSdkServiceImpl;
 import io.harness.gitsync.persistance.testing.GitSyncablePersistenceTestModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
@@ -339,6 +341,7 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
             .annotatedWith(Names.named("deployment-stage-plan-creation-info-executor"))
             .toInstance(mock(ExecutorService.class));
         bind(TelemetryReporter.class).toInstance(mock(TelemetryReporter.class));
+        bind(GitSyncSdkService.class).to(NoOpGitSyncSdkServiceImpl.class);
       }
     });
 

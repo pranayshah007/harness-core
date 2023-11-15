@@ -75,6 +75,8 @@ import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
+import io.harness.ng.core.service.entity.ServiceMoveConfigOperationDTO;
+import io.harness.ng.core.service.entity.ServiceMoveConfigResponse;
 import io.harness.ng.core.service.mappers.ManifestFilterHelper;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
@@ -87,6 +89,7 @@ import io.harness.ng.core.template.RefreshRequestDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.utils.CDGitXService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.ng.core.utils.GitXUtils;
 import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
@@ -179,20 +182,20 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Inject @Named("service-gitx-executor") private ExecutorService executorService;
   private final NGFeatureFlagHelperService featureFlagService;
   @Named(DEFAULT_CONNECTOR_SERVICE) private final ConnectorService connectorService;
-
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ORG =
       "Service [%s] under Organization [%s] in Account [%s] already exists";
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ACCOUNT = "Service [%s] in Account [%s] already exists";
   private static final int REMOTE_SERVICE_BATCH_SIZE = 20;
+  private final CDGitXService cdGitXService;
 
   @Inject
   public ServiceEntityServiceImpl(ServiceRepository serviceRepository, EntitySetupUsageService entitySetupUsageService,
       @Named(ENTITY_CRUD) Producer eventProducer, OutboxService outboxService, TransactionTemplate transactionTemplate,
       ServiceOverrideService serviceOverrideService, ServiceOverridesServiceV2 serviceOverridesServiceV2,
       ServiceEntitySetupUsageHelper entitySetupUsageHelper, NGFeatureFlagHelperService featureFlagService,
-      @Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService) {
+      @Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService, CDGitXService cdGitXService) {
     this.serviceRepository = serviceRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
@@ -203,6 +206,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     this.entitySetupUsageHelper = entitySetupUsageHelper;
     this.featureFlagService = featureFlagService;
     this.connectorService = connectorService;
+    this.cdGitXService = cdGitXService;
   }
 
   void validatePresenceOfRequiredFields(Object... fields) {
@@ -1516,5 +1520,54 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
 
     return RepoListResponseDTO.builder().repositories(uniqueRepos).build();
+  }
+
+  @Override
+  public ServiceMoveConfigResponse moveServiceStoreTypeConfig(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, ServiceMoveConfigOperationDTO moveConfigOperationDTO) {
+    validateMoveConfigRequest(moveConfigOperationDTO);
+    if (!cdGitXService.isNewGitXEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
+      throw new InvalidRequestException(
+          GitXUtils.getErrorMessageForGitSimplificationNotEnabled(orgIdentifier, projectIdentifier));
+    }
+
+    Optional<ServiceEntity> service =
+        getMetadata(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, false);
+
+    if (service.isPresent()) {
+      if (StoreType.REMOTE.equals(service.get().getStoreType())) {
+        throw new InvalidRequestException(
+            String.format("Service with the given identifier: %s is already remote", serviceIdentifier));
+      }
+
+      ServiceEntity movedEntity = serviceRepository.moveServiceEntity(accountIdentifier, orgIdentifier,
+          projectIdentifier, serviceIdentifier, moveConfigOperationDTO, service.get());
+      return ServiceMoveConfigResponse.builder().serviceIdentifier(movedEntity.getIdentifier()).build();
+    } else {
+      throw new InvalidRequestException(
+          String.format("Service with the given identifier: %s does not exist", serviceIdentifier));
+    }
+  }
+
+  private void validateMoveConfigRequest(ServiceMoveConfigOperationDTO moveConfigOperationDTO) {
+    if (isEmpty(moveConfigOperationDTO.getConnectorRef())) {
+      throwInvalidRequestForEmptyField("connectorRef");
+    }
+
+    if (isEmpty(moveConfigOperationDTO.getFilePath())) {
+      throwInvalidRequestForEmptyField("filePath");
+    }
+
+    if (isEmpty(moveConfigOperationDTO.getRepoName())) {
+      throwInvalidRequestForEmptyField("repoName");
+    }
+
+    if (moveConfigOperationDTO.getMoveConfigOperationType() == null) {
+      throwInvalidRequestForEmptyField("moveConfigOperationType");
+    }
+  }
+
+  private void throwInvalidRequestForEmptyField(String fieldName) {
+    throw new InvalidRequestException(String.format("Error: %s cannot be empty", fieldName));
   }
 }
