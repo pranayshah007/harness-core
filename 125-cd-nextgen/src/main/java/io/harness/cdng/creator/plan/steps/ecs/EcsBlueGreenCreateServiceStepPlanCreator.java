@@ -11,9 +11,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
+import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStep;
 import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStepNode;
-import io.harness.cdng.ecs.EcsCanaryDeployStep;
-import io.harness.cdng.ecs.asyncsteps.EcsCanaryDeployStepV2;
+import io.harness.cdng.ecs.asyncsteps.EcsBlueGreenCreateServiceStepV2;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.contracts.steps.StepType;
@@ -50,9 +50,9 @@ public class EcsBlueGreenCreateServiceStepPlanCreator
   protected StepType getStepSpecType(PlanCreationContext ctx, EcsBlueGreenCreateServiceStepNode stepElement) {
     if (featureFlagService.isEnabled(
             ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_ECS_ASYNC_STEP_STRATEGY)) {
-      return EcsCanaryDeployStepV2.STEP_TYPE;
+      return EcsBlueGreenCreateServiceStepV2.STEP_TYPE;
     }
-    return EcsCanaryDeployStep.STEP_TYPE;
+    return EcsBlueGreenCreateServiceStep.STEP_TYPE;
   }
 
   @Override
