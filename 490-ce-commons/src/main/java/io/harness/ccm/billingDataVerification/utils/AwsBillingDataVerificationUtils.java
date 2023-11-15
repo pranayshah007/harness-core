@@ -62,13 +62,14 @@ import java.util.*;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
 @UtilityClass
 public class AwsBillingDataVerificationUtils {
-  @Inject io.harness.aws.AwsClient awsClient;
-  @Inject BigQueryHelper bigQueryHelper;
-  @Inject BillingDataVerificationSQLService billingDataVerificationSQLService;
+  @Autowired io.harness.aws.AwsClient awsClient;
+  @Autowired BigQueryHelper bigQueryHelper;
+  @Autowired BillingDataVerificationSQLService billingDataVerificationSQLService;
 
   public void fetchAndUpdateBillingDataForConnector(String accountId, ConnectorResponseDTO connector, String startDate,
       String endDate, AWSCredentialsProvider awsAssumedCredentialsProvider,

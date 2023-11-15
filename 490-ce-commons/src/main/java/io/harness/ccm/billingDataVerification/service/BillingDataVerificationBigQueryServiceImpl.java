@@ -43,6 +43,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
 public class BillingDataVerificationBigQueryServiceImpl implements BillingDataVerificationSQLService {
@@ -67,8 +68,8 @@ public class BillingDataVerificationBigQueryServiceImpl implements BillingDataVe
       "(harnessAccountId, connectorId, cloudProvider, cloudProviderAccountId, usageStartDate, usageEndDate, costType, costFromCloudProviderAPI, costFromRawBillingTable, costFromUnifiedTable) ",
       "VALUES %s ; ");
 
-  @Inject BigQueryHelper bigQueryHelper;
-  @Inject private io.harness.ccm.bigQuery.BigQueryService bigQueryService;
+  @Autowired BigQueryHelper bigQueryHelper;
+  @Autowired private io.harness.ccm.bigQuery.BigQueryService bigQueryService;
 
   @Override
   public Map<CCMBillingDataVerificationKey, CCMBillingDataVerificationCost> fetchAWSCostsFromAWSBillingTables(
