@@ -20,6 +20,7 @@ import io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsServiceSetupOutcome;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
+import io.harness.cdng.executables.CdTaskChainExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -34,7 +35,6 @@ import io.harness.delegate.task.ecs.request.EcsServiceSetupRequest.EcsServiceSet
 import io.harness.delegate.task.ecs.response.EcsServiceSetupResponse;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -59,7 +59,7 @@ import lombok.extern.slf4j.Slf4j;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class EcsServiceSetupStep extends TaskChainExecutableWithRollbackAndRbac implements EcsStepExecutor {
+public class EcsServiceSetupStep extends CdTaskChainExecutable implements EcsStepExecutor {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.ECS_SERVICE_SETUP.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -140,7 +140,7 @@ public class EcsServiceSetupStep extends TaskChainExecutableWithRollbackAndRbac 
   public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {}
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
+  public TaskChainResponse executeNextLinkWithSecurityContextAndNodeInfo(Ambiance ambiance, StepBaseParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
       throws Exception {
     log.info("Calling executeNextLink");
@@ -148,7 +148,7 @@ public class EcsServiceSetupStep extends TaskChainExecutableWithRollbackAndRbac 
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
+  public StepResponse finalizeExecutionWithSecurityContextAndNodeInfo(Ambiance ambiance, StepBaseParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     if (passThroughData instanceof EcsGitFetchFailurePassThroughData) {
       return ecsStepCommonHelper.handleGitTaskFailure((EcsGitFetchFailurePassThroughData) passThroughData);

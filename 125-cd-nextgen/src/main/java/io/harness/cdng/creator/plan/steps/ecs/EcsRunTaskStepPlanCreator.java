@@ -9,18 +9,27 @@ package io.harness.cdng.creator.plan.steps.ecs;
 
 import static io.harness.cdng.visitor.YamlTypes.ECS_RUN_TASK;
 
+import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
+import io.harness.cdng.ecs.EcsRunTaskStep;
 import io.harness.cdng.ecs.EcsRunTaskStepNode;
 import io.harness.cdng.ecs.EcsRunTaskStepParameters;
+import io.harness.cdng.ecs.asyncsteps.EcsRunTaskStepV2;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import java.util.Set;
 
 public class EcsRunTaskStepPlanCreator extends CDPMSStepPlanCreatorV2<EcsRunTaskStepNode> {
+  @Inject private CDFeatureFlagHelper featureFlagService;
+
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(ECS_RUN_TASK);
@@ -48,5 +57,23 @@ public class EcsRunTaskStepPlanCreator extends CDPMSStepPlanCreatorV2<EcsRunTask
     ecsRunTaskStepParameters.setSkipSteadyStateCheck(stepElement.getEcsRunTaskStepInfo().getSkipSteadyStateCheck());
     ecsRunTaskStepParameters.setDelegateSelectors(stepElement.getEcsRunTaskStepInfo().getDelegateSelectors());
     return stepParameters;
+  }
+
+  @Override
+  protected StepType getStepSpecType(PlanCreationContext ctx, EcsRunTaskStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_ECS_ASYNC_STEP_STRATEGY)) {
+      return EcsRunTaskStepV2.STEP_TYPE;
+    }
+    return EcsRunTaskStep.STEP_TYPE;
+  }
+
+  @Override
+  protected String getFacilitatorType(PlanCreationContext ctx, EcsRunTaskStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_ECS_ASYNC_STEP_STRATEGY)) {
+      return OrchestrationFacilitatorType.ASYNC_CHAIN;
+    }
+    return OrchestrationFacilitatorType.TASK_CHAIN;
   }
 }
