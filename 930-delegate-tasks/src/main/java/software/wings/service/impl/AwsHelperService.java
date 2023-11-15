@@ -1517,12 +1517,17 @@ public class AwsHelperService {
     }
   }
 
-  public AWSCredentialsProvider getCredentialsForIRSAonDelegate(AwsConfig awsConfig) {
+  public AWSCredentialsProvider getCredentialsForCrossAccountRoleOnDelegate(AwsConfig awsConfig) {
     AWSCredentialsProvider credentialsProvider;
 
-    credentialsProvider = WebIdentityTokenCredentialsProvider.builder()
-                              .roleSessionName(awsConfig.getAccountId() + UUIDGenerator.generateUuid())
-                              .build();
+    if (awsConfig.isUseIRSA()) {
+      credentialsProvider = WebIdentityTokenCredentialsProvider.builder()
+                                .roleSessionName(awsConfig.getAccountId() + UUIDGenerator.generateUuid())
+                                .build();
+    } else {
+      credentialsProvider = new AWSStaticCredentialsProvider(
+          new BasicAWSCredentials(new String(awsConfig.getAccessKey()), new String(awsConfig.getSecretKey())));
+    }
 
     if (awsConfig.isAssumeCrossAccountRole()) {
       // For the security token service we default to us-east-1.
