@@ -18,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.Map;
 
 @Slf4j
@@ -44,7 +46,7 @@ public class VersionInfoManagerV2 {
       // Create a VersionInfo object to store the data
       VersionInfoV2 versionInfo = VersionInfoV2.builder()
               .buildVersion((String) data.get("BUILD_VERSION"))
-              .buildTime(Instant.parse((String) data.get("BUILD_TIME")))
+              .buildTime(((Date) data.get("BUILD_TIME")).toInstant().truncatedTo(ChronoUnit.SECONDS))
               .branchName((String) data.get("BRANCH_NAME"))
               .commitSha((String) data.get("COMMIT_SHA"))
               .build(); // Build the VersionInfoV2 instance
