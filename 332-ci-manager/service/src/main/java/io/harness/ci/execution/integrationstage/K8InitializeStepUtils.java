@@ -676,8 +676,8 @@ public class K8InitializeStepUtils {
     }
 
     return ContainerResourceParams.builder()
-        .resourceRequestMilliCpu(STEP_REQUEST_MILLI_CPU)
-        .resourceRequestMemoryMiB(STEP_REQUEST_MEMORY_MIB)
+        .resourceRequestMilliCpu(cpuLimit)
+        .resourceRequestMemoryMiB(memoryLimit)
         .resourceLimitMilliCpu(cpuLimit)
         .resourceLimitMemoryMiB(memoryLimit)
         .build();
