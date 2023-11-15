@@ -7,17 +7,12 @@
 
 package io.harness.ccm.billingDataVerification.utils;
 
-import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
-
 import io.harness.ccm.billingDataVerification.dto.CCMBillingDataVerificationCost;
 import io.harness.ccm.billingDataVerification.dto.CCMBillingDataVerificationKey;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.service.billingDataVerification.service.BillingDataVerificationSQLService;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
-import io.harness.delegate.beans.connector.CEFeatures;
-import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
@@ -55,18 +50,19 @@ import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.TableResult;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+@Service
+@Singleton
 @Slf4j
-@UtilityClass
-public class AwsBillingDataVerificationUtils {
+public class AwsBillingDataVerificationService {
   @Autowired io.harness.aws.AwsClient awsClient;
   @Autowired BigQueryHelper bigQueryHelper;
   @Autowired BillingDataVerificationSQLService billingDataVerificationSQLService;

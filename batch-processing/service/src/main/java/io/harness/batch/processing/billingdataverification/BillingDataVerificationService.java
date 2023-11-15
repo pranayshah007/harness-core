@@ -7,15 +7,13 @@
 
 package io.harness.batch.processing.billingdataverification;
 
-import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
-
 import io.harness.aws.AwsClientImpl;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.ccm.billingDataVerification.dto.CCMBillingDataVerificationCost;
 import io.harness.ccm.billingDataVerification.dto.CCMBillingDataVerificationKey;
-import io.harness.ccm.billingDataVerification.utils.AwsBillingDataVerificationUtils;
+import io.harness.ccm.billingDataVerification.utils.AwsBillingDataVerificationService;
 import io.harness.ccm.service.billingDataVerification.service.BillingDataVerificationSQLService;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.CEFeatures;
@@ -38,7 +36,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class BillingDataVerificationService {
   @Autowired private AccountShardService accountShardService;
-  @Autowired private AwsBillingDataVerificationUtils awsBillingDataVerificationUtils;
+  @Autowired private AwsBillingDataVerificationService awsBillingDataVerificationService;
   @Autowired private NGConnectorHelper ngConnectorHelper;
   @Autowired BillingDataVerificationSQLService billingDataVerificationSQLService;
   @Autowired BatchMainConfig configuration;
@@ -76,8 +74,8 @@ public class BillingDataVerificationService {
       try {
         CrossAccountAccessDTO crossAccountAccessDTO =
             ((CEAwsConnectorDTO) awsBillingConnector.getConnector().getConnectorConfig()).getCrossAccountAccess();
-        awsBillingDataVerificationUtils.fetchAndUpdateBillingDataForConnector(accountId, awsBillingConnector, startDate,
-            endDate, getAssumedCredentialProvider(crossAccountAccessDTO), billingData);
+        awsBillingDataVerificationService.fetchAndUpdateBillingDataForConnector(accountId, awsBillingConnector,
+            startDate, endDate, getAssumedCredentialProvider(crossAccountAccessDTO), billingData);
       } catch (Exception ex) {
         log.error("Exception while fetching AWS billing data for connector: {}",
             awsBillingConnector.getConnector().getIdentifier(), ex);
