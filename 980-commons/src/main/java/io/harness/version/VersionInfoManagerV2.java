@@ -10,6 +10,7 @@ package io.harness.version;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 
+import io.harness.version.VersionInfoException;
 import org.yaml.snakeyaml.Yaml;
 import lombok.extern.slf4j.Slf4j;
 import java.io.FileInputStream;
