@@ -41,9 +41,15 @@ public class VersionInfoManagerV2 {
               .build(); // Build the VersionInfoV2 instance
 
       return versionInfo;
+    } catch (FileNotFoundException e) {
+      log.error("Version file not found: " + e.getMessage(), e);
+      throw new VersionInfoException("Version file not found: " + e.getMessage(), e);
+    } catch (YAMLException | ClassCastException e) {
+      log.error("Error parsing YAML file: " + e.getMessage(), e);
+      throw new VersionInfoException("Error parsing YAML file: " + e.getMessage(), e);
     } catch (Exception e) {
       log.error("Failed to retrieve version info: " + e.getMessage(), e);
-      throw new RuntimeException("Failed to retrieve version info: " + e.getMessage(), e);
+      throw new VersionInfoException("Failed to retrieve version info: " + e.getMessage(), e);
     }
   }
 }
