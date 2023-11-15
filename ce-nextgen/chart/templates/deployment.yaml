@@ -103,19 +103,18 @@ spec:
                 name: nextgen-ce
           env:
             {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
-            {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" .) | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "JWT_AUTH_SECRET" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "JWT_AUTH_SECRET") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "NEXT_GEN_MANAGER_SECRET" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "NEXT_GEN_MANAGER_SECRET") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "JWT_IDENTITY_SERVICE_SECRET" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "JWT_IDENTITY_SERVICE_SECRET") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "NOTIFICATION_CLIENT_SECRET" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "NOTIFICATION_CLIENT_SECRET") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "ACCESS_CONTROL_SECRET" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "ACCESS_CONTROL_SECRET") | indent 12 }}
-            - name: EVENTS_MONGO_DB_URL
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "events" ) }}
-            - name: NOTIFICATION_MONGO_URI
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "notifications" ) }}
             - name: TIMESCALEDB_URI
               value: {{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
+            {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "events") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "events" "connectionURIVariableName" "EVENTS_MONGO_DB_URL") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "notifications") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "notifications" "connectionURIVariableName" "NOTIFICATION_MONGO_URI") | indent 12 }}
             {{- if .Values.global.database.clickhouse.enabled }}
             {{- $globalClickhouseESOSecretIdentifier := include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $  "ctxIdentifier" "clickhouse") }}
             {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "CLICKHOUSE_USERNAME" "defaultValue" .Values.clickhouse.username "extKubernetesSecretCtxs" (list .Values.global.database.clickhouse.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalClickhouseESOSecretIdentifier "secretCtx" .Values.global.database.clickhouse.secrets.secretManagement.externalSecretsOperator))) | indent 12 }}
