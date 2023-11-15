@@ -23,6 +23,7 @@ import io.harness.datahandler.models.AccountSummary;
 import io.harness.datahandler.models.FeatureFlagBO;
 import io.harness.datahandler.services.AdminAccountService;
 import io.harness.datahandler.services.AdminUserService;
+import io.harness.datahandler.utils.AccountSummaryHelper;
 import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
@@ -80,6 +81,7 @@ public class AdminAccountResource {
   private AccessControlAdminClient accessControlAdminClient;
   private DelegateService delegateService;
   private AdminLicenseHttpClient adminLicenseHttpClient;
+  private AccountSummaryHelper accountSummaryHelper;
 
   @Inject
   public AdminAccountResource(AdminAccountService adminAccountService, AdminUserService adminUserService,
@@ -200,12 +202,9 @@ public class AdminAccountResource {
 
   @GET
   @Path("recently-updated-accounts")
-  public RestResponse<List<AccountSummary>> getRecentAccountUpdates(@QueryParam("timestamp") long timestamp) {
-    List<String> updatedAccountsIds = adminAccountService.getAccountsUpdatedSinceTimestamp(timestamp)
-                                          .stream()
-                                          .map(UuidAware::getUuid)
-                                          .collect(Collectors.toList());
-    return new RestResponse<>(adminAccountService.getAccountSummaries(updatedAccountsIds));
+  public RestResponse<List<AccountSummary>> getRecentlyUpdatedAccounts(@QueryParam("timestamp") long timestamp) {
+    List<Account> updatedAccountsIds = adminAccountService.getAccountsUpdatedSinceTimestamp(timestamp);
+    return new RestResponse<>(accountSummaryHelper.getAccountSummariesFromAccounts(updatedAccountsIds));
   }
 
   @PUT
