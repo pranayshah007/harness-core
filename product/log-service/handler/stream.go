@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -44,6 +45,12 @@ func HandleOpen(stream stream.Stream) http.HandlerFunc {
 		ctx := r.Context()
 		st := time.Now()
 
+		cookieToken, err := r.Cookie("token")
+		if err != nil {
+			fmt.Println("Could not fetch token from Cookie open: %v", err)
+		}
+		fmt.Println("Cookkie token in  open===", cookieToken)
+
 		accountID := r.FormValue(accountIDParam)
 		key := CreateAccountSeparatedKey(accountID, r.FormValue(keyParam))
 
@@ -71,6 +78,12 @@ func HandleClose(logStream stream.Stream, store store.Store, scanBatch int64) ht
 		ctx := r.Context()
 		st := time.Now()
 		var keys []string
+
+		cookieToken, err := r.Cookie("token")
+		if err != nil {
+			fmt.Println("Could not fetch token from Cookie close: %v", err)
+		}
+		fmt.Println("Cookkie token in  close===", cookieToken)
 
 		accountID := r.FormValue(accountIDParam)
 		key := CreateAccountSeparatedKey(accountID, r.FormValue(keyParam))
@@ -176,6 +189,12 @@ func HandleWrite(s stream.Stream) http.HandlerFunc {
 		ctx := r.Context()
 		st := time.Now()
 
+		cookieToken, err := r.Cookie("token")
+		if err != nil {
+			fmt.Println("Could not fetch token from Cookie write: %v", err)
+		}
+		fmt.Println("Cookkie token in  write===", cookieToken)
+
 		accountID := r.FormValue(accountIDParam)
 		key := CreateAccountSeparatedKey(accountID, r.FormValue(keyParam))
 
@@ -221,6 +240,12 @@ func HandleWrite(s stream.Stream) http.HandlerFunc {
 // the live stream.
 func HandleTail(s stream.Stream) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		cookieToken, err := r.Cookie("token")
+		if err != nil {
+			fmt.Println("Could not fetch token from Cookie tail: %v", err)
+		}
+		fmt.Println("Cookkie token in  tail===", cookieToken)
 
 		accountID := r.FormValue(accountIDParam)
 		key := CreateAccountSeparatedKey(accountID, r.FormValue(keyParam))

@@ -103,6 +103,12 @@ func HandleDownload(store store.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		st := time.Now()
 		h := w.Header()
+		cookieToken, err := r.Cookie("token")
+		if err != nil {
+			fmt.Println("Could not fetch token from Cookie blob: %v", err)
+		}
+		fmt.Println("Cookkie token in  blob===", cookieToken)
+
 		h.Set("Access-Control-Allow-Origin", "*")
 		ctx := r.Context()
 
@@ -418,6 +424,7 @@ func getVanityURLFromPlatform(ctx context.Context, accountID string, c cache.Cac
 		return "", fmt.Errorf("Could not fetch token from Cookie: %v", err)
 	}
 
+	//Check null token
 	vanityURL, err := ngClient.GetVanityURL(ctx, accountID, "Bearer "+cookieToken.Value)
 	if err != nil {
 		return vanityURL, fmt.Errorf("api: cannot fetch the vanity url: %v", err)
