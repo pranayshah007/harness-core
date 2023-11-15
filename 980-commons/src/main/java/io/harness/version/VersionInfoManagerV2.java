@@ -44,7 +44,7 @@ public class VersionInfoManagerV2 {
       // Create a VersionInfo object to store the data
       VersionInfoV2 versionInfo = VersionInfoV2.builder()
               .buildVersion((String) data.get("BUILD_VERSION"))
-              .buildTime(Instant.parse((String) data.get("BUILD_TIME"))) // Cast to Date
+              .buildTime(Instant.parse((String) data.get("BUILD_TIME")))
               .branchName((String) data.get("BRANCH_NAME"))
               .commitSha((String) data.get("COMMIT_SHA"))
               .build(); // Build the VersionInfoV2 instance
