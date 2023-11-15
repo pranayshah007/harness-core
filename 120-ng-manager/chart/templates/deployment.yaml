@@ -96,7 +96,6 @@ spec:
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "GITOPS_SERVICE_SECRET" "defaultKubernetesSecretName" "ng-manager" "defaultKubernetesSecretKey" "GITOPS_SERVICE_SECRET") | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 12 }}
-            {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" .) | indent 12 }}
             {{- if .Values.global.ccm.enabled }}
               {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "CE_AWS_ACCESS_KEY" "defaultKubernetesSecretName" .Values.ceSecret.access_key.name "defaultKubernetesSecretKey" .Values.ceSecret.access_key.key) | indent 12 }}
@@ -104,14 +103,14 @@ spec:
               {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "CE_AWS_DESTINATION_BUCKET" "defaultKubernetesSecretName" .Values.ceSecret.destination_bucket.name "defaultKubernetesSecretKey" .Values.ceSecret.destination_bucket.key) | indent 12 }}
               {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "CE_AWS_TEMPLATE_URL" "defaultKubernetesSecretName" .Values.ceSecret.template_url.name "defaultKubernetesSecretKey" .Values.ceSecret.template_url.key) | indent 12 }}
             {{- end }}
-            - name: MONGO_URI
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "ng-harness" ) }}
-            - name : NOTIFICATION_MONGO_URI
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "notifications" ) }}
-            - name: PMS_MONGO_URI
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "pms-harness" ) }}
             - name: TIMESCALE_URI
               value: {{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
+            {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "ng-harness") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "ng-harness" "connectionURIVariableName" "MONGO_URI") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "notifications") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "notifications" "connectionURIVariableName" "NOTIFICATION_MONGO_URI") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "pms-harness") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "pms-harness" "connectionURIVariableName" "PMS_MONGO_URI") | indent 12 }}
             {{- if .Values.extraEnvVars }}
             {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
