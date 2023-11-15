@@ -78,7 +78,6 @@ spec:
                 name: batch-processing
           env:
             {{ include "harnesscommon.secrets.manageSMTPEnv" (dict "ctx" $) | indent 12 }}
-            {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "NEXT_GEN_MANAGER_SECRET" "defaultKubernetesSecretName" "batch-processing" "defaultKubernetesSecretKey" "NEXT_GEN_MANAGER_SECRET") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "CE_NG_SERVICE_SECRET" "defaultKubernetesSecretName" "batch-processing" "defaultKubernetesSecretKey" "CE_NG_SERVICE_SECRET") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "S3_SYNC_CONFIG_ACCESSKEY" "defaultKubernetesSecretName" "batch-processing" "defaultKubernetesSecretKey" "S3_SYNC_CONFIG_ACCESSKEY") | indent 12 }}
@@ -88,10 +87,10 @@ spec:
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "HARNESS_CE_AZURE_CLIENTID" "defaultKubernetesSecretName" "batch-processing" "defaultKubernetesSecretKey" "HARNESS_CE_AZURE_CLIENTID") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "HARNESS_CE_AZURE_TENANTID" "defaultKubernetesSecretName" "batch-processing" "defaultKubernetesSecretKey" "HARNESS_CE_AZURE_TENANTID") | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" .) | indent 12 }}
-            - name: MONGO_URI
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "harness" ) }}
-            - name: EVENTS_MONGO_URI
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "events" ) }}
+            {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "harness") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "harness" "connectionURIVariableName" "MONGO_URI") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "events") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "events" "connectionURIVariableName" "EVENTS_MONGO_URI") | indent 12 }}
             - name: TIMESCALEDB_URI
               value: {{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
             - name: POD_NAME
