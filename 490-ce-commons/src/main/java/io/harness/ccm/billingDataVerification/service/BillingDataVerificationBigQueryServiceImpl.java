@@ -64,7 +64,7 @@ public class BillingDataVerificationBigQueryServiceImpl implements BillingDataVe
 
   private static final String INSERT_INTO_BILLING_DATA_VERIFICATION_TABLE_QUERY_TEMPLATE = String.join(" ",
       "INSERT INTO %s ",
-      "(harnessAccountId, connectorId, cloudProvider, cloudProviderAccountId, usageDate, costType, costFromCloudProviderAPI, costFromRawBillingTable, costFromUnifiedTable) ",
+      "(harnessAccountId, connectorId, cloudProvider, cloudProviderAccountId, usageStartDate, usageEndDate, costType, costFromCloudProviderAPI, costFromRawBillingTable, costFromUnifiedTable) ",
       "VALUES %s ; ");
 
   @Inject BigQueryHelper bigQueryHelper;
@@ -231,6 +231,7 @@ public class BillingDataVerificationBigQueryServiceImpl implements BillingDataVe
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
     TableResult result;
     try {
+      log.info("Executing Query: {}", query);
       result = bigQuery.query(queryConfig);
     } catch (final InterruptedException e) {
       log.error("Failed to execute query: {}", queryConfig, e);

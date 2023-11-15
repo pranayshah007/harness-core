@@ -9,11 +9,14 @@ package io.harness.batch.processing.billingdataverification;
 
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 
+import io.harness.aws.AwsClientImpl;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
+import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.ccm.billingDataVerification.dto.CCMBillingDataVerificationCost;
 import io.harness.ccm.billingDataVerification.dto.CCMBillingDataVerificationKey;
 import io.harness.ccm.billingDataVerification.utils.AwsBillingDataVerificationUtils;
+import io.harness.ccm.service.billingDataVerification.service.BillingDataVerificationSQLService;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -37,10 +40,9 @@ public class BillingDataVerificationService {
   @Autowired private AccountShardService accountShardService;
   @Autowired private AwsBillingDataVerificationUtils awsBillingDataVerificationUtils;
   @Autowired private NGConnectorHelper ngConnectorHelper;
-  @Autowired
-  io.harness.ccm.service.billingDataVerification.service
-      .BillingDataVerificationSQLService billingDataVerificationSQLService;
-  @Autowired io.harness.batch.processing.config.BatchMainConfig configuration;
+  @Autowired BillingDataVerificationSQLService billingDataVerificationSQLService;
+  @Autowired BatchMainConfig configuration;
+  @Autowired AwsClientImpl awsClient;
 
   public void verifyBillingData() {
     List<String> accountIds = accountShardService.getCeEnabledAccountIds();
@@ -55,7 +57,7 @@ public class BillingDataVerificationService {
       return;
     }
 
-    if (!configuration.getBillingDataVerificationJobConfig().isAwsBillingDataVerificationEnabled()) {
+    if (!configuration.getBillingDataVerificationJobConfig().getAwsBillingDataVerificationEnabled()) {
       log.info("Billing-Data verification is disabled for AWS. Skipping AWS billing-data verification.");
       return;
     }
