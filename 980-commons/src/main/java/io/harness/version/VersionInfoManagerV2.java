@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 
 import io.harness.version.VersionInfoException;
+import java.io.FileNotFoundException;
+import org.yaml.snakeyaml.error.YAMLException;
 import org.yaml.snakeyaml.Yaml;
 import lombok.extern.slf4j.Slf4j;
 import java.io.FileInputStream;
@@ -25,7 +27,7 @@ public class VersionInfoManagerV2 {
   // this file path will be same for all services
   private String versionFilePath = "/opt/harness/version.yaml";
 
-  public VersionInfoV2 getVersionInfo() {
+  public VersionInfoV2 getVersionInfo() throws VersionInfoException {
     try {
       InputStream inputStream = new FileInputStream(versionFilePath);
 
