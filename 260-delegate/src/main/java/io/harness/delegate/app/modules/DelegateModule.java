@@ -1083,6 +1083,14 @@ public class DelegateModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("helmCliExecutor")
+  public ExecutorService helmCliExecutor() {
+    return ThreadPool.create(10, 50, 30, TimeUnit.SECONDS,
+        new ThreadFactoryBuilder().setNameFormat("helm-cli-%d").setPriority(Thread.MIN_PRIORITY).build());
+  }
+
+  @Provides
+  @Singleton
   @Named("taskExecutor")
   public ThreadPoolExecutor taskExecutor() {
     int maxPoolSize = Integer.MAX_VALUE;
