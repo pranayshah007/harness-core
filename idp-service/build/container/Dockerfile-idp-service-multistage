@@ -37,6 +37,7 @@ COPY --chown=65534:65534  --from=builder \
   /app/dockerization/base-images/apm/*.sh \
   /opt/harness/
 RUN chmod +x /opt/harness/*.sh
+RUN /opt/harness/inject-saas-apm-bins-into-dockerimage.sh && rm -rf /opt/harness/inject-saas-apm-bins-into-dockerimage.sh
 USER root
 RUN microdnf clean all \
     && rm -rf /var/cache/yum
