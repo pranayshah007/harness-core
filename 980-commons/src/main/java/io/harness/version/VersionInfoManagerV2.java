@@ -17,7 +17,7 @@ import org.yaml.snakeyaml.Yaml;
 import lombok.extern.slf4j.Slf4j;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.Date;
+import java.time.Instant;
 import java.util.Map;
 
 @Slf4j
@@ -26,8 +26,14 @@ public class VersionInfoManagerV2 {
 
   // this file path will be same for all services
   private String versionFilePath = "/opt/harness/version.yaml";
+  private VersionInfoV2 cachedVersionInfo;
 
   public VersionInfoV2 getVersionInfo() throws VersionInfoException {
+    // Check if the version info is already cached
+    if (cachedVersionInfo != null) {
+      log.info("Returning cached version info.");
+      return cachedVersionInfo;
+    }
     try {
       InputStream inputStream = new FileInputStream(versionFilePath);
 
@@ -38,10 +44,13 @@ public class VersionInfoManagerV2 {
       // Create a VersionInfo object to store the data
       VersionInfoV2 versionInfo = VersionInfoV2.builder()
               .buildVersion((String) data.get("BUILD_VERSION"))
-              .buildTime((Date) data.get("BUILD_TIME")) // Cast to Date
+              .buildTime(Instant.parse((String) data.get("BUILD_TIME"))) // Cast to Date
               .branchName((String) data.get("BRANCH_NAME"))
               .commitSha((String) data.get("COMMIT_SHA"))
               .build(); // Build the VersionInfoV2 instance
+
+      // Cache the version info
+      cachedVersionInfo = versionInfo;
 
       return versionInfo;
     } catch (FileNotFoundException e) {

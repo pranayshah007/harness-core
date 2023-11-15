@@ -14,14 +14,14 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Value;
 import lombok.Data;
-import java.util.Date;
+import java.time.Instant;
 
 @Data
 @Builder
 @OwnedBy(HarnessTeam.PL)
 public class VersionInfoV2 {
   private String buildVersion;
-  private Date buildTime;
+  private Instant buildTime;
   private String branchName;
   private String commitSha;
 }
