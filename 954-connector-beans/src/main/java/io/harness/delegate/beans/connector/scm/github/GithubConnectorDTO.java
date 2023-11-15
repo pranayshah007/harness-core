@@ -69,7 +69,7 @@ public class GithubConnectorDTO
   Boolean executeOnDelegate;
   String gitConnectionUrl;
   Boolean proxy;
-  String proxyUrl;
+  String proxyUrl = "";
 
   @Builder
   public GithubConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,

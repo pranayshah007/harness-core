@@ -8,6 +8,7 @@
 package io.harness.ng.tunnel.services.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -15,13 +16,15 @@ import io.harness.ng.NextGenConfiguration;
 import io.harness.ng.core.dto.TunnelRegisterRequestDTO;
 import io.harness.ng.core.dto.TunnelResponseDTO;
 import io.harness.ng.tunnel.entities.Tunnel;
+import io.harness.persistence.HPersistence;
 import io.harness.repositories.ng.tunnel.TunnelRepository;
 import io.harness.services.TunnelService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.Optional;
-import javax.ws.rs.NotFoundException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TunnelServiceImpl implements TunnelService {
   private final TunnelRepository tunnelRepository;
   private NextGenConfiguration nextGenConfiguration;
+  private HPersistence persistence;
 
   @Override
   public Boolean registerTunnel(String accountId, TunnelRegisterRequestDTO tunnelRegisterRequestDTO) {
@@ -40,8 +44,13 @@ public class TunnelServiceImpl implements TunnelService {
       return Boolean.FALSE;
     }
 
-    tunnelRepository.save(
-        Tunnel.builder().accountIdentifier(accountId).port(tunnelRegisterRequestDTO.getPort()).build());
+    UpdateOperations<Tunnel> updateOperations =
+        persistence.createUpdateOperations(Tunnel.class)
+            .setOnInsert(Tunnel.TunnelKeys.accountIdentifier, accountId)
+            .set(Tunnel.TunnelKeys.port, tunnelRegisterRequestDTO.getPort());
+    Query<Tunnel> upsertQuery =
+        persistence.createQuery(Tunnel.class, excludeAuthority).filter(Tunnel.TunnelKeys.accountIdentifier, accountId);
+    persistence.upsert(upsertQuery, updateOperations);
     return Boolean.TRUE;
   }
 
