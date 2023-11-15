@@ -94,14 +94,13 @@ spec:
           {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 10 }}
           {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "CACHE_CONFIG_REDIS_USERNAME" "passwordVariableName" "CACHE_CONFIG_REDIS_PASSWORD") | indent 10 }}
           {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 10 }}
-          {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 10 }}
           - name : TIMESCALE_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.timescaleSecret.password.name }}
                 key: {{ .Values.timescaleSecret.password.key }}
-          - name: MONGO_URI
-            value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "template-harness" ) }}
+          {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "template-harness") | indent 10 }}
+          {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "template-harness" "connectionURIVariableName" "MONGO_URI") | indent 10 }}
           {{- if .Values.extraEnvVars }}
             {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 10 }}
           {{- end }}
