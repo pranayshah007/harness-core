@@ -71,6 +71,7 @@ import io.harness.cdng.chaos.ChaosStepPlanCreator;
 import io.harness.cdng.chaos.ChaosStepVariableCreator;
 import io.harness.cdng.creator.filters.CustomStageFilterCreator;
 import io.harness.cdng.creator.filters.DeploymentStageFilterJsonCreatorV2;
+import io.harness.cdng.creator.filters.v1.DeploymentStageFilterJsonCreator;
 import io.harness.cdng.creator.plan.CDStepsPlanCreator;
 import io.harness.cdng.creator.plan.artifact.ArtifactsPlanCreator;
 import io.harness.cdng.creator.plan.artifact.PrimaryArtifactPlanCreator;
@@ -571,6 +572,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   public List<FilterJsonCreator> getFilterJsonCreators() {
     List<FilterJsonCreator> filterJsonCreators = new ArrayList<>();
     filterJsonCreators.add(new DeploymentStageFilterJsonCreatorV2());
+    filterJsonCreators.add(new DeploymentStageFilterJsonCreator());
     filterJsonCreators.add(new CDPMSStepFilterJsonCreator());
     filterJsonCreators.add(new CDPMSStepFilterJsonCreatorV2());
     filterJsonCreators.add(new CDPMSCommandStepFilterJsonCreator());
@@ -607,6 +609,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new GitOpsFetchLinkedAppsStepVariableCreator());
     variableCreators.add(new GitOpsSyncStepVariableCreator());
     variableCreators.add(deploymentStageVariableCreator);
+    variableCreators.add(new EmptyVariableCreator(STAGE, Set.of(YAMLFieldNameConstants.DEPLOYMENT_STAGE_V1)));
     variableCreators.add(new StepGroupVariableCreator());
     variableCreators.add(new K8sApplyStepVariableCreator());
     variableCreators.add(new K8sBGSwapServicesVariableCreator());
