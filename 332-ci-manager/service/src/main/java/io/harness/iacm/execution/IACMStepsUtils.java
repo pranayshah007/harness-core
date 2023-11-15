@@ -163,7 +163,7 @@ public class IACMStepsUtils {
                 Objects.equals(variablesRepo.getRepository(), workspaceInfo.getRepository()) &&
                     Objects.equals(variablesRepo.getRepository_branch(), workspaceInfo.getRepository_branch()) &&
                         Objects.equals(variablesRepo.getRepository_commit(), workspaceInfo.getRepository_commit())) {
-          pluginEnvs.put(String.format("PLUGIN_VARIABLE_CONNECTOR_%s", hashedGitInfo), variablesRepo.getRepository_path());
+          pluginEnvs.put(String.format("PLUGIN_VARIABLE_CONNECTOR_%s", hashedGitInfo), "/harness/" + variablesRepo.getRepository_path());
           continue;
         }
         String variableFilePath = this.generateVariableFilePath(this.generateVariableFileBasePath(hashedGitInfo), variablesRepo.getRepository_path());
