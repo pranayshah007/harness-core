@@ -166,7 +166,7 @@ public class IACMStepsUtils {
           pluginEnvs.put(String.format("PLUGIN_VARIABLE_CONNECTOR_%s", hashedGitInfo), variablesRepo.getRepository_path());
           continue;
         }
-        String variableFilePath = this.generateVariableFilePath(this.generateVariableFileBasePath(hashedGitInfo), hashedGitInfo);
+        String variableFilePath = this.generateVariableFilePath(this.generateVariableFileBasePath(hashedGitInfo), variablesRepo.getRepository_path());
         pluginEnvs.put(String.format("PLUGIN_VARIABLE_CONNECTOR_%s", hashedGitInfo), variableFilePath);
       }
     }
