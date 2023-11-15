@@ -76,19 +76,18 @@ spec:
             {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "CACHE_CONFIG_REDIS_USERNAME" "passwordVariableName" "CACHE_CONFIG_REDIS_PASSWORD") | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 12 }}
-            {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" $ "passwordVariableName" "TIMESCALE_PASSWORD") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "LOG_SERVICE_GLOBAL_TOKEN" "defaultKubernetesSecretName" "ci-manager" "defaultKubernetesSecretKey" "LOG_SERVICE_GLOBAL_TOKEN") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "TI_SERVICE_GLOBAL_TOKEN" "defaultKubernetesSecretName" "ci-manager" "defaultKubernetesSecretKey" "TI_SERVICE_GLOBAL_TOKEN") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "STO_SERVICE_GLOBAL_TOKEN" "defaultKubernetesSecretName" .Values.stoServiceGlobalToken.name "defaultKubernetesSecretKey" .Values.stoServiceGlobalToken.key) | indent 12 }}
-            - name: MONGO_URI
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "harness" ) }}
-            - name: CIMANAGER_MONGO_URI
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "harness-ci" ) }}
-            - name: PMS_MONGO_URI
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "pms-harness" ) }}
             - name: TIMESCALE_URI
               value: {{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
+            {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "harness") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "harness" "connectionURIVariableName" "MONGO_URI") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "harness-ci") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "harness-ci" "connectionURIVariableName" "CIMANAGER_MONGO_URI") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "pms-harness") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "pms-harness" "connectionURIVariableName" "PMS_MONGO_URI") | indent 12 }}
           envFrom:
           - configMapRef:
               name: ci-manager
