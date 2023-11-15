@@ -38,6 +38,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
@@ -100,10 +101,9 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
     if ((!ParameterField.isBlank(timeoutParameterField))
         && stageNode.getStepParameters() instanceof StageElementParameters) {
       StageElementParameters stageElementParameters = (StageElementParameters) stageNode.getStepParameters();
-      planNodeBuilder.stepParameters(
-          stageElementParameters.toBuilder()
-              .timeout(ParameterField.createValueField(timeoutParameterField.getValue().getTimeoutString()))
-              .build());
+      planNodeBuilder.stepParameters(stageElementParameters.toBuilder()
+                                         .timeout(TimeoutUtils.getParameterTimeoutString(timeoutParameterField))
+                                         .build());
     }
     finalResponse.addNode(planNodeBuilder.build());
     finalResponse.setGraphLayoutResponse(getLayoutNodeInfo(ctx, config));
