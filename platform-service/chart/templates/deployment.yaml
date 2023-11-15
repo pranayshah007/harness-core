@@ -73,13 +73,12 @@ spec:
           {{- include "harnesscommon.secrets.manageSMTPEnv" (dict "ctx" $) | indent 10 }}
           {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 10 }}
           {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 10 }}
-          {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 10 }}
-          - name: MONGO_URI
-            value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "notifications" "ctx" $) }}
-          - name: AUDIT_MONGO_URI
-            value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "audits" "ctx" $) }}
-          - name: RESOURCE_GROUP_MONGO_URI
-            value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "resource-groups" "ctx" $) }}
+          {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "notifications") | indent 10 }}
+          {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "notifications" "connectionURIVariableName" "MONGO_URI") | indent 10 }}
+          {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "audits") | indent 10 }}
+          {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "audits" "connectionURIVariableName" "AUDIT_MONGO_URI") | indent 10 }}
+          {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "resource-groups") | indent 10 }}
+          {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "resource-groups" "connectionURIVariableName" "RESOURCE_GROUP_MONGO_URI") | indent 10 }}
           {{- if .Values.extraEnvVars }}
             {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 10 }}
           {{- end }}
