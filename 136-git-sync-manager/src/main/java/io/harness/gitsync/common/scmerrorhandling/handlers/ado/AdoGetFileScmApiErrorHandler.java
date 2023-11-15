@@ -27,7 +27,7 @@ public class AdoGetFileScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String GET_FILE_REQUEST_FAILURE =
       "The requested file<FILEPATH> could not be fetched from Azure. ";
   private static final String AZURE_REQUEST_TIMEOUT_ERROR_MESSAGE =
-      "Failed to fetch file: file<FILEPATH>. Request to the Azure Git Server Timed out. ";
+      "Failed to fetch file: ";
 
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
