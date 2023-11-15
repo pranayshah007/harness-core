@@ -24,7 +24,8 @@ function download_saas_apm_binaries(){
 #  echo "INFO: Download Status: ${JACOCO_AGENT##*/}: $STATUS4"
 #  chmod 711 ${JACOCO_AGENT##*/}
 
-	if [ "${STATUS1}" -eq 0 ] && [ "${STATUS2}" -eq 0 ] && [ "${STATUS3}" -eq 0 ] && [ "${STATUS4}" -eq 0 ] ; then
+#	if [ "${STATUS1}" -eq 0 ] && [ "${STATUS2}" -eq 0 ] && [ "${STATUS3}" -eq 0 ] && [ "${STATUS4}" -eq 0 ] ; then
+  if [ "${STATUS1}" -eq 0 ] ; then
 		echo "Download Finished..."
 	else
 		echo "Failed to Download Saas APM Binaries. Exiting..."
