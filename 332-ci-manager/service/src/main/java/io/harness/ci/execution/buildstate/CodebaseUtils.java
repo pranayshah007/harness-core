@@ -334,7 +334,7 @@ public class CodebaseUtils {
   }
 
   public Map<String, String> getGitEnvVariables(
-      ConnectorDetails gitConnector, CodeBase ciCodebase, boolean skipGitClone) {
+      Ambiance ambiance, ConnectorDetails gitConnector, CodeBase ciCodebase, boolean skipGitClone) {
     if (skipGitClone) {
       return new HashMap<>();
     }
@@ -342,7 +342,11 @@ public class CodebaseUtils {
       throw new CIStageExecutionException("CI codebase spec is not set");
     }
     String repoName = ciCodebase.getRepoName().getValue();
-    return getGitEnvVariables(gitConnector, repoName);
+    Map<String, String> gitEnvVars = getGitEnvVariables(gitConnector, repoName);
+    if (gitConnector.getProxy() != null && gitConnector.getProxy()) {
+      gitEnvVars.putAll(getDroneProxyEnvVars(ambiance));
+    }
+    return gitEnvVars;
   }
 
   public Map<String, String> getGitEnvVariables(ConnectorDetails gitConnector, String repoName) {
