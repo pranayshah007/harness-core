@@ -88,13 +88,12 @@ spec:
             - configMapRef:
                 name: event-service
           env:
-            {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 12 }}
-            - name: EVENTS_MONGO_URI
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "events" "ctx" $) }}
-            - name: MONGO_URI
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "harness" "ctx" $) }}
-            - name: DMS_MONGO_URI
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "dms-harness" "ctx" $) }}
+            {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "events") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "events" "connectionURIVariableName" "EVENTS_MONGO_URI") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "harness") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "harness" "connectionURIVariableName" "MONGO_URI") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "dms-harness") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "dms-harness" "connectionURIVariableName" "DMS_MONGO_URI") | indent 12 }}
         {{- if .Values.lifecycleHooks }}
           lifecycle: {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.lifecycleHooks "context" $) | nindent 12 }}
         {{- end }}
