@@ -7,7 +7,13 @@
 
 package io.harness.delegate.outbox;
 
-import static io.harness.delegate.utils.DelegateOutboxEventConstants.*;
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_DELETE_EVENT;
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_REGISTER_EVENT;
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_TOKEN_CREATE_EVENT;
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_TOKEN_REVOKE_EVENT;
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_UNREGISTER_EVENT;
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_UPSERT_EVENT;
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_VERSION_OVERRIDE_EVENT;
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
 
 import io.harness.ModuleType;
@@ -178,17 +184,17 @@ public class DelegateOutboxEventHandler implements OutboxEventHandler {
   protected boolean handleDelegateVersionOverrideEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
     DelegateVersionOverrideEvent delegateVersionOverrideEvent =
-            objectMapper.readValue(outboxEvent.getEventData(), DelegateVersionOverrideEvent.class);
+        objectMapper.readValue(outboxEvent.getEventData(), DelegateVersionOverrideEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
-            .action(Action.UPSERT)
-            .module(ModuleType.CORE)
-            .newYaml(getYamlString(delegateVersionOverrideEvent.getVersionOverride()))
-            .oldYaml(getYamlString(delegateVersionOverrideEvent.getVersionOverrideOld()))
-            .timestamp(outboxEvent.getCreatedAt())
-            .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
-            .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
-            .insertId(outboxEvent.getId())
-            .build();
+                                .action(Action.UPSERT)
+                                .module(ModuleType.CORE)
+                                .newYaml(getYamlString(delegateVersionOverrideEvent.getVersionOverride()))
+                                .oldYaml(getYamlString(delegateVersionOverrideEvent.getVersionOverrideOld()))
+                                .timestamp(outboxEvent.getCreatedAt())
+                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+                                .insertId(outboxEvent.getId())
+                                .build();
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 }

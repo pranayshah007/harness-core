@@ -193,7 +193,7 @@ public class DelegateOutboxEventHandlerTest extends CategoryTest {
                                   .build();
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any())).thenReturn(true);
-    delegateOutboxEventHandler.handleDelegateUpsertEvent(outboxEvent);
+    delegateOutboxEventHandler.handleDelegateVersionOverrideEvent(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertEquals(Action.UPSERT, auditEntry.getAction());
@@ -207,23 +207,23 @@ public class DelegateOutboxEventHandlerTest extends CategoryTest {
     VersionOverride versionOverride = VersionOverride.auditBuilder("v2").build();
     VersionOverride versionOverride_old = VersionOverride.auditBuilder("v1").build();
     DelegateVersionOverrideEvent delegateVersionOverrideEvent = DelegateVersionOverrideEvent.builder()
-            .accountIdentifier(accountIdentifier)
-            .versionOverride(versionOverride)
-            .versionOverrideOld(versionOverride_old)
-            .build();
+                                                                    .accountIdentifier(accountIdentifier)
+                                                                    .versionOverride(versionOverride)
+                                                                    .versionOverrideOld(versionOverride_old)
+                                                                    .build();
     OutboxEvent outboxEvent = OutboxEvent.builder()
-            .id(randomAlphabetic(10))
-            .blocked(false)
-            .eventType(delegateVersionOverrideEvent.getEventType())
-            .globalContext(globalContext)
-            .resourceScope(delegateVersionOverrideEvent.getResourceScope())
-            .eventData(objectMapper.writeValueAsString(delegateVersionOverrideEvent))
-            .resource(delegateVersionOverrideEvent.getResource())
-            .createdAt(Long.parseLong(randomNumeric(5)))
-            .build();
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType(delegateVersionOverrideEvent.getEventType())
+                                  .globalContext(globalContext)
+                                  .resourceScope(delegateVersionOverrideEvent.getResourceScope())
+                                  .eventData(objectMapper.writeValueAsString(delegateVersionOverrideEvent))
+                                  .resource(delegateVersionOverrideEvent.getResource())
+                                  .createdAt(Long.parseLong(randomNumeric(5)))
+                                  .build();
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any())).thenReturn(true);
-    delegateOutboxEventHandler.handleDelegateUpsertEvent(outboxEvent);
+    delegateOutboxEventHandler.handleDelegateVersionOverrideEvent(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertEquals(Action.UPSERT, auditEntry.getAction());

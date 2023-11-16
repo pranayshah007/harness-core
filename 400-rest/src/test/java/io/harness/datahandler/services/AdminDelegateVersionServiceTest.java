@@ -24,10 +24,11 @@ import io.harness.rule.Owner;
 import com.google.inject.Inject;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 public class AdminDelegateVersionServiceTest extends CachingTest {
-  @Inject private AdminDelegateVersionService adminDelegateVersionService;
+  @Inject @InjectMocks private AdminDelegateVersionService adminDelegateVersionService;
   @Inject private HPersistence persistence;
   @Mock private OutboxService outboxService;
 
