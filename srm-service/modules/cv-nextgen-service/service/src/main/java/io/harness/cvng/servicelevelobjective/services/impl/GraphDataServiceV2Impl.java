@@ -7,7 +7,8 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
-import static io.harness.cvng.servicelevelobjective.services.impl.SLIRecordBucketServiceImpl.SLI_RECORD_BUCKET_SIZE;
+import static io.harness.cvng.core.services.CVNextGenConstants.MAX_NUMBER_OF_POINTS;
+import static io.harness.cvng.core.services.CVNextGenConstants.SLI_RECORD_BUCKET_SIZE;
 
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -32,7 +33,6 @@ import io.harness.cvng.servicelevelobjective.services.api.GraphDataServiceV2;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordBucketService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.time.Clock;
@@ -54,7 +54,6 @@ public class GraphDataServiceV2Impl implements GraphDataServiceV2 {
   @Inject EntityDisabledTimeService entityDisabledTimeService;
   @Inject GraphDataServiceImpl graphDataServiceImpl;
   @Inject Clock clock;
-  @VisibleForTesting public static final int MAX_NUMBER_OF_POINTS = 2000;
 
   @Override
   public SLODashboardWidget.SLOGraphData getGraphData(AbstractServiceLevelObjective serviceLevelObjective,

@@ -39,7 +39,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
-import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -69,7 +68,7 @@ public class AsgShiftTrafficStep extends CdTaskExecutable<AsgCommandResponse> {
                                                .build();
 
   private static final String ASG_BLUE_GREEN_DEPLOY_STEP_MISSING = "Blue Green Deploy step is not configured.";
-  private static final String COMMAND_NAME = "AsgShiftTraffic";
+  public static final String COMMAND_NAME = "AsgShiftTraffic";
 
   @Inject private AsgStepCommonHelper asgStepCommonHelper;
   @Inject private AsgStepHelper asgStepHelper;
@@ -131,14 +130,6 @@ public class AsgShiftTrafficStep extends CdTaskExecutable<AsgCommandResponse> {
 
     AsgBlueGreenDeployOutcome asgBlueGreenDeployDataOutcome =
         (AsgBlueGreenDeployOutcome) asgBlueGreenDeployDataOptional.getOutput();
-
-    // first deploy and skip swapping
-    if (asgBlueGreenPrepareRollbackDataOutcome.getProdAsgName() == null) {
-      return TaskRequest.newBuilder()
-          .setSkipTaskRequest(
-              SkipTaskRequest.newBuilder().setMessage("Skipping shift traffic as this is first deployment").build())
-          .build();
-    }
 
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));

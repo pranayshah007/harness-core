@@ -61,6 +61,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class GitXWebhookEvent implements PersistentEntity, UuidAccess {
   @Wither @Id @dev.morphia.annotations.Id String uuid;
   String accountIdentifier;
+  String orgIdentifier;
+  String projectIdentifier;
   String eventIdentifier;
   String webhookIdentifier;
   String payload;
@@ -78,9 +80,11 @@ public class GitXWebhookEvent implements PersistentEntity, UuidAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("accountIdentifier_eventIdentifier_unique_idx")
+                 .name("accountIdentifier_orgIdentifier_projectIdentifier_eventIdentifier_unique_idx")
                  .unique(true)
                  .field(GitXWebhookEventKeys.accountIdentifier)
+                 .field(GitXWebhookEventKeys.orgIdentifier)
+                 .field(GitXWebhookEventKeys.projectIdentifier)
                  .field(GitXWebhookEventKeys.eventIdentifier)
                  .build())
         .build();

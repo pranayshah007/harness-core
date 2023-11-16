@@ -516,6 +516,9 @@ import io.harness.delegate.task.aws.asg.AsgRollingDeployResult;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackRequest;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackResponse;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackResult;
+import io.harness.delegate.task.aws.asg.AsgShiftTrafficRequest;
+import io.harness.delegate.task.aws.asg.AsgShiftTrafficResponse;
+import io.harness.delegate.task.aws.asg.AsgShiftTrafficResult;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupInstance;
 import io.harness.delegate.task.aws.lambda.AwsLambda;
@@ -2322,6 +2325,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AsgBlueGreenDeployResult.class, 5731609);
     kryo.register(NativeHelmServerInstanceInfo.class, 5731610);
     kryo.register(AsgCapacityConfig.class, 5731611);
+    kryo.register(AsgShiftTrafficRequest.class, 5731612);
+    kryo.register(AsgShiftTrafficResponse.class, 5731613);
+    kryo.register(AsgShiftTrafficResult.class, 5731614);
 
     kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);
