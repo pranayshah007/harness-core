@@ -4,9 +4,13 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
+
 package io.harness.idp.scorecard.datapoints.parser.factory;
 
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.*;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.AVG_RESOLVED_TIME_FOR_LAST_TEN_RESOLVED_INCIDENTS_IN_MINUTES;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.IS_ESCALATION_POLICY_SET;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.IS_ON_CALL_SET;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.NO_OF_INCIDENTS_IN_LAST_THIRTY_DAYS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,8 +23,8 @@ import io.harness.idp.scorecard.datapoints.parser.pagerduty.PagerDutyOnCallSetPa
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
 
-@OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@OwnedBy(HarnessTeam.IDP)
 public class PagerDutyDataPointParserFactory implements DataPointParserFactory {
   private PagerDutyOnCallSetParser pagerDutyOnCallSetParser;
   private PagerDutyIsEscalationPolicySetParser pagerDutyIsEscalationPolicySetParser;
@@ -37,7 +41,6 @@ public class PagerDutyDataPointParserFactory implements DataPointParserFactory {
         return pagerDutyNoOfIncidentsInLastThirtyDaysParser;
       case AVG_RESOLVED_TIME_FOR_LAST_TEN_RESOLVED_INCIDENTS_IN_MINUTES:
         return pagerDutyAvgResolvedTimeForLastTenResolvedIncidents;
-
       default:
         throw new UnsupportedOperationException(String.format("Could not find DataPoint parser for %s", identifier));
     }

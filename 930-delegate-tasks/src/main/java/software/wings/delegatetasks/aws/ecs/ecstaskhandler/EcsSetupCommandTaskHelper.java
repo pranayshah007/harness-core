@@ -67,10 +67,12 @@ import com.amazonaws.services.applicationautoscaling.model.ScalableTarget;
 import com.amazonaws.services.applicationautoscaling.model.ServiceNamespace;
 import com.amazonaws.services.ecs.model.AssignPublicIp;
 import com.amazonaws.services.ecs.model.AwsVpcConfiguration;
+import com.amazonaws.services.ecs.model.Cluster;
 import com.amazonaws.services.ecs.model.ContainerDefinition;
 import com.amazonaws.services.ecs.model.CreateServiceRequest;
 import com.amazonaws.services.ecs.model.DeleteServiceRequest;
 import com.amazonaws.services.ecs.model.DeploymentConfiguration;
+import com.amazonaws.services.ecs.model.DescribeClustersRequest;
 import com.amazonaws.services.ecs.model.DescribeServicesRequest;
 import com.amazonaws.services.ecs.model.DesiredStatus;
 import com.amazonaws.services.ecs.model.KeyValuePair;
@@ -621,6 +623,17 @@ public class EcsSetupCommandTaskHelper {
     // Its automatically calculated by ECS based on number of instances in cluster
     if (setupParams.isDaemonSchedulingStrategy()) {
       createServiceRequest.setSchedulingStrategy(SchedulingStrategy.DAEMON.name());
+      List<Cluster> clusters =
+          awsHelperService
+              .describeClusters(setupParams.getRegion(), (AwsConfig) cloudProviderSetting.getValue(),
+                  encryptedDataDetails, new DescribeClustersRequest().withClusters(setupParams.getClusterName()))
+              .getClusters();
+      if (CollectionUtils.isNotEmpty(clusters)) {
+        Cluster cluster = clusters.get(0);
+        if (CollectionUtils.isNotEmpty(cluster.getDefaultCapacityProviderStrategy())) {
+          createServiceRequest.setLaunchType(setupParams.getLaunchType());
+        }
+      }
       createServiceRequest.withDeploymentConfiguration(
           new DeploymentConfiguration().withMaximumPercent(100).withMinimumHealthyPercent(50));
     } else {

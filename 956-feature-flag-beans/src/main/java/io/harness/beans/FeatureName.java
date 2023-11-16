@@ -176,7 +176,6 @@ public enum FeatureName {
   CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG(
       "Enabling support for skipping BG deployment if the manifest previously deployed is same as current manifest in NG",
       HarnessTeam.CDP),
-  CDS_SUPPORT_TICKET_DEFLECTION("Enable api to create zendesk ticket and for generating coveo token", HarnessTeam.CDP),
   CDS_TERRAFORM_S3_SUPPORT(
       "Enable support for AWS S3 bucket and URIs for Terraform Source, tfVars and Backend Config", HarnessTeam.CDP),
   CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG(
@@ -426,7 +425,6 @@ public enum FeatureName {
       "Enables the error return when the database transaction was not completed due to reaching the transaction limit.",
       SPG),
   SPG_CG_FIXING_PIPELINE_RESUME("This fixes pipeline resume when a loop state is skipped", HarnessTeam.SPG),
-  GITOPS_FLUX_FLAMINGO("Support for flux via flamingo in GitOps", HarnessTeam.GITOPS),
   GITOPS_UPDATE_APP_STEP("Support for Update GitOps App step in GitOps pipeline flow", HarnessTeam.GITOPS),
   GITOPS_GITHUB_RESTRAINT_FOR_STEPS("Add restraining on git steps for GitOps", HarnessTeam.GITOPS),
   GIT_HOST_CONNECTIVITY,

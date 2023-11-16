@@ -8,7 +8,9 @@
 package io.harness.idp.scorecard.datasources.providers;
 
 import static io.harness.idp.common.Constants.JIRA_IDENTIFIER;
-import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.*;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.API_BASE_URL;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.AUTHORIZATION_HEADER;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.PROJECT_COMPONENT_REPLACER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,23 +23,18 @@ import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
 import io.harness.idp.scorecard.datasources.utils.ConfigReader;
 import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import java.io.UnsupportedEncodingException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
-@Slf4j
 public class JiraProvider extends HttpDataSourceProvider {
   private static final String JIRA_PROJECT_ANNOTATION = "jira/project-key";
   private static final String JIRA_COMPONENT_ANNOTATION = "jira/component";
   private static final String JIRA_TARGET_URL_EXPRESSION_KEY = "appConfig.proxy.\"/jira/api\".target";
   private static final String AUTH_TOKEN_EXPRESSION_KEY = "appConfig.proxy.\"/jira/api\".headers.Authorization";
   final ConfigReader configReader;
+
   protected JiraProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
       DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory,
       ConfigReader configReader, DataSourceRepository dataSourceRepository) {
@@ -48,12 +45,12 @@ public class JiraProvider extends HttpDataSourceProvider {
 
   @Override
   public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      List<DataFetchDTO> dataPointsAndInputValues, String configs)
-      throws UnsupportedEncodingException, JsonProcessingException, NoSuchAlgorithmException, KeyManagementException {
+      List<DataFetchDTO> dataPointsAndInputValues, String configs) {
     Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, configs);
     Map<String, String> replaceableHeaders = new HashMap<>(authHeaders);
     Map<String, String> requestBodyPairs = prepareRequestBodyReplaceablePairs(entity);
-    Map<String, String> requestUrlPairs = prepareUrlReplaceablePairs(configs, accountIdentifier);
+    Map<String, String> requestUrlPairs = prepareUrlReplaceablePairs(API_BASE_URL,
+        (String) configReader.getConfigValues(accountIdentifier, configs, JIRA_TARGET_URL_EXPRESSION_KEY));
     return processOut(accountIdentifier, JIRA_IDENTIFIER, entity, replaceableHeaders, requestBodyPairs, requestUrlPairs,
         dataPointsAndInputValues);
   }
@@ -61,17 +58,7 @@ public class JiraProvider extends HttpDataSourceProvider {
   @Override
   protected Map<String, String> getAuthHeaders(String accountIdentifier, String configs) {
     String authToken = (String) configReader.getConfigValues(accountIdentifier, configs, AUTH_TOKEN_EXPRESSION_KEY);
-    if (authToken == null) {
-      log.info("Jira Provider - authToken is not present in config hence we can assume Jira Plugin is not enabled");
-    }
-    assert authToken != null;
     return Map.of(AUTHORIZATION_HEADER, authToken);
-  }
-
-  private Map<String, String> prepareUrlReplaceablePairs(String configs, String accountIdentifier) {
-    String apiBaseUrl =
-        (String) configReader.getConfigValues(accountIdentifier, configs, JIRA_TARGET_URL_EXPRESSION_KEY);
-    return Map.of(API_BASE_URL, apiBaseUrl);
   }
 
   private Map<String, String> prepareRequestBodyReplaceablePairs(BackstageCatalogEntity entity) {

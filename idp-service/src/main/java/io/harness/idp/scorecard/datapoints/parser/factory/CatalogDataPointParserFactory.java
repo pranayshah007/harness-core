@@ -4,9 +4,12 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
+
 package io.harness.idp.scorecard.datapoints.parser.factory;
 
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.*;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.CATALOG_PAGERDUTY;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.CATALOG_SPEC_OWNER;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.CATALOG_TECH_DOCS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,8 +19,8 @@ import io.harness.idp.scorecard.datapoints.parser.GenericExpressionParser;
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
 
-@OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@OwnedBy(HarnessTeam.IDP)
 public class CatalogDataPointParserFactory implements DataPointParserFactory {
   private GenericExpressionParser genericExpressionParser;
 
@@ -27,7 +30,6 @@ public class CatalogDataPointParserFactory implements DataPointParserFactory {
       case CATALOG_PAGERDUTY:
       case CATALOG_SPEC_OWNER:
         return genericExpressionParser;
-
       default:
         throw new UnsupportedOperationException(String.format("Could not find DataPoint parser for %s", identifier));
     }

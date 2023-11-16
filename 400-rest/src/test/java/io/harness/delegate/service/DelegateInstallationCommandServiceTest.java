@@ -61,13 +61,14 @@ public class DelegateInstallationCommandServiceTest {
     when(delegateNgTokenService.getDefaultTokenOrOldestActiveDelegateToken(ACCOUNT_ID, null)).thenReturn(TOKEN_DETAIL);
     when(delegateVersionService.getImmutableDelegateImageTag(ACCOUNT_ID)).thenReturn(IMAGE);
     when(mainConfiguration.getDeployMode()).thenReturn(DeployMode.KUBERNETES_ONPREM);
-    final String result = String.format("docker run --cpus=1 --memory=2g \\\n"
+    final String result = String.format("docker run  --cpus=1 --memory=2g \\\n"
             + "  -e DELEGATE_NAME=docker-delegate \\\n"
             + "  -e DEPLOY_MODE=KUBERNETES_ONPREM \\\n"
             + "  -e NEXT_GEN=\"true\" \\\n"
             + "  -e DELEGATE_TYPE=\"DOCKER\" \\\n"
             + "  -e ACCOUNT_ID=%s \\\n"
             + "  -e DELEGATE_TOKEN=%s \\\n"
+            + "  -e DELEGATE_TAGS=\"\" \\\n"
             + "  -e LOG_STREAMING_SERVICE_URL=%s/log-service/ \\\n"
             + "  -e MANAGER_HOST_AND_PORT=%s %s",
         ACCOUNT_ID, ENCODED_TOKEN_VALUE, MANAGER_URL, MANAGER_URL, IMAGE);
@@ -84,12 +85,13 @@ public class DelegateInstallationCommandServiceTest {
     when(delegateNgTokenService.getDefaultTokenOrOldestActiveDelegateToken(ACCOUNT_ID, null)).thenReturn(TOKEN_DETAIL);
     when(delegateVersionService.getImmutableDelegateImageTag(ACCOUNT_ID)).thenReturn(IMAGE);
     when(mainConfiguration.getDeployMode()).thenReturn(DeployMode.KUBERNETES);
-    final String result = String.format("docker run --cpus=1 --memory=2g \\\n"
+    final String result = String.format("docker run  --cpus=1 --memory=2g \\\n"
             + "  -e DELEGATE_NAME=docker-delegate \\\n"
             + "  -e NEXT_GEN=\"true\" \\\n"
             + "  -e DELEGATE_TYPE=\"DOCKER\" \\\n"
             + "  -e ACCOUNT_ID=%s \\\n"
             + "  -e DELEGATE_TOKEN=%s \\\n"
+            + "  -e DELEGATE_TAGS=\"\" \\\n"
             + "  -e LOG_STREAMING_SERVICE_URL=%s/log-service/ \\\n"
             + "  -e MANAGER_HOST_AND_PORT=%s %s",
         ACCOUNT_ID, ENCODED_TOKEN_VALUE, MANAGER_URL, MANAGER_URL, IMAGE);

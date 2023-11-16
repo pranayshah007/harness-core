@@ -15,7 +15,6 @@ import static io.harness.idp.scorecard.datapoints.constants.DataPoints.STO_ADDED
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
-import io.harness.idp.scorecard.datapoints.parser.factory.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.parser.harness.PipelineIsPolicyEvaluationSuccessfulParser;
 import io.harness.idp.scorecard.datapoints.parser.harness.PipelinePercentageOfCIPipelineFailingInSevenDaysParser;
 import io.harness.idp.scorecard.datapoints.parser.harness.PipelineStoStageAddedParser;
@@ -24,8 +23,8 @@ import io.harness.idp.scorecard.datapoints.parser.harness.PipelineTestFailingInC
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
 
-@OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@OwnedBy(HarnessTeam.IDP)
 public class HarnessDataPointParserFactory implements DataPointParserFactory {
   private PipelineStoStageAddedParser pipelineStoStageAddedParser;
   private PipelineIsPolicyEvaluationSuccessfulParser pipelineIsPolicyEvaluationSuccessfulParser;

@@ -58,6 +58,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -257,6 +258,10 @@ public class ArtifactServiceImpl implements ArtifactService {
                             .is(projectIdentifier)
                             .and(ArtifactEntityKeys.invalid)
                             .is(false);
+
+    if (!StringUtils.isEmpty(body.getSearchTerm())) {
+      criteria.and(ArtifactEntityKeys.name).regex(body.getSearchTerm());
+    }
 
     LicenseFilter licenseFilter = body.getLicenseFilter();
     List<ComponentFilter> componentFilter = body.getComponentFilter();
