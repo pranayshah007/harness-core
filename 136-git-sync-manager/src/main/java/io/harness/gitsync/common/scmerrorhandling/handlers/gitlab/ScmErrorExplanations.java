@@ -30,4 +30,9 @@ public class ScmErrorExplanations {
   public static final String BRANCH_NOT_FOUND = "Provided Gitlab branch<BRANCH> does not exist or has been deleted.";
   public static final String OAUTH_ACCESS_DENIED =
       "If you are using OAUTH, access to Gitlab may have been revoked or token is invalid or expired.";
+  public static final String EXPLANATION_REQUEST_TIMED_OUT =
+      "Request to the GitLab Server to fetch file<FILEPATH> from repo<REPO> and branch<BRANCH> timed out.\n"
+      + "This might have occurred due to the following reasons:\n"
+      + "1. Network connectivity issues from delegate to the GitLab server\n"
+      + "2. GitLab server experiencing higher traffic than usual, or a downtime at the moment.";
 }

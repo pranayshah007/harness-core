@@ -27,6 +27,7 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.cvng.v1.ServiceLevelObjectiveApi;
 import io.harness.spec.server.cvng.v1.model.DowntimeStatus;
 import io.harness.spec.server.cvng.v1.model.DowntimeStatusDetails;
+import io.harness.spec.server.cvng.v1.model.MetricGraph;
 import io.harness.spec.server.cvng.v1.model.SLOError;
 import io.harness.spec.server.cvng.v1.model.UserJourney;
 import io.harness.utils.ApiUtils;
@@ -38,6 +39,7 @@ import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Pattern;
@@ -55,6 +57,21 @@ public class ServiceLevelObjectiveResourceApiImpl implements ServiceLevelObjecti
   public static final String VIEW_PERMISSION = "chi_slo_view";
 
   @Inject SLODashboardService sloDashboardService;
+
+  @Override
+  @Timed
+  @ResponseMetered
+  @ExceptionMetered
+  @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
+  public Response getMetricGraphForSLO(@OrgIdentifier String org, @ProjectIdentifier String project,
+      String sloIdentifier, Long startTime, Long endTime, @AccountIdentifier String harnessAccount) {
+    ProjectParams projectParams =
+        ProjectParams.builder().accountIdentifier(harnessAccount).orgIdentifier(org).projectIdentifier(project).build();
+    Map<String, MetricGraph> metricGraphMap =
+        sloDashboardService.getMetricGraphs(projectParams, sloIdentifier, startTime, endTime);
+    return Response.ok().entity(metricGraphMap).build();
+  }
+
   @Override
   @Timed
   @ResponseMetered
@@ -63,9 +80,9 @@ public class ServiceLevelObjectiveResourceApiImpl implements ServiceLevelObjecti
   public Response listSlo(@OrgIdentifier String org, @ProjectIdentifier String project,
       @AccountIdentifier String harnessAccount, Integer page, @Max(100L) Integer limit, String compositeSloIdentifier,
       String monitoredServiceIdentifier, List<String> userJourneyIdentifiers,
-      @Pattern(regexp = "^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$") @Size(min = 1, max = 128) String filter,
-      @Size(max = 1024) String sloType, @Size(max = 128) List<String> envIdentifiers, List<String> targetTypes,
-      List<String> errorBudgetRisks, String evaluationType, Boolean childResource) {
+      @Pattern(regexp = "^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$") String filter, @Size(max = 1024) String sloType,
+      @Size(max = 128) List<String> envIdentifiers, List<String> targetTypes, List<String> errorBudgetRisks,
+      String evaluationType, Boolean childResource) {
     ProjectParams projectParams =
         ProjectParams.builder().accountIdentifier(harnessAccount).orgIdentifier(org).projectIdentifier(project).build();
     PageParams pageParams = PageParams.builder().size(limit).page(page).build();

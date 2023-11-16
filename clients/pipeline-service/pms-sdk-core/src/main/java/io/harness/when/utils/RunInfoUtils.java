@@ -14,6 +14,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.ExecutionMode;
@@ -84,9 +85,13 @@ public class RunInfoUtils {
   }
 
   private String getGivenRunCondition(ParameterField<String> condition) {
+    if (ParameterField.isNull(condition)) {
+      return null;
+    }
     if (EmptyPredicate.isNotEmpty(condition.getValue())) {
       return condition.getValue();
     }
+
     return condition.getExpressionValue();
   }
 
@@ -103,6 +108,9 @@ public class RunInfoUtils {
 
   private String combineExpressions(String statusExpression, String conditionExpression) {
     if (EmptyPredicate.isNotEmpty(conditionExpression)) {
+      if (NGExpressionUtils.matchesInputSetPattern(conditionExpression)) {
+        conditionExpression = "false";
+      }
       return statusExpression + " && (" + conditionExpression + ")";
     }
     return statusExpression;

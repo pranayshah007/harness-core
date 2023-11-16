@@ -116,7 +116,7 @@ spec:
             - name: CVNG_MONGO_URI
               value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "cvng-harness" ) }}
             - name: CHAOS_MONGO_URI
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "chaos-harness" ) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "harness-chaos" ) }}
             - name: TIMESCALEDB_URI
               value: {{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
               {{- if .Values.extraEnvVars }}
