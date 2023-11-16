@@ -176,7 +176,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         Update update = buildUpdate(updateGitXWebhookRequestDTO);
         if (isNotEmpty(updateGitXWebhookRequestDTO.getRepoName())) {
           String connectorRef = getConnectorRef(updateGitXWebhookCriteriaDTO, updateGitXWebhookRequestDTO);
-          registerWebhookOnGit(updateGitXWebhookRequestDTO.getScope(), updateGitXWebhookRequestDTO.getRepoName(),
+          registerWebhookOnGit(updateGitXWebhookCriteriaDTO.getScope(), updateGitXWebhookRequestDTO.getRepoName(),
               connectorRef, updateGitXWebhookCriteriaDTO.getWebhookIdentifier());
         }
         GitXWebhook updatedGitXWebhook;
@@ -238,7 +238,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
     if (isEmpty(updateGitXWebhookRequestDTO.getConnectorRef())) {
       Optional<GetGitXWebhookResponseDTO> optionalGetGitXWebhookResponse =
           getGitXWebhook(GetGitXWebhookRequestDTO.builder()
-                             .scope(Scope.of(updateGitXWebhookCriteriaDTO.getScope().getAccountIdentifier()))
+                             .scope(updateGitXWebhookCriteriaDTO.getScope())
                              .webhookIdentifier(updateGitXWebhookCriteriaDTO.getWebhookIdentifier())
                              .build());
       if (optionalGetGitXWebhookResponse.isEmpty()) {

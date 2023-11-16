@@ -12,7 +12,6 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.beans.Scope;
 
 import java.util.List;
 import lombok.AccessLevel;
@@ -36,5 +35,4 @@ public class UpdateGitXWebhookRequestDTO {
   List<String> folderPaths;
   Boolean isEnabled;
   Long lastEventTriggerTime;
-  Scope scope;
 }
