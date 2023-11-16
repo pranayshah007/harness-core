@@ -9,6 +9,7 @@ package io.harness.yaml.validator;
 
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.SUJEESH;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -92,6 +93,34 @@ public class YamlSchemaValidatorTest extends CategoryTest {
 
   private String getYamlResource(String resource) throws IOException {
     return IOUtils.resourceToString(resource, StandardCharsets.UTF_8, YamlSchemaValidatorTest.class.getClassLoader());
+  }
+
+  @Test
+  @Owner(developers = SUJEESH)
+  @Category(UnitTests.class)
+  public void testValidateYAMLAgainstSchema() throws IOException {
+    // 1. Read schema
+    String schema = getYamlResource("testSchema/testSampleSchema.json");
+    assertThat(schema).isNotBlank();
+    // 2. Read yaml which satisfies schema
+    String validYAML = getYamlResource("testSchema/validSampleYAML.yaml");
+    assertThat(validYAML).isNotBlank();
+    Set<String> result = yamlSchemaValidator.validate(validYAML, schema);
+    int resultLength = result == null ? 0 : result.size();
+    assertEquals(resultLength, 0);
+  }
+
+  @Test(expected = InvalidYamlException.class)
+  @Owner(developers = SUJEESH)
+  @Category(UnitTests.class)
+  public void testValidateInvalidYAMLAgainstSchema() throws IOException {
+    // 1. Read schema
+    String schema = getYamlResource("testSchema/testSampleSchema.json");
+    assertThat(schema).isNotBlank();
+    // 2. Read yaml which violates schema
+    String inValidYAML = getYamlResource("testSchema/validSampleYAML2.yaml");
+    assertThat(inValidYAML).isNotBlank();
+    yamlSchemaValidator.validate(inValidYAML, schema);
   }
 
   @Test

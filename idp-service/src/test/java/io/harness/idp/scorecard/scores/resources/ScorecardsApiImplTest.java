@@ -30,6 +30,7 @@ import io.harness.spec.server.idp.v1.model.ScorecardDetails;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsRequest;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsResponse;
 import io.harness.spec.server.idp.v1.model.ScorecardStats;
+import io.harness.spec.server.idp.v1.model.ScorecardStatsResponse;
 
 import java.util.List;
 import javax.ws.rs.core.Response;
@@ -213,7 +214,9 @@ public class ScorecardsApiImplTest extends CategoryTest {
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
   }
 
-  private List<ScorecardStats> getScorecardStatsResponse() {
+  private ScorecardStatsResponse getScorecardStatsResponse() {
+    ScorecardStatsResponse response = new ScorecardStatsResponse();
+    response.setName(SCORECARD_NAME);
     ScorecardStats scorecardStats = new ScorecardStats();
     scorecardStats.setName("idp-service");
     scorecardStats.setKind("component");
@@ -221,6 +224,7 @@ public class ScorecardsApiImplTest extends CategoryTest {
     scorecardStats.setSystem("Unknown");
     scorecardStats.setOwner("team-a");
     scorecardStats.setScore(75);
-    return List.of(scorecardStats);
+    response.setStats(List.of(scorecardStats));
+    return response;
   }
 }

@@ -12,6 +12,7 @@ import io.harness.cvng.core.utils.Thresholds;
 import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public enum Risk {
   NO_DATA(-2, "No Data"),
@@ -77,6 +78,17 @@ public enum Risk {
     Preconditions.checkState(INT_TO_RISK_MAP_FOR_DEPLOYMENT_TIMESERIES_ANALYSIS.containsKey(risk),
         "Invalid value of risk for deployment %s", risk);
     return INT_TO_RISK_MAP_FOR_DEPLOYMENT_TIMESERIES_ANALYSIS.get(risk);
+  }
+
+  public int riskValueForTimeSeriesDeploymentAnalysis() {
+    Optional<Integer> optionalRisk = INT_TO_RISK_MAP_FOR_DEPLOYMENT_TIMESERIES_ANALYSIS.entrySet()
+                                         .stream()
+                                         .filter(entry -> this.equals(entry.getValue()))
+                                         .map(entry -> entry.getKey())
+                                         .findAny();
+    Preconditions.checkArgument(
+        optionalRisk.isPresent(), "No Risk value present for Deployment Time Series Analysis for {} ", this);
+    return optionalRisk.get();
   }
 
   public static Risk getRiskFromRiskScore(double riskScore) {

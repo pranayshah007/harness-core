@@ -16,7 +16,9 @@ import io.harness.beans.steps.STOStepInfo;
 import io.harness.beans.steps.nodes.BackgroundStepNode;
 import io.harness.beans.steps.nodes.RunStepNode;
 import io.harness.beans.steps.nodes.SecurityNode;
+import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.serializer.morphia.STOBeansMorphiaRegistrar;
 import io.harness.sto.STOStepType;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
 import io.harness.yaml.schema.beans.YamlGroup;
@@ -24,6 +26,7 @@ import io.harness.yaml.schema.beans.YamlSchemaMetadata;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import java.util.Collections;
 import lombok.experimental.UtilityClass;
 
@@ -86,4 +89,6 @@ public class StoBeansRegistrars {
                    .build())
           .addAll(STOStepType.createSecurityStepYamlDefinitions())
           .build();
+  public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
+      ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().add(STOBeansMorphiaRegistrar.class).build();
 }

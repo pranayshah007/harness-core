@@ -330,7 +330,7 @@ public class AwsHelperServiceTest extends WingsBaseTest {
                               .build();
 
     AwsHelperService service = new AwsHelperService();
-    AWSCredentialsProvider awsCredentialsProvider = service.getCredentialsForIRSAonDelegate(awsConfig);
+    AWSCredentialsProvider awsCredentialsProvider = service.getCredentialsForCrossAccountRoleOnDelegate(awsConfig);
     assertThat(awsCredentialsProvider).isNotNull().isInstanceOf(STSAssumeRoleSessionCredentialsProvider.class);
   }
 
@@ -347,7 +347,7 @@ public class AwsHelperServiceTest extends WingsBaseTest {
                               .build();
 
     AwsHelperService service = new AwsHelperService();
-    AWSCredentialsProvider awsCredentialsProvider = service.getCredentialsForIRSAonDelegate(awsConfig);
+    AWSCredentialsProvider awsCredentialsProvider = service.getCredentialsForCrossAccountRoleOnDelegate(awsConfig);
     assertThat(awsCredentialsProvider).isNotNull().isInstanceOf(WebIdentityTokenCredentialsProvider.class);
   }
 

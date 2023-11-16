@@ -122,18 +122,20 @@ public class AwsS3ArtifactDownloadHandler implements ArtifactDownloadHandler {
       awsAccessKey = credentials.getAccessKeyId();
       awsSecretKey = credentials.getSecretKey();
       awsToken = credentials.getToken();
-    } else if (awsConfigDecrypted.isUseIRSA()) {
-      AWSCredentialsProvider aWSCredentialsProvider =
-          awsHelperService.getCredentialsForIRSAonDelegate(awsConfigDecrypted);
-      AWSCredentials awsCredentials = aWSCredentialsProvider.getCredentials();
-      awsAccessKey = awsCredentials.getAWSAccessKeyId();
-      awsSecretKey = awsCredentials.getAWSSecretKey();
-      if (aWSCredentialsProvider.getCredentials() instanceof AWSSessionCredentials) {
-        awsToken = ((AWSSessionCredentials) awsCredentials).getSessionToken();
-      }
     } else {
-      awsAccessKey = String.valueOf(awsConfigDecrypted.getAccessKey());
-      awsSecretKey = String.valueOf(awsConfigDecrypted.getSecretKey());
+      if (awsConfigDecrypted.isAssumeCrossAccountRole() || awsConfigDecrypted.isUseIRSA()) {
+        AWSCredentialsProvider aWSCredentialsProvider =
+            awsHelperService.getCredentialsForCrossAccountRoleOnDelegate(awsConfigDecrypted);
+        AWSCredentials awsCredentials = aWSCredentialsProvider.getCredentials();
+        awsAccessKey = awsCredentials.getAWSAccessKeyId();
+        awsSecretKey = awsCredentials.getAWSSecretKey();
+        if (aWSCredentialsProvider.getCredentials() instanceof AWSSessionCredentials) {
+          awsToken = ((AWSSessionCredentials) awsCredentials).getSessionToken();
+        }
+      } else {
+        awsAccessKey = String.valueOf(awsConfigDecrypted.getAccessKey());
+        awsSecretKey = String.valueOf(awsConfigDecrypted.getSecretKey());
+      }
     }
     String bucketName = s3ArtifactDelegateConfig.getBucketName();
     if (isEmpty(bucketName)) {
@@ -249,6 +251,7 @@ public class AwsS3ArtifactDownloadHandler implements ArtifactDownloadHandler {
                     s3ArtifactDelegateConfig.getAwsConnector().getCredential().getCrossAccountAccess().getExternalId())
                 .build();
         configBuilder.crossAccountAttributes(awsCrossAccountAttributes);
+        configBuilder.assumeCrossAccountRole(true);
       }
     } else {
       throw new InvalidRequestException("No credentialsType provided with the request.");

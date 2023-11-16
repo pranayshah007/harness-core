@@ -1316,13 +1316,18 @@ public class GitClientV2Impl implements GitClientV2 {
 
         for (String filePath : request.getFilePaths()) {
           try {
+            File destinationFolder = destinationDir;
             File sourceDir = new File(Paths.get(repoPath + "/" + filePath).toString());
             if (sourceDir.isFile()) {
               FileUtils.copyFile(sourceDir, Paths.get(request.getDestinationDirectory(), filePath).toFile());
             } else {
-              FileUtils.copyDirectory(sourceDir, destinationDir);
+              if (request.isMayHaveMultipleFolders()) {
+                FileIo.createDirectoryIfDoesNotExist(Paths.get(request.getDestinationDirectory(), filePath));
+                destinationFolder = new File(Paths.get(request.getDestinationDirectory(), filePath).toString());
+              }
+              FileUtils.copyDirectory(sourceDir, destinationFolder);
               // if source directory is repo root we don't want to have .git copied to destination directory
-              File gitFile = new File(Paths.get(request.getDestinationDirectory(), ".git").toString());
+              File gitFile = new File(Paths.get(destinationFolder.getPath(), ".git").toString());
               if (gitFile.exists()) {
                 FileUtils.deleteQuietly(gitFile);
               }

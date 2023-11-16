@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.service.entity;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.beans.MigrationInputSettingsType.SIMULTANEOUS_DEPLOYMENT_ON_SAME_INFRA;
 
@@ -14,6 +15,7 @@ import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 import static software.wings.ngmigration.NGMigrationEntityType.ELASTIGROUP_CONFIGURATION;
 import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
 import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
+import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -42,6 +44,7 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.InfraDefSummary;
@@ -51,10 +54,13 @@ import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.infra.InfraDefMapper;
 import io.harness.ngmigration.service.infra.InfraMapperFactory;
+import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.service.step.StepMapperFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
@@ -62,6 +68,12 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.api.CloudProviderType;
 import software.wings.api.DeploymentType;
+import software.wings.beans.CanaryOrchestrationWorkflow;
+import software.wings.beans.GraphNode;
+import software.wings.beans.PhaseStep;
+import software.wings.beans.Workflow;
+import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowPhase;
 import software.wings.infra.AwsAmiInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgBasicInfo;
@@ -71,11 +83,13 @@ import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.InfrastructureDefinitionService;
+import software.wings.service.intfc.WorkflowService;
 
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +106,8 @@ public class InfraMigrationService extends NgMigrationService {
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject private ElastigroupConfigurationMigrationService elastigroupConfigurationMigrationService;
   @Inject InfrastructureResourceClient infrastructureResourceClient;
+  @Inject private WorkflowService workflowService;
+  @Inject private StepMapperFactory stepMapperFactory;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -265,6 +281,9 @@ public class InfraMigrationService extends NgMigrationService {
         elastigroupConfigurationMigrationService.getElastigroupConfigurations(migrationContext, infraSpecIds);
 
     Infrastructure infraSpec = infraDefMapper.getSpec(migrationContext, infra, elastigroupConfigurations);
+    Map<String, Object> custom = updateContextVariables(migrationContext, entities, infra);
+    MigratorExpressionUtils.render(migrationContext, infraSpec, custom);
+
     if (infraSpec == null) {
       log.error(String.format("We could not migrate the infra %s", infra.getUuid()));
       return YamlGenerationDetails.builder()
@@ -362,6 +381,89 @@ public class InfraMigrationService extends NgMigrationService {
     } catch (Exception ex) {
       log.warn("Error when getting infra - ", ex);
       return null;
+    }
+  }
+
+  private Map<String, Object> updateContextVariables(MigrationContext migrationContext,
+      Map<CgEntityId, CgEntityNode> entities, InfrastructureDefinition infrastructureDefinition) {
+    Map<String, Object> custom = new HashMap<>();
+    updateFromLastExecution(custom, migrationContext, infrastructureDefinition);
+    if (isEmpty(custom)) {
+      entities.entrySet().stream().filter(entry -> WORKFLOW.equals(entry.getValue().getType())).forEach(entry -> {
+        Workflow workflow = (Workflow) entry.getValue().getEntity();
+        updateFromWorkflow(custom, migrationContext, workflow, infrastructureDefinition);
+      });
+    }
+    return custom;
+  }
+
+  private void updateFromWorkflow(Map<String, Object> custom, MigrationContext migrationContext, Workflow workflow,
+      InfrastructureDefinition infrastructureDefinition) {
+    WorkflowMigrationContext wfContext = WorkflowMigrationContext.newInstance(migrationContext, workflow);
+    if (workflow != null && wfContext != null) {
+      CanaryOrchestrationWorkflow orchestrationWorkflow =
+          (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+      if (orchestrationWorkflow != null) {
+        List<WorkflowPhase> phases = orchestrationWorkflow.getWorkflowPhases();
+        for (WorkflowPhase phase : phases) {
+          if (infrastructureDefinition.getUuid().equals(phase.getInfraDefinitionId())) {
+            processPhase(custom, migrationContext, wfContext, phase);
+          }
+        }
+      }
+    }
+  }
+
+  private void updateFromLastExecution(Map<String, Object> custom, MigrationContext migrationContext,
+      InfrastructureDefinition infrastructureDefinition) {
+    WorkflowExecution workflowExecution = workflowService.getLastWorkflowExecutionByInfrastructure(
+        migrationContext.getAccountId(), infrastructureDefinition.getAppId(), infrastructureDefinition.getUuid());
+    if (workflowExecution != null) {
+      Workflow workflow =
+          workflowService.readWorkflow(infrastructureDefinition.getAppId(), workflowExecution.getWorkflowId());
+      WorkflowMigrationContext wfContext = WorkflowMigrationContext.newInstance(migrationContext, workflow);
+      if (workflow != null && wfContext != null) {
+        CanaryOrchestrationWorkflow orchestrationWorkflow =
+            (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+        if (orchestrationWorkflow != null) {
+          List<WorkflowPhase> phases = orchestrationWorkflow.getWorkflowPhases();
+          for (WorkflowPhase phase : phases) {
+            processPhase(custom, migrationContext, wfContext, phase);
+          }
+        }
+      }
+    }
+  }
+
+  private void processPhase(Map<String, Object> custom, MigrationContext migrationContext,
+      WorkflowMigrationContext wfContext, WorkflowPhase phase) {
+    List<PhaseStep> phaseSteps = phase.getPhaseSteps();
+    List<StepExpressionFunctor> expressionFunctorsFromCurrentPhase = new ArrayList<>();
+    String prefix = phase.getName();
+
+    phaseSteps.stream().filter(phaseStep -> isNotEmpty(phaseStep.getSteps())).forEach(phaseStep -> {
+      List<GraphNode> steps = phaseStep.getSteps();
+      String stepGroupName = prefix + "-" + phaseStep.getName();
+      steps.forEach(stepYaml -> {
+        List<StepExpressionFunctor> expressionFunctors = new ArrayList<>();
+        StepMapper stepMapper = stepMapperFactory.getStepMapper(stepYaml.getType());
+        expressionFunctors.addAll(stepMapper.getExpressionFunctor(wfContext, phase, stepGroupName, stepYaml));
+        expressionFunctors.addAll(stepMapper.getExpressionFunctor(wfContext, phase, phaseStep, stepYaml));
+        if (isNotEmpty(expressionFunctors)) {
+          expressionFunctorsFromCurrentPhase.addAll(expressionFunctors);
+        }
+      });
+    });
+
+    List<StepExpressionFunctor> distinctExpressionsFromCurrentPhase =
+        expressionFunctorsFromCurrentPhase.stream()
+            .filter(functor -> !custom.containsKey(functor.getCgExpression()))
+            .collect(Collectors.toList());
+
+    if (isNotEmpty(distinctExpressionsFromCurrentPhase)) {
+      wfContext.getStepExpressionFunctors().addAll(distinctExpressionsFromCurrentPhase);
+      custom.putAll(MigratorUtility.getExpressions(
+          phase, distinctExpressionsFromCurrentPhase, migrationContext.getInputDTO().getIdentifierCaseFormat()));
     }
   }
 }

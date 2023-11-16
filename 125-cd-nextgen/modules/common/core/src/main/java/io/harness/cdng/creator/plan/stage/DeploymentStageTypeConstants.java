@@ -20,4 +20,5 @@ import io.harness.annotations.dev.ProductModule;
 public class DeploymentStageTypeConstants {
   private DeploymentStageTypeConstants() {}
   public static final String SINGLE_SERVICE_ENVIRONMENT = "SingleServiceEnvironment";
+  public static final String MULTI_SERVICE_ENVIRONMENT = "MultiServiceEnvironment";
 }

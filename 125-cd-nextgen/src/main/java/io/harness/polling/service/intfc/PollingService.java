@@ -54,5 +54,5 @@ public interface PollingService {
   PollingInfoForTriggers getPollingInfoForTriggers(String accountId, String pollingDocId);
 
   boolean updateTriggerPollingStatus(String accountId, List<String> signatures, boolean status, String errorMessage,
-      List<String> lastCollectedVersions);
+      List<String> lastCollectedVersions, Long validityIntervalForErrorStatusMillis);
 }

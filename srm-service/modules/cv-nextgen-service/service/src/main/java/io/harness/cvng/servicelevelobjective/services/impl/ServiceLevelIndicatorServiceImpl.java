@@ -48,6 +48,7 @@ import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIValue;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
+import io.harness.cvng.servicelevelobjective.beans.slispec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
@@ -204,7 +205,9 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
   private SLIValue getSLIValue(ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, SLIAnalyseResponse sliAnalyseResponse,
       SLIAnalyseResponse initialSLIResponse) {
     if (serviceLevelIndicatorDTO.getType() == SLIEvaluationType.WINDOW) {
-      return serviceLevelIndicatorDTO.getSLIMissingDataType().calculateSLIValue(
+      WindowBasedServiceLevelIndicatorSpec windowBasedServiceLevelIndicatorSpec =
+          (WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec();
+      return windowBasedServiceLevelIndicatorSpec.getSliMissingDataType().calculateSLIValue(
           sliAnalyseResponse.getRunningGoodCount(), sliAnalyseResponse.getRunningBadCount(),
           Duration.between(initialSLIResponse.getTimeStamp(), sliAnalyseResponse.getTimeStamp()).toMinutes() + 1);
     } else if (serviceLevelIndicatorDTO.getType() == SLIEvaluationType.REQUEST) {

@@ -275,6 +275,7 @@ public class EmailMessageGenerator {
         .serviceName(anomaly.getEntity().getServiceName())
         .actualCost(anomaly.getActualAmount())
         .expectedCost(anomaly.getExpectedAmount())
+        .cloudProvider(anomaly.getCloudProvider())
         .build();
   }
 }

@@ -11,6 +11,7 @@ import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.rule.OwnerRule.ABHINAV2;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
@@ -70,6 +71,7 @@ import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoH
 import io.harness.delegate.AccountId;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskLogAbstractions;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.TaskSetupAbstractions;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -104,6 +106,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.helm.HelmFetchFileConfig;
 import io.harness.delegate.task.k8s.K8sApplyRequest;
@@ -135,13 +138,16 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -171,6 +177,20 @@ public class CDStepHelperTest extends CategoryTest {
   private String id = "identifier";
   private final ParameterField folderPath = ParameterField.createValueField("folderPath/");
   private final List<String> paths = asList("test/path1.yaml", "test/path2.yaml");
+  private static final String BASE_LOG_KEY = "baseLogKey";
+  private static final String TASK_TYPE = "taskType";
+  private static final String ACCOUNT_ID = "accountId";
+  private static final String STAGE_ID = "stageId";
+  private static final List<TaskSelector> TASK_SELECTORS =
+      Arrays.asList(TaskSelector.newBuilder().setSelector("stage1").setOrigin("stage").build(),
+          TaskSelector.newBuilder().setSelector("stage2").setOrigin("stage").build());
+  private static final List<String> SELECTORS = Arrays.asList("pipeline2", "pipeline1");
+  private static final List<TaskSelector> SELECTOR_WITH_DEFAULT_ORIGIN =
+      SELECTORS.stream()
+          .map(selector -> TaskSelector.newBuilder().setSelector(selector).setOrigin("default").build())
+          .collect(Collectors.toList());
+  private static final HashSet<String> SELECTOR_SET = new HashSet<>(SELECTORS);
+  private static final String DELEGATE = "delegate";
 
   @Before
   public void setup() {
@@ -1229,26 +1249,28 @@ public class CDStepHelperTest extends CategoryTest {
             .build(),
         Set.of("s1", "s2"));
 
-    assertThat(delegateTaskRequest)
-        .isEqualTo(io.harness.beans.DelegateTaskRequest.builder()
-                       .accountId("accountId")
-                       .taskType("tasktype")
-                       .taskParameters(K8sApplyRequest.builder().build())
-                       .parked(true)
-                       .taskSetupAbstractions(Map.of("k", "v"))
-                       .logStreamingAbstractions(new LinkedHashMap<>() {
-                         { put("l", "v_l"); }
-                       })
-                       .taskSelectors(Set.of("s1", "s2"))
-                       .eligibleToExecuteDelegateIds(List.of("d1"))
-                       .expressionFunctorToken(12345)
-                       .forceExecute(true)
-                       .executeOnHarnessHostedDelegates(true)
-                       .stageId("stage_1")
-                       .emitEvent(true)
-                       .baseLogKey("")
-                       .executionTimeout(Duration.ofNanos(100000000))
-                       .build());
+    List<TaskSelector> selectors =
+        Arrays.asList(TaskSelector.newBuilder().setSelector("s2").setOrigin("default").build(),
+            TaskSelector.newBuilder().setSelector("s1").setOrigin("default").build());
+
+    assertThat(delegateTaskRequest.getAccountId()).isEqualTo("accountId");
+    assertThat(delegateTaskRequest.getTaskType()).isEqualTo("tasktype");
+    assertThat(delegateTaskRequest.getTaskParameters()).isEqualTo(K8sApplyRequest.builder().build());
+    assertThat(delegateTaskRequest.isParked()).isEqualTo(true);
+    assertThat(delegateTaskRequest.getTaskSetupAbstractions()).isEqualTo(Map.of("k", "v"));
+    assertThat(delegateTaskRequest.getLogStreamingAbstractions()).isEqualTo(new LinkedHashMap<>() {
+      { put("l", "v_l"); }
+    });
+    assertThat(delegateTaskRequest.getSelectors().size()).isEqualTo(2);
+    assertThat(delegateTaskRequest.getSelectors()).containsAll(selectors);
+    assertThat(delegateTaskRequest.getEligibleToExecuteDelegateIds()).isEqualTo(List.of("d1"));
+    assertThat(delegateTaskRequest.getExpressionFunctorToken()).isEqualTo(12345);
+    assertThat(delegateTaskRequest.isForceExecute()).isEqualTo(true);
+    assertThat(delegateTaskRequest.isExecuteOnHarnessHostedDelegates()).isEqualTo(true);
+    assertThat(delegateTaskRequest.getStageId()).isEqualTo("stage_1");
+    assertThat(delegateTaskRequest.isEmitEvent()).isEqualTo(true);
+    assertThat(delegateTaskRequest.getBaseLogKey()).isEqualTo("");
+    assertThat(delegateTaskRequest.getExecutionTimeout()).isEqualTo(Duration.ofNanos(100000000));
   }
 
   @Test
@@ -1457,5 +1479,109 @@ public class CDStepHelperTest extends CategoryTest {
     assertThat(gitStoreDelegateConfig.isOptimizedFilesFetch()).isFalse();
     assertThat(gitStoreDelegateConfig.getGitConfigDTO()).isInstanceOf(GithubConnectorDTO.class);
     assertThat(gitStoreDelegateConfig.getApiAuthEncryptedDataDetails()).isEqualTo(apiEncryptedDataDetails);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void mapTaskRequestToDelegateTaskRequest_SelectorWithOriginDetails() {
+    TaskRequest taskRequest =
+        TaskRequest.newBuilder()
+            .setDelegateTaskRequest(
+                io.harness.pms.contracts.execution.tasks.DelegateTaskRequest.newBuilder()
+                    .setRequest(
+                        SubmitTaskRequest.newBuilder()
+                            .setAccountId(AccountId.newBuilder().setId(ACCOUNT_ID).build())
+                            .setStageId(STAGE_ID)
+                            .setEmitEvent(false)
+                            .addEligibleToExecuteDelegateIds(DELEGATE)
+                            .setExecuteOnHarnessHostedDelegates(false)
+                            .setForceExecute(false)
+                            .setLogAbstractions(TaskLogAbstractions.newBuilder().build())
+                            .setSetupAbstractions(TaskSetupAbstractions.newBuilder().getDefaultInstanceForType())
+                            .build())
+                    .build())
+            .build();
+    ArtifactTaskParameters artifactTaskParameters1 = ArtifactTaskParameters.builder().build();
+    ArtifactTaskParameters artifactTaskParameters2 = ArtifactTaskParameters.builder().build();
+    Object[] parameters = {artifactTaskParameters1, artifactTaskParameters2};
+    TaskData taskData = TaskData.builder()
+                            .taskType(TASK_TYPE)
+                            .parked(false)
+                            .timeout(1000)
+                            .expressionFunctorToken(10)
+                            .parameters(parameters)
+                            .build();
+
+    io.harness.beans.DelegateTaskRequest delegateTaskRequest =
+        cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, TASK_SELECTORS, BASE_LOG_KEY, false);
+
+    assertThat(delegateTaskRequest.getTaskParameters()).isSameAs(artifactTaskParameters1);
+    assertThat(delegateTaskRequest.getTaskType()).isEqualTo(TASK_TYPE);
+    assertThat(delegateTaskRequest.isParked()).isEqualTo(false);
+    assertThat(delegateTaskRequest.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(delegateTaskRequest.getSelectors()).isSameAs(TASK_SELECTORS);
+    assertThat(delegateTaskRequest.getTaskSelectors().size()).isEqualTo(0);
+    assertThat(delegateTaskRequest.isForceExecute()).isEqualTo(false);
+    assertThat(delegateTaskRequest.getExpressionFunctorToken()).isEqualTo(10);
+    assertThat(delegateTaskRequest.isExecuteOnHarnessHostedDelegates()).isEqualTo(false);
+    assertThat(delegateTaskRequest.isEmitEvent()).isEqualTo(false);
+    assertThat(delegateTaskRequest.getStageId()).isEqualTo(STAGE_ID);
+    assertThat(delegateTaskRequest.getBaseLogKey()).isEqualTo(BASE_LOG_KEY);
+    assertThat(delegateTaskRequest.isShouldSkipOpenStream()).isEqualTo(false);
+    assertThat(delegateTaskRequest.getEligibleToExecuteDelegateIds().size()).isEqualTo(1);
+    assertThat(delegateTaskRequest.getEligibleToExecuteDelegateIds().get(0)).isEqualTo(DELEGATE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void mapTaskRequestToDelegateTaskRequest_SelectorWithoutOriginDetails() {
+    TaskRequest taskRequest =
+        TaskRequest.newBuilder()
+            .setDelegateTaskRequest(
+                io.harness.pms.contracts.execution.tasks.DelegateTaskRequest.newBuilder()
+                    .setRequest(
+                        SubmitTaskRequest.newBuilder()
+                            .setAccountId(AccountId.newBuilder().setId(ACCOUNT_ID).build())
+                            .setStageId(STAGE_ID)
+                            .setEmitEvent(true)
+                            .addEligibleToExecuteDelegateIds(DELEGATE)
+                            .setExecuteOnHarnessHostedDelegates(true)
+                            .setForceExecute(true)
+                            .setLogAbstractions(TaskLogAbstractions.newBuilder().build())
+                            .setSetupAbstractions(TaskSetupAbstractions.newBuilder().getDefaultInstanceForType())
+                            .build())
+                    .build())
+            .build();
+    ArtifactTaskParameters artifactTaskParameters1 = ArtifactTaskParameters.builder().build();
+    ArtifactTaskParameters artifactTaskParameters2 = ArtifactTaskParameters.builder().build();
+    Object[] parameters = {artifactTaskParameters1, artifactTaskParameters2};
+    TaskData taskData = TaskData.builder()
+                            .taskType(TASK_TYPE)
+                            .parked(true)
+                            .timeout(1000)
+                            .expressionFunctorToken(10)
+                            .parameters(parameters)
+                            .build();
+
+    io.harness.beans.DelegateTaskRequest delegateTaskRequest =
+        cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, SELECTOR_SET, BASE_LOG_KEY, true);
+
+    assertThat(delegateTaskRequest.getTaskParameters()).isSameAs(artifactTaskParameters1);
+    assertThat(delegateTaskRequest.getTaskType()).isEqualTo(TASK_TYPE);
+    assertThat(delegateTaskRequest.isParked()).isEqualTo(true);
+    assertThat(delegateTaskRequest.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(delegateTaskRequest.getSelectors()).isEqualTo(SELECTOR_WITH_DEFAULT_ORIGIN);
+    assertThat(delegateTaskRequest.getTaskSelectors().size()).isEqualTo(0);
+    assertThat(delegateTaskRequest.isForceExecute()).isEqualTo(true);
+    assertThat(delegateTaskRequest.getExpressionFunctorToken()).isEqualTo(10);
+    assertThat(delegateTaskRequest.isExecuteOnHarnessHostedDelegates()).isEqualTo(true);
+    assertThat(delegateTaskRequest.isEmitEvent()).isEqualTo(true);
+    assertThat(delegateTaskRequest.getStageId()).isEqualTo(STAGE_ID);
+    assertThat(delegateTaskRequest.getBaseLogKey()).isEqualTo(BASE_LOG_KEY);
+    assertThat(delegateTaskRequest.isShouldSkipOpenStream()).isEqualTo(true);
+    assertThat(delegateTaskRequest.getEligibleToExecuteDelegateIds().size()).isEqualTo(1);
+    assertThat(delegateTaskRequest.getEligibleToExecuteDelegateIds().get(0)).isEqualTo(DELEGATE);
   }
 }

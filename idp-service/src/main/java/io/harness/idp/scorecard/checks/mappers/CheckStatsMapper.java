@@ -14,6 +14,7 @@ import io.harness.idp.backstagebeans.BackstageCatalogEntityTypes;
 import io.harness.idp.scorecard.checks.entity.CheckStatusEntity;
 import io.harness.spec.server.idp.v1.model.CheckGraph;
 import io.harness.spec.server.idp.v1.model.CheckStats;
+import io.harness.spec.server.idp.v1.model.CheckStatsResponse;
 import io.harness.spec.server.idp.v1.model.CheckStatus;
 
 import java.util.ArrayList;
@@ -25,21 +26,27 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
 public class CheckStatsMapper {
-  public List<CheckStats> toDTO(Set<BackstageCatalogEntity> entities, Map<String, CheckStatus.StatusEnum> statusMap) {
+  public CheckStatsResponse toDTO(
+      Set<BackstageCatalogEntity> entities, Map<String, CheckStatus.StatusEnum> statusMap, String name) {
+    CheckStatsResponse response = new CheckStatsResponse();
+    response.setName(name);
     List<CheckStats> checkStats = new ArrayList<>();
     for (BackstageCatalogEntity entity : entities) {
+      String entityId = entity.getMetadata().getUid();
+      if (!statusMap.containsKey(entityId) || (statusMap.containsKey(entityId) && statusMap.get(entityId) == null)) {
+        continue;
+      }
       CheckStats stats = new CheckStats();
       stats.setName(entity.getMetadata().getName());
       stats.setOwner(BackstageCatalogEntityTypes.getEntityOwner(entity));
       stats.setSystem(BackstageCatalogEntityTypes.getEntitySystem(entity));
       stats.setKind(entity.getKind());
       stats.setType(BackstageCatalogEntityTypes.getEntityType(entity));
-      if (statusMap.containsKey(entity.getMetadata().getUid())) {
-        stats.setStatus(String.valueOf(statusMap.get(entity.getMetadata().getUid())));
-      }
+      stats.setStatus(String.valueOf(statusMap.get(entityId)));
       checkStats.add(stats);
     }
-    return checkStats;
+    response.setStats(checkStats);
+    return response;
   }
 
   public List<CheckGraph> toDTO(List<CheckStatusEntity> checkStatusEntities) {

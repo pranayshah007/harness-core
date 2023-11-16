@@ -15,6 +15,8 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
+import io.harness.notification.entities.NotificationCondition.NotificationConditionKeys;
+import io.harness.notification.entities.NotificationEventConfig.NotificationEventConfigKeys;
 import io.harness.persistence.PersistentEntity;
 
 import dev.morphia.annotations.Entity;
@@ -28,6 +30,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.UtilityClass;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -54,8 +57,6 @@ public class NotificationRule implements PersistentEntity, PersistentRegularIter
   String accountIdentifier;
   String orgIdentifier;
   String projectIdentifier;
-
-  NotificationEntity notificationEntity;
 
   List<NotificationCondition> notificationConditions;
 
@@ -110,5 +111,15 @@ public class NotificationRule implements PersistentEntity, PersistentRegularIter
         getNotificationEventConfigs(notificationEvent).stream().findFirst();
     return notificationEventConfigOptional.isPresent() ? notificationEventConfigOptional.get().notificationChannels
                                                        : Collections.emptyList();
+  }
+
+  @UtilityClass
+  public static final class NotificationRuleKeys {
+    public static final String notificationEventConfig =
+        NotificationRuleKeys.notificationConditions + "." + NotificationConditionKeys.notificationEventConfigs;
+    public static final String notificationEntity =
+        notificationEventConfig + NotificationEventConfigKeys.notificationEntity;
+    public static final String notificationEvent =
+        notificationEventConfig + "." + NotificationEventConfigKeys.notificationEvent;
   }
 }

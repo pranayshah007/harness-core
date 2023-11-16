@@ -25,7 +25,6 @@ import io.harness.ssca.transformers.NormalisedSbomComponentTransformer;
 import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -70,14 +69,16 @@ public class NormalisedSbomComponentServiceImpl implements NormalisedSbomCompone
   }
 
   public Criteria getLicenseCriteria(LicenseFilter licenseFilter) {
-    Criteria criteria = new Criteria();
+    if (licenseFilter == null) {
+      return new Criteria();
+    }
     switch (licenseFilter.getOperator()) {
       case EQUALS:
-        return criteria.and(NormalizedSBOMEntityKeys.packageLicense).is(licenseFilter.getValue());
+        return Criteria.where(NormalizedSBOMEntityKeys.packageLicense).is(licenseFilter.getValue());
       case CONTAINS:
-        return criteria.and(NormalizedSBOMEntityKeys.packageLicense).regex(licenseFilter.getValue());
+        return Criteria.where(NormalizedSBOMEntityKeys.packageLicense).regex(licenseFilter.getValue());
       case STARTSWITH:
-        return criteria.and(NormalizedSBOMEntityKeys.packageLicense)
+        return Criteria.where(NormalizedSBOMEntityKeys.packageLicense)
             .regex(Pattern.compile("^".concat(licenseFilter.getValue())));
       default:
         throw new InvalidRequestException("Invalid component filter operator");
@@ -86,27 +87,30 @@ public class NormalisedSbomComponentServiceImpl implements NormalisedSbomCompone
 
   public Criteria getComponentCriteria(List<ComponentFilter> componentFilter) {
     Criteria componentCriteria = new Criteria();
-    Criteria[] componentFilterCriteria =
-        componentFilter.stream()
-            .map(filter -> {
-              if (isEmpty(String.valueOf(filter.getFieldName()))) {
-                throw new InvalidRequestException("fieldName cannot be null");
-              }
-              String fieldName = componentFilterToFieldNameMap.get(filter.getFieldName());
-              switch (filter.getOperator()) {
-                case EQUALS:
-                  return Criteria.where(fieldName).is(filter.getValue());
-                case CONTAINS:
-                  return Criteria.where(fieldName).regex(filter.getValue());
-                case STARTSWITH:
-                  return Criteria.where(fieldName).regex(Pattern.compile("^".concat(filter.getValue())));
-                default:
-                  throw new InvalidRequestException("Invalid component filter operator");
-              }
-            })
-            .toArray(Criteria[] ::new);
-    if (isNotEmpty(componentFilterCriteria)) {
-      componentCriteria.orOperator(componentFilterCriteria);
+
+    if (isNotEmpty(componentFilter)) {
+      Criteria[] componentFilterCriteria =
+          componentFilter.stream()
+              .map(filter -> {
+                if (isEmpty(String.valueOf(filter.getFieldName()))) {
+                  throw new InvalidRequestException("fieldName cannot be null");
+                }
+                String fieldName = componentFilterToFieldNameMap.get(filter.getFieldName());
+                switch (filter.getOperator()) {
+                  case EQUALS:
+                    return Criteria.where(fieldName).is(filter.getValue());
+                  case CONTAINS:
+                    return Criteria.where(fieldName).regex(filter.getValue());
+                  case STARTSWITH:
+                    return Criteria.where(fieldName).regex(Pattern.compile("^".concat(filter.getValue())));
+                  default:
+                    throw new InvalidRequestException("Invalid component filter operator");
+                }
+              })
+              .toArray(Criteria[] ::new);
+      if (isNotEmpty(componentFilterCriteria)) {
+        componentCriteria.andOperator(componentFilterCriteria);
+      }
     }
     return componentCriteria;
   }
@@ -121,60 +125,33 @@ public class NormalisedSbomComponentServiceImpl implements NormalisedSbomCompone
                             .is(projectIdentifier)
                             .and(NormalizedSBOMEntityKeys.orchestrationId)
                             .is(artifact.getOrchestrationId());
+    if (Objects.nonNull(filterBody)) {
+      if (Objects.nonNull(filterBody.getPackageManager())) {
+        Pattern pattern = Pattern.compile("[.]*" + filterBody.getPackageManager() + "[.]*");
+        criteria.and(NormalizedSBOMEntityKeys.packageManager).regex(pattern);
+      }
+      if (Objects.nonNull(filterBody.getPackageSupplier())) {
+        Pattern pattern = Pattern.compile("[.]*" + filterBody.getPackageSupplier() + "[.]*");
+        criteria.and(NormalizedSBOMEntityKeys.packageOriginatorName).regex(pattern);
+      }
 
-    if (Objects.nonNull(filterBody) && Objects.nonNull(filterBody.getPackageManager())) {
-      Pattern pattern = Pattern.compile("[.]*" + filterBody.getPackageManager() + "[.]*");
-      criteria.and(NormalizedSBOMEntityKeys.packageManager).regex(pattern);
-    }
-    if (Objects.nonNull(filterBody) && Objects.nonNull(filterBody.getPackageSupplier())) {
-      Pattern pattern = Pattern.compile("[.]*" + filterBody.getPackageSupplier() + "[.]*");
-      criteria.and(NormalizedSBOMEntityKeys.packageOriginatorName).regex(pattern);
-    }
-
-    if (Objects.nonNull(filterBody) && Objects.nonNull(filterBody.getLicenseFilter())) {
-      criteria.andOperator(getLicenseCriteria(filterBody.getLicenseFilter()));
-    }
-
-    if (Objects.nonNull(filterBody) && Objects.nonNull(filterBody.getComponentFilter())) {
-      criteria.andOperator(getComponentCriteria(filterBody.getComponentFilter()));
+      criteria.andOperator(
+          getLicenseCriteria(filterBody.getLicenseFilter()), getComponentCriteria(filterBody.getComponentFilter()));
     }
 
     return sbomComponentRepo.findAll(criteria, pageable);
   }
 
-  public List<String> getOrchestrationIds(
-      String accountId, String orgIdentifier, String projectIdentifier, LicenseFilter licenseFilter) {
-    if (Objects.nonNull(licenseFilter)) {
-      Criteria criteria = Criteria.where(NormalizedSBOMEntityKeys.accountId)
-                              .is(accountId)
-                              .and(NormalizedSBOMEntityKeys.orgIdentifier)
-                              .is(orgIdentifier)
-                              .and(NormalizedSBOMEntityKeys.projectIdentifier)
-                              .is(projectIdentifier);
+  public List<String> getOrchestrationIds(String accountId, String orgIdentifier, String projectIdentifier,
+      LicenseFilter licenseFilter, List<ComponentFilter> componentFilter) {
+    Criteria criteria = Criteria.where(NormalizedSBOMEntityKeys.accountId)
+                            .is(accountId)
+                            .and(NormalizedSBOMEntityKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(NormalizedSBOMEntityKeys.projectIdentifier)
+                            .is(projectIdentifier);
 
-      criteria.andOperator(getLicenseCriteria(licenseFilter));
-      return sbomComponentRepo.findAll(criteria, Pageable.unpaged())
-          .map(NormalizedSBOMComponentEntity::getOrchestrationId)
-          .toList();
-    }
-    return new ArrayList<>();
-  }
-
-  public List<String> getOrchestrationIds(
-      String accountId, String orgIdentifier, String projectIdentifier, List<ComponentFilter> componentFilter) {
-    if (isNotEmpty(componentFilter)) {
-      Criteria criteria = Criteria.where(NormalizedSBOMEntityKeys.accountId)
-                              .is(accountId)
-                              .and(NormalizedSBOMEntityKeys.orgIdentifier)
-                              .is(orgIdentifier)
-                              .and(NormalizedSBOMEntityKeys.projectIdentifier)
-                              .is(projectIdentifier);
-
-      criteria.andOperator(getComponentCriteria(componentFilter));
-      return sbomComponentRepo.findAll(criteria, Pageable.unpaged())
-          .map(NormalizedSBOMComponentEntity::getOrchestrationId)
-          .toList();
-    }
-    return new ArrayList<>();
+    criteria.andOperator(getLicenseCriteria(licenseFilter), getComponentCriteria(componentFilter));
+    return sbomComponentRepo.findDistinctOrchestrationIds(criteria);
   }
 }

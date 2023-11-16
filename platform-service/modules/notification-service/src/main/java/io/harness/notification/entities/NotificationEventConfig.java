@@ -8,11 +8,16 @@ package io.harness.notification.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.annotations.dev.OwnedBy;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.notification.entities.eventmetadata.NotificationEventParameters;
+
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
-import java.util.Map;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -25,8 +30,9 @@ import lombok.experimental.FieldNameConstants;
 @JsonTypeName("NotificationEventConfig")
 @FieldNameConstants(innerTypeName = "NotificationEventConfigKeys")
 public class NotificationEventConfig {
+  @NotNull NotificationEntity notificationEntity;
   NotificationEvent notificationEvent;
-  // Additional metadata associated with event
-  Map<String, String> eventMetaData;
+  @JsonTypeInfo(use = NAME, property = "notificationEntity", include = EXTERNAL_PROPERTY, visible = true)
+  NotificationEventParameters notificationEventParameters;
   List<NotificationChannel> notificationChannels;
 }

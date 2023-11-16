@@ -8,15 +8,19 @@
 package io.harness.ci.plugin;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.IVAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.config.CIExecutionServiceConfig;
@@ -29,9 +33,13 @@ import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.rule.Owner;
+import io.harness.ssca.client.SSCAServiceUtils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
@@ -49,6 +57,7 @@ public class CiPluginStepInfoProviderTest extends CIExecutionTestBase {
   @InjectMocks @Spy private K8InitializeStepUtils k8InitializeStepUtils;
   @Spy private PluginSettingUtils pluginSettingUtils;
   @InjectMocks private CiPluginStepInfoProvider ciPluginStepInfoProvider;
+  @Mock private SSCAServiceUtils sscaServiceUtils;
 
   @Before
   public void setUp() {}
@@ -221,5 +230,54 @@ public class CiPluginStepInfoProviderTest extends CIExecutionTestBase {
             + "    value: true\n"
             + "  }\n"
             + "}\n");
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testSscaEnvVarsPopulation() {
+    HashMap<String, String> setupAbstractions = new HashMap<>();
+    setupAbstractions.put(SetupAbstractionKeys.accountId, "accountId");
+    setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "projectId");
+    setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "orgId");
+    Ambiance ambiance = Ambiance.newBuilder().putAllSetupAbstractions(setupAbstractions).build();
+
+    when(ciExecutionConfigService.getCiExecutionServiceConfig())
+        .thenReturn(CIExecutionServiceConfig.builder().defaultCPULimit(500).build());
+    when(featureFlagService.isEnabled(any(), anyString())).thenReturn(false);
+    when(featureFlagService.isEnabled(FeatureName.SSCA_ENABLED, "accountId")).thenReturn(true);
+    Map<String, String> envMapWithSecrets = new HashMap<>();
+    envMapWithSecrets.put("SSCA_SERVICE_ENDPOINT", "localhost");
+    envMapWithSecrets.put("SSCA_SERVICE_TOKEN", "token");
+    when(sscaServiceUtils.getSSCAServiceEnvVariables("accountId", "orgId", "projectId")).thenReturn(envMapWithSecrets);
+    String containerRunStepNode = ""
+        + "                        __uuid: uuid\n"
+        + "                        type: Run\n"
+        + "                        name: Run_1\n"
+        + "                        identifier: Run_1\n"
+        + "                        spec:\n"
+        + "                          connectorRef: account.harnessImage\n"
+        + "                          image: alpine\n"
+        + "                          shell: Sh\n"
+        + "                          runAsUser: 1\n"
+        + "                          command: echo 'test'\n"
+        + "                          imagePullPolicy: Always\n"
+        + "                          resources:\n"
+        + "                            limits:\n"
+        + "                              memory: 500Mi\n"
+        + "                              cpu: 400m";
+    PluginCreationRequest pluginCreationRequest =
+        PluginCreationRequest.newBuilder().setStepJsonNode(containerRunStepNode).setOsType("Linux").build();
+
+    PluginCreationResponseWrapper pluginInfo =
+        ciPluginStepInfoProvider.getPluginInfo(pluginCreationRequest, Set.of(1234), ambiance);
+    verify(sscaServiceUtils, times(1)).getSSCAServiceEnvVariables("accountId", "orgId", "projectId");
+    assertThat(pluginInfo.getResponse().getPluginDetails().getEnvVariablesWithPlainTextSecretMap())
+        .isEqualTo(envMapWithSecrets);
+
+    pluginInfo = ciPluginStepInfoProvider.getPluginInfo(pluginCreationRequest, Set.of(1234), ambiance);
+    verify(sscaServiceUtils, times(1)).getSSCAServiceEnvVariables("accountId", "orgId", "projectId");
+    assertThat(pluginInfo.getResponse().getPluginDetails().getEnvVariablesWithPlainTextSecretMap())
+        .isEqualTo(envMapWithSecrets);
   }
 }

@@ -17,14 +17,21 @@ import io.harness.notification.NotificationTriggerRequest;
 import io.harness.notification.Team;
 import io.harness.notification.entities.Notification;
 import io.harness.notification.entities.Notification.NotificationKeys;
+import io.harness.notification.entities.NotificationChannel;
+import io.harness.notification.entities.NotificationEntity;
+import io.harness.notification.entities.NotificationEvent;
+import io.harness.notification.entities.NotificationRule;
 import io.harness.notification.exception.NotificationException;
 import io.harness.notification.remote.mappers.NotificationMapper;
 import io.harness.notification.repositories.NotificationRepository;
 import io.harness.notification.service.api.ChannelService;
+import io.harness.notification.service.api.NotificationRuleManagementService;
 import io.harness.notification.service.api.NotificationService;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
@@ -38,6 +45,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class NotificationServiceImpl implements NotificationService {
   private final ChannelService channelService;
   private final NotificationRepository notificationRepository;
+  private final NotificationRuleManagementService notificationRuleManagementService;
 
   @Override
   public boolean processNewMessage(NotificationRequest notificationRequest) {
@@ -121,7 +129,48 @@ public class NotificationServiceImpl implements NotificationService {
 
   @Override
   public boolean processNewMessage(NotificationTriggerRequest notificationTriggerRequest) {
-    //@TODO: implementation
-    return false;
+    NotificationRule notificationRule = notificationRuleManagementService.get(notificationTriggerRequest.getAccountId(),
+        notificationTriggerRequest.getOrgId(), notificationTriggerRequest.getProjectId(),
+        NotificationEntity.valueOf(notificationTriggerRequest.getEventEntity()),
+        NotificationEvent.valueOf(notificationTriggerRequest.getEvent()));
+    if (notificationRule == null) {
+      return false;
+    }
+    List<NotificationChannel> notificationChannels = notificationRule.getNotificationChannelForEvent(
+        NotificationEvent.valueOf(notificationTriggerRequest.getEvent()));
+    boolean notificationSend = false;
+    for (NotificationChannel notificationChannel : notificationChannels) {
+      notificationSend =
+          sendNotification(notificationRule, notificationChannel, notificationTriggerRequest.getTemplateDataMap());
+    }
+    return notificationSend;
+  }
+
+  private boolean sendNotification(
+      NotificationRule notificationRule, NotificationChannel notificationChannel, Map<String, String> templateData) {
+    Notification notification = NotificationMapper.toNotification(notificationRule, notificationChannel);
+
+    if (Objects.isNull(notification)) {
+      log.error("Ignoring notification request for processing {}", notificationRule.getUuid());
+      return false;
+    }
+
+    notificationRepository.save(notification);
+    NotificationProcessingResponse processingResponse = null;
+    try {
+      // construct notification request from notification rule
+      processingResponse = channelService.send(
+          NotificationMapper.constructNotificationRequest(notificationRule, notificationChannel, templateData));
+    } catch (NotificationException e) {
+      log.error("Could not send notification.", e);
+    }
+    if (Objects.nonNull(processingResponse)) {
+      notification.setProcessingResponses(processingResponse.getResult());
+      notification.setShouldRetry(!(NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)
+          || processingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries)));
+    }
+    notification.setRetries(1);
+    notificationRepository.save(notification);
+    return !NotificationProcessingResponse.isNotificationRequestFailed(processingResponse);
   }
 }

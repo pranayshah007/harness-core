@@ -10,6 +10,8 @@ package io.harness.licensing.mappers.modules;
 import static io.harness.rule.OwnerRule.COREY;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
@@ -18,14 +20,17 @@ import io.harness.licensing.beans.modules.CETModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.entities.modules.CETModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
+import io.harness.licensing.helpers.ModuleLicenseHelper;
 import io.harness.rule.Owner;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 public class CETLicenseObjectMapperTest extends CategoryTest {
+  @Mock ModuleLicenseHelper moduleLicenseHelper;
   @InjectMocks CETLicenseObjectMapper objectMapper;
   private CETModuleLicense moduleLicense;
   private CETModuleLicenseDTO moduleLicenseDTO;
@@ -34,6 +39,8 @@ public class CETLicenseObjectMapperTest extends CategoryTest {
   @Before
   public void setUp() {
     initMocks(this);
+    when(moduleLicenseHelper.isDeveloperLicensingFeatureEnabled(any())).thenReturn(true);
+
     moduleLicense = CETModuleLicense.builder().numberOfAgents(DEFAULT_AGENT_NUMBER).build();
     moduleLicenseDTO = CETModuleLicenseDTO.builder().numberOfAgents(DEFAULT_AGENT_NUMBER).build();
   }

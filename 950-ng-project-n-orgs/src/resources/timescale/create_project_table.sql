@@ -15,6 +15,12 @@ CREATE TABLE IF NOT EXISTS public.projects (
     created_at bigint,
     account_identifier text
 );
+-- drop constraint first if it exists
+ALTER TABLE ONLY public.projects
+    DROP CONSTRAINT IF EXISTS projects_pkey;
+
+-- add primary key constraint, this is done to resolve issues in re-running migrations
+-- this query will fail as only one primary key constraint can exist
 ALTER TABLE ONLY public.projects
     ADD CONSTRAINT projects_pkey PRIMARY KEY (id);
 

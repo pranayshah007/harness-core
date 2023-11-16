@@ -22,7 +22,6 @@ import static io.harness.steps.container.execution.ContainerDetailsSweepingOutpu
 import static io.harness.steps.plugin.infrastructure.ContainerStepInfra.Type.KUBERNETES_DIRECT;
 
 import static java.lang.String.format;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
@@ -407,6 +406,10 @@ public class ContainerStepInitHelper {
       ctrSecurityContext.setRunAsUser(containerDefinitionInfo.getRunAsUser());
     }
     boolean privileged = containerDefinitionInfo.getPrivileged() != null && containerDefinitionInfo.getPrivileged();
+    Map<String, String> envVarsWithPlainTextSecret = new HashMap<>();
+    if (EmptyPredicate.isNotEmpty(containerDefinitionInfo.getEnvVarsWithPlainTextSecret())) {
+      envVarsWithPlainTextSecret = containerDefinitionInfo.getEnvVarsWithPlainTextSecret();
+    }
 
     CIK8ContainerParams cik8ContainerParams =
         CIK8ContainerParams.builder()
@@ -415,11 +418,12 @@ public class ContainerStepInitHelper {
             .containerType(containerDefinitionInfo.getContainerType())
             .envVars(envVars)
             .envVarsWithSecretRef(envVarsWithSecretRef)
-            .containerSecrets(ContainerSecrets.builder()
-                                  .secretVariableDetails(containerSecretVariableDetails)
-                                  .connectorDetailsMap(stepConnectorDetails)
-                                  .plainTextSecretsByName(containerParamsProvider.getLiteEngineSecretVars(emptyMap()))
-                                  .build())
+            .containerSecrets(
+                ContainerSecrets.builder()
+                    .secretVariableDetails(containerSecretVariableDetails)
+                    .connectorDetailsMap(stepConnectorDetails)
+                    .plainTextSecretsByName(containerParamsProvider.getLiteEngineSecretVars(envVarsWithPlainTextSecret))
+                    .build())
             .commands(containerDefinitionInfo.getCommands())
             .ports(containerDefinitionInfo.getPorts())
             .args(containerDefinitionInfo.getArgs())

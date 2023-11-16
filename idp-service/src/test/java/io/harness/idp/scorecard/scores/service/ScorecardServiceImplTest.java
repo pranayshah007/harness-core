@@ -15,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -28,7 +27,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.idp.backstagebeans.BackstageCatalogComponentEntity;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.common.GsonUtils;
-import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
 import io.harness.idp.scorecard.checks.service.CheckService;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
@@ -48,7 +46,7 @@ import io.harness.spec.server.idp.v1.model.ScorecardDetails;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsRequest;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsResponse;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
-import io.harness.spec.server.idp.v1.model.ScorecardStats;
+import io.harness.spec.server.idp.v1.model.ScorecardStatsResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.client.result.DeleteResult;
@@ -78,7 +76,6 @@ public class ScorecardServiceImplTest extends CategoryTest {
   @Mock CheckService checkService;
   @Mock ScoreService scoreService;
   @Mock ScoreComputerService scoreComputerService;
-  @Mock SetupUsageProducer setupUsageProducer;
   @Mock BackstageResourceClient backstageResourceClient;
   @Mock Call<Object> call;
   @Mock ObjectMapper objectMapper;
@@ -105,7 +102,7 @@ public class ScorecardServiceImplTest extends CategoryTest {
   public void setUp() {
     MockitoAnnotations.openMocks(this);
     scorecardServiceImpl = new ScorecardServiceImpl(scorecardRepository, checkService, scoreService,
-        scoreComputerService, setupUsageProducer, backstageResourceClient, transactionTemplate, outboxService);
+        scoreComputerService, backstageResourceClient, transactionTemplate, outboxService);
   }
 
   @Test
@@ -192,7 +189,6 @@ public class ScorecardServiceImplTest extends CategoryTest {
     when(checkService.getChecksByAccountIdAndIdentifiers(any(), any())).thenReturn(checkEntities);
     when(scorecardRepository.saveOrUpdate(any()))
         .thenReturn(ScorecardEntity.builder().checks(Collections.singletonList(getTestCheck())).build());
-    doNothing().when(setupUsageProducer).publishScorecardSetupUsage(request, ACCOUNT_ID);
     assertThatCode(() -> scorecardServiceImpl.saveScorecard(request, ACCOUNT_ID)).doesNotThrowAnyException();
   }
 
@@ -213,8 +209,6 @@ public class ScorecardServiceImplTest extends CategoryTest {
     when(checkService.getChecksByAccountIdAndIdentifiers(any(), any())).thenReturn(checkEntities);
     when(scorecardRepository.update(any()))
         .thenReturn(ScorecardEntity.builder().checks(Collections.singletonList(getTestCheck())).build());
-    doNothing().when(setupUsageProducer).deleteScorecardSetupUsage(ACCOUNT_ID, request.getScorecard().getIdentifier());
-    doNothing().when(setupUsageProducer).publishScorecardSetupUsage(request, ACCOUNT_ID);
     assertThatCode(() -> scorecardServiceImpl.updateScorecard(request, ACCOUNT_ID)).doesNotThrowAnyException();
   }
 
@@ -244,15 +238,24 @@ public class ScorecardServiceImplTest extends CategoryTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testGetScorecardStats() {
-    when(scorecardRepository.findByAccountIdentifierAndIdentifierIn(ACCOUNT_ID, List.of(SCORECARD_ID)))
-        .thenReturn(List.of(getScorecardEntity()));
+    when(scorecardRepository.findByAccountIdentifierAndIdentifier(ACCOUNT_ID, SCORECARD_ID))
+        .thenReturn(getScorecardEntity());
     when(scoreComputerService.getAllEntities(any(), any(), any())).thenReturn(getBackstageCatalogEntities());
     when(scoreService.getScoresForEntityIdentifiersAndScorecardIdentifiers(any(), any(), any()))
         .thenReturn(getEntityIdentifierAndScore());
-    List<ScorecardStats> scorecardStats = scorecardServiceImpl.getScorecardStats(ACCOUNT_ID, SCORECARD_ID);
-    assertEquals(1, scorecardStats.size());
-    assertEquals(IDP_SERVICE_ENTITY_NAME, scorecardStats.get(0).getName());
-    assertEquals(75, (int) scorecardStats.get(0).getScore());
+    ScorecardStatsResponse response = scorecardServiceImpl.getScorecardStats(ACCOUNT_ID, SCORECARD_ID);
+    assertEquals(SCORECARD_NAME, response.getName());
+    assertEquals(1, response.getStats().size());
+    assertEquals(IDP_SERVICE_ENTITY_NAME, response.getStats().get(0).getName());
+    assertEquals(75, (int) response.getStats().get(0).getScore());
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testGetScorecardStatsThrowsException() {
+    when(scorecardRepository.findByAccountIdentifierAndIdentifier(ACCOUNT_ID, SCORECARD_ID)).thenReturn(null);
+    scorecardServiceImpl.getScorecardStats(ACCOUNT_ID, SCORECARD_ID);
   }
 
   @Test
@@ -282,7 +285,6 @@ public class ScorecardServiceImplTest extends CategoryTest {
                    .doInTransaction(new SimpleTransactionStatus()));
     DeleteResult deleteResult = DeleteResult.acknowledged(1);
     when(scorecardRepository.delete(ACCOUNT_ID, SCORECARD_ID)).thenReturn(deleteResult);
-    doNothing().when(setupUsageProducer).deleteScorecardSetupUsage(ACCOUNT_ID, SCORECARD_ID);
     assertThatCode(() -> scorecardServiceImpl.deleteScorecard(ACCOUNT_ID, SCORECARD_ID)).doesNotThrowAnyException();
   }
 

@@ -10,6 +10,7 @@ package io.harness.cdng.artifact.resources.nexus.service;
 import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.RAKSHIT_AGARWAL;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,6 +35,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.nexusconnector.NexusAuthenticationDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
+import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
@@ -613,5 +615,43 @@ public class NexusResourceServiceImplTest extends CategoryTest {
                                ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsMavenBlankClassifier() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .build();
+    ConnectorResponseDTO connectorResponse = getConnector();
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+        .thenReturn(Optional.of(connectorResponse));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
+    when(secretManagerClientService.getEncryptionDetails(any(), any()))
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(
+            ArtifactTaskResponse.builder()
+                .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                .artifactTaskExecutionResponse(
+                    ArtifactTaskExecutionResponse.builder().artifactDelegateResponses(new ArrayList<>()).build())
+                .build());
+
+    NexusResponseDTO nexusResponseDTO = nexusResourceService.getBuildDetails(IDENTIFIER_REF, "repo", REPO_PORT,
+        IMAGE_PATH, RepositoryFormat.maven.name(), "", ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID, ARTIFACT_ID, "",
+        "", PACKAGE_NAME, "group");
+    assertThat(nexusResponseDTO).isNotNull();
+
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
+    DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
+    ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
+    assertThat(artifactTaskParameters.getArtifactTaskType()).isEqualTo(ArtifactTaskType.GET_BUILDS);
+    assertThat(((NexusArtifactDelegateRequest) artifactTaskParameters.getAttributes()).getExtension()).isNull();
+    assertThat(((NexusArtifactDelegateRequest) artifactTaskParameters.getAttributes()).getClassifier()).isNull();
   }
 }

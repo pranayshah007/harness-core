@@ -11,12 +11,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import javax.ws.rs.core.Response;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface DslClient {
-  Response call(String accountIdentifier, ApiRequestDetails apiRequestDetails)
-      throws NoSuchAlgorithmException, KeyManagementException;
+  Response call(String accountIdentifier, ApiRequestDetails apiRequestDetails);
 }

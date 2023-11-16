@@ -10,11 +10,13 @@ package io.harness.audit.remote;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.SortOrder.OrderType.DESC;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.SAHIBA;
 import static io.harness.utils.PageTestUtils.getPage;
 
 import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -30,7 +32,9 @@ import io.harness.audit.api.impl.AuditPermissionValidator;
 import io.harness.audit.beans.AuditFilterPropertiesDTO;
 import io.harness.audit.beans.ResourceScopeDTO;
 import io.harness.audit.entities.AuditEvent.AuditEventKeys;
+import io.harness.beans.SortOrder;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.rule.Owner;
 
@@ -105,5 +109,40 @@ public class AuditResourceTest extends CategoryTest {
     assertEquals(1, pageRequest.getSortOrders().size());
     assertEquals(AuditEventKeys.timestamp, pageRequest.getSortOrders().get(0).getFieldName());
     assertEquals(DESC, pageRequest.getSortOrders().get(0).getOrderType());
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testListWithIncorrectSortOrder() {
+    String accountIdentifier = randomAlphabetic(10);
+    PageRequest pageRequest =
+        PageRequest.builder()
+            .sortOrders(
+                List.of(SortOrder.Builder.aSortOrder().withField("dummyField", SortOrder.OrderType.DESC).build()))
+            .build();
+    assertThatThrownBy(() -> auditResource.list(accountIdentifier, pageRequest, null))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testListWithAppropriateSortOrder() {
+    String accountIdentifier = randomAlphabetic(10);
+    PageRequest pageRequest =
+        PageRequest.builder()
+            .sortOrders(
+                List.of(SortOrder.Builder.aSortOrder().withField("timestamp", SortOrder.OrderType.DESC).build()))
+            .pageSize(10)
+            .build();
+    ResourceScopeDTO scopeDTO = ResourceScopeDTO.builder().accountIdentifier(accountIdentifier).build();
+    doNothing().when(auditPermissionValidator).validate(accountIdentifier, scopeDTO);
+    when(auditService.list(eq(accountIdentifier), any(), eq(null))).thenReturn(getPage(emptyList(), 0));
+
+    auditResource.list(accountIdentifier, pageRequest, null);
+
+    verify(auditPermissionValidator, times(1)).validate(accountIdentifier, scopeDTO);
+    verifyAuditServiceInvocation(accountIdentifier, null);
   }
 }

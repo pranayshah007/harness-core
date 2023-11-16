@@ -11,11 +11,7 @@ import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.contracts.steps.StepInfo;
-import io.harness.pms.contracts.steps.StepMetaData;
-import io.harness.ssca.beans.SscaConstants;
 import io.harness.ssca.cd.beans.enforcement.CdSscaEnforcementStepNode;
 import io.harness.ssca.cd.beans.orchestration.CdSscaOrchestrationStepNode;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
@@ -52,28 +48,6 @@ public class CdSscaBeansRegistrar {
                                            .modulesSupported(ImmutableList.of(ModuleType.CD))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
-                   .build())
-          .build();
-
-  public static final ImmutableList<StepInfo> sscaStepPaletteSteps =
-      ImmutableList.<StepInfo>builder()
-          .add(StepInfo.newBuilder()
-                   .setName(SscaConstants.SSCA_ORCHESTRATION_STEP)
-                   .setType(SscaConstants.CD_SSCA_ORCHESTRATION)
-                   .setStepMetaData(StepMetaData.newBuilder()
-                                        .addCategory("ssca")
-                                        .addFolderPaths(SscaConstants.SSCA_STEPS_FOLDER_NAME_CD)
-                                        .build())
-                   .setFeatureFlag(FeatureName.SSCA_ENABLED.name())
-                   .build())
-          .add(StepInfo.newBuilder()
-                   .setName(SscaConstants.SSCA_ENFORCEMENT)
-                   .setType(SscaConstants.CD_SSCA_ENFORCEMENT)
-                   .setStepMetaData(StepMetaData.newBuilder()
-                                        .addCategory("ssca")
-                                        .addFolderPaths(SscaConstants.SSCA_STEPS_FOLDER_NAME_CD)
-                                        .build())
-                   .setFeatureFlag(FeatureName.SSCA_ENABLED.name())
                    .build())
           .build();
 }

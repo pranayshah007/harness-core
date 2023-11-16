@@ -12,14 +12,22 @@ import static io.harness.annotations.dev.HarnessTeam.IDP;
 import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.idp.app.IdpConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
+import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
+
+import static java.util.Collections.singletonList;
 
 import io.harness.Microservice;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
+import io.harness.SCMGrpcClientModule;
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
+import io.harness.ci.execution.execution.OrchestrationExecutionEventHandlerRegistrar;
+import io.harness.ci.execution.plan.creator.CIModuleInfoProvider;
+import io.harness.ci.registrars.ExecutionAdvisers;
+import io.harness.ff.FeatureFlagService;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.idp.annotations.IdpServiceAuth;
@@ -35,7 +43,6 @@ import io.harness.idp.license.usage.resources.IDPLicenseUsageResource;
 import io.harness.idp.migration.IdpMigrationProvider;
 import io.harness.idp.namespace.jobs.DefaultAccountIdToNamespaceMappingForPrEnv;
 import io.harness.idp.pipeline.filter.IdpFilterCreationResponseMerger;
-import io.harness.idp.pipeline.provider.IdpModuleInfoProvider;
 import io.harness.idp.pipeline.provider.IdpPipelineServiceInfoProvider;
 import io.harness.idp.pipeline.registrar.IdpStepRegistrar;
 import io.harness.idp.scorecard.scores.iteratorhandler.ScoreComputationHandler;
@@ -44,6 +51,7 @@ import io.harness.idp.user.jobs.UserSyncJob;
 import io.harness.licensing.usage.resources.LicenseUsageResource;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.MetricRegistryModule;
+import io.harness.metrics.jobs.RecordMetricsJob;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.migration.MigrationProvider;
 import io.harness.migration.NGMigrationSdkInitHelper;
@@ -62,6 +70,7 @@ import io.harness.notification.templates.PredefinedTemplate;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.events.base.PipelineEventConsumerController;
+import io.harness.pms.listener.NgOrchestrationNotifyEventListenerNonVersioned;
 import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkInitHelper;
 import io.harness.pms.sdk.PmsSdkModule;
@@ -80,6 +89,9 @@ import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEvent
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.NodeProgressEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
+import io.harness.pms.serializer.json.PmsBeansJacksonModule;
+import io.harness.queue.QueueListenerController;
+import io.harness.queue.QueuePublisher;
 import io.harness.request.RequestContextFilter;
 import io.harness.request.RequestLoggingFilter;
 import io.harness.security.InternalApiAuthFilter;
@@ -93,15 +105,23 @@ import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
+import io.harness.waiter.NotifyEvent;
+import io.harness.waiter.NotifyQueuePublisherRegister;
+import io.harness.yaml.YamlSdkConfiguration;
+import io.harness.yaml.YamlSdkInitHelper;
 
 import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dirkraft.dropwizard.fileassets.FileAssetsBundle;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
+import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
+import com.google.inject.util.Providers;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
@@ -110,6 +130,7 @@ import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import io.serializer.HObjectMapper;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -118,13 +139,13 @@ import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.logging.LogManager;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.glassfish.jersey.server.ServerProperties;
 import org.springframework.data.mongodb.core.MongoTemplate;
-
 /**
  * The main application - entry point for the entire Wings Application.
  */
@@ -146,6 +167,11 @@ public class IdpApplication extends Application<IdpConfiguration> {
     }));
 
     new IdpApplication().run(args);
+  }
+
+  public static void configureObjectMapper(final ObjectMapper mapper) {
+    HObjectMapper.configureObjectMapperForNG(mapper);
+    mapper.registerModule(new PmsBeansJacksonModule());
   }
 
   @Override
@@ -185,6 +211,13 @@ public class IdpApplication extends Application<IdpConfiguration> {
     modules.add(PmsSdkModule.getInstance(idpPmsSdkConfiguration));
     modules.add(PipelineServiceUtilityModule.getInstance());
     modules.add(NGMigrationSdkModule.getInstance());
+    modules.add(new SCMGrpcClientModule(configuration.getScmConnectionConfig()));
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(FeatureFlagService.class).toProvider(Providers.of(null));
+      }
+    });
     modules.add(new NotificationClientModule(configuration.getNotificationClientConfiguration()));
     modules.add(new MetricRegistryModule(metricRegistry));
 
@@ -199,14 +232,17 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerExceptionMappers(environment.jersey());
     registerMigrations(injector);
     registerHealthCheck(environment, injector);
+    registerYamlSdk(injector);
+    registerWaitEnginePublishers(injector);
     registerNotificationTemplates(configuration, injector);
     registerRequestContextFilter(environment);
     registerIterators(injector, configuration.getScorecardScoreComputationIteratorConfig());
     environment.jersey().register(RequestLoggingFilter.class);
     environment.jersey().register(injector.getInstance(IdpServiceRequestInterceptor.class));
+    environment.jersey().register(injector.getInstance(IdpServiceResponseInterceptor.class));
     injector.getInstance(IDPTelemetryRecordsJob.class).scheduleTasks();
+    initMetrics(injector);
 
-    //    initMetrics(injector);
     log.info("Starting app done");
     log.info("IDP Service is running on JRE: {}", System.getProperty("java.version"));
 
@@ -234,6 +270,8 @@ public class IdpApplication extends Application<IdpConfiguration> {
     log.info("Initializing queue listeners...");
     IdpEventConsumerController controller = injector.getInstance(IdpEventConsumerController.class);
     controller.register(injector.getInstance(EntityCrudStreamConsumer.class), 1);
+    QueueListenerController queueListenerController = injector.getInstance(QueueListenerController.class);
+    queueListenerController.register(injector.getInstance(NgOrchestrationNotifyEventListenerNonVersioned.class), 1);
     controller.register(injector.getInstance(IdpModuleLicenseUsageCaptureEventConsumer.class), 2);
   }
 
@@ -249,6 +287,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
 
   private void initMetrics(Injector injector) {
     injector.getInstance(MetricService.class).initializeMetrics();
+    injector.getInstance(RecordMetricsJob.class).scheduleMetricsTasks();
   }
 
   private void registerHealthChecksManager(Environment environment, Injector injector) {
@@ -347,8 +386,12 @@ public class IdpApplication extends Application<IdpConfiguration> {
         .pipelineServiceInfoProviderClass(IdpPipelineServiceInfoProvider.class)
         .filterCreationResponseMerger(new IdpFilterCreationResponseMerger())
         .engineSteps(IdpStepRegistrar.getEngineSteps())
-        .engineAdvisers(PipelineServiceUtilAdviserRegistrar.getEngineAdvisers())
-        .executionSummaryModuleInfoProviderClass(IdpModuleInfoProvider.class)
+        .engineAdvisers(ExecutionAdvisers.getEngineAdvisers())
+        .engineEventHandlersMap(OrchestrationExecutionEventHandlerRegistrar.getEngineEventHandlers())
+        .eventsFrameworkConfiguration(configuration.getEventsFrameworkConfiguration())
+        .executionPoolConfig(configuration.getPmsSdkExecutionPoolConfig())
+        .orchestrationEventPoolConfig(configuration.getPmsSdkOrchestrationEventPoolConfig())
+        .executionSummaryModuleInfoProviderClass(CIModuleInfoProvider.class)
         .eventsFrameworkConfiguration(configuration.getEventsFrameworkConfiguration())
         .build();
   }
@@ -385,12 +428,33 @@ public class IdpApplication extends Application<IdpConfiguration> {
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventConsumerV2.class), 1);
 
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 1);
+  }
+
+  private void registerWaitEnginePublishers(Injector injector) {
+    final QueuePublisher<NotifyEvent> publisher =
+        injector.getInstance(Key.get(new TypeLiteral<QueuePublisher<NotifyEvent>>() {}));
+    final NotifyQueuePublisherRegister notifyQueuePublisherRegister =
+        injector.getInstance(NotifyQueuePublisherRegister.class);
+    notifyQueuePublisherRegister.register(
+        NG_ORCHESTRATION, payload -> publisher.send(singletonList(NG_ORCHESTRATION), payload));
   }
 
   private void registerHealthCheck(Environment environment, Injector injector) {
     final HealthService healthService = injector.getInstance(HealthService.class);
     environment.healthChecks().register("IDP", healthService);
     healthService.registerMonitor((HealthMonitor) injector.getInstance(MongoTemplate.class));
+  }
+
+  private void registerYamlSdk(Injector injector) {
+    YamlSdkConfiguration yamlSdkConfiguration = YamlSdkConfiguration.builder()
+                                                    .requireSchemaInit(true)
+                                                    .requireSnippetInit(true)
+                                                    .requireValidatorInit(false)
+                                                    .build();
+    YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
   }
 
   private void registerNotificationTemplates(IdpConfiguration configuration, Injector injector) {

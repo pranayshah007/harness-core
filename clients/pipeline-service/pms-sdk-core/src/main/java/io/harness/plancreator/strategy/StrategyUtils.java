@@ -8,6 +8,7 @@
 package io.harness.plancreator.strategy;
 
 import static io.harness.plancreator.strategy.StrategyConstants.CURRENT_GLOBAL_ITERATION;
+import static io.harness.plancreator.strategy.StrategyConstants.IDENTIFIER_POSTFIX;
 import static io.harness.plancreator.strategy.StrategyConstants.ITEM;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATION;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATIONS;
@@ -39,7 +40,6 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.LevelUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
@@ -61,7 +61,6 @@ import io.harness.strategy.StrategyValidationUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
@@ -345,25 +344,8 @@ public class StrategyUtils {
   /**
    * This function remove <+strategy.identifierPostFix> if present on the passed string
    */
-  private String refineIdentifier(String identifier) {
+  public String refineIdentifier(String identifier) {
     return identifier.replaceAll(STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, "");
-  }
-
-  /**
-   * This is used to fetch strategy object map at a given level
-   * @param level
-   * @return
-   */
-  @Deprecated
-  public Map<String, Object> fetchStrategyObjectMap(Level level, boolean useMatrixFieldName) {
-    Map<String, Object> strategyObjectMap = new HashMap<>();
-    if (AmbianceUtils.hasStrategyMetadata(level)) {
-      return fetchStrategyObjectMap(Lists.newArrayList(level), useMatrixFieldName);
-    }
-    strategyObjectMap.put(ITERATION, 0);
-    strategyObjectMap.put(ITERATIONS, 1);
-    strategyObjectMap.put(TOTAL_ITERATIONS, 1);
-    return strategyObjectMap;
   }
 
   /**
@@ -374,8 +356,7 @@ public class StrategyUtils {
    */
   @Deprecated
   // pass flag
-  public Map<String, Object> fetchStrategyObjectMap(
-      List<Level> levelsWithStrategyMetadata, boolean useMatrixFieldName) {
+  public Map<String, Object> fetchStrategyObjectMap(List<Level> levelsWithStrategyMetadata) {
     Map<String, Object> strategyObjectMap = new HashMap<>();
     Map<String, Object> matrixValuesMap = new HashMap<>();
     Map<String, Object> repeatValuesMap = new HashMap<>();
@@ -404,8 +385,7 @@ public class StrategyUtils {
       strategyObjectMap.put(ITERATION, level.getStrategyMetadata().getCurrentIteration());
       strategyObjectMap.put(ITERATIONS, level.getStrategyMetadata().getTotalIterations());
       strategyObjectMap.put(TOTAL_ITERATIONS, level.getStrategyMetadata().getTotalIterations());
-      strategyObjectMap.put("identifierPostFix",
-          AmbianceUtils.getStrategyPostFixUsingMetadata(level.getStrategyMetadata(), useMatrixFieldName));
+      strategyObjectMap.put(IDENTIFIER_POSTFIX, level.getStrategyMetadata().getIdentifierPostFix());
     }
     strategyObjectMap.put(MATRIX, matrixValuesMap);
     strategyObjectMap.put(REPEAT, repeatValuesMap);

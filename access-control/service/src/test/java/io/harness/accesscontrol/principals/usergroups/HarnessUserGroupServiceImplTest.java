@@ -17,6 +17,7 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -46,8 +47,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import retrofit2.Response;
 
 @OwnedBy(PL)
@@ -56,6 +59,7 @@ public class HarnessUserGroupServiceImplTest extends AccessControlTestBase {
   private UserGroupService userGroupService;
   private HarnessUserGroupService harnessUserGroupService;
   private AccessControlChangeConsumer<UserGroupUpdateEventData> accessControlChangeConsumer;
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   @Before
   public void setup() {
@@ -194,5 +198,46 @@ public class HarnessUserGroupServiceImplTest extends AccessControlTestBase {
     verify(userGroupClient, atLeastOnce()).getUserGroup(identifier, accountIdentifier, null, null);
     verify(userGroupService, times(1)).upsert(userGroup);
     verify(accessControlChangeConsumer, never()).consumeEvent(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void syncUserGroup_ThrowsExceptionInACLProcessing_DoesNotCallUpdateUserGroup() throws IOException {
+    harnessUserGroupService =
+        spy(new HarnessUserGroupServiceImpl(userGroupClient, userGroupService, accessControlChangeConsumer, true));
+    String identifier = randomAlphabetic(10);
+    String accountIdentifier = randomAlphabetic(11);
+    Scope scope =
+        Scope.builder().level(HarnessScopeLevel.ACCOUNT).parentScope(null).instanceId(accountIdentifier).build();
+
+    HashSet<String> users = new HashSet<>(List.of("user1"));
+    UserGroup userGroup =
+        UserGroup.builder().identifier(identifier).scopeIdentifier(scope.toString()).users(users).build();
+    when(userGroupClient.getUserGroup(identifier, accountIdentifier, null, null).execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(UserGroupDTO.builder()
+                                                                 .accountIdentifier(accountIdentifier)
+                                                                 .users(new ArrayList<>(users))
+                                                                 .identifier(identifier)
+                                                                 .build())));
+    Optional<UserGroup> userGroupOptional =
+        Optional.of(UserGroup.builder().identifier(identifier).scopeIdentifier(scope.toString()).build());
+    when(userGroupService.get(identifier, userGroup.getScopeIdentifier())).thenReturn(userGroupOptional);
+    UserGroupUpdateEventData userGroupUpdateEventData = UserGroupUpdateEventData.builder()
+                                                            .usersAdded(users)
+                                                            .usersRemoved(emptySet())
+                                                            .updatedUserGroup(userGroup)
+                                                            .build();
+    exceptionRule.expect(Exception.class);
+    exceptionRule.expectMessage("Could not sync user group.");
+    doAnswer(t -> { throw new Exception("Could not sync user group."); })
+        .when(accessControlChangeConsumer)
+        .consumeEvent(UPDATE_ACTION, null, userGroupUpdateEventData);
+
+    harnessUserGroupService.sync(identifier, scope);
+
+    verify(userGroupClient, atLeastOnce()).getUserGroup(identifier, accountIdentifier, null, null);
+    verify(userGroupService, never()).upsert(userGroup);
+    verify(accessControlChangeConsumer, times(1)).consumeEvent(UPDATE_ACTION, null, userGroupUpdateEventData);
   }
 }

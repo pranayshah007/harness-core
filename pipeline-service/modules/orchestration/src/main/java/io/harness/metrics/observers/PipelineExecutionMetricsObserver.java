@@ -7,18 +7,16 @@
 
 package io.harness.metrics.observers;
 
+import io.harness.PipelineSettingsService;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.observers.OrchestrationEndObserver;
-import io.harness.engine.observers.OrchestrationStartObserver;
-import io.harness.engine.observers.beans.OrchestrationStartInfo;
 import io.harness.metrics.PipelineMetricUtils;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.plan.execution.SetupAbstractionUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -29,27 +27,20 @@ import lombok.extern.slf4j.Slf4j;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @Singleton
-public class PipelineExecutionMetricsObserver
-    implements OrchestrationStartObserver, OrchestrationEndObserver, AsyncInformObserver {
-  private static final String PIPELINE_EXECUTION_STARTING_COUNT = "pipeline_execution_start_count";
+public class PipelineExecutionMetricsObserver implements OrchestrationEndObserver, AsyncInformObserver {
   private static final String PIPELINE_EXECUTION_END_COUNT = "pipeline_execution_end_count";
 
   @Inject @Named("PipelineExecutorService") ExecutorService executorService;
   @Inject PipelineMetricUtils pipelineMetricUtils;
-
-  @Override
-  public void onStart(OrchestrationStartInfo orchestrationStartInfo) {
-    // Add metrics for execution starting for running and queued.
-    pipelineMetricUtils.publishPipelineExecutionMetrics(PIPELINE_EXECUTION_STARTING_COUNT,
-        orchestrationStartInfo.getStartStatus(),
-        SetupAbstractionUtils.getAccountId(orchestrationStartInfo.getAmbiance().getSetupAbstractionsMap()));
-  }
+  @Inject PipelineSettingsService pipelineSettingsService;
 
   @Override
   public void onEnd(Ambiance ambiance, Status endStatus) {
     // Update pipeline execution metrics for end
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String accountEdition = pipelineSettingsService.getAccountEdition(accountId);
     pipelineMetricUtils.publishPipelineExecutionMetrics(
-        PIPELINE_EXECUTION_END_COUNT, endStatus, AmbianceUtils.getAccountId(ambiance));
+        PIPELINE_EXECUTION_END_COUNT, endStatus, accountId, accountEdition);
   }
 
   @Override

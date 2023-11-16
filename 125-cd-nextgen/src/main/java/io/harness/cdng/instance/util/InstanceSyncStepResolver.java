@@ -35,8 +35,11 @@ import io.harness.cdng.ecs.EcsCanaryDeployStep;
 import io.harness.cdng.ecs.EcsRollingDeployStep;
 import io.harness.cdng.ecs.EcsRollingRollbackStep;
 import io.harness.cdng.ecs.EcsUpgradeContainerStep;
+import io.harness.cdng.ecs.asyncsteps.EcsBlueGreenRollbackStepV2;
+import io.harness.cdng.ecs.asyncsteps.EcsBlueGreenSwapTargetGroupsStepV2;
 import io.harness.cdng.ecs.asyncsteps.EcsCanaryDeployStepV2;
 import io.harness.cdng.ecs.asyncsteps.EcsRollingDeployStepV2;
+import io.harness.cdng.ecs.asyncsteps.EcsUpgradeContainerStepV2;
 import io.harness.cdng.elastigroup.ElastigroupBGStageSetupStep;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStep;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStep;
@@ -89,7 +92,8 @@ public class InstanceSyncStepResolver {
       CommandStep.STEP_TYPE.getType(), EcsRollingDeployStep.STEP_TYPE.getType(),
       EcsRollingDeployStepV2.STEP_TYPE.getType(), EcsRollingRollbackStep.STEP_TYPE.getType(),
       EcsCanaryDeployStep.STEP_TYPE.getType(), EcsCanaryDeployStepV2.STEP_TYPE.getType(),
-      EcsBlueGreenSwapTargetGroupsStep.STEP_TYPE.getType(), EcsBlueGreenRollbackStep.STEP_TYPE.getType(),
+      EcsBlueGreenSwapTargetGroupsStep.STEP_TYPE.getType(), EcsBlueGreenSwapTargetGroupsStepV2.STEP_TYPE.getType(),
+      EcsBlueGreenRollbackStep.STEP_TYPE.getType(), EcsBlueGreenRollbackStepV2.STEP_TYPE.getType(),
       FetchInstanceScriptStep.STEP_TYPE.getType(), ElastigroupDeployStep.STEP_TYPE.getType(),
       TasAppResizeStep.STEP_TYPE.getType(), TasSwapRoutesStep.STEP_TYPE.getType(), TasRollbackStep.STEP_TYPE.getType(),
       TasSwapRollbackStep.STEP_TYPE.getType(), ElastigroupBGStageSetupStep.STEP_TYPE.getType(),
@@ -104,7 +108,8 @@ public class InstanceSyncStepResolver {
       AwsLambdaRollbackStep.STEP_TYPE.getType(), GoogleFunctionsGenOneDeployStep.STEP_TYPE.getType(),
       GoogleFunctionsGenOneRollbackStep.STEP_TYPE.getType(), AwsSamDeployStep.STEP_TYPE.getType(),
       ServerlessAwsLambdaDeployV2Step.STEP_TYPE.getType(), EcsUpgradeContainerStep.STEP_TYPE.getType(),
-      EcsBasicRollbackStep.STEP_TYPE.getType(), K8sRollingRollbackStepV2.STEP_TYPE.getType()));
+      EcsUpgradeContainerStepV2.STEP_TYPE.getType(), EcsBasicRollbackStep.STEP_TYPE.getType(),
+      K8sRollingRollbackStepV2.STEP_TYPE.getType()));
 
   public boolean shouldRunInstanceSync(StepType stepType) {
     return nonNull(stepType) && INSTANCE_SYN_STEP_TYPES.contains(stepType.getType());

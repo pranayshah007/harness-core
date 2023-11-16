@@ -68,7 +68,6 @@ import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
 import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
-import io.harness.ssca.cd.CdSscaBeansRegistrar;
 import io.harness.ssca.cd.execution.filtercreator.CdSscaStepFilterJsonCreator;
 import io.harness.ssca.cd.execution.variablecreator.CdSscaStepVariableCreator;
 import io.harness.ssca.plancreator.CdSscaEnforcementStepPlanCreator;
@@ -249,7 +248,6 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(k8sRolling);
-    stepInfos.addAll(CdSscaBeansRegistrar.sscaStepPaletteSteps);
     return stepInfos;
   }
 }

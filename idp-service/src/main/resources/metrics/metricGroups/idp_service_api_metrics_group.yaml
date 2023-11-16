@@ -1,0 +1,6 @@
+name: IDP Service API Metrics Group
+identifier: IdpServiceApiMetricsGroup
+labels:
+  - accountIdentifier
+  - path
+  - method

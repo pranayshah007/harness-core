@@ -16,6 +16,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -105,7 +106,8 @@ public class PMSInputSetFilterHelper {
       criteria.and(InputSetEntityKeys.inputSetEntityType).is(getInputSetType(type));
     }
 
-    if (inputSetFilterPropertiesDto != null) {
+    if (inputSetFilterPropertiesDto != null && inputSetFilterPropertiesDto.getInputSetIdsWithPipelineIds() != null
+        && inputSetFilterPropertiesDto.getInputSetIdsWithPipelineIds().size() > 0) {
       Criteria filterCriteria =
           getFilterCriteriaForListInputSets(inputSetFilterPropertiesDto.getInputSetIdsWithPipelineIds());
       criteria.andOperator(filterCriteria);
@@ -130,6 +132,10 @@ public class PMSInputSetFilterHelper {
     for (String s : inputSetIdsWithPipelineIds) {
       String[] ids = s.split("-");
 
+      if (ids.length < 2) {
+        throw new InvalidRequestException(
+            "Filter list of Ids should contain Ids with format: [pipelineId]-[inputSetId]");
+      }
       String pipelineId = ids[0];
       String inputSetId = ids[1];
 

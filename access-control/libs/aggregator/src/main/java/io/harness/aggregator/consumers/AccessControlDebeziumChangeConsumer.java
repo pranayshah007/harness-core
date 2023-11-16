@@ -46,16 +46,19 @@ public class AccessControlDebeziumChangeConsumer implements DebeziumEngine.Chang
   private final Retry retry;
   private final ChangeEventFailureHandler changeEventFailureHandler;
   private final AccessControlAdminService accessControlAdminService;
+  private boolean enableAclProcessingThroughOutbox;
 
   public AccessControlDebeziumChangeConsumer(Deserializer<String> idDeserializer,
       Map<String, Deserializer<? extends AccessControlEntity>> collectionToDeserializerMap,
       Map<String, ChangeConsumer<? extends AccessControlEntity>> collectionToConsumerMap,
-      ChangeEventFailureHandler changeEventFailureHandler, AccessControlAdminService accessControlAdminService) {
+      ChangeEventFailureHandler changeEventFailureHandler, AccessControlAdminService accessControlAdminService,
+      boolean enableAclProcessingThroughOutbox) {
     this.idDeserializer = idDeserializer;
     this.collectionToDeserializerMap = collectionToDeserializerMap;
     this.collectionToConsumerMap = collectionToConsumerMap;
     this.changeEventFailureHandler = changeEventFailureHandler;
     this.accessControlAdminService = accessControlAdminService;
+    this.enableAclProcessingThroughOutbox = enableAclProcessingThroughOutbox;
 
     IntervalFunction intervalFunction = IntervalFunction.ofExponentialBackoff(1000, 2);
     RetryConfig retryConfig = RetryConfig.custom()
@@ -68,6 +71,11 @@ public class AccessControlDebeziumChangeConsumer implements DebeziumEngine.Chang
 
   @VisibleForTesting
   protected boolean handleEvent(ChangeEvent<String, String> changeEvent, Set<String> updateEventsSeen) {
+    // If ACL Processing is enabled through outbox framework, disable it via Debezium.
+    if (enableAclProcessingThroughOutbox) {
+      return true;
+    }
+
     String id = idDeserializer.deserialize(null, changeEvent.key().getBytes());
     Optional<String> collectionName = getCollectionName(changeEvent.destination());
 

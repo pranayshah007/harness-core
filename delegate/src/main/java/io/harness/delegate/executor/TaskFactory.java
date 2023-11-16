@@ -11,9 +11,9 @@ import static org.joor.Reflect.on;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.DelegateTokenUtils;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
-import io.harness.delegate.executor.common.DelegateTokenUtils;
 import io.harness.delegate.executor.config.Configuration;
 import io.harness.delegate.task.common.DelegateRunnableTask;
 import io.harness.delegate.taskagent.DelegateTaskAgent;

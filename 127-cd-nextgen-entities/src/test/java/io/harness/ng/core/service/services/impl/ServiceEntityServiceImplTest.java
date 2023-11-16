@@ -73,6 +73,7 @@ import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.ng.core.template.refresh.ErrorNodeSummary;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.utils.CDGitXService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
@@ -135,6 +136,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock NGFeatureFlagHelperService featureFlagService;
   @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
   @Mock @Named(DEFAULT_CONNECTOR_SERVICE) private ConnectorService connectorService;
+  @Mock private CDGitXService cdGitXService;
 
   @Inject @InjectMocks private ServiceEntityServiceImpl serviceEntityService;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -155,6 +157,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     when(serviceEntityValidatorFactory.getServiceEntityValidator(any())).thenReturn(noOpServiceEntityValidator);
     Reflect.on(serviceEntityService).set("connectorService", connectorService);
     Reflect.on(serviceEntityService).set("featureFlagService", featureFlagService);
+    Reflect.on(serviceEntityService).set("cdGitXService", cdGitXService);
   }
 
   private Object[][] data() {

@@ -20,6 +20,7 @@ import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 
 import java.util.List;
@@ -28,6 +29,8 @@ import java.util.Set;
 
 public interface DeploymentTimeSeriesAnalysisService {
   void save(DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis);
+
+  void updateNoAnalysisMetricsAsFailureIfRequired(AnalysisInput analysisInput);
   TransactionMetricInfoSummaryPageDTO getMetrics(String accountId, String verificationJobInstanceId,
       DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter, PageParams pageParams);
   List<TransactionMetricInfo> getTransactionMetricInfos(String accountId, String verificationJobInstanceId);

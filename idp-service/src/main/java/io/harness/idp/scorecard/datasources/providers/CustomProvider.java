@@ -23,10 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.AccessLevel;
-import lombok.experimental.FieldDefaults;
 
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
 public class CustomProvider extends HttpDataSourceProvider {
   protected CustomProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
@@ -40,6 +37,11 @@ public class CustomProvider extends HttpDataSourceProvider {
   public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
       List<DataFetchDTO> dataPointsAndInputValues, String configs) {
     return new HashMap<>();
+  }
+
+  @Override
+  protected Map<String, String> prepareUrlReplaceablePairs(String... keysValues) {
+    return Collections.emptyMap();
   }
 
   @Override

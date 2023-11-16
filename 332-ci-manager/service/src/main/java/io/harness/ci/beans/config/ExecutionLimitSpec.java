@@ -22,4 +22,5 @@ public class ExecutionLimitSpec {
   long defaultTotalExecutionCount;
   long defaultMacExecutionCount;
   long dailyMaxBuildsCount;
+  long monthlyMaxCreditsCount;
 }

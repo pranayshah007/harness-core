@@ -28,14 +28,15 @@ import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
 public class CEViewDao {
-  @Inject private HPersistence hPersistence;
   private static final String VIEW_VISUALIZATION_GROUP_BY_FIELD_ID = "viewVisualization.groupBy.fieldId";
   private static final String VIEW_VISUALIZATION_GROUP_BY_FIELD_NAME = "viewVisualization.groupBy.fieldName";
   private static final String VIEW_VISUALIZATION_GROUP_BY_IDENTIFIER = "viewVisualization.groupBy.identifier";
@@ -49,6 +50,8 @@ public class CEViewDao {
   private static final String INSENSITIVE_SEARCH = "i";
   private static final String OPTIONS = "$options";
   private static final String REGEX = "$regex";
+
+  @Inject private HPersistence hPersistence;
 
   public boolean save(CEView ceView) {
     return hPersistence.save(ceView) != null;
@@ -263,16 +266,24 @@ public class CEViewDao {
 
   public Long countByAccountIdAndFolderIds(
       String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters) {
-    Query<CEView> query = paginationQuery(accountId, folderIds, searchKey, cloudFilters);
-    return query.count();
+    return getFiltersQuery(accountId, folderIds, searchKey, cloudFilters).count();
   }
 
-  public Query<CEView> paginationQuery(
-      String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters) {
-    Query<CEView> query = hPersistence.createQuery(CEView.class).filter(CEViewKeys.accountId, accountId);
-    if (!isEmpty(folderIds)) {
-      query.field(CEViewKeys.folderId).in(folderIds);
+  private void decorateQueryWithViewTypeFilter(Query<CEView> query, boolean excludeDefault) {
+    if (!excludeDefault) {
+      query.filter(CEViewKeys.viewType, ViewType.DEFAULT);
+    } else {
+      query.field(CEViewKeys.viewType).notEqual(ViewType.DEFAULT);
     }
+  }
+
+  private Query<CEView> getFiltersQuery(
+      String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters) {
+    Query<CEView> query = hPersistence.createQuery(CEView.class)
+                              .field(CEViewKeys.accountId)
+                              .equal(accountId)
+                              .field(CEViewKeys.folderId)
+                              .in(Objects.isNull(folderIds) ? new HashSet<String>() : folderIds);
 
     if (!isEmpty(searchKey)) {
       BasicDBObject basicDBObject = new BasicDBObject(REGEX, searchKey);
@@ -295,13 +306,23 @@ public class CEViewDao {
     return query;
   }
 
-  public List<CEView> findByAccountIdAndFolderId(String accountId, Set<String> folderIds,
-      QLCEViewSortCriteria sortCriteria, Integer pageNo, Integer pageSize, String searchKey,
-      List<CloudFilter> filters) {
-    Query<CEView> query = paginationQuery(accountId, folderIds, searchKey, filters);
+  public List<CEView> findByAccountIdAndFolderIds(String accountId, Set<String> folderIds,
+      QLCEViewSortCriteria sortCriteria, int limit, int offset, String searchKey, List<CloudFilter> filters,
+      boolean excludeDefault) {
+    Query<CEView> query = getFiltersQuery(accountId, folderIds, searchKey, filters);
+    decorateQueryWithViewTypeFilter(query, excludeDefault);
     query = decorateQueryWithSortCriteria(query, sortCriteria);
-    query.offset(pageNo * pageSize);
-    query.limit(pageSize);
+    query.limit(limit);
+    query.offset(offset);
+    return query.asList();
+  }
+
+  public List<CEView> findByAccountIdAndFolderIds(String accountId, Set<String> folderIds,
+      QLCEViewSortCriteria sortCriteria, Integer limit, Integer offset, String searchKey, List<CloudFilter> filters) {
+    Query<CEView> query = getFiltersQuery(accountId, folderIds, searchKey, filters);
+    query = decorateQueryWithSortCriteria(query, sortCriteria);
+    query.limit(limit);
+    query.offset(offset);
     return query.asList();
   }
 

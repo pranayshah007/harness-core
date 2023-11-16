@@ -14,7 +14,6 @@ import io.harness.metrics.service.api.MetricService;
 import io.harness.metrics.service.api.MetricsPublisher;
 
 import com.codahale.metrics.Counter;
-import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
@@ -47,11 +46,6 @@ public class PipelineServiceThreadMetricsPublisher implements MetricsPublisher {
         .filter(e -> metricFilters.stream().anyMatch(e.getKey()::startsWith))
         .forEach(entry -> recordMeter(sanitizeMetricName(entry.getKey()), entry.getValue()));
 
-    Set<Map.Entry<String, Gauge>> gaugeSet = metricRegistry.getThreadPoolMetricRegistry().getGauges().entrySet();
-    gaugeSet.stream()
-        .filter(e -> metricFilters.stream().anyMatch(e.getKey()::startsWith))
-        .forEach(entry -> recordGauge(sanitizeMetricName(entry.getKey()), entry.getValue()));
-
     Set<Map.Entry<String, Timer>> timerSet = metricRegistry.getThreadPoolMetricRegistry().getTimers().entrySet();
     timerSet.stream()
         .filter(e -> metricFilters.stream().anyMatch(e.getKey()::startsWith))
@@ -73,24 +67,6 @@ public class PipelineServiceThreadMetricsPublisher implements MetricsPublisher {
   private void recordCounter(String metricName, Counter counter) {
     try (DwMetricContext ignore = new DwMetricContext(NAMESPACE, CONTAINER_NAME, SERVICE_NAME)) {
       recordMetric(metricName, counter.getCount());
-    }
-  }
-
-  private void recordGauge(String metricName, Gauge gauge) {
-    try (DwMetricContext ignore = new DwMetricContext(NAMESPACE, CONTAINER_NAME, SERVICE_NAME)) {
-      Object obj = gauge.getValue();
-      double value;
-      if (obj instanceof Number) {
-        value = ((Number) obj).doubleValue();
-      } else {
-        if (!(obj instanceof Boolean)) {
-          log.debug(String.format(
-              "Invalid type for Gauge %s: %s", metricName, obj == null ? "null" : obj.getClass().getName()));
-          return;
-        }
-        value = (Boolean) obj ? 1.0D : 0.0D;
-      }
-      recordMetric(metricName, value);
     }
   }
 

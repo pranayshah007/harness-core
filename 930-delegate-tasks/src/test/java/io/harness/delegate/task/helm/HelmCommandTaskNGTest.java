@@ -104,7 +104,7 @@ public class HelmCommandTaskNGTest extends CategoryTest {
   @Test
   @Owner(developers = ACHYUTH)
   @Category(UnitTests.class)
-  public void testRunTaskWithInstallCommand() throws IOException {
+  public void testRunTaskWithInstallCommand() throws Exception {
     HelmInstallCommandRequestNG request = HelmInstallCommandRequestNG.builder().accountId("accountId").build();
     HelmInstallCmdResponseNG deployResponse =
         HelmInstallCmdResponseNG.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
@@ -156,7 +156,7 @@ public class HelmCommandTaskNGTest extends CategoryTest {
   @Test
   @Owner(developers = ACHYUTH)
   @Category(UnitTests.class)
-  public void testRunTaskWithException() throws IOException {
+  public void testRunTaskWithException() throws Exception {
     HelmInstallCommandRequestNG request = HelmInstallCommandRequestNG.builder().accountId("accountId").build();
     doThrow(new IOException("Unable to deploy")).when(helmDeployServiceNG).deploy(request);
 
@@ -169,7 +169,7 @@ public class HelmCommandTaskNGTest extends CategoryTest {
   @Test
   @Owner(developers = ACHYUTH)
   @Category(UnitTests.class)
-  public void testRunTaskWithFailure() throws IOException {
+  public void testRunTaskWithFailure() throws Exception {
     HelmInstallCommandRequestNG request = HelmInstallCommandRequestNG.builder().accountId("accountId").build();
     HelmInstallCmdResponseNG deployResponse = HelmInstallCmdResponseNG.builder()
                                                   .commandExecutionStatus(CommandExecutionStatus.FAILURE)

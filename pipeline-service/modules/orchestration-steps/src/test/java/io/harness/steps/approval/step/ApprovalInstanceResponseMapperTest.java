@@ -38,9 +38,9 @@ import io.harness.steps.approval.step.custom.beans.CustomApprovalInstanceDetails
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.harness.beans.ApproversDTO;
-import io.harness.steps.approval.step.harness.beans.AutoApprovalParams;
+import io.harness.steps.approval.step.harness.beans.AutoApprovalDTO;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalInstanceDetailsDTO;
-import io.harness.steps.approval.step.harness.beans.ScheduledDeadline;
+import io.harness.steps.approval.step.harness.beans.ScheduledDeadlineDTO;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
 import io.harness.steps.approval.step.jira.beans.JiraApprovalInstanceDetailsDTO;
@@ -354,9 +354,9 @@ public class ApprovalInstanceResponseMapperTest extends CategoryTest {
                 .isAutoRejectEnabled(false)
                 .approvers(ApproversDTO.builder().build())
                 .autoApproval(
-                    AutoApprovalParams.builder()
+                    AutoApprovalDTO.builder()
                         .scheduledDeadline(
-                            ScheduledDeadline.builder().time("2023-05-05 04:24 am").timeZone("Asia/Kolkata").build())
+                            ScheduledDeadlineDTO.builder().time("2023-05-05 04:24 am").timeZone("Asia/Kolkata").build())
                         .build())
                 .build();
         harnessApprovalInstance.setId(INSTANCE_ID);

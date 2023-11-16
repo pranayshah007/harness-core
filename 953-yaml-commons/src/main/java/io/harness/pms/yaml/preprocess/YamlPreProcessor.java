@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.RandomStringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
@@ -64,18 +65,14 @@ public interface YamlPreProcessor {
     return IdentifierGeneratorUtils.getId(id);
   }
 
-  default String getMaxSuffixForAnId(Set<String> idsValuesSet, Map<String, Integer> idsSuffixMap, String id) {
+  default String getIdWithSuffix(Set<String> idsValuesSet, String id) {
     // get the last index that was used as suffix with this id previously.
-    Integer previousSuffixValue = idsSuffixMap.getOrDefault(id, 0);
-    previousSuffixValue++;
-    String idWithSuffix = id + "_" + previousSuffixValue;
-    // Keep incrementing the suffix until the idWithSuffix is present in the idsValuesSet because if its present
-    // in the set then user has used that id in the YAML so we can't use it.
+    String idSuffix = RandomStringUtils.randomAlphanumeric(4);
+    String idWithSuffix = id + "_" + idSuffix;
     while (idsValuesSet.contains(idWithSuffix)) {
-      previousSuffixValue++;
-      idWithSuffix = id + "_" + previousSuffixValue;
+      idSuffix = RandomStringUtils.randomAlphanumeric(4);
+      idWithSuffix = id + "_" + idSuffix;
     }
-    idsSuffixMap.put(id, previousSuffixValue);
     return idWithSuffix;
   }
 }

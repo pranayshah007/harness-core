@@ -448,6 +448,14 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
     verify(yamlExpressionResolveHelper, times(1))
         .resolveExpressionsInYaml(
             inputSetYamlWithTriggerExpression, PLAN_EXECUTION_ID, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
+
+    doReturn(null)
+        .when(yamlExpressionResolveHelper)
+        .resolveExpressionsInYaml(
+            inputSetYamlWithTriggerExpression, PLAN_EXECUTION_ID, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
+    inputSet = pmsExecutionService.mergeRuntimeInputIntoPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+        PLAN_EXECUTION_ID, false, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
+    assertThat(inputSet).isEqualTo(InputSetMergeHelper.mergeInputSetIntoPipeline(template, "", false));
   }
 
   @Test

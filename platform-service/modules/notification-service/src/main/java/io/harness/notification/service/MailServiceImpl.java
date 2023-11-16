@@ -189,6 +189,10 @@ public class MailServiceImpl implements ChannelService {
     return response;
   }
 
+  public boolean isDefaultSMTPPresent(String accountId) {
+    return smtpConfigDefault != null;
+  }
+
   private void validateEmptyEmails(EmailDTO emailDTO, List<String> emails, List<String> ccEmails, String errorMessage) {
     if (emails.isEmpty() && ccEmails.isEmpty()) {
       String emptyEmailMessage = String.format("No email id encountered");

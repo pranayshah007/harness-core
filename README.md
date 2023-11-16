@@ -257,7 +257,7 @@ alias runui='run_ui'
    More info on this can be found [here](https://github.com/wings-software/wingsui/wiki/Docker-Harness-UI).
 ### Editing setup
 
-1. Install [clang-format](https://clang.llvm.org/docs/ClangFormat.html) (11.0.0)
+1. Install [clang-format](https://clang.llvm.org/docs/ClangFormat.html) (15.0.7 )
 If on MacOS you can download this via brew `brew install clang-format@11`
 
 else

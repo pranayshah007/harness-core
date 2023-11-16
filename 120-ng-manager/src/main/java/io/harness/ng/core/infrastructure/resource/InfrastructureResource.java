@@ -78,6 +78,8 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PageUtils;
 
+import com.codahale.metrics.annotation.ResponseMetered;
+import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -179,6 +181,8 @@ public class InfrastructureResource {
   @ApiOperation(value = "Gets an Infrastructure by identifier", nickname = "getInfrastructure")
   @Operation(operationId = "getInfrastructure", summary = "Gets an Infrastructure by identifier",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "The saved Infrastructure") })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<InfrastructureResponse>
   get(@Parameter(description = INFRA_PARAM_MESSAGE) @PathParam(
           "infraIdentifier") @ResourceIdentifier String infraIdentifier,
@@ -227,6 +231,8 @@ public class InfrastructureResource {
   @Operation(operationId = "createInfrastructure", summary = "Create an Infrastructure in an Environment",
       responses =
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the created Infrastructure") })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<InfrastructureResponse>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -266,6 +272,8 @@ public class InfrastructureResource {
       responses =
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the created Infrastructures") },
       hidden = true)
+  @Timed
+  @ResponseMetered
   public ResponseDTO<PageResponse<InfrastructureResponse>>
   createInfrastructures(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -299,6 +307,8 @@ public class InfrastructureResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns true if the Infrastructure is deleted")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<Boolean>
   delete(@Parameter(description = INFRA_PARAM_MESSAGE) @PathParam(
              "infraIdentifier") @ResourceIdentifier String infraIdentifier,
@@ -326,6 +336,8 @@ public class InfrastructureResource {
   @Operation(operationId = "updateInfrastructure", summary = "Update an Infrastructure by identifier",
       responses =
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the updated Infrastructure") })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<InfrastructureResponse>
   update(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -364,6 +376,8 @@ public class InfrastructureResource {
       responses =
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the upserted Infrastructure") },
       hidden = true)
+  @Timed
+  @ResponseMetered
   public ResponseDTO<InfrastructureResponse>
   upsert(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -399,6 +413,8 @@ public class InfrastructureResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns the list of Infrastructure for an Environment")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<PageResponse<InfrastructureResponse>>
   listInfrastructures(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                           NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,

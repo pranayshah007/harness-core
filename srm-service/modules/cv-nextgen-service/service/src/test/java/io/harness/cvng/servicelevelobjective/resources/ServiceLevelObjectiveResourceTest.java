@@ -30,15 +30,21 @@ import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
+import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.persistence.HPersistence;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
 
@@ -52,6 +58,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.junit.Before;
@@ -68,10 +75,12 @@ public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
   @Inject private MetricPackService metricPackService;
   @Inject CVNGLogService cvngLogService;
   @Inject NotificationRuleService notificationRuleService;
+  @Inject HPersistence hPersistence;
   private MonitoredServiceDTO monitoredServiceDTO;
   private BuilderFactory builderFactory;
   private static final ServiceLevelObjectiveResource serviceLevelObjectiveResource =
       new ServiceLevelObjectiveResource();
+  private static SLODashboardResource sloDashboardResource = new SLODashboardResource();
 
   @ClassRule
   public static final ResourceTestRule RESOURCES =
@@ -83,12 +92,18 @@ public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
   @ClassRule
   public static final ResourceTestRule V2_RESOURCES =
       ResourceTestRule.builder().addResource(serviceLevelObjectiveV2Resource).build();
+
+  @ClassRule
+  public static final ResourceTestRule RESOURCES_DASHBOARD =
+      ResourceTestRule.builder().addResource(sloDashboardResource).build();
   @Before
   public void setup() {
     injector.injectMembers(serviceLevelObjectiveResource);
     injector.injectMembers(serviceLevelObjectiveV2Resource);
-
+    injector.injectMembers(sloDashboardResource);
     builderFactory = BuilderFactory.getDefault();
+    builderFactory.getContext().setProjectIdentifier("project");
+    builderFactory.getContext().setOrgIdentifier("orgIdentifier");
     metricPackService.createDefaultMetricPackAndThresholds(builderFactory.getContext().getAccountId(),
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier());
     monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
@@ -239,6 +254,120 @@ public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.readEntity(String.class)).contains("\"sloFormulaType\":\"WeightedAverage\"");
   }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testCreate_MetricLessSLO() {
+    ServiceLevelObjectiveV2DTO sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
+        .setServiceLevelIndicators(
+            Collections.singletonList(builderFactory.getMetricLessServiceLevelIndicatorDTOBuilder().build()));
+    Response response = V2_RESOURCES.client()
+                            .target("http://localhost:9998/slo/v2/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(sloDTO));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<ServiceLevelObjectiveV2Response> restResponse =
+        response.readEntity(new GenericType<RestResponse<ServiceLevelObjectiveV2Response>>() {});
+    assertThat(restResponse.getResource().getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testCreate_updateSLI() {
+    ServiceLevelObjectiveV2DTO sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
+        .setServiceLevelIndicators(
+            Collections.singletonList(builderFactory.getMetricLessServiceLevelIndicatorDTOBuilder().build()));
+    Response response = V2_RESOURCES.client()
+                            .target("http://localhost:9998/slo/v2/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(sloDTO));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<ServiceLevelObjectiveV2Response> restResponse =
+        response.readEntity(new GenericType<RestResponse<ServiceLevelObjectiveV2Response>>() {});
+    assertThat(restResponse.getResource().getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
+        builderFactory.getThresholdServiceLevelIndicatorDTOBuilder().build();
+    serviceLevelIndicatorDTO.getSpec().generateNameAndIdentifier(sloDTO.getIdentifier(), serviceLevelIndicatorDTO);
+    ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
+        .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO));
+    response = V2_RESOURCES.client()
+                   .target("http://localhost:9998/slo/v2/" + sloDTO.getIdentifier())
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .put(Entity.json(sloDTO));
+    assertThat(response.getStatus()).isEqualTo(200);
+    restResponse = response.readEntity(new GenericType<RestResponse<ServiceLevelObjectiveV2Response>>() {});
+    assertThat(restResponse.getResource().getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testDelete_MetricLessSLO() {
+    ServiceLevelObjectiveV2DTO sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
+        .setServiceLevelIndicators(
+            Collections.singletonList(builderFactory.getMetricLessServiceLevelIndicatorDTOBuilder().build()));
+    Response response = V2_RESOURCES.client()
+                            .target("http://localhost:9998/slo/v2/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(sloDTO));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<ServiceLevelObjectiveV2Response> restResponse =
+        response.readEntity(new GenericType<RestResponse<ServiceLevelObjectiveV2Response>>() {});
+    assertThat(restResponse.getResource().getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+
+    response = V2_RESOURCES.client()
+                   .target("http://localhost:9998/slo/v2/" + sloDTO.getIdentifier())
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .delete();
+    assertThat(response.getStatus()).isEqualTo(200);
+    List<ServiceLevelIndicator> serviceLevelIndicators = hPersistence.createQuery(ServiceLevelIndicator.class).asList();
+    assertThat(serviceLevelIndicators).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testGet_MetricLessSLO() {
+    ServiceLevelObjectiveV2DTO sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
+        .setServiceLevelIndicators(
+            Collections.singletonList(builderFactory.getMetricLessServiceLevelIndicatorDTOBuilder().build()));
+    Response response = V2_RESOURCES.client()
+                            .target("http://localhost:9998/slo/v2/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(sloDTO));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<ServiceLevelObjectiveV2Response> restResponse =
+        response.readEntity(new GenericType<RestResponse<ServiceLevelObjectiveV2Response>>() {});
+    assertThat(restResponse.getResource().getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+
+    response = RESOURCES_DASHBOARD.client()
+                   .target("http://localhost:9998/slo-dashboard/widgets/list")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .get();
+    assertThat(response.getStatus()).isEqualTo(200);
+    ResponseDTO<PageResponse<SLOHealthListView>> restResponseDashboard = response.readEntity(new GenericType<>() {});
+    assertThat(restResponseDashboard.getData().getContent().size()).isEqualTo(1);
+  }
+
   @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
