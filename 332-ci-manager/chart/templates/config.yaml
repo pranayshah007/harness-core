@@ -11,17 +11,17 @@ metadata:
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
-  CACHE_BACKEND: "REDIS"
+  CACHE_BACKEND: {{ .Values.config.CACHE_BACKEND | default 'REDIS' }}
   CACHE_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  CACHE_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
+  CACHE_CONFIG_SENTINEL_MASTER_NAME: {{ .Values.config.CACHE_CONFIG_SENTINEL_MASTER_NAME | default 'harness-redis' }}
   CACHE_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   CACHE_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  DEPLOY_MODE: KUBERNETES_ONPREM
+  DEPLOY_MODE: {{ .Values.config.DEPLOY_MODE | default 'KUBERNETES_ONPREM' }}
   ENABLE_AUTH: {{ .Values.enableAuth | quote }}
-  MANAGER_TARGET: harness-manager:9879
-  MANAGER_AUTHORITY: harness-manager:9879
+  MANAGER_TARGET: {{ .Values.config.MANAGER_TARGET | default 'harness-manager:9879' }}
+  MANAGER_AUTHORITY: {{ .Values.config.MANAGER_AUTHORITY | default 'harness-manager:9879' }}
   GRPC_SERVER_PORT: {{.Values.service.grpcport | quote}}
-  SCM_SERVICE_URI: "scm-service:8091"
+  SCM_SERVICE_URI: {{ .Values.config.SCM_SERVICE_URI | default 'scm-service:8091' }}
   ADDON_IMAGE: '{{ .Values.ci_images.addon.image.repository }}:{{ .Values.ci_images.addon.image.tag }}'
   LE_IMAGE: '{{ .Values.ci_images.lite_engine.image.repository }}:{{ .Values.ci_images.lite_engine.image.tag }}'
   GIT_CLONE_IMAGE: '{{ .Values.ci_images.git_clone.image.repository }}:{{ .Values.ci_images.git_clone.image.tag }}'
@@ -35,34 +35,34 @@ data:
   GCS_CACHE_IMAGE: '{{ .Values.ci_images.gcs_cache.image.repository }}:{{ .Values.ci_images.gcs_cache.image.tag }}'
   S3_CACHE_IMAGE: '{{ .Values.ci_images.s3_cache.image.repository }}:{{ .Values.ci_images.s3_cache.image.tag }}'
   SECURITY_IMAGE: '{{ .Values.securityImage.image.repository }}:{{ .Values.securityImage.image.tag }}'
-  PMS_TARGET:  pipeline-service:12011
-  PMS_AUTHORITY:  pipeline-service:12011
+  PMS_TARGET: {{ .Values.config.PMS_TARGET | default 'pipeline-service:12011' }}
+  PMS_AUTHORITY: {{ .Values.config.PMS_AUTHORITY | default 'pipeline-service:12011' }}
   LOGGING_LEVEL: {{ .Values.appLogLevel }}
   EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: {{ .Values.config.EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME | default 'harness-redis' }}
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: 'harness-redis'
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: {{ .Values.config.LOCK_CONFIG_SENTINEL_MASTER_NAME | default 'harness-redis' }}
   LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  SHOULD_CONFIGURE_WITH_PMS: "true"
-  ENABLE_DASHBOARD_TIMESCALE: "true"
+  SHOULD_CONFIGURE_WITH_PMS: {{ .Values.config.SHOULD_CONFIGURE_WITH_PMS | default 'true' }}
+  ENABLE_DASHBOARD_TIMESCALE: {{ .Values.config.ENABLE_DASHBOARD_TIMESCALE | default 'true' }}
   MEMORY: {{ .Values.java.memory | quote }}
-  USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
+  USE_REDIS_FOR_SDK_RESPONSE_EVENTS: {{ .Values.config.USE_REDIS_FOR_SDK_RESPONSE_EVENTS | default 'true' }}
  {{- if .Values.global.airgap }}
-  DEFAULT_INTERNAL_IMAGE_CONNECTOR: "account.harnessImage"
+  DEFAULT_INTERNAL_IMAGE_CONNECTOR: {{ .Values.config.DEFAULT_INTERNAL_IMAGE_CONNECTOR | default 'account.harnessImage' }}
  {{- end }}
   NG_MANAGER_URL: 'http://ng-manager.{{ .Release.Namespace }}.svc.cluster.local:7090/'
-  MANAGER_URL: 'http://harness-manager:9090/api/'
+  MANAGER_URL: {{ .Values.config.MANAGER_URL | default 'http://harness-manager:9090/api/' }}
   LOG_SERVICE_ENDPOINT: '{{ .Values.global.loadbalancerURL }}/log-service/'
   TI_SERVICE_ENDPOINT: '{{ .Values.global.loadbalancerURL }}/ti-service/'
-  LOG_SERVICE_INTERNAL_URL: 'http://log-service:8079/'
-  TI_SERVICE_INTERNAL_URL: 'http://ti-service:8078/'
+  LOG_SERVICE_INTERNAL_URL: {{ .Values.config.LOG_SERVICE_INTERNAL_URL | default 'http://log-service:8079/' }}
+  TI_SERVICE_INTERNAL_URL: {{ .Values.config.TI_SERVICE_INTERNAL_URL | default 'http://ti-service:8078/' }}
   API_URL: '{{ .Values.global.loadbalancerURL }}/ng/#/'
   STO_SERVICE_ENDPOINT: '{{ .Values.global.loadbalancerURL }}/sto/'
   {{- if .Values.global.ssca.enabled }}
-  SSCA_MANAGER_ENABLED: "true"
+  SSCA_MANAGER_ENABLED: {{ .Values.config.SSCA_MANAGER_ENABLED | default 'true' }}
   SSCA_SERVICE_ENDPOINT: '{{ .Values.global.loadbalancerURL }}/ssca-manager/'
   SSCA_ORCHESTRATION_IMAGE: '{{ .Values.ci_images.ssca_plugin.image.repository }}:{{ .Values.ci_images.ssca_plugin.image.tag }}'
   SSCA_ENFORCEMENT_IMAGE: '{{ .Values.ci_images.ssca_plugin.image.repository }}:{{ .Values.ci_images.ssca_plugin.image.tag }}'
@@ -73,31 +73,31 @@ data:
   DOCKER_PROVENANCE_IMAGE: '{{ .Values.ci_images.slsa_plugin.image.repository }}:{{ .Values.ci_images.slsa_plugin.image.tag }}'
   GCR_PROVENANCE_IMAGE: '{{ .Values.ci_images.slsa_plugin.image.repository }}:{{ .Values.ci_images.slsa_plugin.image.tag }}'
   {{- end }}
-  GITNESS_INTERNAL_URL: 'http://code-api:80/'
+  GITNESS_INTERNAL_URL: {{ .Values.config.GITNESS_INTERNAL_URL | default 'http://code-api:80/' }}
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
 
   # The following image variables are just for the reference and do not impact any functionality
-  ANCHORE_IMAGE: harness/anchore-job-runner:latest
-  AWS_ECR_IMAGE: harness/aws-ecr-job-runner:latest
-  AWS_SECURITY_HUB_IMAGE: harness/aws-security-hub-job-runner:latest
-  AQUA_TRIVY_IMAGE: harness/aqua-trivy-job-runner:latest
-  BANDIT_IMAGE: harness/bandit-job-runner:latest
-  BLACKDUCK_IMAGE: harness/blackduckhub-job-runner:latest
-  BRAKEMAN_IMAGE: harness/brakeman-job-runner:latest
-  STO_IMAGE: harness/sto-plugin:latest
-  FOSSA_IMAGE: harness/fossa-job-runner:latest
-  GRYPE_IMAGE: harness/grype-job-runner:latest
-  NMAP_IMAGE: harness/nmap-job-runner:latest
-  NIKTO_IMAGE: harness/nikto-job-runner:latest
-  OWASP_IMAGE: harness/owasp-dependency-check-job-runner:latest
-  SYNK_IMAGE: harness/snyk-job-runner:latest
-  SONARQUBE_IMAGE: harness/sonarqube-agent-job-runner:latest
-  PROWLER_IMAGE: harness/prowler-job-runner:latest
-  TWISTLOCK_IMAGE: harness/twistlock-job-runner:latest
-  CHECKMARX_IMAGE: harness/checkmarx-job-runner:latest
-  VERACODE_IMAGE: harness/veracode-agent-job-runner:latest
-  ZAP_IMAGE: harness/zap-job-runner:latest
-  WHITE_SOURCE_IMAGE: harness/whitesource-agent-job-runner:latest
+  ANCHORE_IMAGE: {{ .Values.config.ANCHORE_IMAGE | default 'harness/anchore-job-runner:latest' }}
+  AWS_ECR_IMAGE: {{ .Values.config.AWS_ECR_IMAGE | default 'harness/aws-ecr-job-runner:latest' }}
+  AWS_SECURITY_HUB_IMAGE: {{ .Values.config.AWS_SECURITY_HUB_IMAGE | default 'harness/aws-security-hub-job-runner:latest' }}
+  AQUA_TRIVY_IMAGE: {{ .Values.config.AQUA_TRIVY_IMAGE | default 'harness/aqua-trivy-job-runner:latest' }}
+  BANDIT_IMAGE: {{ .Values.config.BANDIT_IMAGE | default 'harness/bandit-job-runner:latest' }}
+  BLACKDUCK_IMAGE: {{ .Values.config.BLACKDUCK_IMAGE | default 'harness/blackduckhub-job-runner:latest' }}
+  BRAKEMAN_IMAGE: {{ .Values.config.BRAKEMAN_IMAGE | default 'harness/brakeman-job-runner:latest' }}
+  STO_IMAGE: {{ .Values.config.STO_IMAGE | default 'harness/sto-plugin:latest' }}
+  FOSSA_IMAGE: {{ .Values.config.FOSSA_IMAGE | default 'harness/fossa-job-runner:latest' }}
+  GRYPE_IMAGE: {{ .Values.config.GRYPE_IMAGE | default 'harness/grype-job-runner:latest' }}
+  NMAP_IMAGE: {{ .Values.config.NMAP_IMAGE | default 'harness/nmap-job-runner:latest' }}
+  NIKTO_IMAGE: {{ .Values.config.NIKTO_IMAGE | default 'harness/nikto-job-runner:latest' }}
+  OWASP_IMAGE: {{ .Values.config.OWASP_IMAGE | default 'harness/owasp-dependency-check-job-runner:latest' }}
+  SYNK_IMAGE: {{ .Values.config.SYNK_IMAGE | default 'harness/snyk-job-runner:latest' }}
+  SONARQUBE_IMAGE: {{ .Values.config.SONARQUBE_IMAGE | default 'harness/sonarqube-agent-job-runner:latest' }}
+  PROWLER_IMAGE: {{ .Values.config.PROWLER_IMAGE | default 'harness/prowler-job-runner:latest' }}
+  TWISTLOCK_IMAGE: {{ .Values.config.TWISTLOCK_IMAGE | default 'harness/twistlock-job-runner:latest' }}
+  CHECKMARX_IMAGE: {{ .Values.config.CHECKMARX_IMAGE | default 'harness/checkmarx-job-runner:latest' }}
+  VERACODE_IMAGE: {{ .Values.config.VERACODE_IMAGE | default 'harness/veracode-agent-job-runner:latest' }}
+  ZAP_IMAGE: {{ .Values.config.ZAP_IMAGE | default 'harness/zap-job-runner:latest' }}
+  WHITE_SOURCE_IMAGE: {{ .Values.config.WHITE_SOURCE_IMAGE | default 'harness/whitesource-agent-job-runner:latest' }}
   HARNESS_CODE_GIT_URL: '{{ .Values.global.loadbalancerURL }}/code/git'
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
 {{- if .Values.additionalConfigs }}
