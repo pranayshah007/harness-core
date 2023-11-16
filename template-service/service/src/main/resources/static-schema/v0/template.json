@@ -31584,7 +31584,7 @@
               "$ref" : "#/definitions/pipeline/common/StepSpecType"
             }, {
               "type" : "object",
-              "required" : [ "onDelegate", "shell", "source" ],
+              "required" : ["shell", "source" ],
               "properties" : {
                 "delegateSelectors" : {
                   "oneOf" : [ {
@@ -31660,7 +31660,7 @@
             } ],
             "$schema" : "http://json-schema.org/draft-07/schema#",
             "type" : "object",
-            "required" : [ "onDelegate", "shell", "source" ],
+            "required" : ["shell", "source" ],
             "properties" : {
               "delegateSelectors" : {
                 "oneOf" : [ {

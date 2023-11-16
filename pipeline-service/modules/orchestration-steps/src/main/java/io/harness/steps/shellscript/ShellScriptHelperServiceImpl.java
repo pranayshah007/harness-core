@@ -223,8 +223,8 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
   @Override
   public void prepareTaskParametersForExecutionTarget(@Nonnull Ambiance ambiance,
       @Nonnull ShellScriptStepParameters shellScriptStepParameters,
-      @Nonnull ShellScriptTaskParametersNGBuilder taskParametersNGBuilder) {
-    if (ParameterField.isNotNull(shellScriptStepParameters.getExecutionTarget())) {
+      @Nonnull ShellScriptTaskParametersNGBuilder taskParametersNGBuilder, boolean executeOnDelegate) {
+    if (!executeOnDelegate && ParameterField.isNotNull(shellScriptStepParameters.getExecutionTarget())) {
       ParameterField<ExecutionTarget> executionTarget = shellScriptStepParameters.getExecutionTarget();
       validateExecutionTarget(executionTarget.getValue());
       SSHKeySpecDTO secretSpec = (SSHKeySpecDTO) getSshKeySpec(ambiance, executionTarget.getValue());
@@ -236,6 +236,19 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
           .encryptionDetails(sshKeyEncryptionDetails)
           .host(executionTarget.getValue().getHost().getValue());
     }
+  }
+
+  @Override
+  public boolean toExecuteOnDelegate(@Nonnull ShellScriptStepParameters shellScriptStepParameters) {
+    if (ParameterField.isNotNull(shellScriptStepParameters.getExecutionTarget())) {
+      ParameterField<ExecutionTarget> executionTarget = shellScriptStepParameters.getExecutionTarget();
+      if (ParameterField.isBlank(executionTarget.getValue().getHost())) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+    return true;
   }
 
   private void validateExecutionTarget(ExecutionTarget executionTarget) {
@@ -375,7 +388,9 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
     taskParametersNGBuilder.k8sInfraDelegateConfig(
         shellScriptHelperService.getK8sInfraDelegateConfig(ambiance, shellScript, includeInfraSelectors));
 
-    if (ParameterField.isNotNull(shellScriptStepParameters.getExecutionTarget())) {
+    boolean executeOnDelegate = shellScriptHelperService.toExecuteOnDelegate(shellScriptStepParameters);
+
+    if (!executeOnDelegate && ParameterField.isNotNull(shellScriptStepParameters.getExecutionTarget())) {
       ParameterField<ExecutionTarget> executionTarget = shellScriptStepParameters.getExecutionTarget();
       validateExecutionTarget(executionTarget.getValue());
       SecretSpecDTO secretSpec = getSshKeySpec(ambiance, executionTarget.getValue());
@@ -398,7 +413,7 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
             AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_NG_DISABLE_SPECIAL_CHARS_ESCAPE_OF_WINRM_ENV_VARS));
 
     return taskParametersNGBuilder.accountId(AmbianceUtils.getAccountId(ambiance))
-        .executeOnDelegate(ParameterField.isNull(shellScriptStepParameters.getExecutionTarget()))
+        .executeOnDelegate(executeOnDelegate)
         .environmentVariables(shellScriptHelperService.getEnvironmentVariables(
             shellScriptStepParameters.getEnvironmentVariables(), ambiance))
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
@@ -425,10 +440,11 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
 
     taskParametersNGBuilder.k8sInfraDelegateConfig(
         shellScriptHelperService.getK8sInfraDelegateConfig(ambiance, shellScript, includeInfraSelectors));
+    boolean executeOnDelegate = toExecuteOnDelegate(shellScriptStepParameters);
     shellScriptHelperService.prepareTaskParametersForExecutionTarget(
-        ambiance, shellScriptStepParameters, taskParametersNGBuilder);
+        ambiance, shellScriptStepParameters, taskParametersNGBuilder, executeOnDelegate);
     return taskParametersNGBuilder.accountId(AmbianceUtils.getAccountId(ambiance))
-        .executeOnDelegate(ParameterField.isNull(shellScriptStepParameters.getExecutionTarget()))
+        .executeOnDelegate(executeOnDelegate)
         .environmentVariables(shellScriptHelperService.getEnvironmentVariables(
             shellScriptStepParameters.getEnvironmentVariables(), ambiance))
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))

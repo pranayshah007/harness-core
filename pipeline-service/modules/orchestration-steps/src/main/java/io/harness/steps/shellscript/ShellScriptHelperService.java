@@ -49,7 +49,9 @@ public interface ShellScriptHelperService {
 
   void prepareTaskParametersForExecutionTarget(@Nonnull Ambiance ambiance,
       @Nonnull ShellScriptStepParameters shellScriptStepParameters,
-      @Nonnull ShellScriptTaskParametersNGBuilder taskParametersNGBuilder);
+      @Nonnull ShellScriptTaskParametersNGBuilder taskParametersNGBuilder, boolean executeOnDelegate);
+
+  boolean toExecuteOnDelegate(@Nonnull ShellScriptStepParameters shellScriptStepParameters);
 
   String getShellScript(@Nonnull ShellScriptStepParameters stepParameters, Ambiance ambiance);
 

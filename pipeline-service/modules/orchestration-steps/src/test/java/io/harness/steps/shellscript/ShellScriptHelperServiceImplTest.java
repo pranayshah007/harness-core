@@ -297,7 +297,8 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
         ShellScriptStepParameters.infoBuilder().onDelegate(ParameterField.createValueField(true)).build();
     ShellScriptTaskParametersNGBuilder taskParamsBuilder = ShellScriptTaskParametersNG.builder();
 
-    shellScriptHelperServiceImpl.prepareTaskParametersForExecutionTarget(ambiance, stepParameters, taskParamsBuilder);
+    shellScriptHelperServiceImpl.prepareTaskParametersForExecutionTarget(
+        ambiance, stepParameters, taskParamsBuilder, false);
     assertThat(taskParamsBuilder.build().getHost()).isNull();
 
     stepParameters.setOnDelegate(ParameterField.createValueField(false));
@@ -307,13 +308,13 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     stepParameters.setExecutionTarget(executionTarget);
     assertThatThrownBy(()
                            -> shellScriptHelperServiceImpl.prepareTaskParametersForExecutionTarget(
-                               ambiance, stepParameters, taskParamsBuilder))
+                               ambiance, stepParameters, taskParamsBuilder, false))
         .hasMessageContaining("Connector Ref in Execution Target can't be empty");
 
     executionTarget.getValue().setConnectorRef(ParameterField.createValueField("cRef"));
     assertThatThrownBy(()
                            -> shellScriptHelperServiceImpl.prepareTaskParametersForExecutionTarget(
-                               ambiance, stepParameters, taskParamsBuilder))
+                               ambiance, stepParameters, taskParamsBuilder, false))
         .hasMessageContaining("Host in Execution Target can't be empty");
   }
 
@@ -341,7 +342,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
       aStatic.when(() -> NGRestUtils.getResponse(any(), any())).thenReturn(null);
       assertThatThrownBy(()
                              -> shellScriptHelperServiceImpl.prepareTaskParametersForExecutionTarget(
-                                 ambiance, stepParameters, taskParamsBuilder))
+                                 ambiance, stepParameters, taskParamsBuilder, false))
           .hasMessageContaining("No secret configured with identifier: cref");
 
       SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
@@ -353,7 +354,8 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
       doReturn(encryptedDataDetails)
           .when(sshKeySpecDTOHelper)
           .getSSHKeyEncryptionDetails(sshKeySpecDTO, AmbianceUtils.getNgAccess(ambiance));
-      shellScriptHelperServiceImpl.prepareTaskParametersForExecutionTarget(ambiance, stepParameters, taskParamsBuilder);
+      shellScriptHelperServiceImpl.prepareTaskParametersForExecutionTarget(
+          ambiance, stepParameters, taskParamsBuilder, false);
       assertThat(taskParamsBuilder.build().getHost()).isEqualTo("host");
       assertThat(taskParamsBuilder.build().getEncryptionDetails()).hasSize(1);
       assertThat(taskParamsBuilder.build().getSshKeySpecDTO()).isEqualTo(sshKeySpecDTO);
@@ -491,7 +493,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     doReturn(script).when(shellScriptHelperService).getShellScript(stepParameters, ambiance);
     doNothing()
         .when(shellScriptHelperService)
-        .prepareTaskParametersForExecutionTarget(eq(ambiance), eq(stepParameters), any());
+        .prepareTaskParametersForExecutionTarget(eq(ambiance), eq(stepParameters), any(), false);
     doReturn(k8sInfraDelegateConfig).when(shellScriptHelperService).getK8sInfraDelegateConfig(ambiance, script, false);
     doReturn(taskEnvVariables)
         .when(shellScriptHelperService)
