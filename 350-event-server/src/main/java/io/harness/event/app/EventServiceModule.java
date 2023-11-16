@@ -13,7 +13,6 @@ import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cf.CfClientModule;
 import io.harness.delegate.authenticator.DelegateSecretManager;
-import io.harness.delegate.authenticator.DelegateTokenAuthenticatorImpl;
 import io.harness.event.MessageProcessorType;
 import io.harness.event.grpc.EventPublisherServerImpl;
 import io.harness.event.grpc.MessageProcessor;
@@ -26,7 +25,6 @@ import io.harness.event.service.intfc.EventPublisherService;
 import io.harness.event.service.intfc.LastReceivedPublishedMessageRepository;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ff.FeatureFlagServiceImpl;
-import io.harness.grpc.auth.DelegateAuthServerInterceptor;
 import io.harness.grpc.exception.GrpcExceptionMapper;
 import io.harness.grpc.exception.WingsExceptionGrpcMapper;
 import io.harness.grpc.server.GrpcServerExceptionHandler;
@@ -38,7 +36,6 @@ import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.metrics.service.api.MetricsPublisher;
 import io.harness.persistence.HPersistence;
-import io.harness.security.DelegateTokenAuthenticator;
 import io.harness.service.impl.DelegateSecretManagerImpl;
 import io.harness.service.impl.agent.mtls.AgentMtlsEndpointServiceReadOnlyImpl;
 import io.harness.service.intfc.AgentMtlsEndpointService;
@@ -87,7 +84,6 @@ public class EventServiceModule extends AbstractModule {
 
     // event service only needs reading capabilities for datapath authority validation
     bind(AgentMtlsEndpointService.class).to(AgentMtlsEndpointServiceReadOnlyImpl.class);
-    bind(DelegateTokenAuthenticator.class).to(DelegateTokenAuthenticatorImpl.class).in(Singleton.class);
     bind(DelegateMetricsService.class).to(DelegateMetricsServiceImpl.class);
 
     bind(SecretManager.class).to(NoOpSecretManagerImpl.class);
@@ -101,7 +97,6 @@ public class EventServiceModule extends AbstractModule {
 
     Multibinder<ServerInterceptor> serverInterceptorMultibinder =
         Multibinder.newSetBinder(binder(), ServerInterceptor.class);
-    serverInterceptorMultibinder.addBinding().to(DelegateAuthServerInterceptor.class);
 
     Multibinder<GrpcExceptionMapper> expectionMapperMultibinder =
         Multibinder.newSetBinder(binder(), GrpcExceptionMapper.class);
