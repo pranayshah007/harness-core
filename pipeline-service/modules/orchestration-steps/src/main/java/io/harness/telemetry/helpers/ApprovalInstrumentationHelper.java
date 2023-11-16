@@ -9,6 +9,7 @@ package io.harness.telemetry.helpers;
 
 import static io.harness.telemetry.helpers.InstrumentationConstants.ACCOUNT;
 import static io.harness.telemetry.helpers.InstrumentationConstants.APPROVAL_CRITERIA_SPEC_TYPE;
+import static io.harness.telemetry.helpers.InstrumentationConstants.APPROVAL_STEP;
 import static io.harness.telemetry.helpers.InstrumentationConstants.APPROVAL_TYPE;
 import static io.harness.telemetry.helpers.InstrumentationConstants.AUTO_APPROVAL;
 import static io.harness.telemetry.helpers.InstrumentationConstants.GLOBAL_ACCOUNT_ID;
@@ -51,16 +52,15 @@ public class ApprovalInstrumentationHelper extends InstrumentationHelper {
     eventPropertiesMap.put(APPROVAL_TYPE, approvalInstance.getType());
     switch (approvalInstance.getType()) {
       case JIRA_APPROVAL:
-        return publishJiraApprovalInfo((JiraApprovalInstance) approvalInstance, "approval_step", eventPropertiesMap);
+        return publishJiraApprovalInfo((JiraApprovalInstance) approvalInstance, APPROVAL_STEP, eventPropertiesMap);
       case CUSTOM_APPROVAL:
-        return publishCustomApprovalInfo(
-            (CustomApprovalInstance) approvalInstance, "approval_step", eventPropertiesMap);
+        return publishCustomApprovalInfo((CustomApprovalInstance) approvalInstance, APPROVAL_STEP, eventPropertiesMap);
       case HARNESS_APPROVAL:
         return publishHarnessApprovalInfo(
-            (HarnessApprovalInstance) approvalInstance, "approval_step", eventPropertiesMap);
+            (HarnessApprovalInstance) approvalInstance, APPROVAL_STEP, eventPropertiesMap);
       case SERVICENOW_APPROVAL:
         return publishServiceNowApprovalInfo(
-            (ServiceNowApprovalInstance) approvalInstance, "approval_step", eventPropertiesMap);
+            (ServiceNowApprovalInstance) approvalInstance, APPROVAL_STEP, eventPropertiesMap);
     }
     return null;
   }
