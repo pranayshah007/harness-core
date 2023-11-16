@@ -194,21 +194,12 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     List<String> processedRepos = new ArrayList<>();
     List<ExecutionWrapperConfig> innerSteps = new ArrayList<>();
 
-    String workspaceBranch = "";
-    String workspaceCommit = "";
-    if (workspace.getRepository_commit() != null) {
-      workspaceCommit = workspace.getRepository_commit();
-    }
-    if (workspace.getRepository_branch() != null) {
-      workspaceBranch =  workspace.getRepository_branch();
-    }
-
     for (VariablesRepo variablesRepo : workspace.getTerraform_variable_files()) {
       // if the connector, repo, branch and commit are the same as the workspace repo we can skip
       if (Objects.equals(variablesRepo.getRepository_connector(), workspace.getRepository_connector()) &&
               Objects.equals(variablesRepo.getRepository(), workspace.getRepository()) &&
-              Objects.equals(variablesRepo.getRepository_branch(), workspaceBranch) &&
-              Objects.equals(variablesRepo.getRepository_commit(), workspaceCommit)) {
+              Objects.equals(variablesRepo.getRepository_branch(), Objects.toString(workspace.getRepository_branch(), "")) &&
+              Objects.equals(variablesRepo.getRepository_commit(), Objects.toString(workspace.getRepository_commit(), ""))) {
         continue;
       }
 

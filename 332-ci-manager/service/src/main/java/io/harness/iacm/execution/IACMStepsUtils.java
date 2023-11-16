@@ -150,14 +150,6 @@ public class IACMStepsUtils {
     pluginEnvs.put("PLUGIN_HARNESS_INFRACOST_KEY", getHarnessInfracostKey());
     pluginEnvs.put("PLUGIN_PRICING_API_ENDPOINT", getInfracostAPIEndpoint());
 
-    String workspaceBranch = "";
-    String workspaceCommit = "";
-    if (workspaceInfo.getRepository_commit() != null) {
-      workspaceCommit = workspaceInfo.getRepository_commit();
-    }
-    if (workspaceInfo.getRepository_branch() != null) {
-      workspaceBranch =  workspaceInfo.getRepository_branch();
-    }
 
     if (workspaceInfo.getTerraform_variable_files() != null) {
       for (VariablesRepo variablesRepo : workspaceInfo.getTerraform_variable_files()) {
@@ -166,9 +158,8 @@ public class IACMStepsUtils {
 
         if (Objects.equals(variablesRepo.getRepository_connector(), workspaceInfo.getRepository_connector()) &&
                 Objects.equals(variablesRepo.getRepository(), workspaceInfo.getRepository()) &&
-                    Objects.equals(variablesRepo.getRepository_branch(), workspaceBranch) &&
-                        Objects.equals(variablesRepo.getRepository_commit(), workspaceCommit)) {
-
+                Objects.equals(variablesRepo.getRepository_branch(), Objects.toString(workspaceInfo.getRepository_branch(), "")) &&
+                Objects.equals(variablesRepo.getRepository_commit(), Objects.toString(workspaceInfo.getRepository_commit(), ""))) {
           pluginEnvs.put(String.format("PLUGIN_VARIABLE_CONNECTOR_%s", hashedGitInfo), "/harness/" + variablesRepo.getRepository_path());
           continue;
         }
