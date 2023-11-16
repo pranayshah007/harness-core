@@ -40,16 +40,17 @@ public class EngineGrpcExpressionService implements EngineExpressionService {
 
   @Override
   public String renderExpression(Ambiance ambiance, String expression, boolean skipUnresolvedExpressionsCheck) {
-    ExpressionRenderBlobResponse expressionRenderBlobResponse =
-        PmsGrpcClientUtils.retryAndProcessException(engineExpressionProtoServiceBlockingStub::renderExpression,
-            ExpressionRenderBlobRequest.newBuilder()
-                .setAmbiance(ambiance)
-                .setExpression(expression)
-                .setSkipUnresolvedExpressionsCheck(skipUnresolvedExpressionsCheck)
-                .build());
     if (isEmpty(expression)) {
       throw new InvalidRequestException("The expression cannot be empty.");
     } else {
+      ExpressionRenderBlobResponse expressionRenderBlobResponse =
+          PmsGrpcClientUtils.retryAndProcessException(engineExpressionProtoServiceBlockingStub::renderExpression,
+              ExpressionRenderBlobRequest.newBuilder()
+                  .setAmbiance(ambiance)
+                  .setExpression(expression)
+                  .setSkipUnresolvedExpressionsCheck(skipUnresolvedExpressionsCheck)
+                  .build());
+
       return expressionRenderBlobResponse.getValue();
     }
   }
@@ -58,46 +59,44 @@ public class EngineGrpcExpressionService implements EngineExpressionService {
   public String renderExpression(Ambiance ambiance, String expression, ExpressionMode mode) {
     Preconditions.checkNotNull(mode);
     Preconditions.checkArgument(mode != ExpressionMode.UNKNOWN_MODE, "mode cannot be set to unknown");
-
-    ExpressionRenderBlobResponse expressionRenderBlobResponse =
-        PmsGrpcClientUtils.retryAndProcessException(engineExpressionProtoServiceBlockingStub::renderExpression,
-            ExpressionRenderBlobRequest.newBuilder()
-                .setAmbiance(ambiance)
-                .setExpression(expression)
-                .setExpressionMode(mode)
-                .build());
     if (isEmpty(expression)) {
       throw new InvalidRequestException("The expression cannot be empty.");
     } else {
+      ExpressionRenderBlobResponse expressionRenderBlobResponse =
+          PmsGrpcClientUtils.retryAndProcessException(engineExpressionProtoServiceBlockingStub::renderExpression,
+              ExpressionRenderBlobRequest.newBuilder()
+                  .setAmbiance(ambiance)
+                  .setExpression(expression)
+                  .setExpressionMode(mode)
+                  .build());
       return expressionRenderBlobResponse.getValue();
     }
   }
 
   @Override
   public Object evaluateExpression(Ambiance ambiance, String expression) {
-    ExpressionEvaluateBlobResponse expressionEvaluateBlobResponse =
-        PmsGrpcClientUtils.retryAndProcessException(engineExpressionProtoServiceBlockingStub::evaluateExpression,
-            ExpressionEvaluateBlobRequest.newBuilder().setAmbiance(ambiance).setExpression(expression).build());
-
     if (isEmpty(expression)) {
       throw new InvalidRequestException("The expression cannot be empty.");
     } else {
+      ExpressionEvaluateBlobResponse expressionEvaluateBlobResponse =
+          PmsGrpcClientUtils.retryAndProcessException(engineExpressionProtoServiceBlockingStub::evaluateExpression,
+              ExpressionEvaluateBlobRequest.newBuilder().setAmbiance(ambiance).setExpression(expression).build());
       return RecastOrchestrationUtils.fromJson(expressionEvaluateBlobResponse.getValue(), Object.class);
     }
   }
   @Override
   public Object evaluateExpression(Ambiance ambiance, String expression, ExpressionMode mode) {
-    ExpressionEvaluateBlobResponse expressionEvaluateBlobResponse =
-        PmsGrpcClientUtils.retryAndProcessException(engineExpressionProtoServiceBlockingStub::evaluateExpression,
-            ExpressionEvaluateBlobRequest.newBuilder()
-                .setAmbiance(ambiance)
-                .setExpression(expression)
-                .setExpressionMode(mode)
-                .setNewRecastFlow(true)
-                .build());
     if (isEmpty(expression)) {
       throw new InvalidRequestException("The expression cannot be empty.");
     } else {
+      ExpressionEvaluateBlobResponse expressionEvaluateBlobResponse =
+          PmsGrpcClientUtils.retryAndProcessException(engineExpressionProtoServiceBlockingStub::evaluateExpression,
+              ExpressionEvaluateBlobRequest.newBuilder()
+                  .setAmbiance(ambiance)
+                  .setExpression(expression)
+                  .setExpressionMode(mode)
+                  .setNewRecastFlow(true)
+                  .build());
       return RecastOrchestrationUtils.fromJson(expressionEvaluateBlobResponse.getValue(), Object.class, true);
     }
   }

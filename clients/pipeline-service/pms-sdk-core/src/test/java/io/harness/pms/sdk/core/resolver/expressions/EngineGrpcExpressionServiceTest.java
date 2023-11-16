@@ -10,8 +10,10 @@ package io.harness.pms.sdk.core.resolver.expressions;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.service.EngineExpressionProtoServiceGrpc.EngineExpressionProtoServiceBlockingStub;
@@ -47,6 +49,13 @@ public class EngineGrpcExpressionServiceTest extends PmsSdkCoreTestBase {
   public void testRenderExpression() {
     Ambiance ambiance = AmbianceTestUtils.buildAmbiance();
     String expression = "test";
+    assertThatThrownBy(() -> engineGrpcExpressionService.renderExpression(ambiance, null, false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The expression cannot be empty.");
+    assertThatThrownBy(() -> engineGrpcExpressionService.renderExpression(ambiance, "", false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The expression cannot be empty.");
+
     ExpressionRenderBlobResponse expressionRenderBlobResponse =
         ExpressionRenderBlobResponse.newBuilder().setValue("test").build();
     Mockito
@@ -65,6 +74,14 @@ public class EngineGrpcExpressionServiceTest extends PmsSdkCoreTestBase {
   public void testEvaluateExpression() {
     Ambiance ambiance = AmbianceTestUtils.buildAmbiance();
     String expression = "{'test':'test'}";
+    assertThatThrownBy(
+        () -> engineGrpcExpressionService.evaluateExpression(ambiance, null, ExpressionMode.UNKNOWN_MODE))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The expression cannot be empty.");
+    assertThatThrownBy(() -> engineGrpcExpressionService.evaluateExpression(ambiance, "", ExpressionMode.UNKNOWN_MODE))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The expression cannot be empty.");
+
     ExpressionEvaluateBlobResponse expressionRenderBlobResponse = ExpressionEvaluateBlobResponse.newBuilder().build();
     Mockito
         .when(engineExpressionProtoServiceBlockingStub.evaluateExpression(
