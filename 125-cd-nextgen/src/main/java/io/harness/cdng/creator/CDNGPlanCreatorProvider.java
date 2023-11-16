@@ -269,7 +269,6 @@ import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsGenOneDe
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsGenOneRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsTrafficShiftStepVariableCreator;
-import io.harness.cdng.creator.variables.v1.DeploymentStageVariableCreatorV1;
 import io.harness.cdng.customDeployment.constants.CustomDeploymentConstants;
 import io.harness.cdng.customDeployment.variablecreator.FetchInstanceScriptStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
