@@ -84,21 +84,21 @@ public class InputSetsApiUtilsTest extends CategoryTest {
   String identifier = randomAlphabetic(10);
   String name = randomAlphabetic(10);
   String account = "accountId";
-  final static String ERROR_PIPELINE_YAML = "error_pipeline_yaml";
-  final static String INPUT_SET_YAML = "input_set_yaml";
-  final static String UUID = "uuid";
-  final static String INVALID_INPUT_SET_REFERENCE = "invalid_input_set_reference";
-  final static String ORG_IDENTIFIER = "org1";
-  final static String PROJ_IDENTIFIER = "project1";
-  final static String DESCRIPTION = "description";
-  final static String OBJECT_ID = "objectId";
-  final static String BRANCH_NAME = "branchName";
-  final static String BASE_BRANCH = "baseBranch";
-  final static String COMMIT_MESSAGE = "commit message";
-  final static String COMMIT_ID = "commitId";
-  final static String FILE_PATH = "filePath";
-  final static String REPO_NAME = "repoName";
-  final static String CONNECTOR_REF = "connectorRef";
+  static final String ERROR_PIPELINE_YAML = "error_pipeline_yaml";
+  static final String INPUT_SET_YAML = "input_set_yaml";
+  static final String UUID = "uuid";
+  static final String INVALID_INPUT_SET_REFERENCE = "invalid_input_set_reference";
+  static final String ORG_IDENTIFIER = "org1";
+  static final String PROJ_IDENTIFIER = "project1";
+  static final String DESCRIPTION = "description";
+  static final String OBJECT_ID = "objectId";
+  static final String BRANCH_NAME = "branchName";
+  static final String BASE_BRANCH = "baseBranch";
+  static final String COMMIT_MESSAGE = "commit message";
+  static final String COMMIT_ID = "commitId";
+  static final String FILE_PATH = "filePath";
+  static final String REPO_NAME = "repoName";
+  static final String CONNECTOR_REF = "connectorRef";
   private GitDetails gitDetails = new GitDetails();
 
   @Before
