@@ -12,4 +12,5 @@ Batch jobs description - https://harness.atlassian.net/wiki/spaces/CE/pages/3458
 Common setup instructions are present in the root [README.md](https://github.com/harness/harness-core/blob/develop/README.md) of the repository.
 
 ## Building, Testing and Releasing Batch Processing 
+TEST
 
