@@ -69,8 +69,6 @@ import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
-import software.wings.beans.TaskType;
-
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.math.BigDecimal;

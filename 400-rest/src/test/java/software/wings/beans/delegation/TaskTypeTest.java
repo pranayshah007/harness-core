@@ -15,7 +15,6 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.beans.TaskGroup;
 import io.harness.rule.Owner;
 
 import software.wings.beans.TaskType;
