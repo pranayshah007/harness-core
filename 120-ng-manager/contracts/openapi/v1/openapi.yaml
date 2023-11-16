@@ -2229,6 +2229,8 @@ components:
         - PIPELINE
         - SECRET
         - PROJECT
+        - ENTITY
+        - FLOWS
     CreateProjectRequest:
       description: Create project request
       type: object
