@@ -197,6 +197,7 @@ import io.harness.ng.core.api.impl.NGModulesServiceImpl;
 import io.harness.ng.core.api.impl.NGSecretServiceV2Impl;
 import io.harness.ng.core.api.impl.TokenServiceImpl;
 import io.harness.ng.core.api.impl.UserGroupServiceImpl;
+import io.harness.ng.core.beans.ScopeInfo;
 import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClientModule;
 import io.harness.ng.core.encryptors.NGManagerCustomEncryptor;
 import io.harness.ng.core.encryptors.NGManagerKmsEncryptor;
@@ -1327,5 +1328,25 @@ public class NextGenModule extends AbstractModule {
         .configure()
         .parameterNameProvider(new ReflectionParameterNameProvider())
         .buildValidatorFactory();
+  }
+
+  @Provides
+  @Singleton
+  @Named(OrganizationService.ORG_SCOPE_INFO_DATA_CACHE_KEY)
+  Cache<String, ScopeInfo> getOrgScopeInfoDataCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache(OrganizationService.ORG_SCOPE_INFO_DATA_CACHE_KEY, String.class,
+        ScopeInfo.class, CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 1)),
+        versionInfoManager.getVersionInfo().getBuildNo());
+  }
+
+  @Provides
+  @Singleton
+  @Named(ProjectService.PROJECT_SCOPE_INFO_DATA_CACHE_KEY)
+  Cache<String, ScopeInfo> getProjectScopeInfoDataCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache(ProjectService.PROJECT_SCOPE_INFO_DATA_CACHE_KEY, String.class, ScopeInfo.class,
+        CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 1)),
+        versionInfoManager.getVersionInfo().getBuildNo());
   }
 }

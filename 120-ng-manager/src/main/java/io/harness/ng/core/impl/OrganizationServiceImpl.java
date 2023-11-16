@@ -34,6 +34,8 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.beans.ScopeInfo;
+import io.harness.beans.ScopeLevel;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.EntityNotFoundException;
@@ -78,6 +80,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.cache.Cache;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -101,12 +104,16 @@ public class OrganizationServiceImpl implements OrganizationService {
   private final ScopeAccessHelper scopeAccessHelper;
   private final OrganizationInstrumentationHelper instrumentationHelper;
   private final DefaultUserGroupService defaultUserGroupService;
+  private final Cache<String, ScopeInfo> scopeInfoCache;
+  private final ScopeInfoHelper scopeInfoHelper;
 
   @Inject
   public OrganizationServiceImpl(OrganizationRepository organizationRepository, OutboxService outboxService,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, NgUserService ngUserService,
       AccessControlClient accessControlClient, ScopeAccessHelper scopeAccessHelper,
-      OrganizationInstrumentationHelper instrumentationHelper, DefaultUserGroupService defaultUserGroupService) {
+      OrganizationInstrumentationHelper instrumentationHelper, DefaultUserGroupService defaultUserGroupService,
+      @Named(OrganizationService.ORG_SCOPE_INFO_DATA_CACHE_KEY) Cache<String, ScopeInfo> scopeInfoCache,
+      ScopeInfoHelper scopeInfoHelper) {
     this.organizationRepository = organizationRepository;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
@@ -115,6 +122,8 @@ public class OrganizationServiceImpl implements OrganizationService {
     this.scopeAccessHelper = scopeAccessHelper;
     this.instrumentationHelper = instrumentationHelper;
     this.defaultUserGroupService = defaultUserGroupService;
+    this.scopeInfoCache = scopeInfoCache;
+    this.scopeInfoHelper = scopeInfoHelper;
   }
 
   @Override
@@ -126,6 +135,10 @@ public class OrganizationServiceImpl implements OrganizationService {
     try {
       validate(organization);
       Organization savedOrganization = saveOrganization(organization);
+      scopeInfoCache.put(
+          scopeInfoHelper.getScopeInfoCacheKey(accountIdentifier, savedOrganization.getIdentifier(), null),
+          scopeInfoHelper.populateScopeInfo(ScopeLevel.ORGANIZATION, savedOrganization.getUniqueId(), accountIdentifier,
+              savedOrganization.getIdentifier(), null));
       setupOrganization(Scope.of(accountIdentifier, organizationDTO.getIdentifier(), null));
       log.info(
           String.format("Organization with identifier [%s] was successfully created", organization.getIdentifier()));
@@ -368,6 +381,7 @@ public class OrganizationServiceImpl implements OrganizationService {
       return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Organization organization =
             organizationRepository.hardDelete(accountIdentifier, organizationIdentifier, version);
+        scopeInfoCache.remove(scopeInfoHelper.getScopeInfoCacheKey(accountIdentifier, organizationIdentifier, null));
 
         if (isNull(organization)) {
           log.error(String.format(
@@ -417,5 +431,26 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   private void validateUpdateOrganizationRequest(String identifier, OrganizationDTO organization) {
     verifyValuesNotChanged(Lists.newArrayList(Pair.of(identifier, organization.getIdentifier())), false);
+  }
+
+  public Optional<ScopeInfo> getScopeInfo(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    final String cacheKey = scopeInfoHelper.getScopeInfoCacheKey(accountIdentifier, orgIdentifier, projectIdentifier);
+    if (scopeInfoCache.containsKey(cacheKey)) {
+      return Optional.of(scopeInfoCache.get(cacheKey));
+    }
+    if (isEmpty(projectIdentifier)) {
+      Optional<Organization> org = get(accountIdentifier, orgIdentifier);
+      if (org.isPresent()) {
+        ScopeInfo orgScopeInfo = scopeInfoHelper.populateScopeInfo(
+            ScopeLevel.ORGANIZATION, org.get().getUniqueId(), accountIdentifier, orgIdentifier, null);
+        scopeInfoCache.put(cacheKey, orgScopeInfo);
+        return Optional.of(orgScopeInfo);
+      } else {
+        log.warn(String.format(
+            "Org with identifier [%s] in Account: [%s] does not exist", orgIdentifier, accountIdentifier));
+        return Optional.empty();
+      }
+    }
+    return Optional.empty();
   }
 }

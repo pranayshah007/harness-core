@@ -7,36 +7,12 @@
 
 package io.harness.ng.core.impl;
 
-import static io.harness.NGCommonEntityConstants.MONGODB_ID;
-import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
-import static io.harness.NGConstants.DEFAULT_PROJECT_IDENTIFIER;
-import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
-import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_PROJECTS;
-import static io.harness.exception.WingsException.USER;
-import static io.harness.exception.WingsException.USER_SRE;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
-import static io.harness.ng.accesscontrol.PlatformPermissions.INVITE_PERMISSION_IDENTIFIER;
-import static io.harness.ng.core.remote.ProjectMapper.toProject;
-import static io.harness.ng.core.user.UserMembershipUpdateSource.SYSTEM;
-import static io.harness.ng.core.utils.NGUtils.validate;
-import static io.harness.ng.core.utils.NGUtils.verifyValuesNotChanged;
-import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
-import static io.harness.utils.PageUtils.getNGPageResponse;
-
-import static java.lang.Boolean.FALSE;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static java.util.Objects.isNull;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.project;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.sort;
-
+import com.google.common.collect.Lists;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
 import io.harness.ModuleType;
 import io.harness.NgAutoLogContext;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -47,6 +23,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.Scope.ScopeKeys;
+import io.harness.beans.ScopeInfo;
+import io.harness.beans.ScopeLevel;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.EntityNotFoundException;
@@ -95,25 +73,6 @@ import io.harness.telemetry.helpers.ProjectInstrumentationHelper;
 import io.harness.utils.PageUtils;
 import io.harness.utils.ScopeUtils;
 import io.harness.utils.UserHelperService;
-
-import com.google.common.collect.Lists;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
-import io.github.resilience4j.retry.Retry;
-import io.github.resilience4j.retry.RetryConfig;
-import java.io.IOException;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.apache.commons.lang3.BooleanUtils;
@@ -130,6 +89,49 @@ import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.util.CloseableIterator;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import javax.cache.Cache;
+import java.io.IOException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import static io.harness.NGCommonEntityConstants.MONGODB_ID;
+import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_PROJECT_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_PROJECTS;
+import static io.harness.exception.WingsException.USER;
+import static io.harness.exception.WingsException.USER_SRE;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.ng.accesscontrol.PlatformPermissions.INVITE_PERMISSION_IDENTIFIER;
+import static io.harness.ng.core.remote.ProjectMapper.toProject;
+import static io.harness.ng.core.user.UserMembershipUpdateSource.SYSTEM;
+import static io.harness.ng.core.utils.NGUtils.validate;
+import static io.harness.ng.core.utils.NGUtils.verifyValuesNotChanged;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
+import static io.harness.utils.PageUtils.getNGPageResponse;
+import static java.lang.Boolean.FALSE;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static java.util.Objects.isNull;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.project;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.sort;
 
 @OwnedBy(PL)
 @Singleton
@@ -149,6 +151,8 @@ public class ProjectServiceImpl implements ProjectService {
   private final DefaultUserGroupService defaultUserGroupService;
   private final FavoritesService favoritesService;
   private final UserHelperService userHelperService;
+  private final Cache<String, ScopeInfo> scopeInfoCache;
+  private final ScopeInfoHelper scopeInfoHelper;
 
   @Inject
   public ProjectServiceImpl(ProjectRepository projectRepository, OrganizationService organizationService,
@@ -156,7 +160,9 @@ public class ProjectServiceImpl implements ProjectService {
       NgUserService ngUserService, AccessControlClient accessControlClient, ScopeAccessHelper scopeAccessHelper,
       ProjectInstrumentationHelper instrumentationHelper, YamlGitConfigService yamlGitConfigService,
       FeatureFlagService featureFlagService, DefaultUserGroupService defaultUserGroupService,
-      FavoritesService favoritesService, UserHelperService userHelperService) {
+      FavoritesService favoritesService, UserHelperService userHelperService,
+      @Named(ProjectService.PROJECT_SCOPE_INFO_DATA_CACHE_KEY) Cache<String, ScopeInfo> scopeInfoCache,
+      ScopeInfoHelper scopeInfoHelper) {
     this.projectRepository = projectRepository;
     this.organizationService = organizationService;
     this.transactionTemplate = transactionTemplate;
@@ -170,6 +176,8 @@ public class ProjectServiceImpl implements ProjectService {
     this.defaultUserGroupService = defaultUserGroupService;
     this.favoritesService = favoritesService;
     this.userHelperService = userHelperService;
+    this.scopeInfoCache = scopeInfoCache;
+    this.scopeInfoHelper = scopeInfoHelper;
   }
 
   @Override
@@ -192,6 +200,10 @@ public class ProjectServiceImpl implements ProjectService {
       validate(project);
       Project createdProject = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Project savedProject = projectRepository.save(project);
+        scopeInfoCache.put(scopeInfoHelper.getScopeInfoCacheKey(
+                               accountIdentifier, savedProject.getOrgIdentifier(), savedProject.getIdentifier()),
+            scopeInfoHelper.populateScopeInfo(ScopeLevel.PROJECT, savedProject.getUniqueId(), accountIdentifier,
+                savedProject.getOrgIdentifier(), savedProject.getIdentifier()));
         outboxService.save(new ProjectCreateEvent(project.getAccountIdentifier(), ProjectMapper.writeDTO(project)));
         return savedProject;
       }));
@@ -636,6 +648,8 @@ public class ProjectServiceImpl implements ProjectService {
       return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Project deletedProject =
             projectRepository.hardDelete(accountIdentifier, orgIdentifier, projectIdentifier, version);
+        scopeInfoCache.remove(
+            scopeInfoHelper.getScopeInfoCacheKey(accountIdentifier, orgIdentifier, projectIdentifier));
         if (isNull(deletedProject)) {
           log.error(String.format("Project with identifier [%s] could not be deleted as it does not exist",
               projectIdentifier, orgIdentifier));
@@ -742,5 +756,26 @@ public class ProjectServiceImpl implements ProjectService {
             -> result.put(projectsPerAccountCount.getAccountIdentifier(), projectsPerAccountCount.getCount()));
 
     return result;
+  }
+
+  public Optional<ScopeInfo> getScopeInfo(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    final String cacheKey = scopeInfoHelper.getScopeInfoCacheKey(accountIdentifier, orgIdentifier, projectIdentifier);
+    if (scopeInfoCache.containsKey(cacheKey)) {
+      return Optional.of(scopeInfoCache.get(cacheKey));
+    }
+    if (isEmpty(projectIdentifier)) {
+      Optional<Project> project = get(accountIdentifier, orgIdentifier, projectIdentifier);
+      if (project.isPresent()) {
+        ScopeInfo projectScopeInfo = scopeInfoHelper.populateScopeInfo(
+            ScopeLevel.PROJECT, project.get().getUniqueId(), accountIdentifier, orgIdentifier, null);
+        scopeInfoCache.put(cacheKey, projectScopeInfo);
+        return Optional.of(projectScopeInfo);
+      } else {
+        log.warn(String.format("Project with identifier [%s] in Account: [%s] and Organization: [%s] does not exist",
+            projectIdentifier, accountIdentifier, orgIdentifier));
+        return Optional.empty();
+      }
+    }
+    return Optional.empty();
   }
 }

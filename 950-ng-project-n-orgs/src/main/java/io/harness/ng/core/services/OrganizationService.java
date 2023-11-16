@@ -10,6 +10,7 @@ package io.harness.ng.core.services;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeInfo;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.dto.OrganizationFilterDTO;
 import io.harness.ng.core.entities.Organization;
@@ -24,6 +25,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PL)
 public interface OrganizationService {
+  public static final String ORG_SCOPE_INFO_DATA_CACHE_KEY = "orgScopeInfoDataCache";
   Organization create(String accountIdentifier, OrganizationDTO organization);
 
   List<String> getDistinctAccounts();
@@ -57,4 +59,5 @@ public interface OrganizationService {
   Long countOrgs(String accountIdentifier);
 
   Set<String> getPermittedOrganizations(@NotNull String accountIdentifier, String orgIdentifier);
+  Optional<ScopeInfo> getScopeInfo(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

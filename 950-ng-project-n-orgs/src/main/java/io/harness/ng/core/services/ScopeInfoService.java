@@ -11,19 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ScopeInfo;
-import io.harness.beans.ScopeLevel;
 
 import java.util.Optional;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(PL)
 public interface ScopeInfoService {
-  String SCOPE_INFO_DATA_CACHE_KEY = "scopeInfoDataCache";
-
   Optional<ScopeInfo> getScopeInfo(@NotEmpty String accountIdentifier, String orgIdentifier, String projectIdentifier);
-
-  void addScopeInfoToCache(@NotEmpty String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      ScopeLevel scopeType, String uniqueId);
-
-  boolean removeScopeInfoFromCache(@NotEmpty String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }
