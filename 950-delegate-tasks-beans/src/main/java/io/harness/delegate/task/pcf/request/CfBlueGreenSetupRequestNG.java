@@ -90,8 +90,9 @@ public class CfBlueGreenSetupRequestNG extends AbstractTasTaskRequest {
   public TaskType getDelegateTaskType() {
     if (this.olderActiveVersionCountToKeep == 0) {
       return TAS_BG_SETUP_V2;
-    } else
+    } else {
       return TAS_BG_SETUP;
+    }
   }
 
   @Override

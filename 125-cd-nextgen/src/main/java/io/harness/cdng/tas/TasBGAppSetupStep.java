@@ -35,7 +35,6 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.pcf.TasResizeStrategyType;
-import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.request.CfBlueGreenSetupRequestNG;
 import io.harness.delegate.task.pcf.request.TasManifestsPackage;
