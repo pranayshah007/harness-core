@@ -3727,15 +3727,15 @@ public class UserServiceImpl implements UserService {
   @Override
   public void sendNotificationEmailNG(String accountId, List<NotificationRequest.UserGroup> userGroups,
       String templateId, Map<String, String> templateData, Team team, List<String> recipients) {
-    EmailChannel.EmailChannelBuilder emailChannel = EmailChannel.builder()
-                                                        .recipients(recipients)
-                                                        .accountId(accountId)
-                                                        .templateId(templateId)
-                                                        .templateData(templateData)
-                                                        .team(team)
-                                                        .userGroups(userGroups);
     log.info("Sending Notification email through NG: templateId: {}  recipients: {} ", templateId, recipients);
-    notificationClient.sendNotificationAsync(emailChannel.build());
+    notificationClient.sendNotificationAsync(EmailChannel.builder()
+                                                 .recipients(recipients)
+                                                 .accountId(accountId)
+                                                 .templateId(templateId)
+                                                 .templateData(templateData)
+                                                 .team(team)
+                                                 .userGroups(userGroups)
+                                                 .build());
   }
 
   @Override

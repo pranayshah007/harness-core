@@ -28,7 +28,6 @@ import io.harness.notification.notificationclient.NotificationClient;
 import software.wings.beans.Account;
 import software.wings.beans.User;
 import software.wings.logcontext.UserLogContext;
-import software.wings.persistence.mail.EmailData;
 import software.wings.security.authentication.totp.FeatureFlaggedTotpChecker;
 import software.wings.service.intfc.EmailNotificationService;
 import software.wings.service.intfc.UserService;
