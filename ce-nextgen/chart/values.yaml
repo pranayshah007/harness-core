@@ -79,7 +79,7 @@ global:
                   property: ""
                 TIMESCALEDB_SSL_ROOT_CERT:
                   name: ""
-                  property: ""  
+                  property: ""
       secretName: ""
       userKey: ""
       passwordKey: ""
@@ -122,7 +122,7 @@ global:
             keys:
               CLICKHOUSE_USERNAME: ""
               CLICKHOUSE_PASSWORD: ""
-        secretManagement: 
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -170,9 +170,7 @@ global:
     ecsEndPointUrl: https://ecs.us-east-2.amazonaws.com
     cloudwatchEndPointUrl: https://monitoring.us-east-2.amazonaws.com
   deployMode: KUBERNETES_ONPREM
-
 replicaCount: 2
-
 redis:
   protocol: ""
   hosts: []
@@ -195,7 +193,6 @@ redis:
             REDIS_PASSWORD:
               name: ""
               property: ""
-
 timescaledb:
   # -- TimescaleDB host names
   hosts: []
@@ -224,7 +221,6 @@ timescaledb:
             TIMESCALEDB_SSL_ROOT_CERT:
               name: ""
               property: ""
-
 mongo:
   protocol: "redis"
   hosts: []
@@ -246,37 +242,30 @@ mongo:
               property: ""
             MONGO_PASSWORD:
               name: ""
-              property: ""                            
-
-
+              property: ""
 maxSurge: 100%
-
 maxUnavailable: 0
-
 java:
   memory: "4096m"
   memoryLimit: "4096m"
-
 image:
   registry: docker.io
   repository: harness/ce-nextgen-signed
   pullPolicy: IfNotPresent
-# Overrides the image tag whose default is the chart appVersion.
+  # Overrides the image tag whose default is the chart appVersion.
   tag: "81102-000"
   digest: ""
-# image pull secrets to use for ce-nextgen image
+  # image pull secrets to use for ce-nextgen image
   imagePullSecrets: []
-
 imageClickhouseEnabled:
   registry: docker.io
   repository: harness/ce-nextgen-signed
   pullPolicy: Always
-# Overrides the image tag whose default is the chart appVersion.
+  # Overrides the image tag whose default is the chart appVersion.
   tag: "81102-000"
   digest: ""
-# image pull secrets to use for ce-nextgen image
+  # image pull secrets to use for ce-nextgen image
   imagePullSecrets: []
-
 waitForInitContainer:
   image:
     registry: docker.io
@@ -284,9 +273,8 @@ waitForInitContainer:
     pullPolicy: IfNotPresent
     tag: "latest"
     digest: ""
-  # image pull secrets to use for helm-init-container image
+    # image pull secrets to use for helm-init-container image
     imagePullSecrets: []
-
 mongoSecrets:
   userName:
     name: harness-secrets
@@ -294,12 +282,10 @@ mongoSecrets:
   password:
     name: mongodb-replicaset-chart
     key: mongodb-root-password
-
 timescaleSecret:
   password:
     name: harness-secrets
     key: timescaledbPostgresPassword
-
 awsSecret:
   AWS_ACCESS_KEY: ""
   AWS_SECRET_KEY: ""
@@ -307,82 +293,62 @@ awsSecret:
   AWS_DESTINATION_BUCKET: ""
   AWS_TEMPLATE_LINK: ""
   CE_AWS_TEMPLATE_URL: ""
-
 ceng-gcp-credentials: ""
-
 nameOverride: "nextgen-ce"
 fullnameOverride: ""
-
 serviceAccount:
   create: false
   annotations: {}
   name: "harness-default"
-
 podAnnotations: {}
-
 podSecurityContext: {}
-
 securityContext: {}
-
 service:
   annotations: {}
   type: ClusterIP
   port: 6340
-
 ingress:
   className: nginx
-
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPU: ""
   targetMemory: ""
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 cloudProviderConfig:
   AZURE_APP_CLIENT_ID: "0211763d-24fb-4d63-865d-92f86f77e908"
   AWS_GOV_CLOUD_ACCOUNT_ID: "147449478367"
   AWS_GOV_CLOUD_REGION_NAME: "us-gov-west-1"
   AWS_GOV_CLOUD_TEMPLATE_LINK: "https://continuous-efficiency.s3.us-east-2.amazonaws.com/setup/v1/ng/HarnessAWSTemplate.yaml"
   GCP_SERVICE_ACCOUNT_EMAIL: "placeHolder"
-
 clickhouse:
   username: "default"
   password:
     name: clickhouse
     key: admin-password
-
 workloadIdentity:
   enabled: false
-
 resources:
   limits:
     memory: "4Gi"
   requests:
     cpu: 1
     memory: "4Gi"
-
 additionalConfigs: {}
 java17flags: ""
-
 # extraVolumes:
 #   - name: volume-test
 #     configMap:
 #       name: test-config
 #       # readOnly: true
 extraVolumes: []
-
 # extraVolumeMounts:
 #   - name: volume-test
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
-
 lifecycleHooks: {}
 # lifecycleHooks:
 #   postStart:
@@ -395,9 +361,7 @@ virtualService:
   annotations: {}
 ingress:
   annotations: {}
-
 distributedLockImplementation: MONGO
-
 secrets:
   default:
     JWT_AUTH_SECRET: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
@@ -434,3 +398,21 @@ secrets:
           ACCESS_CONTROL_SECRET:
             name: ""
             property: ""
+config:
+  LOGGING_LEVEL: INFO
+  MANAGER_TARGET: harness-manager:9879
+  MANAGER_AUTHORITY: harness-manager:9879
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: harness-redis
+  EVENTS_FRAMEWORK_ENV_NAMESPACE: ""
+  EVENTS_FRAMEWORK_REDIS_SSL_ENABLED: "false"
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
+  GOOGLE_CREDENTIALS_PATH: /opt/harness/svc/ceng_gcp_credentials.json
+  GOOGLE_APPLICATION_CREDENTIALS: /opt/harness/svc/ceng_gcp_credentials.json
+  CE_GCP_CREDENTIALS_PATH: /opt/harness/svc/ceng_gcp_credentials.json
+  EVENTS_MONGO_INDEX_MANAGER_MODE: AUTO
+  AZURE_ENABLE_FILE_CHECK_AT_SOURCE: "true"
+  SEGMENT_ENABLED: "false"
+  AUDIT_ENABLED: "true"
+  ACCESS_CONTROL_ENABLED: "true"
+  MOCK_ACCESS_CONTROL_SERVICE: "false"
+  ENABLE_APPDYNAMICS: "false"
