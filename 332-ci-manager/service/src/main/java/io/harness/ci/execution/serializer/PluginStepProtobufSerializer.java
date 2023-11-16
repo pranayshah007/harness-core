@@ -128,7 +128,8 @@ public class PluginStepProtobufSerializer implements ProtobufStepSerializer<Plug
         }
       }
     }
-    if (settings.get(GIT_CLONE_DEPTH_ATTRIBUTE).asText().equals("0")) {
+    if (settings.get(GIT_CLONE_DEPTH_ATTRIBUTE) != null
+        && settings.get(GIT_CLONE_DEPTH_ATTRIBUTE).asText().equals("0")) {
       settings.remove(GIT_CLONE_DEPTH_ATTRIBUTE);
     }
   }
