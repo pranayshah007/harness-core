@@ -39,7 +39,7 @@ public class TasAppSetupBaseStepInfo {
   @NotNull
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   @YamlSchemaTypes(value = {expression})
-  @Min(1)
+  @Min(0)
   ParameterField<String> existingVersionToKeep;
   @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)

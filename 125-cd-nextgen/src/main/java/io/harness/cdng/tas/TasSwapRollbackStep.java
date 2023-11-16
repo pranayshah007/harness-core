@@ -169,6 +169,7 @@ public class TasSwapRollbackStep extends CdTaskExecutable<CfCommandResponseNG> {
             .routeMaps(tasSetupDataOutcome.getRouteMaps())
             .instanceData(instanceData)
             .upsizeInActiveApp(tasSwapRollbackStepParameters.getUpsizeInActiveApp().getValue())
+            .olderActiveVersionCountToKeep(tasSetupDataOutcome.getOlderActiveVersionCountToKeep())
             .build();
 
     final TaskData taskData = TaskData.builder()
