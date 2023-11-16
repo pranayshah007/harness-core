@@ -70,7 +70,7 @@ public class DelegateOutboxEventHandler implements OutboxEventHandler {
         case DELEGATE_UNREGISTER_EVENT:
           return handleDelegateUnRegisterEvent(outboxEvent);
         case DELEGATE_VERSION_OVERRIDE_EVENT:
-          return handleDelegateUnRegisterEvent(outboxEvent);
+          return handleDelegateVersionOverrideEvent(outboxEvent);
         default:
           return false;
       }

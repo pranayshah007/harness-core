@@ -33,7 +33,7 @@ import org.joda.time.DateTime;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class AdminDelegateVersionService {
   private final HPersistence persistence;
-  private OutboxService outboxService;
+  private final OutboxService outboxService;
 
   public String setDelegateImageTag(
       final String delegateTag, final String accountId, final boolean validTillNextRelease, final int validFor) {
