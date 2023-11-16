@@ -11,19 +11,19 @@ import io.harness.security.annotations.PublicApi;
 import io.harness.version.VersionInfoManagerV2;
 import io.harness.version.VersionInfoV2;
 
-import lombok.extern.slf4j.Slf4j;
 import com.google.inject.Inject;
+import io.dropwizard.jersey.errors.ErrorMessage;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import java.util.Map;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.WebApplicationException;
-import java.util.Map;
-import io.dropwizard.jersey.errors.ErrorMessage;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import lombok.extern.slf4j.Slf4j;
 
 @Api("version")
 @Path("/v2/version")
@@ -32,7 +32,6 @@ import io.dropwizard.jersey.errors.ErrorMessage;
 @Slf4j
 @PublicApi
 public class VersionInfoResourceV2 {
-
   private final VersionInfoManagerV2 versionInfoManager;
 
   @Inject
@@ -46,8 +45,10 @@ public class VersionInfoResourceV2 {
       return versionInfoManager.getVersionInfo();
     } catch (Exception e) {
       log.error("Failed to retrieve version info: {}", e.getMessage(), e);
-      ErrorMessage errorMessage = new ErrorMessage(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Failed to retrieve version info: " + e.getMessage());
-      throw new WebApplicationException(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorMessage).build());
+      ErrorMessage errorMessage = new ErrorMessage(
+          Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Failed to retrieve version info: " + e.getMessage());
+      throw new WebApplicationException(
+          Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorMessage).build());
     }
   }
 }

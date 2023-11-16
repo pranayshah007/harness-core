@@ -8,24 +8,24 @@
 package io.harness.version;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import io.harness.annotations.dev.OwnedBy;
 
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.version.VersionInfoException;
-import java.io.FileNotFoundException;
-import org.yaml.snakeyaml.error.YAMLException;
-import org.yaml.snakeyaml.Yaml;
-import lombok.extern.slf4j.Slf4j;
+
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 @Slf4j
 @OwnedBy(PL)
 public class VersionInfoManagerV2 {
-
   // this file path will be same for all services
   private String versionFilePath = "/opt/harness/version.yaml";
   private VersionInfoV2 cachedVersionInfo;
@@ -37,13 +37,13 @@ public class VersionInfoManagerV2 {
       return cachedVersionInfo;
     }
     try (InputStream inputStream = new FileInputStream(versionFilePath)) {
-
       // Parse YAML file
       Yaml yaml = new Yaml();
       Map<String, Object> data = yaml.load(inputStream);
 
       // Create a VersionInfo object to store the data
-      VersionInfoV2 versionInfo = VersionInfoV2.builder()
+      VersionInfoV2 versionInfo =
+          VersionInfoV2.builder()
               .buildVersion((String) data.get("BUILD_VERSION"))
               .buildTime(((Date) data.get("BUILD_TIME")).toInstant().truncatedTo(ChronoUnit.SECONDS))
               .branchName((String) data.get("BRANCH_NAME"))
@@ -66,4 +66,3 @@ public class VersionInfoManagerV2 {
     }
   }
 }
-
