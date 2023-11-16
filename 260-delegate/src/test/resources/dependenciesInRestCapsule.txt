@@ -584,7 +584,7 @@ org.powermock:powermock-reflect:jar:1.7.4:test
 org.projectlombok:lombok:jar:1.18.6:provided
 org.quartz-scheduler:quartz:jar:2.3.2
 org.reactivestreams:reactive-streams:jar:1.0.2
-org.redisson:redisson:jar:3.13.3
+org.redisson:redisson:jar:3.22.0
 org.reflections:reflections:jar:0.9.12-SNAPSHOT
 org.slf4j:jcl-over-slf4j:jar:1.7.29
 org.slf4j:jul-to-slf4j:jar:1.7.29
