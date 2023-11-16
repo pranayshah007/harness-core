@@ -214,7 +214,7 @@ public class GARApiServiceImpl implements GarApiService {
       if (!response.isSuccessful()) {
         log.error("Request not successful. Reason: {}", response);
         if (!isSuccessful(response.code(), response.errorBody().toString())) {
-          throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the versions for the package",
+          throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch Repository for the region",
               "Please check region field", new InvalidArtifactServerException(response.message(), USER));
         }
       }
