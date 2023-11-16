@@ -51,6 +51,7 @@ public class ProjectCreateEvent implements Event {
         .identifier(project.getIdentifier())
         .type(PROJECT)
         .uniqueId(project.getUniqueId())
+        .parentId(project.getParentId())
         .labels(labels)
         .build();
   }

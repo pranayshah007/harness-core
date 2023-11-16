@@ -51,6 +51,7 @@ public class OrganizationCreateEvent implements Event {
         .identifier(organization.getIdentifier())
         .type(ORGANIZATION)
         .uniqueId(organization.getUniqueId())
+        .parentId(organization.getParentId())
         .labels(labels)
         .build();
   }

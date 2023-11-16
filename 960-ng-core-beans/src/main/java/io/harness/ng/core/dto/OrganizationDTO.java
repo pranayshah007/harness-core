@@ -47,6 +47,7 @@ public class OrganizationDTO {
   @Schema(description = OrganizationConstants.IDENTIFIER)
   String identifier;
   @JsonView(JsonViews.Internal.class) @Schema(hidden = true, description = "UniqueId of Organization") String uniqueId;
+  @JsonView(JsonViews.Internal.class) @Schema(hidden = true, description = "ParentId of Organization") String parentId;
   @ApiModelProperty(required = true) @NGEntityName @Schema(description = OrganizationConstants.NAME) String name;
   @Size(max = 1024) @Schema(description = "Description of the Organization.") String description;
   @Size(max = 128) @Schema(description = "Tags for the Organization.") Map<String, String> tags;
@@ -55,11 +56,12 @@ public class OrganizationDTO {
 
   @Builder
   public OrganizationDTO(
-      String identifier, String name, String description, Map<String, String> tags, String uniqueId) {
+      String identifier, String name, String description, Map<String, String> tags, String uniqueId, String parentId) {
     this.identifier = identifier;
     this.name = name;
     this.description = description;
     this.tags = tags;
     this.uniqueId = uniqueId;
+    this.parentId = parentId;
   }
 }
