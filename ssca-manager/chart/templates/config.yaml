@@ -12,11 +12,11 @@ metadata:
     {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.global.commonAnnotations "context" $) | nindent 4 }}
   {{- end }}
 data:
-  SERVER_PORT: "8188"
-  LOGGING_LEVEL: INFO
-  MONGO_INDEX_MANAGER_MODE: AUTO
+  SERVER_PORT: {{ .Values.config.SERVER_PORT | default '8188' }}
+  LOGGING_LEVEL: {{ .Values.config.LOGGING_LEVEL | default 'INFO' }}
+  MONGO_INDEX_MANAGER_MODE: {{ .Values.config.MONGO_INDEX_MANAGER_MODE | default 'AUTO' }}
   NG_MANAGER_BASE_URL: http://ng-manager.{{ .Release.Namespace }}.svc.cluster.local:7090
-  DEPLOY_MODE: KUBERNETES_ONPREM
+  DEPLOY_MODE: {{ .Values.config.DEPLOY_MODE | default 'KUBERNETES_ONPREM' }}
   MEMORY: {{ .Values.java.memory | quote }}
   STACK_DRIVER_LOGGING_ENABLED: '{{ .Values.global.stackDriverLoggingEnabled }}'
   S3_BUCKET: {{ .Values.s3.sbomBucketName }}
@@ -28,16 +28,16 @@ data:
   S3_POLICY_BUCKET: {{ .Values.s3.policyBucketName }}
   S3_REGION: {{ .Values.s3.region }}
   CACHE_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  CACHE_BACKEND: "REDIS"
+  CACHE_BACKEND: {{ .Values.config.CACHE_BACKEND | default 'REDIS' }}
   CACHE_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  CACHE_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
+  CACHE_CONFIG_SENTINEL_MASTER_NAME: {{ .Values.config.CACHE_CONFIG_SENTINEL_MASTER_NAME | default 'harness-redis' }}
   CACHE_CONFIG_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   EVENTS_FRAMEWORK_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: {{ .Values.config.EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME | default 'harness-redis' }}
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   LOCK_CONFIG_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: 'harness-redis'
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: {{ .Values.config.LOCK_CONFIG_SENTINEL_MASTER_NAME | default 'harness-redis' }}
   LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
