@@ -405,6 +405,12 @@ secrets:
     JWT_IDENTITY_SERVICE_SECRET: "HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU="
     NOTIFICATION_CLIENT_SECRET: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
     ACCESS_CONTROL_SECRET: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
+    AWS_ACCESS_KEY: ""
+    AWS_DESTINATION_BUCKET: ""
+    AWS_SECRET_KEY: ""
+    AWS_TEMPLATE_LINK: ""
+    AZURE_APP_CLIENT_SECRET: ""
+    CE_AWS_TEMPLATE_URL: ""
   kubernetesSecrets:
     - secretName: ""
       keys:
@@ -413,6 +419,12 @@ secrets:
         JWT_IDENTITY_SERVICE_SECRET: ""
         NOTIFICATION_CLIENT_SECRET: ""
         ACCESS_CONTROL_SECRET: ""
+        AWS_ACCESS_KEY: ""
+        AWS_DESTINATION_BUCKET: ""
+        AWS_SECRET_KEY: ""
+        AWS_TEMPLATE_LINK: ""
+        AZURE_APP_CLIENT_SECRET: ""
+        CE_AWS_TEMPLATE_URL: ""
   secretManagement:
     externalSecretsOperator:
       - secretStore:
@@ -434,3 +446,26 @@ secrets:
           ACCESS_CONTROL_SECRET:
             name: ""
             property: ""
+          AWS_ACCESS_KEY:
+            name: ""
+            property: ""
+          AWS_ACCOUNT_ID:
+            name: ""
+            property: ""
+          AWS_DESTINATION_BUCKET:
+            name: ""
+            property: ""
+          AWS_SECRET_KEY:
+            name: ""
+            property: ""
+          AWS_TEMPLATE_LINK:
+            name: ""
+            property: ""
+          AZURE_APP_CLIENT_SECRET:
+            name: ""
+            property: ""
+          CE_AWS_TEMPLATE_URL:
+            name: ""
+            property: ""
+
+

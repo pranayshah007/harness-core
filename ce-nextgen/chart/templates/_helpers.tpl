@@ -118,6 +118,34 @@ NOTIFICATION_CLIENT_SECRET: '{{ .ctx.Values.secrets.default.NOTIFICATION_CLIENT_
     {{- $hasAtleastOneSecret = true }}
 ACCESS_CONTROL_SECRET: '{{ .ctx.Values.secrets.default.ACCESS_CONTROL_SECRET | b64enc }}'
     {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "AWS_ACCESS_KEY")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+AWS_ACCESS_KEY: '{{ .ctx.Values.secrets.default.AWS_ACCESS_KEY | b64enc }}'
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "AWS_ACCOUNT_ID")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+AWS_ACCOUNT_ID: '{{ .ctx.Values.secrets.default.AWS_ACCOUNT_ID | b64enc }}'
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "AWS_DESTINATION_BUCKET")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+AWS_DESTINATION_BUCKET: '{{ .ctx.Values.secrets.default.AWS_DESTINATION_BUCKET | b64enc }}'
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "AWS_SECRET_KEY")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+AWS_SECRET_KEY: '{{ .ctx.Values.secrets.default.AWS_SECRET_KEY | b64enc }}'
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "AWS_TEMPLATE_LINK")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+AWS_TEMPLATE_LINK: '{{ .ctx.Values.secrets.default.AWS_TEMPLATE_LINK | b64enc }}'
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "AZURE_APP_CLIENT_SECRET")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+AZURE_APP_CLIENT_SECRET: '{{ .ctx.Values.secrets.default.AZURE_APP_CLIENT_SECRET | b64enc }}'
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "CE_AWS_TEMPLATE_URL")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+CE_AWS_TEMPLATE_URL: '{{ .ctx.Values.secrets.default.CE_AWS_TEMPLATE_URL | b64enc }}'
+    {{- end }}
     {{- if not $hasAtleastOneSecret }}
 {}
     {{- end }}
