@@ -72,8 +72,7 @@ public class PluginStepProtobufSerializer implements ProtobufStepSerializer<Plug
     Map<String, JsonNode> settings =
         resolveJsonNodeMapParameter("settings", "Plugin", identifier, pluginStepInfo.getSettings(), false);
     Map<String, String> envVarMap = new HashMap<>();
-    if (executionSource != null && executionSource.getType() == ExecutionSource.Type.MANUAL
-        && identifier.equals(GIT_CLONE_STEP_ID) && settings != null) {
+    if (executionSource != null && identifier.equals(GIT_CLONE_STEP_ID) && settings != null) {
       resolveGitCloneDepth(settings, executionSource);
     }
     if (!isEmpty(settings)) {
@@ -121,14 +120,16 @@ public class PluginStepProtobufSerializer implements ProtobufStepSerializer<Plug
   }
 
   private void resolveGitCloneDepth(Map<String, JsonNode> settings, ExecutionSource executionSource) {
-    ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
-    if (isNotEmpty(manualExecutionSource.getBranch()) || isNotEmpty(manualExecutionSource.getTag())) {
-      if (!settings.containsKey(GIT_CLONE_DEPTH_ATTRIBUTE)) {
-        settings.put(GIT_CLONE_DEPTH_ATTRIBUTE, JsonNodeFactory.instance.textNode(GIT_CLONE_MANUAL_DEPTH.toString()));
+    if (executionSource instanceof ManualExecutionSource) {
+      ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
+      if (isNotEmpty(manualExecutionSource.getBranch()) || isNotEmpty(manualExecutionSource.getTag())) {
+        if (!settings.containsKey(GIT_CLONE_DEPTH_ATTRIBUTE)) {
+          settings.put(GIT_CLONE_DEPTH_ATTRIBUTE, JsonNodeFactory.instance.textNode(GIT_CLONE_MANUAL_DEPTH.toString()));
+        }
       }
-      if (settings.get(GIT_CLONE_DEPTH_ATTRIBUTE).asText().equals("0")) {
-        settings.remove(GIT_CLONE_DEPTH_ATTRIBUTE);
-      }
+    }
+    if (settings.get(GIT_CLONE_DEPTH_ATTRIBUTE).asText().equals("0")) {
+      settings.remove(GIT_CLONE_DEPTH_ATTRIBUTE);
     }
   }
 }
