@@ -51,16 +51,16 @@ public class ApprovalInstrumentationHelper extends InstrumentationHelper {
     eventPropertiesMap.put(APPROVAL_TYPE, approvalInstance.getType());
     switch (approvalInstance.getType()) {
       case JIRA_APPROVAL:
-        return publishJiraApprovalInfo((JiraApprovalInstance) approvalInstance, "jira_approval", eventPropertiesMap);
+        return publishJiraApprovalInfo((JiraApprovalInstance) approvalInstance, "approval_step", eventPropertiesMap);
       case CUSTOM_APPROVAL:
         return publishCustomApprovalInfo(
-            (CustomApprovalInstance) approvalInstance, "custom_approval", eventPropertiesMap);
+            (CustomApprovalInstance) approvalInstance, "approval_step", eventPropertiesMap);
       case HARNESS_APPROVAL:
         return publishHarnessApprovalInfo(
-            (HarnessApprovalInstance) approvalInstance, "harness_approval", eventPropertiesMap);
+            (HarnessApprovalInstance) approvalInstance, "approval_step", eventPropertiesMap);
       case SERVICENOW_APPROVAL:
         return publishServiceNowApprovalInfo(
-            (ServiceNowApprovalInstance) approvalInstance, "service_now_approval", eventPropertiesMap);
+            (ServiceNowApprovalInstance) approvalInstance, "approval_step", eventPropertiesMap);
     }
     return null;
   }
