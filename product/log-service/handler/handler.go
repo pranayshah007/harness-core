@@ -27,7 +27,7 @@ import (
 
 // Handler returns an http.Handler that exposes the
 // service resources.
-func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store store.Store, stackdriver *stackdriver.Stackdriver, config config.Config, ngClient *client.HTTPClient, gcsClient gcputils.GCS) http.Handler {
+func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store store.Store, stackdriver *stackdriver.Stackdriver, config config.Config, ngClient, ngPlatformClient *client.HTTPClient, gcsClient gcputils.GCS) http.Handler {
 	r := chi.NewRouter()
 	r.Use(logger.Middleware)
 
@@ -176,7 +176,7 @@ func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store s
 			With(RequiredQueryParams(accountIDParam, usePrefixParam)).
 			With(ValidatePrefixRequest()).
 			With(CacheRequest(cache)).
-			Post("/", HandleZipLinkPrefix(queue, store, cache, config, gcsClient))
+			Post("/", HandleZipLinkPrefix(queue, store, cache, config, gcsClient, ngPlatformClient))
 
 		return sr
 	}())

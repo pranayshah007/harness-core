@@ -63,6 +63,7 @@ import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.beans.FeatureName;
+import io.harness.beans.IdentifierRef;
 import io.harness.delegate.DelegateGlobalAccountController;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.NoGlobalDelegateAccountException;
@@ -94,8 +95,12 @@ import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.core.beans.AcquireTasksResponse;
 import io.harness.delegate.core.beans.InputData;
+import io.harness.delegate.core.beans.Secret;
 import io.harness.delegate.core.beans.TaskPayload;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
+import io.harness.delegate.secret.EncryptedDataDetailToSecretMapper;
+import io.harness.delegate.secret.ScopedSecretIdToIdentifierRefMapper;
+import io.harness.delegate.secret.TaskSecretService;
 import io.harness.delegate.task.TaskFailureReason;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.pcf.CfCommandRequest;
@@ -109,6 +114,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.eventframework.manager.ManagerObserverEventProducer;
 import io.harness.exception.CriticalExpressionEvaluationException;
 import io.harness.exception.DelegateNotAvailableException;
+import io.harness.exception.EncryptDecryptException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -267,6 +273,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   @Inject private ManagerObserverEventProducer managerObserverEventProducer;
   @Inject private LoggingTokenCache loggingTokenCache;
+
+  @Inject private TaskSecretService taskSecretService;
 
   private final Cache<String, EncryptedDataDetails> secretsCache =
       Caffeine.newBuilder().maximumSize(10000).expireAfterWrite(5, TimeUnit.MINUTES).build();
@@ -933,11 +941,40 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
         // TODO: add metrics for new APIs
         // delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE);
+        // Fetch EncryptionDetails
         var builder = TaskPayload.newBuilder()
                           .setId(taskId)
                           .setExecutionInfraId(delegateTask.getInfraId())
+                          .setLogKey(Objects.toString(delegateTask.getBaseLogKey(), ""))
                           .setEventType(delegateTask.getEventType())
                           .setRunnerType(delegateTask.getRunnerType());
+        if (Objects.nonNull(delegateTask.getSecretsToDecrypt())) {
+          List<IdentifierRef> secretIds =
+              delegateTask.getSecretsToDecrypt()
+                  .stream()
+                  .map(scopedId
+                      -> ScopedSecretIdToIdentifierRefMapper.map(
+                          scopedId, delegateTask.getAccountId(), delegateTask.getOrgId(), delegateTask.getProjectId()))
+                  .collect(toList());
+          try {
+            List<Secret> secretsToDecryptByDelegate =
+                secretIds.stream()
+                    .map(identifierRef -> {
+                      Optional<EncryptedDataDetail> dataDetail = taskSecretService.getEncryptionDetail(identifierRef);
+                      return dataDetail
+                          .map(detail
+                              -> EncryptedDataDetailToSecretMapper.map(identifierRef.buildScopedIdentifier(), detail))
+                          .orElseGet(null);
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(toList());
+            builder.addAllSecrets(secretsToDecryptByDelegate);
+          } catch (EncryptDecryptException e) {
+            // TODO: mark the task fail, and send response message
+            return Optional.empty();
+          }
+        }
+
         if (Objects.nonNull(delegateTask.getRunnerData())) {
           builder.setInfraData(
               InputData.newBuilder().setBinaryData(ByteString.copyFrom(delegateTask.getRunnerData())).build());
@@ -946,7 +983,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           builder.setTaskData(
               InputData.newBuilder().setBinaryData(ByteString.copyFrom(delegateTask.getTaskData())).build());
         }
-
+        builder.setAccountId(accountId);
         return Optional.of(AcquireTasksResponse.newBuilder().addTask(builder.build()).build());
       }
     } finally {

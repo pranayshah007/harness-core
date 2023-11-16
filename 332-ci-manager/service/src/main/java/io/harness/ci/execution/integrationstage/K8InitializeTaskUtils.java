@@ -136,9 +136,11 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -655,6 +657,25 @@ public class K8InitializeTaskUtils {
     if (isNotEmpty(entityDetails) && featureFlagService.isEnabled(CIE_ENABLED_RBAC, accountIdentifier)) {
       pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, false);
     }
+  }
+
+  public List<SecretVariableDetails> deDupSecrets(List<SecretVariableDetails> secretVariableDetails) {
+    Set<String> dedupSet = new HashSet<>();
+    List<SecretVariableDetails> uniqueSecretVariableDetails = new ArrayList<>();
+
+    if (isEmpty(secretVariableDetails)) {
+      return secretVariableDetails;
+    }
+
+    for (SecretVariableDetails secretVariableDetail : secretVariableDetails) {
+      if (secretVariableDetail != null
+          && !dedupSet.contains(secretVariableDetail.getSecretVariableDTO().getSecret().toSecretRefStringValue())) {
+        uniqueSecretVariableDetails.add(secretVariableDetail);
+        dedupSet.add(secretVariableDetail.getSecretVariableDTO().getSecret().toSecretRefStringValue());
+      }
+    }
+
+    return uniqueSecretVariableDetails;
   }
 
   private EntityDetail createEntityDetails(

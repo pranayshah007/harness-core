@@ -8,3 +8,4 @@ resource-groups: ../../../platform-service/modules/resource-group-service/contra
 audit-service: ../../../platform-service/modules/audit-service/contracts/openapi/v1/openapi.yaml
 idp-service: ../../../idp-service/contracts/openapi/v1/openapi.yaml
 ssca-manager: ../../../ssca-manager/contracts/openapi/v1/openapi.yaml
+cv-nextgen: ../../../srm-service/modules/cv-nextgen-service/contracts/openapi/v1/openapi.yaml

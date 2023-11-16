@@ -16,6 +16,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.creator.plan.stage.DeploymentStagePlanCreationInfo;
 
+import java.util.List;
+import java.util.Set;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
@@ -23,4 +25,19 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 @HarnessRepo
 @OwnedBy(CDC)
 public interface DeploymentStagePlanCreationInfoRepository
-    extends PagingAndSortingRepository<DeploymentStagePlanCreationInfo, String> {}
+    extends PagingAndSortingRepository<DeploymentStagePlanCreationInfo, String> {
+  /**
+   * Finds all DeploymentStagePlanCreationInfo for given scope, plan execution id and stage identifiers
+   * Uses - unique_deployment_stage_plan_creation_info_using_plan_execution_id_stage_id_idx idx
+   * or deployment_stage_plan_creation_info_using_plan_execution_id_idx idx
+   * @param accountIdentifier accountIdentifier
+   * @param orgIdentifier orgIdentifier
+   * @param projectIdentifier projectIdentifier
+   * @param planExecutionId planExecutionId
+   * @param stageIdentifiers set of stage identifiers to filter with
+   */
+  List<DeploymentStagePlanCreationInfo>
+  findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndStageIdentifierIn(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String planExecutionId,
+      Set<String> stageIdentifiers);
+}

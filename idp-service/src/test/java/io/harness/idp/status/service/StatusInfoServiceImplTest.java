@@ -18,9 +18,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.idp.status.beans.StatusInfoEntity;
 import io.harness.idp.status.enums.StatusType;
+import io.harness.idp.status.k8s.HealthCheck;
 import io.harness.idp.status.repositories.StatusInfoRepository;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
+import io.harness.spec.server.idp.v1.model.StatusInfoV2;
 
 import java.util.Optional;
 import org.junit.Before;
@@ -34,9 +36,11 @@ import org.mockito.MockitoAnnotations;
 public class StatusInfoServiceImplTest {
   @InjectMocks private StatusInfoServiceImpl statusInfoServiceImpl;
   @Mock private StatusInfoRepository statusInfoRepository;
+  @Mock private HealthCheck healthCheck;
 
   private static final String ACCOUNT_ID = "123";
   private String type;
+  private StatusInfoV2 statusInfoV2;
 
   @Before
   public void setUp() {
@@ -53,6 +57,45 @@ public class StatusInfoServiceImplTest {
         .thenReturn(Optional.of(statusInfoEntity));
     Optional<StatusInfo> statusInfo = statusInfoServiceImpl.findByAccountIdentifierAndType(ACCOUNT_ID, type);
     assertEquals(statusInfo.get().getCurrentStatus(), StatusInfo.CurrentStatusEnum.COMPLETED);
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testFindByAccountIdentifierAndTypeV2ForInfra() {
+    type = StatusType.INFRA.toString().toLowerCase();
+    StatusInfo statusInfo = initializeStatusInfo();
+    when(healthCheck.getCurrentStatus(ACCOUNT_ID)).thenReturn(Optional.of(statusInfo));
+    statusInfoV2 = statusInfoServiceImpl.findByAccountIdentifierAndTypeV2(ACCOUNT_ID, type);
+    assertEquals(statusInfoV2.get(type).getCurrentStatus(), StatusInfo.CurrentStatusEnum.RUNNING);
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testFindByAccountIdentifierAndTypeV2ForOnboarding() {
+    type = StatusType.ONBOARDING.toString().toLowerCase();
+    StatusInfoEntity statusInfoEntity = initializeStatusInfoEntity();
+    when(statusInfoRepository.findByAccountIdentifierAndType(ACCOUNT_ID, type.toUpperCase()))
+        .thenReturn(Optional.of(statusInfoEntity));
+    statusInfoV2 = statusInfoServiceImpl.findByAccountIdentifierAndTypeV2(ACCOUNT_ID, type);
+    assertEquals(statusInfoV2.get(type.toLowerCase()).getCurrentStatus(), StatusInfo.CurrentStatusEnum.COMPLETED);
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testFindByAccountIdentifierAndTypeV2ForInfraOnboarding() {
+    type = StatusType.INFRA_ONBOARDING.toString().toLowerCase();
+    when(healthCheck.getCurrentStatus(ACCOUNT_ID)).thenReturn(Optional.of(initializeStatusInfo()));
+    when(
+        statusInfoRepository.findByAccountIdentifierAndType(ACCOUNT_ID, StatusType.ONBOARDING.toString().toUpperCase()))
+        .thenReturn(Optional.empty());
+    statusInfoV2 = statusInfoServiceImpl.findByAccountIdentifierAndTypeV2(ACCOUNT_ID, type);
+    assertEquals(statusInfoV2.get(StatusType.INFRA.toString().toLowerCase()).getCurrentStatus(),
+        StatusInfo.CurrentStatusEnum.RUNNING);
+    assertEquals(statusInfoV2.get(StatusType.ONBOARDING.toString().toLowerCase()).getCurrentStatus(),
+        StatusInfo.CurrentStatusEnum.NOT_FOUND);
   }
 
   @Test
@@ -76,5 +119,11 @@ public class StatusInfoServiceImplTest {
         .reason("completed successfully")
         .lastModifiedAt(System.currentTimeMillis())
         .build();
+  }
+
+  StatusInfo initializeStatusInfo() {
+    StatusInfo statusInfo = new StatusInfo();
+    statusInfo.setCurrentStatus(StatusInfo.CurrentStatusEnum.RUNNING);
+    return statusInfo;
   }
 }

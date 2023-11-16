@@ -982,6 +982,8 @@ components:
           type: string
         tag:
           type: string
+        url:
+          type: string
         components_count:
           type: integer
         allow_list_violation_count:
@@ -993,7 +995,7 @@ components:
           enum:
             - DEPLOYED
             - GENERATED
-        updated_at:
+        updated:
           type: string
         prod_env_count:
           type: integer
@@ -1021,6 +1023,8 @@ components:
         id:
           type: string
         name:
+          type: string
+        url:
           type: string
         tag:
           type: string
@@ -1113,9 +1117,9 @@ components:
           type: string
         pipeline_execution_id:
           type: string
-        allow_list_policy_violation:
+        allow_list_violation_count:
           type: string
-        deny_list_policy_violation:
+        deny_list_violation_count:
           type: string
         attested_status:
           type: string
@@ -1151,6 +1155,10 @@ components:
           type: string
         operator:
           $ref: '#/components/schemas/Operator'
+      required:
+        - field_name
+        - value
+        - operator
     LicenseFilter:
       title: LicenseFilter
       type: object
@@ -1159,6 +1167,9 @@ components:
           type: string
         operator:
           $ref: '#/components/schemas/Operator'
+      required:
+        - value
+        - operator
   parameters:
     OrgParam:
       name: org

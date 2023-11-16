@@ -112,13 +112,14 @@ public class ScmFetchFilesHelperNG {
         .build();
   }
 
-  public String downloadFilesUsingScm(
-      String manifestFilesDirectory, GitStoreDelegateConfig gitStoreDelegateConfig, LogCallback executionLogCallback) {
+  public String downloadFilesUsingScm(String manifestFilesDirectory, GitStoreDelegateConfig gitStoreDelegateConfig,
+      LogCallback executionLogCallback, boolean mayHaveMultipleFolders) {
     String directoryPath = Paths.get(manifestFilesDirectory).toString();
     Set<String> commitIds = new HashSet<>();
     gitStoreDelegateConfig.getPaths().forEach(filePath
-        -> commitIds.add(downloadFilesForFilePath(gitStoreDelegateConfig,
-            filePath.replaceAll(regexStartSlash.pattern(), ""), executionLogCallback, directoryPath)));
+        -> commitIds.add(
+            downloadFilesForFilePath(gitStoreDelegateConfig, filePath.replaceAll(regexStartSlash.pattern(), ""),
+                executionLogCallback, directoryPath, mayHaveMultipleFolders)));
 
     if (commitIds.size() > 1) {
       log.warn("Found multiple commit ids: {}, expected only one", commitIds);
@@ -270,7 +271,7 @@ public class ScmFetchFilesHelperNG {
   }
 
   private String downloadFilesForFilePath(GitStoreDelegateConfig gitStoreDelegateConfig, String filePath,
-      LogCallback executionLogCallback, String directoryPath) {
+      LogCallback executionLogCallback, String directoryPath, boolean mayHaveMultipleFolders) {
     FileContentBatchResponse fileBatchContentResponse = getFileContentBatchResponseByFolder(
         gitStoreDelegateConfig, Collections.singleton(filePath), gitStoreDelegateConfig.getGitConfigDTO());
     boolean useBranch = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH;
@@ -279,7 +280,7 @@ public class ScmFetchFilesHelperNG {
     if (isEmpty(fileBatchContentResponse.getFileBatchContentResponse().getFileContentsList())) {
       fileBatchContentResponse =
           fetchFilesByFilePaths(useBranch, gitStoreDelegateConfig.getBranch(), gitStoreDelegateConfig.getCommitId(),
-              gitStoreDelegateConfig.getPaths(), gitStoreDelegateConfig.getGitConfigDTO());
+              Collections.singletonList(filePath), gitStoreDelegateConfig.getGitConfigDTO());
       relativize = false;
       useBase64 = false;
     }
@@ -304,12 +305,11 @@ public class ScmFetchFilesHelperNG {
 
     try {
       for (FileContent fileContent : fileContents) {
-        ScmFetcherUtils.writeFile(directoryPath, fileContent, filePath, relativize, useBase64);
+        ScmFetcherUtils.writeFile(directoryPath, fileContent, filePath, relativize, useBase64, mayHaveMultipleFolders);
       }
     } catch (Exception ex) {
       executionLogCallback.saveExecutionLog(ExceptionUtils.getMessage(ex), ERROR, CommandExecutionStatus.FAILURE);
     }
-
     return fileBatchContentResponse.getCommitId();
   }
 

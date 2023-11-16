@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.services.impl;
 
+import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,6 +19,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.BuilderFactory.Context;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.beans.template.TemplateDTO;
+import io.harness.cvng.core.beans.template.TemplateMetadata;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.SetupUsageEventService;
 import io.harness.eventsframework.api.AbstractProducer;
@@ -45,12 +48,14 @@ public class SetupUsageEventsServiceImplTest extends CvNextGenTestBase {
 
   private BuilderFactory builderFactory;
   private Context context;
+  private MonitoredServiceDTO monitoredServiceDTO;
 
   @Before
   public void setup() throws IllegalAccessException {
     builderFactory = BuilderFactory.getDefault();
     context = builderFactory.getContext();
     producer = Mockito.mock(AbstractProducer.class);
+    monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
 
     FieldUtils.writeField(setupUsageEventService, "eventProducer", producer, true);
   }
@@ -59,34 +64,57 @@ public class SetupUsageEventsServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testSendCreateEventsForMonitoredService() throws InvalidProtocolBufferException {
-    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
-
     ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
     setupUsageEventService.sendCreateEventsForMonitoredService(context.getProjectParams(), monitoredServiceDTO);
 
     verify(producer, times(3)).send(messageArgumentCaptor.capture());
 
     List<Message> messages = messageArgumentCaptor.getAllValues();
-    assertThat(messages.size()).isEqualTo(3);
-    assertThat(messages.get(0).getMetadataMap().get("referredEntityType")).isEqualTo("CONNECTORS");
+    assertThat(messages).hasSize(3);
+
     EntityDetailProtoDTO entityDetailProtoDTO =
         EntitySetupUsageCreateV2DTO.parseFrom(messages.get(0).getData()).getReferredByEntity();
     assertThat(entityDetailProtoDTO.getName()).isEqualTo(monitoredServiceDTO.getName());
     assertThat(entityDetailProtoDTO.getIdentifierRef().getIdentifier().getValue())
         .isEqualTo(monitoredServiceDTO.getIdentifier());
-    assertThat(messages.get(0).getMetadataMap().get("action")).isEqualTo("flushCreate");
-    assertThat(messages.get(1).getMetadataMap().get("referredEntityType")).isEqualTo("SERVICE");
-    assertThat(messages.get(1).getMetadataMap().get("action")).isEqualTo("flushCreate");
-    assertThat(messages.get(2).getMetadataMap().get("referredEntityType")).isEqualTo("ENVIRONMENT");
-    assertThat(messages.get(2).getMetadataMap().get("action")).isEqualTo("flushCreate");
+
+    assertThat(messages.get(0).getMetadataMap()).containsEntry("referredEntityType", "CONNECTORS");
+    assertThat(messages.get(0).getMetadataMap()).containsEntry("action", "flushCreate");
+    assertThat(messages.get(1).getMetadataMap()).containsEntry("referredEntityType", "SERVICE");
+    assertThat(messages.get(1).getMetadataMap()).containsEntry("action", "flushCreate");
+    assertThat(messages.get(2).getMetadataMap()).containsEntry("referredEntityType", "ENVIRONMENT");
+    assertThat(messages.get(2).getMetadataMap()).containsEntry("action", "flushCreate");
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testSendCreateEventsForTemplateReferencedMonitoredService() throws InvalidProtocolBufferException {
+    monitoredServiceDTO.setTemplate(
+        TemplateDTO.builder().templateRef("template1").versionLabel("v1").isTemplateByReference(true).build());
+
+    ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+    setupUsageEventService.sendCreateEventsForMonitoredService(context.getProjectParams(), monitoredServiceDTO);
+
+    verify(producer, times(4)).send(messageArgumentCaptor.capture());
+
+    List<Message> messages = messageArgumentCaptor.getAllValues();
+    assertThat(messages).hasSize(4);
+
+    EntityDetailProtoDTO entityDetailProtoDTO =
+        EntitySetupUsageCreateV2DTO.parseFrom(messages.get(0).getData()).getReferredByEntity();
+    assertThat(entityDetailProtoDTO.getName()).isEqualTo(monitoredServiceDTO.getName());
+    assertThat(entityDetailProtoDTO.getIdentifierRef().getIdentifier().getValue())
+        .isEqualTo(monitoredServiceDTO.getIdentifier());
+
+    assertThat(messages.get(3).getMetadataMap()).containsEntry("referredEntityType", "TEMPLATE");
+    assertThat(messages.get(3).getMetadataMap()).containsEntry("action", "flushCreate");
   }
 
   @Test
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testSendDeleteEventsForMonitoredService() throws InvalidProtocolBufferException {
-    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
-
     ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
     setupUsageEventService.sendDeleteEventsForMonitoredService(context.getProjectParams(),
         MonitoredService.builder()
@@ -97,16 +125,48 @@ public class SetupUsageEventsServiceImplTest extends CvNextGenTestBase {
     verify(producer, times(3)).send(messageArgumentCaptor.capture());
 
     List<Message> messages = messageArgumentCaptor.getAllValues();
-    assertThat(messages.size()).isEqualTo(3);
-    assertThat(messages.get(0).getMetadataMap().get("referredEntityType")).isEqualTo("CONNECTORS");
+    assertThat(messages).hasSize(3);
+
     EntityDetailProtoDTO entityDetailProtoDTO =
         EntitySetupUsageCreateV2DTO.parseFrom(messages.get(0).getData()).getReferredByEntity();
     assertThat(entityDetailProtoDTO.getIdentifierRef().getIdentifier().getValue())
         .isEqualTo(monitoredServiceDTO.getIdentifier());
-    assertThat(messages.get(0).getMetadataMap().get("action")).isEqualTo("flushCreate");
-    assertThat(messages.get(1).getMetadataMap().get("referredEntityType")).isEqualTo("SERVICE");
-    assertThat(messages.get(1).getMetadataMap().get("action")).isEqualTo("flushCreate");
-    assertThat(messages.get(2).getMetadataMap().get("referredEntityType")).isEqualTo("ENVIRONMENT");
-    assertThat(messages.get(2).getMetadataMap().get("action")).isEqualTo("flushCreate");
+
+    assertThat(messages.get(0).getMetadataMap()).containsEntry("referredEntityType", "CONNECTORS");
+    assertThat(messages.get(0).getMetadataMap()).containsEntry("action", "flushCreate");
+    assertThat(messages.get(1).getMetadataMap()).containsEntry("referredEntityType", "SERVICE");
+    assertThat(messages.get(1).getMetadataMap()).containsEntry("action", "flushCreate");
+    assertThat(messages.get(2).getMetadataMap()).containsEntry("referredEntityType", "ENVIRONMENT");
+    assertThat(messages.get(2).getMetadataMap()).containsEntry("action", "flushCreate");
+  }
+
+  @Test
+  @Owner(developers = SOWMYA)
+  @Category(UnitTests.class)
+  public void testSendDeleteEventsForTemplateReferencedMonitoredService() throws InvalidProtocolBufferException {
+    ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+    setupUsageEventService.sendDeleteEventsForMonitoredService(context.getProjectParams(),
+        MonitoredService.builder()
+            .identifier(monitoredServiceDTO.getIdentifier())
+            .name(monitoredServiceDTO.getName())
+            .templateMetadata(TemplateMetadata.builder()
+                                  .templateIdentifier("template")
+                                  .versionLabel("v1")
+                                  .isTemplateByReference(true)
+                                  .build())
+            .build());
+
+    verify(producer, times(4)).send(messageArgumentCaptor.capture());
+
+    List<Message> messages = messageArgumentCaptor.getAllValues();
+    assertThat(messages).hasSize(4);
+
+    EntityDetailProtoDTO entityDetailProtoDTO =
+        EntitySetupUsageCreateV2DTO.parseFrom(messages.get(0).getData()).getReferredByEntity();
+    assertThat(entityDetailProtoDTO.getIdentifierRef().getIdentifier().getValue())
+        .isEqualTo(monitoredServiceDTO.getIdentifier());
+
+    assertThat(messages.get(3).getMetadataMap()).containsEntry("referredEntityType", "TEMPLATE");
+    assertThat(messages.get(3).getMetadataMap()).containsEntry("action", "flushCreate");
   }
 }

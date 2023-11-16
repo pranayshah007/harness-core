@@ -13,6 +13,7 @@ import static io.harness.container.ContainerInfo.Status.SUCCESS;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.GEORGE;
+import static io.harness.rule.OwnerRule.PRAGYESH;
 import static io.harness.rule.OwnerRule.RAGHVENDRA;
 import static io.harness.rule.OwnerRule.SAINATH;
 import static io.harness.rule.OwnerRule.SATYAM;
@@ -80,9 +81,12 @@ import com.amazonaws.services.applicationautoscaling.model.ScalableTarget;
 import com.amazonaws.services.applicationautoscaling.model.ScalingPolicy;
 import com.amazonaws.services.ecs.model.AssignPublicIp;
 import com.amazonaws.services.ecs.model.AwsVpcConfiguration;
+import com.amazonaws.services.ecs.model.CapacityProviderStrategyItem;
+import com.amazonaws.services.ecs.model.Cluster;
 import com.amazonaws.services.ecs.model.ContainerDefinition;
 import com.amazonaws.services.ecs.model.CreateServiceRequest;
 import com.amazonaws.services.ecs.model.DeleteServiceRequest;
+import com.amazonaws.services.ecs.model.DescribeClustersResult;
 import com.amazonaws.services.ecs.model.DescribeServicesResult;
 import com.amazonaws.services.ecs.model.KeyValuePair;
 import com.amazonaws.services.ecs.model.LaunchType;
@@ -1380,6 +1384,31 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
         ecsSetupCommandTaskHelper.getCreateServiceRequest(attribute, emptyList(), params, taskDefinition,
             "containerServiceName", mockCallback, LoggerFactory.getLogger("test-logger"), builder, false);
     assertThat(createServiceRequest.getEnableExecuteCommand()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testCreateEcsServiceDaemonStrategy() {
+    EcsSetupParams params = anEcsSetupParams()
+                                .withRegion("us-east-1")
+                                .withClusterName("cluster")
+                                .withTaskFamily("foo")
+                                .withIsDaemonSchedulingStrategy(true)
+                                .withLaunchType("EC2")
+                                .build();
+    TaskDefinition taskDefinition = new TaskDefinition().withRevision(2);
+    SettingAttribute attribute = SettingAttribute.builder().value(AwsConfig.builder().build()).build();
+    ContainerSetupCommandUnitExecutionDataBuilder builder = ContainerSetupCommandUnitExecutionData.builder();
+    ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
+    doNothing().when(mockCallback).saveExecutionLog(anyString());
+    Cluster cluster = new Cluster().withDefaultCapacityProviderStrategy(new CapacityProviderStrategyItem());
+    DescribeClustersResult describeClustersResult = new DescribeClustersResult().withClusters(cluster);
+    doReturn(describeClustersResult).when(mockAwsHelperService).describeClusters(anyString(), any(), any(), any());
+    CreateServiceRequest createServiceRequest =
+        ecsSetupCommandTaskHelper.getCreateServiceRequest(attribute, emptyList(), params, taskDefinition,
+            "containerServiceName", mockCallback, LoggerFactory.getLogger("test-logger"), builder, false);
+    assertThat(createServiceRequest.getLaunchType()).isEqualTo("EC2");
   }
 
   @Test

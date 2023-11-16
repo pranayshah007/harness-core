@@ -89,7 +89,7 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
     if (language == null) {
       throw new CIStageExecutionException("language cannot be null");
     }
-    if (language.equalsIgnoreCase("python") && featureFlagService.isEnabled(FeatureName.CI_PYTHON_TI, accountId)) {
+    if (language.equalsIgnoreCase("python") && !featureFlagService.isEnabled(FeatureName.CI_PYTHON_TI, accountId)) {
       throw new CIStageExecutionException("python TI is not enabled for this account");
     }
     runTestsStepBuilder.setLanguage(language.toLowerCase());

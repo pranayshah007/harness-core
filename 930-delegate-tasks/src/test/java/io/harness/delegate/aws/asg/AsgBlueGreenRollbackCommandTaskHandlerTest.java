@@ -116,7 +116,7 @@ public class AsgBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
     assertThat(asgNameCaptor.getValue()).isEqualTo(STAGE_ASG_NAME);
 
     verify(asgSdkManager, times(0)).updateASG(anyString(), anyString(), anyString(), any());
-    verify(asgSdkManager, times(0)).modifySpecificListenerRule(anyString(), anyString(), any(), any());
+    verify(asgSdkManager, times(0)).modifySpecificListenerRule(anyString(), anyString(), any(List.class), any());
     verify(asgSdkManager, times(0)).updateBGTags(anyString(), anyString());
   }
 
@@ -138,7 +138,7 @@ public class AsgBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
     assertThat(asgNameCaptor.getValue()).isEqualTo(STAGE_ASG_NAME);
 
     verify(asgSdkManager, times(1)).updateASG(anyString(), anyString(), anyString(), any());
-    verify(asgSdkManager, times(0)).modifySpecificListenerRule(anyString(), anyString(), any(), any());
+    verify(asgSdkManager, times(0)).modifySpecificListenerRule(anyString(), anyString(), any(List.class), any());
     verify(asgSdkManager, times(0)).updateBGTags(anyString(), anyString());
   }
 
@@ -157,7 +157,7 @@ public class AsgBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
 
     verify(asgSdkManager, times(0)).deleteAsg(anyString());
     verify(asgSdkManager, times(2)).updateASG(anyString(), anyString(), anyString(), any());
-    verify(asgSdkManager, times(2)).modifySpecificListenerRule(anyString(), anyString(), any(), any());
+    verify(asgSdkManager, times(2)).modifySpecificListenerRule(anyString(), anyString(), any(List.class), any());
     verify(asgSdkManager, times(2)).updateBGTags(anyString(), anyString());
   }
 
@@ -176,7 +176,7 @@ public class AsgBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
 
     verify(asgSdkManager, times(0)).deleteAsg(anyString());
     verify(asgSdkManager, times(2)).updateASG(anyString(), anyString(), anyString(), any());
-    verify(asgSdkManager, times(0)).modifySpecificListenerRule(anyString(), anyString(), any(), any());
+    verify(asgSdkManager, times(0)).modifySpecificListenerRule(anyString(), anyString(), any(List.class), any());
     verify(asgSdkManager, times(0)).updateBGTags(anyString(), anyString());
   }
 

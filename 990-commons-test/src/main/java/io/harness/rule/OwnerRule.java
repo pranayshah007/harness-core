@@ -194,6 +194,7 @@ public class OwnerRule implements TestRule {
   public static final String RISHABH = "rishabh.gupta";
   public static final String ROGER = "roger.simms";
   public static final String ROHIT = "rohit.reddy";
+  public static final String SUJEESH = "sujeesh.madathil";
   public static final String ROHIT_KUMAR = "rohit.kumar";
   public static final String ROHITKARELIA = "rohit.karelia";
   public static final String RUSHABH = "rushabh.shah";
@@ -343,7 +344,7 @@ public class OwnerRule implements TestRule {
   public static final String SHOBHIT_SINGH = "shobhit.singh";
   public static final String RAKSHIT_AGARWAL = "rakshit.agarwal";
   public static final String VINIT_KUMAR = "vinit.kumar";
-
+  public static final String SHUBHENDU = "shubhendu.patidar";
   public static final String EOIN_MCAFEE = "eoin.mcafee";
 
   public static final String DMACK = "daniel.mack";
@@ -360,6 +361,7 @@ public class OwnerRule implements TestRule {
           .put(AASHRIT, defaultUserInfo(AASHRIT).slack("U05GY78UG1J").team(IDP).build())
           .put(ABHIJEET, defaultUserInfo(ABHIJEET).slack("U0395DJBXS7").team(CE).build())
           .put(ABHIJITH, defaultUserInfo(ABHIJITH).slack("U0270PE0T24").team(CV).build())
+          .put(SHUBHENDU, defaultUserInfo(SHUBHENDU).slack("U05R38YQ8J3").team(CV).build())
           .put(ABHINAV, defaultUserInfo(ABHINAV).slack("UQQPR8M6Y").team(DX).build())
           .put(AKHIL_PANDEY, defaultUserInfo(AKHIL_PANDEY).slack("U0141LFM478").team(CDP).build())
           .put(ABHISHEK, defaultUserInfo(ABHISHEK).slack("U03F6BDAKTN").team(CDC).build())
@@ -457,6 +459,7 @@ public class OwnerRule implements TestRule {
           .put(RICHA, defaultUserInfo(RICHA).slack("U02SF3HLXEZ").team(PL).build())
           .put(RISHABH, defaultUserInfo(RISHABH).slack("U03E51DCJRL").team(CDP).build())
           .put(ROHIT, defaultUserInfo(ROHIT).slack("UKLSUUCAC").team(CE).build())
+          .put(SUJEESH, defaultUserInfo(SUJEESH).slack("U030GNDDENL").team(CE).build())
           .put(ROHIT_KUMAR, defaultUserInfo(ROHIT_KUMAR).slack("UL92UJN4S").team(DX).build())
           .put(ROHITKARELIA, defaultUserInfo(ROHITKARELIA).slack("UP48HU3T9").team(SWAT).build())
           .put(RUSHABH, defaultUserInfo(RUSHABH).slack("U8M736D36").team(PL).jira("rushabh").build())

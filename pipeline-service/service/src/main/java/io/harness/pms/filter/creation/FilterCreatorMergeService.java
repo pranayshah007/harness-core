@@ -22,6 +22,7 @@ import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -291,9 +292,9 @@ public class FilterCreatorMergeService {
   @VisibleForTesting
   public Optional<EntityDetailProtoDTO> getGitConnectorReference(PipelineEntity pipelineEntity) {
     if (isGitSimplificationEnabled(pipelineEntity)) {
-      IdentifierRef identifierRef =
-          IdentifierRefHelper.getIdentifierRef(pipelineEntity.getConnectorRef(), pipelineEntity.getAccountIdentifier(),
-              pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
+      IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
+          getConnectorRefFromPipelineEntity(pipelineEntity), pipelineEntity.getAccountIdentifier(),
+          pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
 
       IdentifierRefProtoDTO connectorReference =
           IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(identifierRef.getAccountIdentifier(),
@@ -305,6 +306,15 @@ public class FilterCreatorMergeService {
       return Optional.of(connectorDetails);
     }
     return Optional.empty();
+  }
+
+  private String getConnectorRefFromPipelineEntity(PipelineEntity pipelineEntity) {
+    if (isNotEmpty(pipelineEntity.getConnectorRef())) {
+      return pipelineEntity.getConnectorRef();
+    }
+    GitAwareContextHelper.initDefaultScmGitMetaData();
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    return gitEntityInfo.getConnectorRef();
   }
 
   private boolean isGitSimplificationEnabled(PipelineEntity pipelineEntity) {

@@ -377,6 +377,32 @@ public class AccountResource {
         accountService.updateCrossGenerationAccessEnabled(accountId, isCrossGenerationAccessEnabled, false));
   }
 
+  @PUT
+  @Path("{accountId}/canny-username-abbreviation-enabled")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Account> updateCannyUsernameAbbreviationEnabled(
+      @PathParam("accountId") @NotEmpty String accountId,
+      @QueryParam("cannyUsernameAbbreviationEnabled") @DefaultValue(
+          "false") boolean isCannyUsernameAbbreviationEnabled) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(
+          accountService.updateCannyUsernameAbbreviationEnabled(accountId, isCannyUsernameAbbreviationEnabled));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(Lists.newArrayList(
+              ResponseMessage.builder()
+                  .message("User not allowed to update account isCannyUsernameAbbreviationEnabled field")
+                  .build()))
+          .build();
+    }
+  }
+
   @POST
   @Path("/createSampleApplication")
   @Timed

@@ -34,8 +34,8 @@ message Resource {
   Supported resource types. UNKNOWN resource type should not be used
  */
 enum ResourceType {
-  RES_UNKNOWN = 0;
-  RES_VOLUME = 1;
+  RESOURCE_TYPE_UNSPECIFIED = 0;
+  RESOURCE_TYPE_VOLUME = 1;
 }
 
 message EmptyDirVolume {

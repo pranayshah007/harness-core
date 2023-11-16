@@ -73,8 +73,9 @@ public class AccessControlDebeziumChangeConsumerTest extends AggregatorTestBase 
     collectionToConsumerMap = new HashMap<>();
     changeConsumer = mock(ChangeConsumer.class);
     collectionToConsumerMap.put("mockAccessControlEntity", changeConsumer);
-    accessControlDebeziumChangeConsumer = new AccessControlDebeziumChangeConsumer(idDeserializer,
-        collectionToDeserializerMap, collectionToConsumerMap, changeEventFailureHandler, accessControlAdminService);
+    accessControlDebeziumChangeConsumer =
+        new AccessControlDebeziumChangeConsumer(idDeserializer, collectionToDeserializerMap, collectionToConsumerMap,
+            changeEventFailureHandler, accessControlAdminService, false);
     recordCommitter = mock(DebeziumEngine.RecordCommitter.class);
   }
 

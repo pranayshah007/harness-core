@@ -66,7 +66,9 @@ import io.harness.connector.utils.ConnectorUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityIdentifierValidator;
 import io.harness.delegate.beans.TaskData;
+import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
 import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto;
 import io.harness.exception.InvalidRequestException;
@@ -622,6 +624,10 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
                                                    .setStageExecutionId(ambiance.getStageExecutionId())
                                                    .build())
                 .setUsageType(PIPELINE_EXECUTION)
+                .setEntityType(EntityTypeProtoEnum.PIPELINES)
+                .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+                    AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+                    AmbianceUtils.getProjectIdentifier(ambiance), AmbianceUtils.getPipelineIdentifier(ambiance)))
                 .build());
       }
     }

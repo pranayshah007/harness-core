@@ -93,7 +93,7 @@ public class InfraRequestTestFactory {
   private static SetupExecutionInfrastructureRequest createSetupInfraRequest(
       final K8sInfraSpec infraSpec, final String logKey) {
     final ExecutionInfrastructure infra = ExecutionInfrastructure.newBuilder()
-                                              .setLogConfig(LogConfig.newBuilder().setLogKey(logKey).build())
+                                              .setLogConfig(LogConfig.newBuilder().setLogPrefix(logKey).build())
                                               .setK8S(infraSpec)
                                               .build();
     final var config = SchedulingConfig.newBuilder()
@@ -110,7 +110,7 @@ public class InfraRequestTestFactory {
 
   private static Resource createEmptyDir() {
     return Resource.newBuilder()
-        .setType(ResourceType.RES_VOLUME)
+        .setType(ResourceType.RESOURCE_TYPE_VOLUME)
         .setEmptyDir(
             EmptyDirVolume.newBuilder().setName("name").setPath("path").setSize("size").setMedium("medium").build())
         .build();
@@ -142,7 +142,7 @@ public class InfraRequestTestFactory {
 
   private static io.harness.delegate.core.beans.Resource expectedEmptyDir() {
     return io.harness.delegate.core.beans.Resource.newBuilder()
-        .setType(io.harness.delegate.core.beans.ResourceType.RES_VOLUME)
+        .setType(io.harness.delegate.core.beans.ResourceType.RESOURCE_TYPE_VOLUME)
         .setSpec(Any.pack(io.harness.delegate.core.beans.EmptyDirVolume.newBuilder()
                               .setName("name")
                               .setPath("path")

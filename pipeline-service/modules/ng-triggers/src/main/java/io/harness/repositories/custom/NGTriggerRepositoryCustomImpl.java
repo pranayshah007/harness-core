@@ -82,6 +82,7 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
       }
 
       PollingSubscriptionStatus pollingSubscriptionStatus = triggerStatus.getPollingSubscriptionStatus();
+      overrideFailedPollingStatusIfExpired(pollingSubscriptionStatus);
       ValidationStatus validationStatus = triggerStatus.getValidationStatus();
       WebhookAutoRegistrationStatus webhookAutoRegistrationStatus = triggerStatus.getWebhookAutoRegistrationStatus();
 
@@ -235,7 +236,7 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
 
   @Override
   public boolean updateManyTriggerPollingSubscriptionStatusBySignatures(String accountId, List<String> signatures,
-      boolean status, String errorMessage, List<String> versions, Long timestamp) {
+      boolean status, String errorMessage, List<String> versions, Long timestamp, Long errorStatusValidUntil) {
     Update update = new Update();
     PollingSubscriptionStatus pollingSubscriptionStatus =
         PollingSubscriptionStatus.builder()
@@ -243,6 +244,7 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
             .detailedMessage(errorMessage)
             .lastPolled(versions)
             .lastPollingUpdate(timestamp)
+            .errorStatusValidUntil(errorStatusValidUntil)
             .build();
     update.set(NGTriggerEntityKeys.triggerStatus + "." + TriggerStatusKeys.pollingSubscriptionStatus,
         pollingSubscriptionStatus);
@@ -256,5 +258,14 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
     return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
+  }
+
+  private static void overrideFailedPollingStatusIfExpired(PollingSubscriptionStatus pollingSubscriptionStatus) {
+    if (pollingSubscriptionStatus != null && pollingSubscriptionStatus.getStatusResult().equals(StatusResult.FAILED)
+        && pollingSubscriptionStatus.getErrorStatusValidUntil() != null
+        && pollingSubscriptionStatus.getErrorStatusValidUntil() < System.currentTimeMillis()) {
+      pollingSubscriptionStatus.setStatusResult(StatusResult.SUCCESS);
+      pollingSubscriptionStatus.setDetailedMessage(null);
+    }
   }
 }

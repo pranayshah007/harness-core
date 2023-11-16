@@ -7,7 +7,7 @@
 
 package io.harness.plancreator.pipeline;
 
-import static io.harness.pms.utils.NGPipelineSettingsConstant.MAX_STAGE_TIMEOUT;
+import static io.harness.pms.utils.NGPipelineSettingsConstant.MAX_PIPELINE_TIMEOUT;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -84,9 +84,9 @@ public class NGPipelinePlanCreator extends ChildrenPlanCreator<PipelineInfoConfi
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
             .skipExpressionChain(false);
-    ParameterField<Timeout> timeout =
-        SdkTimeoutObtainmentUtils.getTimeout(config.getTimeout(), ctx.getTimeoutDuration(MAX_STAGE_TIMEOUT.getName()),
-            ctx.getFeatureFlagValue(FeatureName.CDS_DISABLE_MAX_TIMEOUT_CONFIG.toString()));
+    ParameterField<Timeout> timeout = SdkTimeoutObtainmentUtils.getTimeout(config.getTimeout(),
+        ctx.getTimeoutDuration(MAX_PIPELINE_TIMEOUT.getName()),
+        ctx.getFeatureFlagValue(FeatureName.CDS_DISABLE_MAX_TIMEOUT_CONFIG.toString()));
     planNodeBuilder = setStageTimeoutObtainment(timeout, planNodeBuilder);
     StepParameters stepParameters =
         PipelineSetupStepParameters.getStepParameters(ctx, config, stagesYamlNode.getUuid(), timeout);

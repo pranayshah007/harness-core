@@ -525,6 +525,7 @@ public final class STOSettingsUtils {
 
     map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
     map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+    map.putAll(processSTOSBOMFields(stepInfo.getSbom()));
 
     return map;
   }
@@ -563,6 +564,8 @@ public final class STOSettingsUtils {
     Map<String, String> map = new HashMap<>();
 
     map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+
+    map.putAll(processSTOSBOMFields(stepInfo.getSbom()));
 
     return map;
   }

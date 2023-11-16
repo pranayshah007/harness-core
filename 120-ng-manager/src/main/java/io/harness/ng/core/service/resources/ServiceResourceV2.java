@@ -8,6 +8,7 @@
 package io.harness.ng.core.service.resources;
 
 import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
+import static io.harness.NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.rbac.NGResourceType.SERVICE;
@@ -57,6 +58,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.gitaware.helper.MoveConfigOperationType;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
@@ -83,6 +85,9 @@ import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
+import io.harness.ng.core.service.entity.ServiceMoveConfigOperationDTO;
+import io.harness.ng.core.service.entity.ServiceMoveConfigRequestDTO;
+import io.harness.ng.core.service.entity.ServiceMoveConfigResponse;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
@@ -102,6 +107,8 @@ import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
+import com.codahale.metrics.annotation.ResponseMetered;
+import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -218,6 +225,8 @@ public class ServiceResourceV2 {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "The saved Service")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<ServiceResponse>
   get(@Parameter(description = SERVICE_PARAM_MESSAGE) @PathParam(
           "serviceIdentifier") @ResourceIdentifier String serviceIdentifier,
@@ -275,6 +284,8 @@ public class ServiceResourceV2 {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created Service")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<ServiceResponse>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -311,6 +322,8 @@ public class ServiceResourceV2 {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created Services")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<PageResponse<ServiceResponse>>
   createServices(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                      NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -348,6 +361,8 @@ public class ServiceResourceV2 {
   @Operation(operationId = "deleteServiceV2", summary = "Delete a Service by identifier",
       responses =
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns true if the Service is deleted") })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<Boolean>
   delete(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = SERVICE_PARAM_MESSAGE) @PathParam(
@@ -368,6 +383,8 @@ public class ServiceResourceV2 {
   @ApiOperation(value = "Update a service by identifier", nickname = "updateServiceV2")
   @Operation(operationId = "updateServiceV2", summary = "Update a Service by identifier",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the updated Service") })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<ServiceResponse>
   update(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -399,6 +416,8 @@ public class ServiceResourceV2 {
   @ApiOperation(value = "Upsert a service by identifier", nickname = "upsertServiceV2")
   @Operation(operationId = "upsertServiceV2", summary = "Upsert a Service by identifier",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the updated Service") })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<ServiceResponse>
   upsert(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -430,6 +449,8 @@ public class ServiceResourceV2 {
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the list of Services for a Project")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<PageResponse<ServiceResponse>>
   listServices(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                    NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
@@ -505,6 +526,8 @@ public class ServiceResourceV2 {
       hidden = true)
   @InternalApi
   @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_view")
+  @Timed
+  @ResponseMetered
   public ResponseDTO<PageResponse<ServiceResponse>>
   getAllServicesList(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -540,6 +563,8 @@ public class ServiceResourceV2 {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns the list of Services filtered by scoped service refs")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<PageResponse<ServiceResponse>>
   getServicesFilteredByRefs(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                                 NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
@@ -625,6 +650,8 @@ public class ServiceResourceV2 {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns the list of Services for a Project that are accessible")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<List<ServiceResponse>>
   listAccessServices(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                          NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
@@ -941,6 +968,8 @@ public class ServiceResourceV2 {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns the list of actions available for service hooks")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<Set<ServiceHookAction>>
   getServiceHookActions(@QueryParam("serviceSpecType") @NotNull String serviceSpecType) {
     if (allowedServiceSpecs.contains(serviceSpecType)) {
@@ -1080,5 +1109,46 @@ public class ServiceResourceV2 {
     RepoListResponseDTO repoListResponseDTO = serviceEntityService.getListOfRepos(
         accountIdentifier, orgIdentifier, projectIdentifier, includeAllServicesAccessibleAtScope);
     return ResponseDTO.newResponse(repoListResponseDTO);
+  }
+
+  @POST
+  @Path("/move-config/{serviceIdentifier}")
+  @ApiOperation(value = "Move Service YAML from inline to remote", nickname = "moveServiceConfigs")
+  @Operation(operationId = "moveServiceConfigs", summary = "Move Service YAML from inline to remote",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Fetches Service YAML from Harness DB and creates a remote entity")
+      })
+  @Hidden
+  public ResponseDTO<ServiceMoveConfigResponse>
+  moveConfig(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                 NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = SERVICE_PARAM_MESSAGE) @PathParam(SERVICE_IDENTIFIER_KEY)
+      @ResourceIdentifier String serviceIdentifier, @BeanParam ServiceMoveConfigRequestDTO serviceRequestDTO) {
+    // check for service update permission
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(NGResourceType.SERVICE, serviceIdentifier), SERVICE_UPDATE_PERMISSION);
+
+    ServiceMoveConfigOperationDTO moveConfigOperationDTO =
+        ServiceMoveConfigOperationDTO.builder()
+            .repoName(serviceRequestDTO.getRepoName())
+            .branch(serviceRequestDTO.getBranch())
+            .moveConfigOperationType(
+                MoveConfigOperationType.getMoveConfigType(serviceRequestDTO.getMoveConfigOperationType()))
+            .connectorRef(serviceRequestDTO.getConnectorRef())
+            .baseBranch(serviceRequestDTO.getBaseBranch())
+            .commitMessage(serviceRequestDTO.getCommitMsg())
+            .isNewBranch(serviceRequestDTO.getIsNewBranch())
+            .filePath(serviceRequestDTO.getFilePath())
+            .build();
+
+    ServiceMoveConfigResponse serviceMoveConfigResponse = serviceEntityService.moveServiceStoreTypeConfig(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, moveConfigOperationDTO);
+    return ResponseDTO.newResponse(serviceMoveConfigResponse);
   }
 }

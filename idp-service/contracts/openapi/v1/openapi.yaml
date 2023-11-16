@@ -276,6 +276,24 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/StatusInfoRequest'
       x-internal: true
+  /v2/status-info/{type}:
+    get:
+      summary: Get Status Info by type
+      description: Get Status Info for the given type
+      tags:
+        - StatusInfoV2
+      responses:
+        '200':
+          $ref: '#/components/responses/StatusInfoResponseV2'
+      operationId: get-status-info-type-v2
+      x-stoplight:
+        id: g2rre6x1jk36w
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/StatusType'
+      security:
+        - x-api-key: []
+      x-internal: true
   /v1/namespace-info:
     get:
       summary: Get Namespace Info
@@ -1507,6 +1525,13 @@ components:
       properties:
         status:
           $ref: '#/components/schemas/StatusInfo'
+    StatusInfoV2:
+      title: StatusInfoV2
+      x-stoplight:
+        id: ygx956s72iibx
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/StatusInfo'
     NamespaceInfo:
       title: NamespaceInfo
       x-stoplight:
@@ -3471,6 +3496,26 @@ components:
         - kind
         - type
         - score
+    ScorecardStatsResponse:
+      title: ScorecardStatsResponse
+      x-stoplight:
+        id: csadnzoryu4um
+      description: ScorecardStatsResponse
+      type: object
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: czewiwd87fr8u
+        stats:
+          type: array
+          x-stoplight:
+            id: f4tm5re3zal0h
+          items:
+            $ref: '#/components/schemas/ScorecardStats'
+      required:
+        - name
+        - stats
     CheckStats:
       title: CheckStats
       x-stoplight:
@@ -3510,6 +3555,27 @@ components:
         - kind
         - type
         - status
+    CheckStatsResponse:
+      title: CheckStatsResponse
+      x-stoplight:
+        id: 1hhr4bzpt278k
+      type: object
+      description: CheckStatsResponse
+      x-internal: true
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: 5kkekddw3r1zh
+        stats:
+          x-stoplight:
+            id: nd4na7s04suxx
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckStats'
+      required:
+        - name
+        - stats
     CheckGraph:
       title: CheckGraph
       x-stoplight:
@@ -3571,6 +3637,7 @@ components:
         enum:
           - infra
           - onboarding
+          - infra_onboarding
     AccountIdentifier:
       name: accountIdentifier
       in: path
@@ -3906,6 +3973,12 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/StatusInfoResponse'
+    StatusInfoResponseV2:
+      description: Response for getting status info
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StatusInfoV2'
     LayoutResponse:
       description: Layout response
       content:
@@ -4246,27 +4319,19 @@ components:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/ScorecardStats'
+            $ref: '#/components/schemas/ScorecardStatsResponse'
         application/yaml:
           schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/ScorecardStats'
+            $ref: '#/components/schemas/ScorecardStatsResponse'
     CheckStatsResponse:
       description: Response for check stats
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/CheckStats'
+            $ref: '#/components/schemas/CheckStatsResponse'
         application/yaml:
           schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/CheckStats'
+            $ref: '#/components/schemas/CheckStatsResponse'
     CheckGraphResponse:
       description: Response for check graph data
       content:

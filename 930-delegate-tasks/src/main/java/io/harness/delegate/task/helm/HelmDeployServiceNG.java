@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 
-import java.io.IOException;
 import java.util.List;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
@@ -22,7 +21,7 @@ public interface HelmDeployServiceNG {
 
   void setTaskProgressStreamingClient(ILogStreamingTaskClient iLogStreamingTaskClient);
 
-  HelmCommandResponseNG deploy(HelmInstallCommandRequestNG commandRequest) throws IOException;
+  HelmCommandResponseNG deploy(HelmInstallCommandRequestNG commandRequest) throws Exception;
 
   /**
    * Rollback helm command response.

@@ -19,6 +19,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ClickHouseConfig {
   @JsonProperty(defaultValue = "jdbc:ch://clickhouse.harness.svc.cluster.local:8123") String url;
+  @JsonProperty Long socketTimeout;
   @ConfigSecret String username;
   @ConfigSecret String password;
 }

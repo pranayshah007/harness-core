@@ -1,0 +1,18 @@
+{
+  "type":"Deployment",
+  "spec":{
+    "environment":{
+      "environmentRef":"remotee1",
+      "infrastructureDefinitions":[
+        {
+          "identifier":"infra1"
+        }
+      ],
+      "gitBranch":"environment-git-branch"
+    },
+    "service":{
+      "serviceRef":"remoteservicenewbracnch711",
+      "gitBranch":"service-git-branch"
+    }
+  }
+}

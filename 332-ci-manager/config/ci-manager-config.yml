@@ -104,16 +104,16 @@ tiServiceConfig:
 
 sscaServiceConfig:
   httpClientConfig:
-    baseUrl: http://localhost:8186
+    baseUrl: http://localhost:8188
     connectTimeOutSeconds: 40
     readTimeOutSeconds: 40
-  sscaManagerEnabled: ${SSCA_MANAGER_ENABLED:-false}
-  serviceSecret: secret
+  sscaManagerEnabled: ${SSCA_MANAGER_ENABLED:-true}
+  serviceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
 stoServiceConfig:
   baseUrl: http://localhost:4000
   internalUrl: ""
-  globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
+  globalToken: "token"
 
 iacmServiceConfig:
   baseUrl: http://localhost:4000
@@ -157,8 +157,10 @@ ciExecutionServiceConfig:
   executionLimits:
     freeNewUser:
       dailyMaxBuildsCount: 0
+      monthlyMaxCreditsCount: 0
     freeBasicUser:
       dailyMaxBuildsCount: 25
+      monthlyMaxCreditsCount: 2000
     free:
       defaultTotalExecutionCount: 21
       defaultMacExecutionCount: 1
@@ -172,8 +174,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.29
-  liteEngineImage: harness/ci-lite-engine:1.16.29
+  addonImage: harness/ci-addon:1.16.30
+  liteEngineImage: harness/ci-lite-engine:1.16.30
   isLocal: false
   remoteDebugTimeout: 3600
   tmateEndpoint: ${TMATE_ENDPOINT:-"ssh.harness.io"}
@@ -301,33 +303,33 @@ ciExecutionServiceConfig:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.8.0
+      image: plugins/kaniko:1.8.1
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.8.0
+      image: plugins/kaniko-ecr:1.8.1
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.8.0
+      image: plugins/kaniko-gcr:1.8.1
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushGARConfig:
-      image: plugins/kaniko-gcr:1.8.0
+      image: plugins/kaniko-gcr:1.8.1
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.8.0
+      image: plugins/kaniko-acr:1.8.1
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
-      image: plugins/gcs:1.5.0
+      image: plugins/gcs:1.5.1
       entrypoint:
         - /bin/drone-gcs
       windowsEntrypoint:
         - "C:\\drone-gcs.exe"
     s3UploadConfig:
-      image: plugins/s3:1.2.7
+      image: plugins/s3:1.2.9
       entrypoint:
         - /bin/drone-s3
       windowsEntrypoint:
@@ -339,19 +341,19 @@ ciExecutionServiceConfig:
         - -c
         - python3 ${DOCKER_ENTRYPOINT}
     artifactoryUploadConfig:
-      image: plugins/artifactory:1.4.7
+      image: plugins/artifactory:1.4.8
       entrypoint:
         - /bin/plugin
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.6.1
+      image: plugins/cache:1.6.4
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.6.1
+      image: plugins/cache:1.6.4
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
@@ -371,17 +373,17 @@ ciExecutionServiceConfig:
     vmImageConfig:
       # Use root image for VM git clone
       gitClone: harness/drone-git:1.4.2
-      buildAndPushDockerRegistry: plugins/docker:20.14.5
-      buildAndPushACR: plugins/acr:20.14.5
-      buildAndPushECR: plugins/ecr:20.14.5
-      buildAndPushGCR: plugins/gcr:20.16.0
-      buildAndPushGAR: plugins/gar:20.17.0
-      gcsUpload: plugins/gcs:1.5.0
-      s3Upload: plugins/s3:1.2.8
+      buildAndPushDockerRegistry: plugins/docker:20.17.1
+      buildAndPushACR: plugins/acr:20.17.1
+      buildAndPushECR: plugins/ecr:20.17.1
+      buildAndPushGCR: plugins/gcr:20.17.1
+      buildAndPushGAR: plugins/gar:20.17.1
+      gcsUpload: plugins/gcs:1.5.1
+      s3Upload: plugins/s3:1.2.9
       security: harness/sto-plugin:${STO_STEP_CONFIG_DEFAULT_TAG:-latest}
-      artifactoryUpload: plugins/artifactory:1.4.7
-      cacheGCS: plugins/cache:1.6.2
-      cacheS3: plugins/cache:1.6.2
+      artifactoryUpload: plugins/artifactory:1.4.8
+      cacheGCS: plugins/cache:1.6.4
+      cacheS3: plugins/cache:1.6.4
       sscaOrchestration: harness/ssca-plugin:0.11.0
       sscaEnforcement: harness/ssca-plugin:0.11.0
     vmContainerlessStepConfig:
@@ -390,7 +392,7 @@ ciExecutionServiceConfig:
       gcsUploadConfig:
         name: github.com/drone-plugins/drone-gcs@refs/tags/v1.5.0
       cacheS3Config:
-        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.6.1
+        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.6.3
       cacheGCSConfig:
         name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.6.1
       gitCloneConfig:

@@ -36,9 +36,13 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.AquaSecurityStepInfo")
 public class AquaSecurityStepInfo extends STOGenericStepInfo {
+  private static final String PRODUCT_NAME = "aqua_security";
   @NotNull
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlGenericConfig")
   protected STOYamlGenericConfig config;
 
   @JsonProperty protected STOYamlImage image;
+  public String getProductName() {
+    return PRODUCT_NAME;
+  }
 }

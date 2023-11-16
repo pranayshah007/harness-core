@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 62
+version: 64
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -167,6 +167,13 @@ roles:
         - cet_criticalevent_view
         - cet_criticalevent_create
         - cet_criticalevent_delete
+        - iac_workspace_accessstate
+        - iac_workspace_approve
+        - iac_workspace_delete
+        - iac_workspace_deletevariable
+        - iac_workspace_edit
+        - iac_workspace_editvariable
+        - iac_workspace_view
       allowedScopeLevels:
         - project
       managed: true
@@ -225,6 +232,7 @@ roles:
         - cet_agents_view
         - cet_token_view
         - cet_criticalevent_view
+        - iac_workspace_view
       allowedScopeLevels:
         - project
       managed: true
@@ -399,6 +407,13 @@ roles:
         - cet_criticalevent_view
         - cet_criticalevent_create
         - cet_criticalevent_delete
+        - iac_workspace_accessstate
+        - iac_workspace_approve
+        - iac_workspace_delete
+        - iac_workspace_deletevariable
+        - iac_workspace_edit
+        - iac_workspace_editvariable
+        - iac_workspace_view
       allowedScopeLevels:
         - organization
       managed: true
@@ -459,6 +474,7 @@ roles:
         - cet_agents_view
         - cet_token_view
         - cet_criticalevent_view
+        - iac_workspace_view
       allowedScopeLevels:
         - organization
       managed: true
@@ -681,6 +697,15 @@ roles:
         - cet_criticalevent_delete
         - ccm_anomalies_view
         - ccm_recommendations_view
+        - ccm_commitmentOrchestrator_view
+        - ccm_commitmentOrchestrator_edit
+        - iac_workspace_accessstate
+        - iac_workspace_approve
+        - iac_workspace_delete
+        - iac_workspace_deletevariable
+        - iac_workspace_edit
+        - iac_workspace_editvariable
+        - iac_workspace_view
       allowedScopeLevels:
         - account
       managed: true
@@ -759,6 +784,8 @@ roles:
         - cet_criticalevent_view
         - ccm_anomalies_view
         - ccm_recommendations_view
+        - ccm_commitmentOrchestrator_view
+        - iac_workspace_view
       allowedScopeLevels:
         - account
       managed: true
@@ -1000,6 +1027,8 @@ roles:
         - ccm_cloudAssetGovernanceEnforcement_delete
         - ccm_anomalies_view
         - ccm_recommendations_view
+        - ccm_commitmentOrchestrator_edit
+        - ccm_commitmentOrchestrator_view
       managed: true
       allowedScopeLevels:
         - account
@@ -1020,6 +1049,7 @@ roles:
         - ccm_cloudAssetGovernanceRule_view
         - ccm_anomalies_view
         - ccm_recommendations_view
+        - ccm_commitmentOrchestrator_view
       managed: true
       allowedScopeLevels:
         - account

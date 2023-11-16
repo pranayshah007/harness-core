@@ -17,6 +17,8 @@ import lombok.experimental.UtilityClass;
 public class STOCommonEndpointConstants {
   public static final String STO_SERVICE_TOKEN_ENDPOINT = "api/v2/token";
 
+  public static final String STO_SERVICE_DELETE_ACCOUNT_DATA_ENDPOINT = "api/v2/accounts/{accountId}/data";
+
   public static final String STO_SERVICE_SCAN_RESULTS_ENDPOINT = "api/v2/scans/{scanId}/issues/counts";
 
   public static final String STO_SERVICE_SCANS_ENDPOINT = "api/v2/scans";

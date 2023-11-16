@@ -7,4 +7,4 @@
 
 package io.harness.idp.status.enums;
 
-public enum StatusType { INFRA, ONBOARDING }
+public enum StatusType { INFRA, ONBOARDING, INFRA_ONBOARDING }

@@ -429,6 +429,7 @@ replace_key_value segmentConfiguration.enabled "$SEGMENT_ENABLED"
 replace_key_value segmentConfiguration.url "$SEGMENT_URL"
 replace_key_value segmentConfiguration.apiKey "$SEGMENT_APIKEY"
 replace_key_value segmentConfiguration.certValidationRequired "$SEGMENT_VERIFY_CERT"
+replace_key_value auditServiceConfig.publishAccountActivityMetrics "$PUBLISH_ACCOUNT_ACTIVITY_METRICS"
 
 replace_key_value resourceGroupServiceConfig.resourceClients.policyManagerSecret "$OPA_SERVER_SECRET"
 replace_key_value resourceGroupServiceConfig.resourceClients.opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"

@@ -3159,6 +3159,9 @@
 5731609:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult
 5731610:io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo
 5731611:io.harness.aws.beans.AsgCapacityConfig
+5731612:io.harness.delegate.task.aws.asg.AsgShiftTrafficRequest
+5731613:io.harness.delegate.task.aws.asg.AsgShiftTrafficResponse
+5731614:io.harness.delegate.task.aws.asg.AsgShiftTrafficResult
 
 9000312:software.wings.helpers.ext.nexus.NexusRepositories
 9000313:io.harness.provision.model.TfConfigInspectVersion
@@ -3329,3 +3332,4 @@
 20001000:io.harness.delegate.beans.connector.scm.github.GithubAppDTO
 20001001:io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO
 20001002:io.harness.delegate.task.k8s.ReleaseMetadata
+20001003:java.util.concurrent.atomic.AtomicBoolean

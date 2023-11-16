@@ -21,7 +21,6 @@ import lombok.NoArgsConstructor;
 public class ServiceLevelObjectiveFilter {
   @QueryParam("userJourneys") List<String> userJourneys;
   @QueryParam("identifiers") List<String> identifiers;
-  @QueryParam("sliTypes") List<ServiceLevelIndicatorType> sliTypes;
   @QueryParam("targetTypes") List<SLOTargetType> targetTypes;
   @QueryParam("errorBudgetRisks") List<ErrorBudgetRisk> errorBudgetRisks;
 }

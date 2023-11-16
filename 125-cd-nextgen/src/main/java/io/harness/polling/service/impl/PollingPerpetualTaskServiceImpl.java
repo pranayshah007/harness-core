@@ -26,6 +26,7 @@ import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
 import io.harness.polling.bean.GitPollingInfo;
+import io.harness.polling.bean.PollingConstants;
 import io.harness.polling.bean.PollingDocument;
 import io.harness.polling.bean.PollingType;
 import io.harness.polling.service.impl.artifact.ArtifactPerpetualTaskHelperNg;
@@ -66,16 +67,16 @@ public class PollingPerpetualTaskServiceImpl implements PollingPerpetualTaskServ
           executionBundle = manifestPerpetualTaskHelperNg.createPerpetualTaskExecutionBundle(pollingDocument);
           perpetualTaskType = MANIFEST_COLLECTION_NG;
           schedule = PerpetualTaskSchedule.newBuilder()
-                         .setInterval(Durations.fromMinutes(2))
-                         .setTimeout(Durations.fromMinutes(3))
+                         .setInterval(Durations.fromMinutes(PollingConstants.MANIFEST_COLLECTION_NG_INTERVAL_MINUTES))
+                         .setTimeout(Durations.fromMinutes(PollingConstants.MANIFEST_COLLECTION_NG_TIMEOUT_MINUTES))
                          .build();
           break;
         case ARTIFACT:
           executionBundle = artifactPerpetualTaskHelperNg.createPerpetualTaskExecutionBundle(pollingDocument);
           perpetualTaskType = ARTIFACT_COLLECTION_NG;
           schedule = PerpetualTaskSchedule.newBuilder()
-                         .setInterval(Durations.fromMinutes(1))
-                         .setTimeout(Durations.fromMinutes(2))
+                         .setInterval(Durations.fromMinutes(PollingConstants.ARTIFACT_COLLECTION_NG_INTERVAL_MINUTES))
+                         .setTimeout(Durations.fromMinutes(PollingConstants.ARTIFACT_COLLECTION_NG_TIMEOUT_MINUTES))
                          .build();
           break;
         case WEBHOOK_POLLING:

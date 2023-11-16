@@ -9,16 +9,22 @@ package io.harness.ngmigration.service.step.asg;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.cdng.aws.asg.AsgCurrentRunningInstances;
+import io.harness.cdng.aws.asg.AsgFixedInstances;
+import io.harness.cdng.aws.asg.AsgInstances;
+import io.harness.cdng.aws.asg.AsgInstancesSpec;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.step.AsgAmiStepFunctor;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.WorkflowPhase;
+import software.wings.sm.states.AwsAmiServiceSetup;
 
 import com.google.common.collect.Lists;
 import java.util.List;
@@ -45,5 +51,27 @@ public abstract class AsgBaseStepMapper extends StepMapper {
                    .build())
         .map(so -> new AsgAmiStepFunctor(so, context.getWorkflow()))
         .collect(Collectors.toList());
+  }
+
+  protected AsgInstances getAsgInstancesNode(AwsAmiServiceSetup state) {
+    AsgInstancesSpec spec;
+    if (state.isUseCurrentRunningCount()) {
+      spec = AsgCurrentRunningInstances.builder().build();
+    } else {
+      spec = AsgFixedInstances.builder()
+                 .max(getParameterFieldFromInstances(state.getMaxInstances()))
+                 .min(getParameterFieldFromInstances(state.getMinInstances()))
+                 .desired(getParameterFieldFromInstances(state.getDesiredInstances()))
+                 .build();
+    }
+    return AsgInstances.builder().spec(spec).type(spec.getType()).build();
+  }
+
+  private ParameterField<Integer> getParameterFieldFromInstances(String instanceValue) {
+    try {
+      return ParameterField.createValueField(Integer.parseInt(instanceValue));
+    } catch (NumberFormatException e) {
+      return ParameterField.createExpressionField(true, instanceValue, null, true);
+    }
   }
 }

@@ -55,6 +55,16 @@ public class MonitoredServiceYamlExpressionFunctorTest extends CvNextGenTestBase
       + "          metricPacks: \n"
       + "              - identifier: Errors\n"
       + "          metricDefinitions:\n"
+      + "      - name: appDWithoutIdenifier\n"
+      + "        type: AppDynamics\n"
+      + "        spec:\n"
+      + "          connectorRef: conntector2\n"
+      + "          feature:  Application Monitoring\n"
+      + "          applicationName: prod\n"
+      + "          tierName: cv-nextgen\n"
+      + "          metricPacks: \n"
+      + "              - identifier: Errors\n"
+      + "          metricDefinitions:\n"
       + "    changeSources: \n";
 
   @Test

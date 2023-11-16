@@ -6,6 +6,7 @@
  */
 
 package io.harness.plancreator.steps;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotation.RecasterAlias;
@@ -21,6 +22,7 @@ import io.harness.pms.yaml.ParameterField;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -50,6 +52,14 @@ public class TaskSelectorYaml {
   public static TaskSelector toTaskSelector(String delegateSelector) {
     return TaskSelector.newBuilder().setSelector(delegateSelector).setOrigin("default").build();
   }
+
+  public static List<TaskSelector> toTaskSelector(Set<String> delegateSelector) {
+    if (isEmpty(delegateSelector)) {
+      return new ArrayList<>();
+    }
+    return delegateSelector.stream().map(TaskSelectorYaml::toTaskSelector).collect(Collectors.toList());
+  }
+
   public static List<TaskSelector> toTaskSelector(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     if (ParameterField.isNull(delegateSelectors)) {
       return Collections.emptyList();

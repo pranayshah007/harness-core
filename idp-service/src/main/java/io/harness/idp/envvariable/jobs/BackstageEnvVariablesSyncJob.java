@@ -45,7 +45,7 @@ public class BackstageEnvVariablesSyncJob implements Managed {
   public void start() throws Exception {
     executorService = Executors.newSingleThreadScheduledExecutor(
         new ThreadFactoryBuilder().setNameFormat("backstage-env-variable-sync-job").build());
-    executorService.scheduleWithFixedDelay(this::run, 0, DELAY_IN_MINUTES, TimeUnit.MINUTES);
+    executorService.scheduleWithFixedDelay(this::run, 5, DELAY_IN_MINUTES, TimeUnit.MINUTES);
   }
 
   @Override

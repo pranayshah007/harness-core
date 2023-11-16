@@ -92,8 +92,12 @@ public class GovernanceRecommendationService {
     // get all ce enabled accounts
     List<String> getAccounts = accountShardService.getCeEnabledAccountIds();
     for (String account : getAccounts) {
-      log.info("generateRecommendationForAccount: {}", account);
-      generateRecommendationForAccount(account, ceEnabledConnectorType);
+      try {
+        log.info("generateRecommendationForAccount: {}", account);
+        generateRecommendationForAccount(account, ceEnabledConnectorType);
+      } catch (Exception e) {
+        log.error("Exception while generating governance recommendations for {}", account, e);
+      }
     }
   }
 
@@ -155,8 +159,13 @@ public class GovernanceRecommendationService {
 
     // get top regions
     List<String> regions = new ArrayList<>();
-    List<QLCEViewEntityStatsDataPoint> accountNames =
-        getAccountNames(accountId, cloudProviderIdentifiers, fieldId, fieldName, identifier, identifierName);
+    List<QLCEViewEntityStatsDataPoint> accountNames = new ArrayList<>();
+    try {
+      accountNames =
+          getAccountNames(accountId, cloudProviderIdentifiers, fieldId, fieldName, identifier, identifierName);
+    } catch (Exception e) {
+      log.error("Error which fetching accounts for governance recommendation for {}", accountId, e);
+    }
     // filter out final list of rolearn,externalId etc based on top accounts
     List<RecommendationAdhocDTO> recommendationAdhocDTOListFinal = new ArrayList<>();
     if (!accountNames.isEmpty()) {
@@ -172,9 +181,14 @@ public class GovernanceRecommendationService {
           ruleCloudProviderType.name(), cloudProviderIdentifiersFinal);
 
       if (ruleCloudProviderType == RuleCloudProviderType.AWS) {
-        List<QLCEViewEntityStatsDataPoint> regionsFromPerspective =
-            getTopRegions(accountId, cloudProviderIdentifiersFinal, fieldId, fieldName, identifier);
-        regions = regionsFromPerspective.stream().map(QLCEViewEntityStatsDataPoint::getId).collect(Collectors.toList());
+        try {
+          List<QLCEViewEntityStatsDataPoint> regionsFromPerspective =
+              getTopRegions(accountId, cloudProviderIdentifiersFinal, fieldId, fieldName, identifier);
+          regions =
+              regionsFromPerspective.stream().map(QLCEViewEntityStatsDataPoint::getId).collect(Collectors.toList());
+        } catch (Exception e) {
+          log.error("Error which fetching top regions for governance recommendation for {}", accountId, e);
+        }
       }
     } else {
       log.info("Failed to get account and regions from perspective {} ", accountId);

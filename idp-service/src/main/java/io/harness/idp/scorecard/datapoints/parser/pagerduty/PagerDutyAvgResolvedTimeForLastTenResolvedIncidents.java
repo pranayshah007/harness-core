@@ -24,26 +24,20 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
-@Slf4j
 public class PagerDutyAvgResolvedTimeForLastTenResolvedIncidents implements DataPointParser {
   private static final String INCIDENTS_RESPONSE_KEY = "incidents";
+
   @Override
   public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
-    log.info(
-        "Parser for AvgResolvedTimeForLastTenResolvedIncidentsInHours is invoked data - {}, data point - {}, input values - {}",
-        data, dataFetchDTO.getDataPoint(), dataFetchDTO.getInputValues());
+    data = (Map<String, Object>) data.get(dataFetchDTO.getRuleIdentifier());
     String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
     if (!isEmpty(errorMessage)) {
       return constructDataPointInfo(dataFetchDTO, null, errorMessage);
     }
 
     List<LinkedTreeMap> incidents = new ArrayList<>();
-
-    // we cannot creat error scenario here as even if service id is incorrect we are getting incident
-    // with incidents as empty array
 
     if (CommonUtils.findObjectByName(data, INCIDENTS_RESPONSE_KEY) != null) {
       incidents = (ArrayList) CommonUtils.findObjectByName(data, INCIDENTS_RESPONSE_KEY);
@@ -53,9 +47,6 @@ public class PagerDutyAvgResolvedTimeForLastTenResolvedIncidents implements Data
 
     long sumOfResolvedTime = 0;
     for (int i = 0; i < noOfIncidentsForCalculation; i++) {
-      String status = incidents.get(i).get("status").toString();
-      log.info("Status of incident - {}", status);
-
       sumOfResolvedTime += getDifferenceBetweenTimeInHours(
           incidents.get(i).get("created_at").toString(), incidents.get(i).get("resolved_at").toString());
     }
@@ -63,7 +54,6 @@ public class PagerDutyAvgResolvedTimeForLastTenResolvedIncidents implements Data
     if (noOfIncidentsForCalculation == 0) {
       return constructDataPointInfo(dataFetchDTO, 0, null);
     }
-    log.info("AvgResolvedTimeForLastTenResolvedIncidentsInHours - {}", sumOfResolvedTime / noOfIncidentsForCalculation);
 
     return constructDataPointInfo(dataFetchDTO, sumOfResolvedTime / noOfIncidentsForCalculation, null);
   }

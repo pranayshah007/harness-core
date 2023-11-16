@@ -1510,7 +1510,7 @@ paths:
       x-internal: false
   /v1/gitx-webhooks:
     post:
-      summary: Create a GitX webhook
+      summary: Create a GitX webhook at Account level
       operationId: create-gitx-webhook
       responses:
         '201':
@@ -1526,7 +1526,7 @@ paths:
         $ref: '#/components/requestBodies/CreateGitXWebhookRequest'
       x-internal: true
     get:
-      summary: Lists all the GitX Webhooks
+      summary: Lists all the GitX Webhooks at Account level
       operationId: list-gitx-webhooks
       responses:
         '200':
@@ -1549,7 +1549,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/GitXWebhookIdentifier'
     get:
-      summary: Fetch GitX Webhook
+      summary: Fetch GitX Webhook at Account level
       responses:
         '200':
           $ref: '#/components/responses/GetGitXWebhookResponse'
@@ -1563,7 +1563,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
     put:
-      summary: Updates a GitX Webhook
+      summary: Updates a GitX Webhook at Account level
       operationId: update-gitx-webhook
       responses:
         '200':
@@ -1579,7 +1579,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
     delete:
-      summary: Deletes a GitX Webhook
+      summary: Deletes a GitX Webhook at Account level
       operationId: delete-gitx-webhook
       responses:
         '204':
@@ -1594,7 +1594,7 @@ paths:
       x-internal: true
   /v1/gitx-webhook-events:
     get:
-      summary: Lists all the GitX Webhooks events
+      summary: Lists all the GitX Webhooks events at Account level
       tags:
         - GitX Webhooks
       responses:
@@ -1634,6 +1634,19 @@ paths:
             type: string
           in: query
           name: event_identifier
+        - schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - SKIPPED
+                - FAILED
+                - PROCESSING
+                - SUCCESSFUL
+                - QUEUED
+                - UNKNOWN
+          in: query
+          name: event_status
       x-internal: true
   /v1/kubernetes/releases/service-mapping:
     get:
@@ -1652,6 +1665,298 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/BatchReleaseDetailsRequest'
     parameters: []
+  '/v1/orgs/{org}/gitx-webhooks':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+    get:
+      summary: Lists all the GitX Webhooks at Org level
+      tags:
+        - Org Gitx Webhooks
+      responses:
+        '200':
+          $ref: '#/components/responses/ListGitXWebhookResponse'
+      operationId: list-org-gitx-webhooks
+      description: List org level GitX webhooks
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - schema:
+            type: string
+          in: query
+          name: webhook_identifier
+      x-internal: true
+    post:
+      summary: Create Org Level GitX webhook
+      operationId: create-org-gitx-webhook
+      responses:
+        '200':
+          $ref: '#/components/responses/CreateGitXWebhookResponse'
+      description: Create GitXWebhook at org level
+      tags:
+        - Org Gitx Webhooks
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/CreateGitXWebhookRequest'
+  '/v1/orgs/{org}/gitx-webhooks/{gitx-webhook}':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/GitXWebhookIdentifier'
+    get:
+      summary: Fetch GitX Webhook at org level
+      tags:
+        - Org Gitx Webhooks
+      responses:
+        '200':
+          $ref: '#/components/responses/GetGitXWebhookResponse'
+      operationId: get-org-gitx-webhook
+      description: Fetch a org level gitx webhook
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      x-internal: true
+    put:
+      summary: Updates a GitX Webhook at org level
+      operationId: update-org-gitx-webhook
+      responses:
+        '200':
+          $ref: '#/components/responses/UpdateGitXWebhookResponse'
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: Update a org level Gitx webhook
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateGitXWebhookRequest'
+      tags:
+        - Org Gitx Webhooks
+      x-internal: true
+    delete:
+      summary: Deletes a GitX Webhook at org level
+      operationId: delete-org-gitx-webhook
+      responses:
+        '204':
+          description: No Content
+      description: Deletes a org level gitx webhooks
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Org Gitx Webhooks
+      x-internal: true
+  '/v1/orgs/{org}/gitx-webhook-events':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+    get:
+      summary: Lists all the GitX Webhooks events at org level
+      responses:
+        '200':
+          $ref: '#/components/responses/ListGitXWebhookEventResponse'
+      operationId: list-org-gitx-webhook-events
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - schema:
+            type: string
+          in: query
+          name: webhook_identifier
+        - schema:
+            type: integer
+            format: int64
+          in: query
+          name: event_start_time
+        - schema:
+            type: integer
+            format: int64
+          in: query
+          name: event_end_time
+        - schema:
+            type: string
+          in: query
+          name: repo_name
+        - schema:
+            type: string
+          in: query
+          name: file_path
+        - schema:
+            type: string
+          in: query
+          name: event_identifier
+        - schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - SKIPPED
+                - FAILED
+                - PROCESSING
+                - SUCCESSFUL
+                - QUEUED
+                - UNKNOWN
+          in: query
+          name: event_status
+      tags:
+        - Org Gitx Webhooks
+      x-internal: true
+      description: List GitX webhook Events at org level
+  '/v1/orgs/{org}/projects/{project}/gitx-webhooks':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+    get:
+      summary: Lists all the GitX Webhooks at project level
+      tags:
+        - Project Gitx Webhooks
+      responses:
+        '200':
+          $ref: '#/components/responses/ListGitXWebhookResponse'
+      operationId: list-project-gitx-webhook
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - schema:
+            type: string
+          in: query
+          name: webhook_identifier
+      description: List project level GitX webhooks
+      x-internal: true
+    post:
+      summary: Create Project level GitX webhook
+      operationId: create-project-gitx-webhook
+      responses:
+        '200':
+          $ref: '#/components/responses/CreateGitXWebhookResponse'
+      description: Create GitXWebhook at project level
+      requestBody:
+        $ref: '#/components/requestBodies/CreateGitXWebhookRequest'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      tags:
+        - Project Gitx Webhooks
+  '/v1/orgs/{org}/projects/{project}/gitx-webhooks/{gitx-webhook}':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+      - $ref: '#/components/parameters/GitXWebhookIdentifier'
+    get:
+      summary: Fetch GitX Webhook at project level
+      tags:
+        - Project Gitx Webhooks
+      responses:
+        '200':
+          $ref: '#/components/responses/GetGitXWebhookResponse'
+      operationId: get-project-gitx-webhook
+      x-internal: true
+      description: Fetch a project level gitx webhook
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+    put:
+      summary: Updates a GitX Webhook at project level
+      operationId: update-project-gitx-webhook
+      responses:
+        '200':
+          $ref: '#/components/responses/UpdateGitXWebhookResponse'
+      description: Update a project level Gitx webhook
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateGitXWebhookRequest'
+      tags:
+        - Project Gitx Webhooks
+      x-internal: true
+    delete:
+      summary: Deletes a GitX Webhook at project level
+      operationId: delete-project-gitx-webhook
+      responses:
+        '204':
+          description: No Content
+      description: Deletes a project level gitx webhooks
+      tags:
+        - Project Gitx Webhooks
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+  '/v1/orgs/{org}/projects/{project}/gitx-webhook-events':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+    get:
+      summary: Lists all the GitX Webhooks events at project level
+      tags:
+        - Project Gitx Webhooks
+      responses:
+        '200':
+          $ref: '#/components/responses/ListGitXWebhookEventResponse'
+      operationId: list-project-gitx-webhook-events
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - schema:
+            type: string
+          in: query
+          name: webhook_identifier
+        - schema:
+            type: integer
+            format: int64
+          in: query
+          name: event_start_time
+        - schema:
+            type: integer
+            format: int64
+          in: query
+          name: event_end_time
+        - schema:
+            type: string
+          in: query
+          name: repo_name
+        - schema:
+            type: string
+          in: query
+          name: file_path
+        - schema:
+            type: string
+          in: query
+          name: event_identifier
+        - schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - SKIPPED
+                - FAILED
+                - PROCESSING
+                - SUCCESSFUL
+                - QUEUED
+                - UNKNOWN
+          in: query
+          name: event_status
+      x-internal: true
+      description: List GitX webhook Events at project level
 components:
   schemas:
     Service:
@@ -2822,6 +3127,15 @@ components:
           format: int64
         repo_name:
           type: string
+        event_status:
+          type: string
+          enum:
+            - SKIPPED
+            - FAILED
+            - QUEUED
+            - SUCCESSFUL
+            - PROCESSING
+            - UNKNOWN
     ReleaseDetailsResponse:
       title: ReleaseDetailsResponse
       x-stoplight:

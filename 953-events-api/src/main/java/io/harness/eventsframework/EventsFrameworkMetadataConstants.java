@@ -132,4 +132,7 @@ public final class EventsFrameworkMetadataConstants {
 
   // FF
   public static final String FEATUREFLAG_ENTITY = "featureflag";
+
+  // CODE
+  public static final String CODE_REPOSITORY = "codeRepository";
 }

@@ -52,6 +52,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.ListUtils;
@@ -155,6 +156,7 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
     List<Variable> variables = ListUtils.emptyIfNull(customArtifactStream.getTemplateVariables());
     Map<String, String> varMap =
         variables.stream()
+            .filter(Objects::nonNull)
             .filter(variable -> StringUtils.isNoneBlank(variable.getName(), variable.getValue()))
             .collect(Collectors.toMap(Variable::getName, Variable::getValue));
 
@@ -162,19 +164,20 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
     ObjectMapper mapper = new ObjectMapper();
 
     ArrayNode inputs = mapper.createArrayNode();
-    List<Variable> customArtifactTemplateVariables = template.getVariables();
-    if (isNotEmpty(customArtifactTemplateVariables)) {
-      Map<String, String> templateVariableMap =
-          customArtifactTemplateVariables.stream().collect(Collectors.toMap(Variable::getName, Variable::getValue));
+    List<Variable> customArtifactTemplateVariables = ListUtils.emptyIfNull(template.getVariables());
+    Map<String, String> templateVariableMap =
+        customArtifactTemplateVariables.stream()
+            .filter(Objects::nonNull)
+            .filter(variable -> StringUtils.isNoneBlank(variable.getName(), variable.getValue()))
+            .collect(Collectors.toMap(Variable::getName, Variable::getValue));
 
-      customArtifactTemplateVariables.forEach(v -> {
-        ObjectNode variable = mapper.createObjectNode();
-        variable.put("name", v.getName());
-        variable.put("type", "String");
-        variable.put("value", varMap.getOrDefault(v.getName(), getDefaultValueFromTemplate(v, templateVariableMap)));
-        inputs.add(variable);
-      });
-    }
+    customArtifactTemplateVariables.forEach(v -> {
+      ObjectNode variable = mapper.createObjectNode();
+      variable.put("name", v.getName());
+      variable.put("type", "String");
+      variable.put("value", varMap.getOrDefault(v.getName(), getDefaultValueFromTemplate(v, templateVariableMap)));
+      inputs.add(variable);
+    });
     ObjectNode spec = mapper.createObjectNode();
     spec.put("version", RUNTIME_INPUT);
     spec.set("inputs", inputs);

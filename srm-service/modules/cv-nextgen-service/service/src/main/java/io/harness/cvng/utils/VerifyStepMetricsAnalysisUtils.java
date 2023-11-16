@@ -50,6 +50,8 @@ import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 
+import graphql.VisibleForTesting;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -93,17 +95,21 @@ public class VerifyStepMetricsAnalysisUtils {
     }
   }
 
-  private static AnalysisReason getReasonForFailure(
+  @VisibleForTesting
+  protected static AnalysisReason getReasonForFailure(
       HostData hostData, Map<String, MetricThreshold> metricThresholdMap) {
-    if (CollectionUtils.isEmpty(hostData.getAppliedThresholdIds())) {
-      return AnalysisReason.ML_ANALYSIS;
-    }
-    List<String> appliedThresholds = hostData.getAppliedThresholdIds();
+    Collection<String> appliedThresholds = CollectionUtils.emptyIfNull(hostData.getAppliedThresholdIds());
     for (String appliedThreshold : appliedThresholds) {
       MetricThreshold threshold = metricThresholdMap.get(appliedThreshold);
       if (threshold != null && threshold.getThresholdType() == MetricThresholdType.FAIL_FAST) {
         return AnalysisReason.CUSTOM_FAIL_FAST_THRESHOLD;
       }
+    }
+    if (CollectionUtils.isEmpty(hostData.getTestData())) {
+      return AnalysisReason.NO_TEST_DATA;
+    }
+    if (CollectionUtils.isEmpty(hostData.getControlData())) {
+      return AnalysisReason.NO_CONTROL_DATA;
     }
     return AnalysisReason.ML_ANALYSIS;
   }

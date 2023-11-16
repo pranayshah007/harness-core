@@ -134,8 +134,8 @@ public class VariableCreatorMergeService {
         responseYaml, response, serviceExpressionMap, newVersion);
   }
 
-  public VariableMergeServiceResponse createVariablesResponseV2(@NotNull String accountId,
-      @NotNull String orgIdentifier, @NotNull String projectIdentifier, @NotNull String yaml) throws IOException {
+  public VariableMergeServiceResponse createVariablesResponseV2(@NotNull String accountId, String orgIdentifier,
+      String projectIdentifier, @NotNull String yaml) throws IOException {
     Map<String, PlanCreatorServiceInfo> services = pmsSdkHelper.getServices();
 
     YamlField processedYaml = YamlUtils.injectUuidInYamlField(yaml);
@@ -157,8 +157,12 @@ public class VariableCreatorMergeService {
     metadataBuilder.putMetadata("newVersion", "newVersion");
 
     metadataBuilder.putMetadata(NGCommonEntityConstants.ACCOUNT_KEY, accountId);
-    metadataBuilder.putMetadata(NGCommonEntityConstants.ORG_KEY, orgIdentifier);
-    metadataBuilder.putMetadata(NGCommonEntityConstants.PROJECT_KEY, projectIdentifier);
+    if (isNotEmpty(orgIdentifier)) {
+      metadataBuilder.putMetadata(NGCommonEntityConstants.ORG_KEY, orgIdentifier);
+    }
+    if (isNotEmpty(projectIdentifier)) {
+      metadataBuilder.putMetadata(NGCommonEntityConstants.PROJECT_KEY, projectIdentifier);
+    }
     VariablesCreationBlobResponse response =
         createVariablesForDependenciesRecursive(services, dependencies, metadataBuilder.build());
 
@@ -244,7 +248,7 @@ public class VariableCreatorMergeService {
   }
 
   private Map<String, List<String>> getPipelineMetadataExpressions(
-      @NotNull String accountId, @NotNull String orgIdentifier, @NotNull String projectIdentifier) {
+      @NotNull String accountId, String orgIdentifier, String projectIdentifier) {
     Map<String, List<String>> resultMap = new HashMap<>();
     for (Map.Entry<String, List<String>> entry : serviceExpressionMap.entrySet()) {
       resultMap.put(entry.getKey(), entry.getValue());
@@ -253,22 +257,27 @@ public class VariableCreatorMergeService {
     // Adding account expressions
     resultMap.put("account", VariableCreatorHelper.getExpressionsInObject(AccountDTO.builder().build(), "account"));
     // Adding org expressions
-    try {
-      Optional<OrganizationResponse> resp =
-          SafeHttpCall.execute(organizationClient.getOrganization(orgIdentifier, accountId)).getData();
-      OrganizationDTO organizationDTO = resp.map(OrganizationResponse::getOrganization).orElse(null);
-      resultMap.put("org", VariableCreatorHelper.getExpressionsInObject(organizationDTO, "org"));
-    } catch (Exception ex) {
-      log.error("Couldn't get organisation details", ex);
+    if (isNotEmpty(orgIdentifier)) {
+      try {
+        Optional<OrganizationResponse> resp =
+            SafeHttpCall.execute(organizationClient.getOrganization(orgIdentifier, accountId)).getData();
+        OrganizationDTO organizationDTO = resp.map(OrganizationResponse::getOrganization).orElse(null);
+        resultMap.put("org", VariableCreatorHelper.getExpressionsInObject(organizationDTO, "org"));
+      } catch (Exception ex) {
+        log.error("Couldn't get organisation details", ex);
+      }
     }
     // Adding project details
-    try {
-      Optional<ProjectResponse> resp =
-          SafeHttpCall.execute(projectClient.getProject(projectIdentifier, accountId, orgIdentifier)).getData();
-      ProjectDTO projectDTO = resp.map(ProjectResponse::getProject).orElse(null);
-      resultMap.put("project", VariableCreatorHelper.getExpressionsInObject(projectDTO, "project"));
-    } catch (Exception ex) {
-      log.error("Couldn't get project details", ex);
+
+    if (isNotEmpty(projectIdentifier)) {
+      try {
+        Optional<ProjectResponse> resp =
+            SafeHttpCall.execute(projectClient.getProject(projectIdentifier, accountId, orgIdentifier)).getData();
+        ProjectDTO projectDTO = resp.map(ProjectResponse::getProject).orElse(null);
+        resultMap.put("project", VariableCreatorHelper.getExpressionsInObject(projectDTO, "project"));
+      } catch (Exception ex) {
+        log.error("Couldn't get project details", ex);
+      }
     }
     // Adding variable details
     try {

@@ -70,7 +70,7 @@ public class KubernetesClusterActivityUpdateHandler extends ActivityUpdateHandle
             KubernetesDependencyMetadata kubernetesDependencyMetadata =
                 (KubernetesDependencyMetadata) serviceDependency.getDependencyMetadata();
             if (kubernetesDependencyMetadata.getNamespace().equals(activity.getNamespace())
-                && kubernetesDependencyMetadata.getWorkload().equals(activity.getWorkload())) {
+                && kubernetesDependencyMetadata.getWorkloads().contains(activity.getWorkload())) {
               if (activity.getRelatedAppServices() == null) {
                 activity.setRelatedAppServices(new ArrayList<>());
               }

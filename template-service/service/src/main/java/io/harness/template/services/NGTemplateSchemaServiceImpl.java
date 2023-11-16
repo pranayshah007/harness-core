@@ -8,6 +8,10 @@
 package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.TEMPLATE_ENTITY;
+import static io.harness.pms.yaml.HarnessYamlVersion.V1;
+import static io.harness.yaml.individualschema.TemplateSchemaParserV0.TEMPLATE_VO;
+import static io.harness.yaml.individualschema.TemplateSchemaParserV1.TEMPLATE_V1;
 import static io.harness.yaml.schema.beans.SchemaConstants.SPEC_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.STAGES_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.TEMPLATE_NODE;
@@ -20,19 +24,28 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.yaml.HarnessYamlVersion;
+import io.harness.pms.yaml.NGYamlHelper;
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.preprocess.YamlPreProcessor;
+import io.harness.pms.yaml.preprocess.YamlPreProcessorFactory;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.utils.TemplateSchemaFetcher;
 import io.harness.yaml.individualschema.AbstractStaticSchemaParser;
 import io.harness.yaml.individualschema.PipelineSchemaRequest;
+import io.harness.yaml.individualschema.SchemaParserInterface;
 import io.harness.yaml.individualschema.TemplateSchemaMetadata;
 import io.harness.yaml.individualschema.TemplateSchemaParserFactory;
 import io.harness.yaml.schema.client.YamlSchemaClient;
+import io.harness.yaml.schema.inputs.InputsSchemaServiceImpl;
+import io.harness.yaml.schema.inputs.beans.YamlInputDetails;
 import io.harness.yaml.utils.JsonPipelineUtils;
 import io.harness.yaml.validator.YamlSchemaValidator;
 
@@ -43,8 +56,10 @@ import com.google.inject.Singleton;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
@@ -56,13 +71,18 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
   @Inject TemplateSchemaFetcher templateSchemaFetcher;
 
   @Inject TemplateSchemaParserFactory templateSchemaParserFactory;
+  @Inject YamlPreProcessorFactory yamlPreProcessorFactory;
+  private final InputsSchemaServiceImpl inputsSchemaService;
   Map<String, YamlSchemaClient> yamlSchemaClientMapper;
   private YamlSchemaValidator yamlSchemaValidator;
   private AccountClient accountClient;
+  static final String VERSION_KEY = "version";
 
   @Inject
-  public NGTemplateSchemaServiceImpl(Map<String, YamlSchemaClient> yamlSchemaClientMapper,
-      YamlSchemaValidator yamlSchemaValidator, AccountClient accountClient) {
+  public NGTemplateSchemaServiceImpl(InputsSchemaServiceImpl inputsSchemaService,
+      Map<String, YamlSchemaClient> yamlSchemaClientMapper, YamlSchemaValidator yamlSchemaValidator,
+      AccountClient accountClient) {
+    this.inputsSchemaService = inputsSchemaService;
     this.yamlSchemaClientMapper = yamlSchemaClientMapper;
     this.yamlSchemaValidator = yamlSchemaValidator;
     this.accountClient = accountClient;
@@ -152,8 +172,37 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
 
   private String getSchemaVersionFromHarnessYamlVersion(String harnessYamlVersion) {
     if (harnessYamlVersion.equals(HarnessYamlVersion.V0)) {
-      return "v0";
+      return TEMPLATE_VO;
     }
-    return "v1";
+    return TEMPLATE_V1;
+  }
+
+  @Override
+  @SneakyThrows
+  public List<YamlInputDetails> getInputSchemaDetails(String yaml) {
+    YamlPreProcessor preProcessor = yamlPreProcessorFactory.getProcessorInstance(NGYamlHelper.getVersion(yaml));
+    // Preprocessing the YAML to add the id fields at the required places if not already present.
+    yaml = YamlUtils.writeYamlString(preProcessor.preProcess(yaml).getPreprocessedJsonNode());
+    YamlConfig yamlConfig = new YamlConfig(yaml);
+    SchemaParserInterface staticSchemaParser = getStaticSchemaParser(yamlConfig);
+    return inputsSchemaService.getInputsSchemaRelations(staticSchemaParser, yaml);
+  }
+
+  private SchemaParserInterface getStaticSchemaParser(YamlConfig yamlConfig) {
+    if (yamlConfig.getYamlMap().get(TEMPLATE_ENTITY) != null) {
+      return templateSchemaParserFactory.getTemplateSchemaParser(TEMPLATE_VO);
+    }
+
+    JsonNode versionNode = yamlConfig.getYamlMap().get(VERSION_KEY);
+    if (versionNode != null) {
+      switch (versionNode.asText()) {
+        case V1:
+          return templateSchemaParserFactory.getTemplateSchemaParser(TEMPLATE_V1);
+        default:
+          throw new InvalidRequestException("Invalid version found in yaml : " + versionNode.asText());
+      }
+    } else {
+      throw new InvalidRequestException("No version field found in yaml");
+    }
   }
 }

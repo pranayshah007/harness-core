@@ -20,6 +20,7 @@ import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 import static io.harness.rule.OwnerRule.NAVEEN;
 import static io.harness.rule.OwnerRule.PRAVEEN;
+import static io.harness.rule.OwnerRule.SHASHWAT_SACHAN;
 import static io.harness.rule.OwnerRule.SOWMYA;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
@@ -1383,7 +1384,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceOneDTO);
     monitoredServiceService.update(builderFactory.getContext().getAccountId(), monitoredServiceTwoDTO);
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, null, 0, 10, null, null, false);
+        monitoredServiceService.list(projectParams, null, null, 0, 10, null, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(3);
     List<MonitoredServiceListItemDTO> monitoredServiceListItemDTOS = monitoredServiceListDTOPageResponse.getContent();
@@ -1418,7 +1419,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     ChangeSummaryDTO changeSummary = ChangeSummaryDTO.builder().build();
     when(changeSourceServiceMock.getChangeSummary(any(), any(), any(), any())).thenReturn(changeSummary);
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse = monitoredServiceService.list(
-        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, null, false);
+        projectParams, Collections.singletonList(environmentIdentifier), null, 0, 10, null, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(1);
     MonitoredServiceListItemDTO monitoredServiceListItemDTO = monitoredServiceListDTOPageResponse.getContent().get(0);
@@ -1433,7 +1434,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServiceListItemDTO.isHealthMonitoringEnabled()).isFalse();
 
     monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, Collections.emptyList(), 0, 10, null, null, false);
+        monitoredServiceService.list(projectParams, Collections.emptyList(), null, 0, 10, null, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(3);
   }
@@ -1562,7 +1563,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     ChangeSummaryDTO changeSummary = ChangeSummaryDTO.builder().build();
     when(changeSourceServiceMock.getChangeSummary(any(), any(), any(), any())).thenReturn(changeSummary);
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, Collections.singletonList("env2"), 0, 10, null, null, false);
+        monitoredServiceService.list(projectParams, Collections.singletonList("env2"), null, 0, 10, null, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(1);
     MonitoredServiceListItemDTO monitoredServiceListItemDTO = monitoredServiceListDTOPageResponse.getContent().get(0);
@@ -1590,7 +1591,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         monitoredServiceIdentifier, environmentParams.getServiceIdentifier(), Sets.newHashSet("service_2_local"));
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceOneDTO);
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, null, 0, 10, null, null, false);
+        monitoredServiceService.list(projectParams, null, null, 0, 10, null, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(3);
     List<MonitoredServiceListItemDTO> monitoredServiceListItemDTOS =
@@ -1611,6 +1612,28 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testList_WithServiceIdentifier() {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms1", "service1", "evn1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms2", "service2", "evn1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms3", "service3", "evn1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms4", "service2", "evn4").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+
+    monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms1", true);
+    monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms2", true);
+
+    PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
+        monitoredServiceService.list(projectParams, null, "service2", 0, 10, null, null, false);
+    assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
+    assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(2);
+  }
+
+  @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testList_allUniqueServices() {
@@ -1625,7 +1648,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms2", true);
 
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, null, 0, 10, null, null, false);
+        monitoredServiceService.list(projectParams, null, null, 0, 10, null, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(3);
     List<MonitoredServiceListItemDTO> monitoredServiceListItemDTOS = monitoredServiceListDTOPageResponse.getContent();
@@ -1654,7 +1677,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms2", true);
 
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, null, 0, 10, null, null, false);
+        monitoredServiceService.list(projectParams, null, null, 0, 10, null, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(4);
     List<MonitoredServiceListItemDTO> monitoredServiceListItemDTOS = monitoredServiceListDTOPageResponse.getContent();
@@ -2390,7 +2413,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testList_withNoMonitoredService() {
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse = monitoredServiceService.list(
-        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, null, false);
+        projectParams, Collections.singletonList(environmentIdentifier), null, 0, 10, null, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(0);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(0);
     assertThat(monitoredServiceListDTOPageResponse.getPageItemCount()).isEqualTo(0);
@@ -2408,7 +2431,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceOneDTO);
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceTwoDTO);
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse = monitoredServiceService.list(
-        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, null, false);
+        projectParams, Collections.singletonList(environmentIdentifier), null, 0, 10, null, null, false);
     monitoredServiceListDTOPageResponse.getContent().sort(
         Comparator.comparing(MonitoredServiceListItemDTO::getIdentifier));
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
@@ -2461,7 +2484,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     hPersistence.save(msTwoHeatMap);
 
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse = monitoredServiceService.list(
-        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, null, true);
+        projectParams, Collections.singletonList(environmentIdentifier), null, 0, 10, null, null, true);
 
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(1);
@@ -2533,7 +2556,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     hPersistence.save(msFiveHeatMap);
 
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, null, 0, 10, null, null, false);
+        monitoredServiceService.list(projectParams, null, null, 0, 10, null, null, false);
 
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(5);
@@ -2687,7 +2710,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                                                 .build();
     hPersistence.save(sloHealthIndicator);
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListItemDTOPageResponse = monitoredServiceService.list(
-        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, null, false);
+        projectParams, Collections.singletonList(environmentIdentifier), null, 0, 10, null, null, false);
     MonitoredServiceListItemDTO monitoredServiceListItemDTO =
         monitoredServiceListItemDTOPageResponse.getContent().get(0);
     assertThat(monitoredServiceListItemDTO.getSloHealthIndicators().size()).isEqualTo(1);

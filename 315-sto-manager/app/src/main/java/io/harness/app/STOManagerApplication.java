@@ -12,6 +12,7 @@ import static io.harness.app.STOManagerConfiguration.BASE_PACKAGE;
 import static io.harness.app.STOManagerConfiguration.NG_PIPELINE_PACKAGE;
 import static io.harness.authorization.AuthorizationServiceHeader.STO_MANAGER;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
 import static io.harness.eventsframework.EventsFrameworkConstants.STO_ORCHESTRATION_NOTIFY_EVENT;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
@@ -28,6 +29,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.telemetry.STOTelemetryRecordsJob;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
+import io.harness.ci.execution.AccountEventConsumer;
 import io.harness.ci.execution.execution.ObserverEventConsumer;
 import io.harness.ci.execution.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.execution.plan.creator.CIModuleInfoProvider;
@@ -102,6 +104,8 @@ import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
+import io.harness.sto.event.STOAccountEntityListener;
+import io.harness.sto.event.STODataDeleteJob;
 import io.harness.sto.execution.STONotifyEventConsumerRedis;
 import io.harness.sto.execution.STONotifyEventPublisher;
 import io.harness.sto.plan.creator.STOPipelineServiceInfoProvider;
@@ -224,6 +228,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
       @Singleton
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
         return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
+            .addAll(StoBeansRegistrars.morphiaRegistrars)
             .addAll(CiExecutionRegistrars.morphiaRegistrars)
             .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
             .build();
@@ -287,7 +292,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     String mongoUri = STOManagerConfiguration.getHarnessSTOMongo(configuration.getHarnessCIMongo()).getUri();
     modules.add(new CIManagerServiceModule(configuration,
         new CIManagerConfigurationOverride(STO_MANAGER, "sto", false, false, mongoUri, STO_ORCHESTRATION_NOTIFY_EVENT,
-            STOLicenseNoopServiceImpl.class)));
+            STOLicenseNoopServiceImpl.class, STOAccountEntityListener.class)));
     modules.add(new STOManagerServiceModule());
 
     modules.add(new AbstractModule() {
@@ -339,6 +344,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
 
     initializeSTOUsageMonitoring(configuration, injector);
 
+    initializeSTOManagerDataDeletion(injector);
     initializePluginPublisher(injector);
     registerEventConsumers(injector);
     registerOasResource(configuration, environment, injector);
@@ -360,6 +366,9 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     final ExecutorService observerEventConsumerExecutor =
         Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(OBSERVER_EVENT_CHANNEL).build());
     observerEventConsumerExecutor.execute(injector.getInstance(ObserverEventConsumer.class));
+    final ExecutorService accountEventConsumerExecutor =
+        Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(ENTITY_CRUD).build());
+    accountEventConsumerExecutor.execute(injector.getInstance(AccountEventConsumer.class));
   }
 
   private void registerOasResource(CIManagerConfiguration appConfig, Environment environment, Injector injector) {
@@ -582,6 +591,10 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
                                                     .requireValidatorInit(false)
                                                     .build();
     YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
+  }
+
+  private void initializeSTOManagerDataDeletion(Injector injector) {
+    injector.getInstance(STODataDeleteJob.class).scheduleTasks();
   }
 
   private void initializePluginPublisher(Injector injector) {

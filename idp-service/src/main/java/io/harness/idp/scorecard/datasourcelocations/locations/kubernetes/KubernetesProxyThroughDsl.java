@@ -16,73 +16,54 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.common.GsonUtils;
-import io.harness.idp.scorecard.common.beans.DataSourceConfig;
-import io.harness.idp.scorecard.common.beans.HttpConfig;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
-import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
-import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
-import io.harness.idp.scorecard.datasourcelocations.client.DslClientFactory;
-import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
-import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocation;
+import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationLoop;
 import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 import io.harness.spec.server.idp.v1.model.InputValue;
 
-import com.google.inject.Inject;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.Response;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
-@Slf4j
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
-public class KubernetesProxyThroughDsl implements DataSourceLocation {
-  DslClientFactory dslClientFactory;
-
+public class KubernetesProxyThroughDsl extends DataSourceLocationLoop {
   @Override
-  public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
-      DataSourceLocationEntity dataSourceLocationEntity, List<DataFetchDTO> dataPointAndInputValues,
-      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
-      Map<String, String> possibleReplaceableUrlPairs, DataSourceConfig dataSourceConfig)
-      throws NoSuchAlgorithmException, KeyManagementException {
-    ApiRequestDetails apiRequestDetails = fetchApiRequestDetails(dataSourceLocationEntity);
-    matchAndReplaceHeaders(apiRequestDetails.getHeaders(), replaceableHeaders);
-    HttpConfig httpConfig = (HttpConfig) dataSourceConfig;
-    apiRequestDetails.getHeaders().putAll(httpConfig.getHeaders());
-    Map<String, Object> data = new HashMap<>();
-    String apiUrl = apiRequestDetails.getUrl();
-    apiUrl = constructUrl(httpConfig.getTarget(), apiUrl, possibleReplaceableUrlPairs);
-    apiRequestDetails.setUrl(apiUrl);
-    String requestBody =
-        replaceRequestBodyPlaceholdersIfAny(possibleReplaceableRequestBodyPairs, apiRequestDetails.getRequestBody());
-    apiRequestDetails.setRequestBody(requestBody);
-
-    DslClient dslClient = dslClientFactory.getClient(accountIdentifier, possibleReplaceableUrlPairs.get("{HOST}"));
-    Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
-    log.info("Received kubernetes response: {}", response);
-    log.info("Received kubernetes response entity: {}", response.getEntity());
-    if (response.getStatus() == 500) {
-      data.put(ERROR_MESSAGE_KEY, ((ResponseMessage) response.getEntity()).getMessage());
-    } else if (response.getStatus() == 200) {
-      Map<String, Object> convertedResponse =
-          GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class);
-      data.put(DSL_RESPONSE, convertedResponse);
-    } else {
-      data.put(ERROR_MESSAGE_KEY,
-          GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class).get(MESSAGE_KEY));
-    }
-
-    log.info("kubernetes dsl response : {}", data);
-    return data;
+  protected String replaceInputValuePlaceholdersIfAnyInRequestUrl(
+      String url, DataPointEntity dataPoint, List<InputValue> inputValues) {
+    return url;
   }
 
   @Override
-  public String replaceInputValuePlaceholdersIfAny(
-      String requestBody, DataPointEntity dataPoint, List<InputValue> inputValues) {
-    return null;
+  protected boolean validate(DataFetchDTO dataFetchDTO, Map<String, Object> data,
+      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs) {
+    return true;
+  }
+
+  @Override
+  public String replaceInputValuePlaceholdersIfAnyInRequestBody(
+      String requestBody, List<DataFetchDTO> dataPointsAndInputValues, BackstageCatalogEntity backstageCatalogEntity) {
+    return requestBody;
+  }
+
+  @Override
+  protected String getHost(Map<String, String> data) {
+    return data.get("{HOST}");
+  }
+
+  @Override
+  protected Map<String, Object> processResponse(Response response) {
+    Map<String, Object> ruleData = new HashMap<>();
+    if (response.getStatus() == 500) {
+      ruleData.put(ERROR_MESSAGE_KEY, ((ResponseMessage) response.getEntity()).getMessage());
+    } else if (response.getStatus() == 200) {
+      Map<String, Object> convertedResponse =
+          GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class);
+      ruleData.put(DSL_RESPONSE, convertedResponse);
+    } else {
+      ruleData.put(ERROR_MESSAGE_KEY,
+          GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class).get(MESSAGE_KEY));
+    }
+    return ruleData;
   }
 }

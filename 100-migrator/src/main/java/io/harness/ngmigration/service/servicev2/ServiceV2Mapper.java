@@ -19,9 +19,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
+import io.harness.cdng.aws.asg.UserDataConfiguration;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.data.structure.EmptyPredicate;
@@ -60,7 +64,7 @@ public interface ServiceV2Mapper {
 
   ServiceDefinition getServiceDefinition(WorkflowService workflowService, MigrationContext migrationContext,
       Service service, List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
-      List<StartupScriptConfiguration> startupScriptConfigurations);
+      List<NGYamlFile> startupScriptConfigurationFiles);
 
   default List<NGYamlFile> getChildYamlFiles(
       MigrationContext migrationContext, Service service, LambdaSpecification lambdaSpecification) {
@@ -151,5 +155,27 @@ public interface ServiceV2Mapper {
       manifests.get(i).getManifest().setIdentifier(prefix + i);
     }
     return manifests;
+  }
+
+  default StartupScriptConfiguration getConfigFileWrapper(NGYamlFile file) {
+    ParameterField<List<String>> files;
+    files = MigratorUtility.getFileStorePaths(Collections.singletonList(file));
+    return StartupScriptConfiguration.builder()
+        .store(StoreConfigWrapper.builder()
+                   .type(StoreConfigType.HARNESS)
+                   .spec(HarnessStore.builder().files(files).build())
+                   .build())
+        .build();
+  }
+
+  default UserDataConfiguration getUserDataConfigFileWrapper(NGYamlFile file) {
+    ParameterField<List<String>> files;
+    files = MigratorUtility.getFileStorePaths(Collections.singletonList(file));
+    return UserDataConfiguration.builder()
+        .store(StoreConfigWrapper.builder()
+                   .type(StoreConfigType.HARNESS)
+                   .spec(HarnessStore.builder().files(files).build())
+                   .build())
+        .build();
   }
 }

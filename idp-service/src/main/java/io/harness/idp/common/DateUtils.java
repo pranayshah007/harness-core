@@ -62,6 +62,16 @@ public class DateUtils {
         DateUtils.getDateByFormat(yesterdayDate, "yyyy-MM-dd"));
   }
 
+  public static long yesterdayInMilliseconds() {
+    Calendar calendar = Calendar.getInstance();
+    calendar.add(Calendar.DATE, -1);
+    calendar.set(Calendar.HOUR_OF_DAY, 12);
+    calendar.set(Calendar.MINUTE, 0);
+    calendar.set(Calendar.SECOND, 0);
+    calendar.set(Calendar.MILLISECOND, 0);
+    return calendar.getTimeInMillis();
+  }
+
   public static String getDateStringByFormat(Date date, String format) {
     return new SimpleDateFormat(format).format(date);
   }
