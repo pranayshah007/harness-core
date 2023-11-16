@@ -29,6 +29,6 @@ public class Resource {
   @NotEmpty String type;
   @NotEmpty String identifier;
   String uniqueId;
-  String parentId;
+  String parentUniqueId;
   Map<String, String> labels;
 }

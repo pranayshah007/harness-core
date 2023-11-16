@@ -56,7 +56,7 @@ public class ProjectDTO {
   @EntityIdentifier(allowBlank = false)
   String identifier;
   @JsonView(JsonViews.Internal.class) @Schema(hidden = true, description = "UniqueId of Project") String uniqueId;
-  @JsonView(JsonViews.Internal.class) @Schema(hidden = true, description = "ParentId of Project") String parentId;
+  @JsonView(JsonViews.Internal.class) @Schema(hidden = true, description = "ParentId of Project") String parentUniqueId;
   @ApiModelProperty(required = true) @Schema(description = "Project Name for the entity") @NGEntityName String name;
   @Schema(description = "Color") @VariableExpression(skipVariableExpression = true) String color;
 
@@ -72,7 +72,7 @@ public class ProjectDTO {
 
   @Builder
   public ProjectDTO(String orgIdentifier, String identifier, String name, String color, String description,
-      Map<String, String> tags, String uniqueId, String parentId) {
+      Map<String, String> tags, String uniqueId, String parentUniqueId) {
     this.orgIdentifier = orgIdentifier;
     this.identifier = identifier;
     this.name = name;
@@ -81,6 +81,6 @@ public class ProjectDTO {
     this.description = description;
     this.tags = tags;
     this.uniqueId = uniqueId;
-    this.parentId = parentId;
+    this.parentUniqueId = parentUniqueId;
   }
 }
