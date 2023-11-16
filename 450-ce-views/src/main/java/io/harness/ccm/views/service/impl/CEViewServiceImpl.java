@@ -438,8 +438,8 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   @Override
-  public void updateBusinessMappingName(String accountId, String buinessMappingUuid, String newBusinessMappingName) {
-    ceViewDao.updateBusinessMappingName(accountId, buinessMappingUuid, newBusinessMappingName);
+  public void updateBusinessMappingName(String accountId, String businessMappingUuid, String newBusinessMappingName) {
+    ceViewDao.updateBusinessMappingName(accountId, businessMappingUuid, newBusinessMappingName);
   }
 
   @Override
@@ -512,8 +512,8 @@ public class CEViewServiceImpl implements CEViewService {
       Integer pageSize, Integer pageNo, String searchKey, List<CEViewFolder> folders, Set<String> allowedFolderIds,
       List<CloudFilter> cloudFilters) {
     sortCriteria = getModifiedSortCriteria(sortCriteria);
-    List<CEView> viewList = ceViewDao.findByAccountIdAndFolderId(
-        accountId, allowedFolderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters);
+    List<CEView> viewList =
+        getViewList(accountId, sortCriteria, pageSize, pageNo, searchKey, allowedFolderIds, cloudFilters);
     return getQLCEViewsFromCEViews(accountId, viewList, folders, includeDefault);
   }
 
@@ -523,10 +523,34 @@ public class CEViewServiceImpl implements CEViewService {
       List<CloudFilter> cloudFilters) {
     sortCriteria = getModifiedSortCriteria(sortCriteria);
     Set<String> folderIds = new HashSet<>(Collections.singleton(folderId));
-    List<CEView> viewList = ceViewDao.findByAccountIdAndFolderId(
-        accountId, folderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters);
+    List<CEView> viewList = getViewList(accountId, sortCriteria, pageSize, pageNo, searchKey, folderIds, cloudFilters);
     List<CEViewFolder> folderList = ceViewFolderDao.getFolders(accountId, Collections.singletonList(folderId));
     return getQLCEViewsFromCEViews(accountId, viewList, folderList, includeDefault);
+  }
+
+  private List<CEView> getViewList(String accountId, QLCEViewSortCriteria sortCriteria, Integer pageSize,
+      Integer pageNo, String searchKey, Set<String> allowedFolderIds, List<CloudFilter> cloudFilters) {
+    List<CEView> defaultViewList = ceViewDao.findByAccountIdAndFolderIds(
+        accountId, allowedFolderIds, sortCriteria, pageSize, 0, searchKey, cloudFilters, false);
+    int limit = Objects.equals(pageNo, 0) ? pageSize - defaultViewList.size() : pageSize;
+    int offset = Objects.equals(pageNo, 0) ? 0 : pageNo * pageSize - defaultViewList.size();
+    List<CEView> viewList = ceViewDao.findByAccountIdAndFolderIds(
+        accountId, allowedFolderIds, sortCriteria, limit, offset, searchKey, cloudFilters, true);
+    if (Objects.equals(pageNo, 0)) {
+      defaultViewList.addAll(viewList);
+      viewList = defaultViewList;
+    }
+    return viewList;
+  }
+
+  @Override
+  public List<QLCEView> getAllPerspectives(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria,
+      Integer pageSize, Integer pageNo, String searchKey, List<CEViewFolder> folders, Set<String> allowedFolderIds,
+      List<CloudFilter> cloudFilters) {
+    sortCriteria = getModifiedSortCriteria(sortCriteria);
+    List<CEView> viewList = ceViewDao.findByAccountIdAndFolderIds(
+        accountId, allowedFolderIds, sortCriteria, pageSize, pageNo * pageSize, searchKey, cloudFilters);
+    return getQLCEViewsFromCEViews(accountId, viewList, folders, includeDefault);
   }
 
   @Override
@@ -832,16 +856,16 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   @Override
-  public Long countByAccountIdAndFolderId(
+  public Long countByAccountIdAndFolderIds(
       String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters) {
     return ceViewDao.countByAccountIdAndFolderIds(accountId, folderIds, searchKey, cloudFilters);
   }
 
-  public QLCEViewSortCriteria getModifiedSortCriteria(QLCEViewSortCriteria sortCriteria) {
+  private QLCEViewSortCriteria getModifiedSortCriteria(QLCEViewSortCriteria sortCriteria) {
     QLCEViewSortCriteria modifiedSortCriteria = sortCriteria;
-    if (Objects.isNull(sortCriteria.getSortOrder()) && Objects.isNull(sortCriteria.getSortType())) {
+    if (Objects.isNull(sortCriteria)) {
       modifiedSortCriteria =
-          QLCEViewSortCriteria.builder().sortOrder(QLCESortOrder.ASCENDING).sortType(QLCEViewSortType.NAME).build();
+          QLCEViewSortCriteria.builder().sortOrder(QLCESortOrder.DESCENDING).sortType(QLCEViewSortType.TIME).build();
     }
     return modifiedSortCriteria;
   }

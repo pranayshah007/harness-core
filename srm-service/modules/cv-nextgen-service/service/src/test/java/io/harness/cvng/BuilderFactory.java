@@ -233,6 +233,7 @@ import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricE
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
+import io.harness.cvng.servicelevelobjective.beans.slispec.MetricLessServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slispec.RequestBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slispec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
@@ -1708,6 +1709,14 @@ public class BuilderFactory {
                   .metric2("Calls per Minute")
                   .eventType(RatioSLIMetricEventType.GOOD)
                   .build());
+  }
+
+  public ServiceLevelIndicatorDTOBuilder getMetricLessServiceLevelIndicatorDTOBuilder() {
+    return ServiceLevelIndicatorDTO.builder()
+        .name("metric_less")
+        .identifier("metric_less")
+        .type(SLIEvaluationType.METRIC_LESS)
+        .spec(MetricLessServiceLevelIndicatorSpec.builder().build());
   }
 
   private VerificationJob getVerificationJob(List<CVConfig> cvConfigs) {

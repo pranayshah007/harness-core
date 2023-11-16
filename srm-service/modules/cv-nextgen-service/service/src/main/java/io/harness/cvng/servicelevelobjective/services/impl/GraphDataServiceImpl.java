@@ -62,13 +62,6 @@ public class GraphDataServiceImpl implements GraphDataService {
 
   @Override
   public SLODashboardWidget.SLOGraphData getGraphData(AbstractServiceLevelObjective serviceLevelObjective,
-      Instant startTime, Instant endTime, int totalErrorBudgetMinutes, long numOfDataPointsInBetween) {
-    return getGraphData(
-        serviceLevelObjective, startTime, endTime, totalErrorBudgetMinutes, null, numOfDataPointsInBetween);
-  }
-
-  @Override
-  public SLODashboardWidget.SLOGraphData getGraphData(AbstractServiceLevelObjective serviceLevelObjective,
       Instant startTime, Instant endTime, int totalErrorBudgetMinutes, TimeRangeParams filter) {
     return getGraphData(
         serviceLevelObjective, startTime, endTime, totalErrorBudgetMinutes, filter, MAX_NUMBER_OF_POINTS);

@@ -12,10 +12,15 @@ import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFI
 import static java.util.Collections.singletonList;
 
 import io.harness.AccessControlClientConfiguration;
+import io.harness.ScmConnectionConfig;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.entities.IACMServiceConfig;
 import io.harness.cache.CacheConfig;
+import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
+import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
@@ -31,7 +36,10 @@ import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
+import io.harness.ssca.beans.entities.SSCAServiceConfig;
+import io.harness.sto.beans.entities.STOServiceConfig;
 import io.harness.telemetry.segment.SegmentConfiguration;
+import io.harness.threading.ThreadPoolConfig;
 
 import ch.qos.logback.access.spi.IAccessEvent;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -115,6 +123,20 @@ public class IdpConfiguration extends Configuration {
   private String managerAuthority;
   @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
   @JsonProperty("internalAccounts") private List<String> internalAccounts;
+  @JsonProperty("logServiceConfig") private LogServiceConfig logServiceConfig;
+  @JsonProperty("sscaServiceConfig") private SSCAServiceConfig sscaServiceConfig;
+  @JsonProperty("stoServiceConfig") private STOServiceConfig stoServiceConfig;
+  @JsonProperty("apiUrl") private String apiUrl;
+  @JsonProperty("iacmServiceConfig") private IACMServiceConfig iacmServiceConfig;
+  @JsonProperty("scmConnectionConfig") private ScmConnectionConfig scmConnectionConfig;
+  @JsonProperty("pmsSdkExecutionPoolConfig") private ThreadPoolConfig pmsSdkExecutionPoolConfig;
+  @JsonProperty("pmsSdkOrchestrationEventPoolConfig") private ThreadPoolConfig pmsSdkOrchestrationEventPoolConfig;
+  @JsonProperty("pmsPlanCreatorServicePoolConfig") private ThreadPoolConfig pmsPlanCreatorServicePoolConfig;
+  @JsonProperty("opaClientConfig") private ServiceHttpClientConfig opaClientConfig;
+  @JsonProperty("policyManagerSecret") private String policyManagerSecret;
+  @JsonProperty("ciExecutionServiceConfig") private CIExecutionServiceConfig ciExecutionServiceConfig;
+  @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
+  @JsonProperty("harnessCodeGitUrl") private String harnessCodeGitUrl;
   @JsonProperty("segmentConfiguration") private SegmentConfiguration segmentConfiguration;
 
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
@@ -122,6 +144,7 @@ public class IdpConfiguration extends Configuration {
   public static final String SERVICES_PROXY_PACKAGE = "io.harness.idp.proxy.services";
   public static final String DELEGATE_PROXY_PACKAGE = "io.harness.idp.proxy.delegate";
   public static final String IDP_HEALTH_PACKAGE = "io.harness.idp.health";
+  private static final String IDP_YAML_SCHEMA = "io.harness.idp.pipeline.stages.yamlschema";
 
   public IdpConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();
@@ -183,7 +206,7 @@ public class IdpConfiguration extends Configuration {
         .stream()
         .filter(klazz
             -> StringUtils.startsWithAny(klazz.getPackage().getName(), IDP_SPEC_PACKAGE, SERVICES_PROXY_PACKAGE,
-                DELEGATE_PROXY_PACKAGE, IDP_HEALTH_PACKAGE))
+                DELEGATE_PROXY_PACKAGE, IDP_HEALTH_PACKAGE, IDP_YAML_SCHEMA))
         .collect(Collectors.toSet());
   }
 }

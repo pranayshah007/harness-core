@@ -13,7 +13,10 @@ import io.harness.eraro.ErrorCode;
 
 @OwnedBy(HarnessTeam.PL)
 public class ScmUnexpectedException extends ScmException {
+  private static final String MESSAGE_ARG = "message";
+
   public ScmUnexpectedException(String errorMessage) {
     super(errorMessage, ErrorCode.SCM_UNEXPECTED_ERROR);
+    super.param(MESSAGE_ARG, errorMessage);
   }
 }

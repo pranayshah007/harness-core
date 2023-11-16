@@ -1,0 +1,532 @@
+openapi: 3.0.3
+x-stoplight:
+  id: 51adqopsjlq9b
+info:
+  title: Harness NextGen Software Delivery Platform API Reference
+  version: '1.0'
+  description: This is the Open Api Spec 3 for the SRM Service. This is under active development. Beware of the breaking change with respect to the generated code stub.
+  contact:
+    email: contact@harness.io
+servers:
+  - url: 'https://app.harness.io'
+    description: Harness host URL.
+tags:
+  - name: ServiceLevelObjective
+    description: This contains CRUD APIs for ServiceLevelObjective.
+    x-displayName: 'Service LevelObjective [Beta]'
+paths:
+  '/v1/orgs/{org}/projects/{project}/slo':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+    get:
+      summary: List SLOs
+      operationId: list-slo
+      description: Returns a list of Service Level Objectives
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/PageIndex'
+        - $ref: '#/components/parameters/Limit'
+        - schema:
+            type: string
+          in: query
+          name: composite_slo_identifier
+          description: Identifier for the Composite SLO for which underlying SLOs needs to be listed.
+        - schema:
+            type: string
+          in: query
+          name: monitored_service_identifier
+          description: For filtering on the basis of monitored service identifier
+        - schema:
+            type: array
+            items:
+              type: string
+          in: query
+          name: user_journey_identifiers
+          description: List of User Journey identifiers on the basis of which the SLOs are filtered.
+        - schema:
+            type: string
+            pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
+          in: query
+          name: filter
+          description: SLO Name on the basis of which the SLOs are filtered.
+        - schema:
+            type: string
+            maxLength: 1024
+            enum:
+              - Simple
+              - Composite
+          in: query
+          name: slo_type
+          description: SLO Types on the basis of which the SLOs are filtered.
+        - schema:
+            type: array
+            items:
+              type: string
+            maxItems: 128
+          in: query
+          name: env_identifiers
+          description: Identifiers of Environments on the basis of which the SLOs are filtered.
+        - schema:
+            type: array
+            items:
+              type: string
+            enum:
+              - Rolling
+              - Calender
+          in: query
+          name: target_types
+          description: Target Types on the basis of which the SLOs are filtered.
+        - schema:
+            type: array
+            items:
+              type: string
+            enum:
+              - Healthy
+              - Unhealthy
+              - Observe
+              - Exhausted
+              - Need Attention
+          in: query
+          name: error_budget_risks
+          description: Error Budgets on the basis of which the SLOs are filtered.
+        - schema:
+            type: string
+            enum:
+              - Window
+              - Request
+          in: query
+          name: evaluation_type
+          description: Evaluation Type on the basis of which the SLOs are filtered.
+        - schema:
+            type: boolean
+            default: false
+          in: query
+          name: child_resource
+          description: For filtering the simple slo's on the basis of accountId. Set it to true for Account Level SLOs.
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/SLOHealthListViewResponse'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+        '502':
+          description: Bad Gateway
+      x-stoplight:
+        id: qz7cxcokqykq6
+      tags:
+        - ServiceLevelObjective
+components:
+  schemas:
+    SLOHealthListView:
+      type: object
+      x-examples:
+        Example 1:
+          - slo_identifier: slo_demo
+            name: slo demo
+            org_name: default
+            project_name: srm
+            monitored_service_identifier: sto_prod
+            monitored_service_name: sto_prod
+            health_source_identifier: appd
+            health_source_name: appd
+            service_identifier: sto
+            service_name: sto
+            environment_identifier: prod
+            environment_name: ''
+            user_journeys:
+              - identifier: t1u1
+            burn_rate: 44.554455445544555
+            error_budget_remaining_percentage: -33.663366336633665
+            error_budget_remaining: -34
+            total_error_budget: 101
+            slo_target_type:
+              type: Rolling
+            slo_type:
+              type: Simple
+            slo_target_percentage: 99
+            no_of_active_alerts: 0
+            evaluation_type:
+              type: Window
+            project_params:
+              account_identifier: C2aOky2hQsGxcdkl05yqmA
+              org_identifier: default
+              project_identifier: srm
+            slo_error:
+              failed_state: false
+            error_budget_risk: Exhausted
+      title: SLOHealthListView
+      description: Health List View of SLO.
+      properties:
+        slo_identifier:
+          type: string
+          description: Identifier of the SLO.
+        name:
+          type: string
+          description: Name of the SLO.
+        org_name:
+          type: string
+          description: Organization Name to which the SLO belongs.
+        project_name:
+          type: string
+          description: Project Name to which the SLO belongs.
+        monitored_service_identifier:
+          type: string
+          description: Identifier of the Monitored Service to which the SLO is associated.
+        monitored_service_name:
+          type: string
+          description: Name of the Monitored Service to which the SLO is associated.
+        service_identifier:
+          type: string
+          description: Identifier of the Service to which the SLO is associated.
+        health_source_identifier:
+          type: string
+          description: Identifier of the Health Source to which the SLO is associated.
+        health_source_name:
+          type: string
+          description: Identifier of the Health Source to which the SLO is associated.
+        service_name:
+          type: string
+          description: Name of the Service to which the SLO is associated.
+        environment_identifier:
+          type: string
+          description: Identifier of the Environment to which the SLO is associated.
+        environment_name:
+          type: string
+          description: Name of the Environment to which the SLO is associated.
+        tags:
+          type: array
+          description: List of tags for SLO.
+          items:
+            type: string
+        description:
+          type: string
+          description: Description for the SLO.
+        user_journey_name:
+          type: string
+          description: Name of the first User Journey for the SLO.
+        user_journeys:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserJourney'
+        burn_rate:
+          type: number
+          x-stoplight:
+            id: a6sr7ucm2qg46
+          format: double
+          description: 'Burn rate per day of the SLO. The unit is "Minutes" if the Evaluation type is Window, for Request based it''s "Request".'
+        error_budget_remaining_percentage:
+          type: number
+          format: double
+          description: Error Budget Remaining Percentage of the SLO.
+        error_budget_remaining:
+          type: integer
+          description: 'Error Budget Remaining of the SLO. The unit is "Minutes" if the Evaluation type is Window, for Request based it''s "Request".'
+        total_error_budget:
+          type: integer
+          description: 'Total Error Budget of the SLO. The unit is "Minutes" if the Evaluation type is Window, for Request based it''s "Request".'
+        slo_target_type:
+          $ref: '#/components/schemas/SLOTargetType'
+        slo_type:
+          $ref: '#/components/schemas/ServiceLevelObjectiveType'
+        slo_target_percentage:
+          type: number
+          x-stoplight:
+            id: qjjo4qeazs8ma
+          description: Target Percentage of the SLO defined by the user.
+          format: double
+        no_of_active_alerts:
+          type: integer
+          x-stoplight:
+            id: w73fgd0qu13wa
+          description: Number of Notification Rules defined for the SLO.
+        evaluation_type:
+          $ref: '#/components/schemas/SLIEvaluationType'
+        downtime_status_details:
+          $ref: '#/components/schemas/DowntimeStatusDetails'
+        project_params:
+          $ref: '#/components/schemas/ProjectParams'
+        slo_error:
+          $ref: '#/components/schemas/SLOError'
+        error_budget_risk:
+          x-stoplight:
+            id: zvd5xnbcwrtuf
+          enum:
+            - Exhausted
+            - Unhealthy
+            - Need Attention
+            - Observe
+            - Healthy
+          description: |
+            Error Budget Risk for the SLO.
+            - It's Healthy if Error Budget Remaining Percentage >= 75.
+            - It's Observe if Error Budget Remaining Percentage >= 50 < 75.
+            - It's Need Attention if Error Budget Remaining Percentage >= 25 < 50.
+            - It's Unhealthy if Error Budget Remaining Percentage >= 0 < 25.
+            - It's Exhausted if Error Budget Remaining Percentage < 0.
+      required:
+        - slo_identifier
+        - name
+        - burn_rate
+        - error_budget_remaining_percentage
+        - error_budget_remaining
+        - total_error_budget
+        - slo_type
+        - slo_target_percentage
+        - no_of_active_alerts
+        - evaluation_type
+        - project_params
+    UserJourney:
+      title: UserJourney
+      x-stoplight:
+        id: se7v2ka5mvb0t
+      type: object
+      description: User Journey Details.
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: mmz0jsepqzq7h
+          description: Name of the User Journey.
+        identifier:
+          type: string
+          x-stoplight:
+            id: 5615z41ajd1hd
+          description: Identifier of the User Journey.
+    SLOTargetType:
+      title: SLOTargetType
+      x-stoplight:
+        id: quigx2v8pxg0x
+      type: object
+      properties:
+        type:
+          x-stoplight:
+            id: zge6b9mkz9tz5
+          enum:
+            - Rolling
+            - Calender
+      description: Types of SLO Target Period.
+    ServiceLevelObjectiveType:
+      title: ServiceLevelObjectiveType
+      x-stoplight:
+        id: p8ul2oy4947lm
+      type: object
+      properties:
+        type:
+          x-stoplight:
+            id: lhlkynczdwlku
+          enum:
+            - Simple
+            - Composite
+      description: Types of Service Level Objectives.
+    SLIEvaluationType:
+      title: SLIEvaluationType
+      x-stoplight:
+        id: 33wmb5xdlxknh
+      type: object
+      description: Evaluation Type of SLI
+      properties:
+        type:
+          x-stoplight:
+            id: zo4htjjbta6yi
+          enum:
+            - Window
+            - Request
+    ProjectParams:
+      title: ProjectParams
+      x-stoplight:
+        id: rjc226j80bsqw
+      type: object
+      description: Project Parameters
+      properties:
+        account_identifier:
+          type: string
+          x-stoplight:
+            id: 7r0jvex7youbo
+          description: Account Identifier.
+        org_identifier:
+          type: string
+          x-stoplight:
+            id: zr27fcdlh8j8r
+          description: Org Identifier.
+        project_identifier:
+          type: string
+          x-stoplight:
+            id: icfypf9j1bzo6
+          description: Project Identifier.
+      required:
+        - account_identifier
+    DowntimeStatusDetails:
+      title: DowntimeStatusDetails
+      x-stoplight:
+        id: ab1vu3o0swqf7
+      type: object
+      description: Details of Downtime with Status
+      properties:
+        status:
+          $ref: '#/components/schemas/DowntimeStatus'
+        start_time:
+          type: integer
+          x-stoplight:
+            id: s5aculgl7l3vr
+          format: int64
+          description: Start time of the Downtime.
+        end_time:
+          type: integer
+          x-stoplight:
+            id: ebzis96se8htx
+          format: int64
+          description: End time of the Downtime.
+        end_date_time:
+          type: string
+          x-stoplight:
+            id: vvl20rfqbxoae
+          description: 'End time of the Downtime in the format: yyyy-MM-dd hh:mm a'
+    DowntimeStatus:
+      title: DowntimeStatus
+      x-stoplight:
+        id: ife4dsxsstrpw
+      type: object
+      properties:
+        status:
+          x-stoplight:
+            id: bcsqxske281qx
+          enum:
+            - Active
+            - Scheduled
+      description: Enum For Downtime Statuses
+    SLOError:
+      title: SLOError
+      x-stoplight:
+        id: 6wag8o70op8ae
+      type: object
+      properties:
+        failed_state:
+          type: boolean
+          x-stoplight:
+            id: qav75kgv5fvu4
+          description: Failed State of the SLO. If SLO has some failures this field will be true.
+        error_message:
+          type: string
+          x-stoplight:
+            id: 84raxa4l2opzj
+          description: Error Message if there is an SLO failure.
+        slo_error_type:
+          x-stoplight:
+            id: lzdvtf7ssh48b
+          enum:
+            - DataCollectionFailure
+            - SimpleSLODeletion
+          description: Types of SLO Errors.
+      required:
+        - failed_state
+      description: SLO Error Details.
+  securitySchemes:
+    x-api-key:
+      name: x-api-key
+      type: apiKey
+      in: header
+      description: API key is a token provided while making the API calls. This is used to authenticate the client at the exposed endpoint.
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+        maximum: 100
+      description: 'Pagination: Number of items to return.'
+    Sort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - identifier
+          - name
+          - created
+          - updated
+      description: Parameter on the basis of which sorting is done.
+    Order:
+      name: order
+      in: query
+      schema:
+        type: string
+        enum:
+          - ASC
+          - DESC
+      description: Order on the basis of which sorting is done.
+    PageIndex:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+      description: 'Pagination page number strategy: Specify the page number within the paginated collection related to the number of items on each page.'
+    SearchTerm:
+      name: filter
+      in: query
+      required: false
+      schema:
+        type: string
+      description: This would be used to filter resources having attributes matching the search term.
+    OrgParam:
+      name: org
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Organization identifier
+    ProjectParam:
+      name: project
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Project identifier
+    AccountHeader:
+      name: Harness-Account
+      in: header
+      required: false
+      schema:
+        type: string
+      description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+  responses:
+    SLOHealthListViewResponse:
+      description: SLO List Response body
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/SLOHealthListView'
+        application/xml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/SLOHealthListView'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
+  requestBodies: {}

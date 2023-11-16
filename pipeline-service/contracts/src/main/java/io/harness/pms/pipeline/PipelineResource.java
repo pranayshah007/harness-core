@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
@@ -221,9 +222,9 @@ public interface PipelineResource {
   ResponseDTO<VariableMergeServiceResponse>
   createVariablesV2(@Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE,
                         required = true) @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) String orgId,
-      @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+      @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,

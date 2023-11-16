@@ -29,6 +29,7 @@ import io.harness.spec.server.ssca.v1.model.LicenseFilter;
 import io.harness.spec.server.ssca.v1.model.Operator;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
+import io.harness.ssca.entities.NormalizedSBOMComponentEntity.NormalizedSBOMEntityKeys;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -99,54 +100,11 @@ public class NormalisedSbomComponentServiceImplTest extends SSCAManagerTestBase 
   @Category(UnitTests.class)
   public void testGetOrchestrationIds() {
     String licenseValue = randomAlphabetic(10);
-    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
-    when(sbomComponentRepo.findDistinctOrchestrationIds(any())).thenReturn(List.of("orch1", "orch2"));
-    LicenseFilter licenseFilter = new LicenseFilter().operator(Operator.EQUALS).value(licenseValue);
-    List<String> orchestrationIds =
-        normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", licenseFilter);
-    assertEquals(orchestrationIds.size(), 2);
-    verify(sbomComponentRepo, times(1)).findDistinctOrchestrationIds(criteriaArgumentCaptor.capture());
-    Criteria criteria = criteriaArgumentCaptor.getValue();
-    Document document = criteria.getCriteriaObject();
-    assertEquals(4, document.size());
-    BasicDBList licenseList = (BasicDBList) document.get("$and");
-    assertEquals(licenseList.size(), 1);
-  }
-
-  @Test
-  @Owner(developers = REETIKA)
-  @Category(UnitTests.class)
-  public void testGetOrchestrationIdsWithNoLicenseFilter() {
-    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
-    when(sbomComponentRepo.findDistinctOrchestrationIds(any())).thenReturn(List.of("orch1", "orch2"));
-    LicenseFilter licenseFilter = null;
-    List<String> orchestrationIds =
-        normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", licenseFilter);
-    assertEquals(orchestrationIds.size(), 0);
-    verify(sbomComponentRepo, times(0)).findDistinctOrchestrationIds(criteriaArgumentCaptor.capture());
-  }
-
-  @Test
-  @Owner(developers = REETIKA)
-  @Category(UnitTests.class)
-  public void testGetOrchestrationIdsWithNoComponentFilter() {
-    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
-    when(sbomComponentRepo.findDistinctOrchestrationIds(any())).thenReturn(List.of("orch1", "orch2"));
-    List<ComponentFilter> componentFilter = Lists.newArrayList();
-    List<String> orchestrationIds =
-        normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", componentFilter);
-    assertEquals(orchestrationIds.size(), 0);
-    verify(sbomComponentRepo, times(0)).findDistinctOrchestrationIds(criteriaArgumentCaptor.capture());
-  }
-
-  @Test
-  @Owner(developers = REETIKA)
-  @Category(UnitTests.class)
-  public void testGetOrchestrationIdsForComponentFilter() {
     String componentValue1 = randomAlphabetic(10);
     String componentValue2 = randomAlphabetic(10);
     ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
     when(sbomComponentRepo.findDistinctOrchestrationIds(any())).thenReturn(List.of("orch1", "orch2"));
+    LicenseFilter licenseFilter = new LicenseFilter().operator(Operator.EQUALS).value(licenseValue);
     List<ComponentFilter> componentFilter =
         Lists.newArrayList(new ComponentFilter()
                                .fieldName(ComponentFilter.FieldNameEnum.COMPONENTNAME)
@@ -156,22 +114,83 @@ public class NormalisedSbomComponentServiceImplTest extends SSCAManagerTestBase 
                 .fieldName(ComponentFilter.FieldNameEnum.COMPONENTVERSION)
                 .operator(Operator.STARTSWITH)
                 .value(componentValue2));
-
     List<String> orchestrationIds =
-        normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", componentFilter);
+        normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", licenseFilter, componentFilter);
     assertEquals(orchestrationIds.size(), 2);
-
     verify(sbomComponentRepo, times(1)).findDistinctOrchestrationIds(criteriaArgumentCaptor.capture());
     Criteria criteria = criteriaArgumentCaptor.getValue();
     Document document = criteria.getCriteriaObject();
     assertEquals(4, document.size());
-    BasicDBList andList = (BasicDBList) document.get("$and");
+    BasicDBList filterList = (BasicDBList) document.get("$and");
+    assertEquals(filterList.size(), 2);
+    Document licenseDocument = (Document) filterList.get(0);
+    assertEquals(licenseDocument.get(NormalizedSBOMEntityKeys.packageLicense), licenseValue);
+    Document componetDocument = (Document) filterList.get(1);
+    BasicDBList componentFilterList = (BasicDBList) componetDocument.get("$and");
+    assertEquals(componentFilterList.size(), 2);
+    assertThat(((Document) componentFilterList.get(0)).get(NormalizedSBOMEntityKeys.packageName).toString())
+        .isEqualTo(componentValue1);
+    assertThat(((Document) componentFilterList.get(1)).get(NormalizedSBOMEntityKeys.packageVersion).toString())
+        .isEqualTo("^" + componentValue2);
+  }
 
-    assertEquals(andList.size(), 1);
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void testGetOrchestrationIdsWithNoLicenseFilter() {
+    String componentValue1 = randomAlphabetic(10);
+    String componentValue2 = randomAlphabetic(10);
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(sbomComponentRepo.findDistinctOrchestrationIds(any())).thenReturn(List.of("orch1", "orch2"));
+    LicenseFilter licenseFilter = null;
+    List<ComponentFilter> componentFilter =
+        Lists.newArrayList(new ComponentFilter()
+                               .fieldName(ComponentFilter.FieldNameEnum.COMPONENTNAME)
+                               .operator(Operator.CONTAINS)
+                               .value(componentValue1),
+            new ComponentFilter()
+                .fieldName(ComponentFilter.FieldNameEnum.COMPONENTVERSION)
+                .operator(Operator.STARTSWITH)
+                .value(componentValue2));
+    List<String> orchestrationIds =
+        normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", licenseFilter, componentFilter);
+    assertEquals(orchestrationIds.size(), 2);
+    verify(sbomComponentRepo, times(1)).findDistinctOrchestrationIds(criteriaArgumentCaptor.capture());
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    Document document = criteria.getCriteriaObject();
+    assertEquals(4, document.size());
+    BasicDBList filterList = (BasicDBList) document.get("$and");
+    assertEquals(filterList.size(), 2);
+    assertEquals(((Document) filterList.get(0)).size(), 0);
+    Document componetDocument = (Document) filterList.get(1);
+    BasicDBList componentFilterList = (BasicDBList) componetDocument.get("$and");
+    assertEquals(componentFilterList.size(), 2);
+    assertThat(((Document) componentFilterList.get(0)).get(NormalizedSBOMEntityKeys.packageName).toString())
+        .isEqualTo(componentValue1);
+    assertThat(((Document) componentFilterList.get(1)).get(NormalizedSBOMEntityKeys.packageVersion).toString())
+        .isEqualTo("^" + componentValue2);
+  }
 
-    Document criteriaDocument = (Document) andList.get(0);
-
-    BasicDBList orList = (BasicDBList) criteriaDocument.get("$or");
-    assertEquals(orList.size(), 2);
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void testGetOrchestrationIdsWithNoComponentFilter() {
+    String licenseValue = randomAlphabetic(10);
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(sbomComponentRepo.findDistinctOrchestrationIds(any())).thenReturn(List.of("orch1", "orch2"));
+    LicenseFilter licenseFilter = new LicenseFilter().operator(Operator.EQUALS).value(licenseValue);
+    List<ComponentFilter> componentFilter = Lists.newArrayList();
+    List<String> orchestrationIds =
+        normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", licenseFilter, componentFilter);
+    assertEquals(orchestrationIds.size(), 2);
+    verify(sbomComponentRepo, times(1)).findDistinctOrchestrationIds(criteriaArgumentCaptor.capture());
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    Document document = criteria.getCriteriaObject();
+    assertEquals(4, document.size());
+    BasicDBList filterList = (BasicDBList) document.get("$and");
+    assertEquals(filterList.size(), 2);
+    Document licenseDocument = (Document) filterList.get(0);
+    assertEquals(licenseDocument.get(NormalizedSBOMEntityKeys.packageLicense), licenseValue);
+    assertEquals(((Document) filterList.get(1)).size(), 0);
   }
 }

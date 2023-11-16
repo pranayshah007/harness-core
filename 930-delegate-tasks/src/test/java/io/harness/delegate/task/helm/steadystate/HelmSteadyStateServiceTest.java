@@ -9,6 +9,7 @@ package io.harness.delegate.task.helm.steadystate;
 
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.BUHA;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -112,11 +113,26 @@ public class HelmSteadyStateServiceTest extends CategoryTest {
     List<KubernetesResource> resources =
         HelmClientUtils.readManifestFromHelmOutput(readResource(RES_HELM_MANIFEST_ALL));
 
-    List<KubernetesResourceId> workloadsIds = helmSteadyStateService.findEligibleWorkloadIds(resources);
+    List<KubernetesResourceId> workloadsIds = helmSteadyStateService.findEligibleWorkloadIds(resources, true);
 
     assertThat(workloadsIds.stream().map(KubernetesResourceId::kindNameRef))
         .containsExactlyInAnyOrder("Deployment/my-hello", "StatefulSet/my-hello", "Job/my-hello-job",
             "DaemonSet/my-hello-daemon-set", "DeploymentConfig/my-hello-deployment-config");
+  }
+
+  @Test
+  @SneakyThrows
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testFindEligibleWorkloadIdsWithSteadyStateCheckForJobs() {
+    List<KubernetesResource> resources =
+        HelmClientUtils.readManifestFromHelmOutput(readResource(RES_HELM_MANIFEST_ALL));
+
+    List<KubernetesResourceId> workloadsIds = helmSteadyStateService.findEligibleWorkloadIds(resources, false);
+
+    assertThat(workloadsIds.stream().map(KubernetesResourceId::kindNameRef))
+        .containsExactlyInAnyOrder("Deployment/my-hello", "StatefulSet/my-hello", "DaemonSet/my-hello-daemon-set",
+            "DeploymentConfig/my-hello-deployment-config");
   }
 
   @Test

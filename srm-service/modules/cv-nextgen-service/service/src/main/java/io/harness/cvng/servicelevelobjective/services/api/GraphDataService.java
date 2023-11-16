@@ -15,8 +15,6 @@ import java.time.Instant;
 
 public interface GraphDataService {
   SLODashboardWidget.SLOGraphData getGraphData(AbstractServiceLevelObjective serviceLevelObjective, Instant startTime,
-      Instant endTime, int totalErrorBudgetMinutes, long numOfDataPointsInBetween);
-  SLODashboardWidget.SLOGraphData getGraphData(AbstractServiceLevelObjective serviceLevelObjective, Instant startTime,
       Instant endTime, int totalErrorBudgetMinutes, TimeRangeParams timeRangeParams);
 
   SLODashboardWidget.SLOGraphData getGraphData(AbstractServiceLevelObjective serviceLevelObjective, Instant startTime,

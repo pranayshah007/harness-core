@@ -12,13 +12,13 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.UnexpectedException;
 import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.security.AllTrustingX509TrustManager;
 
 import com.google.common.collect.ImmutableList;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -43,8 +43,7 @@ public class DirectDslClient implements DslClient {
       ImmutableList.of(new AllTrustingX509TrustManager());
 
   @Override
-  public Response call(String accountIdentifier, ApiRequestDetails apiRequestDetails)
-      throws NoSuchAlgorithmException, KeyManagementException {
+  public Response call(String accountIdentifier, ApiRequestDetails apiRequestDetails) {
     OkHttpClient client = buildOkHttpClient();
     String url = apiRequestDetails.getUrl();
     String method = apiRequestDetails.getMethod();
@@ -53,18 +52,22 @@ public class DirectDslClient implements DslClient {
     return executeRequest(client, request);
   }
 
-  private OkHttpClient buildOkHttpClient() throws NoSuchAlgorithmException, KeyManagementException {
-    final SSLContext sslContext = SSLContext.getInstance("SSL");
-    sslContext.init(null, TRUST_ALL_CERTS.toArray(new TrustManager[1]), new java.security.SecureRandom());
-    final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
-    return new OkHttpClient()
-        .newBuilder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(20, TimeUnit.SECONDS)
-        .writeTimeout(10, TimeUnit.SECONDS)
-        .retryOnConnectionFailure(true)
-        .sslSocketFactory(sslSocketFactory, (X509TrustManager) TRUST_ALL_CERTS.get(0))
-        .build();
+  private OkHttpClient buildOkHttpClient() {
+    try {
+      final SSLContext sslContext = SSLContext.getInstance("SSL");
+      sslContext.init(null, TRUST_ALL_CERTS.toArray(new TrustManager[1]), new java.security.SecureRandom());
+      final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+      return new OkHttpClient()
+          .newBuilder()
+          .connectTimeout(10, TimeUnit.SECONDS)
+          .readTimeout(20, TimeUnit.SECONDS)
+          .writeTimeout(10, TimeUnit.SECONDS)
+          .retryOnConnectionFailure(true)
+          .sslSocketFactory(sslSocketFactory, (X509TrustManager) TRUST_ALL_CERTS.get(0))
+          .build();
+    } catch (NoSuchAlgorithmException | KeyManagementException e) {
+      throw new UnexpectedException(e.getMessage());
+    }
   }
 
   private Request buildRequest(String url, String method, Map<String, String> headers, String body) {

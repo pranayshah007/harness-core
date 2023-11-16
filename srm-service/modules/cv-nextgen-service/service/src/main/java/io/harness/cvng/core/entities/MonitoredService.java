@@ -12,6 +12,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.MonitoredServiceType;
+import io.harness.cvng.core.beans.template.TemplateMetadata;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -86,6 +87,7 @@ public final class MonitoredService implements PersistentEntity, UuidAware, Acco
   @FdIndex private long nextErrorTrackingNotificationIteration;
   String templateIdentifier;
   String templateVersionLabel;
+  TemplateMetadata templateMetadata;
 
   @NotNull @Singular @Size(max = 128) List<NGTag> tags;
   // usage of this should be replaced with environmentIdentifierList. A better type based api is needed.

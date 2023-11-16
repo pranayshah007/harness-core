@@ -122,7 +122,7 @@ public class MigratorUtility {
 
   // Choice, GumGum
   public static final List<String> ELASTIC_GROUP_ACCOUNT_IDS =
-      Lists.newArrayList("R7OsqSbNQS69mq74kMNceQ", "EBGrtCo0RE6i_E9yNDdCOg");
+      Lists.newArrayList("R7OsqSbNQS69mq74kMNceQ", "EBGrtCo0RE6i_E9yNDdCOg", "kmpySmUISimoRrJL6NL73w");
 
   private MigratorUtility() {}
 
@@ -930,6 +930,7 @@ public class MigratorUtility {
     }
     return defaultValue;
   }
+
   public static boolean isExpression(String str) {
     if (StringUtils.isBlank(str)) {
       return false;

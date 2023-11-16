@@ -7,9 +7,9 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
-import io.harness.exception.InvalidRequestException;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.common.beans.DataSourceConfig;
-import io.harness.idp.scorecard.common.beans.DataSourceType;
 import io.harness.idp.scorecard.common.beans.HttpConfig;
 import io.harness.idp.scorecard.datapoints.parser.factory.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
@@ -21,6 +21,7 @@ import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
 
 import java.util.Map;
 
+@OwnedBy(HarnessTeam.IDP)
 public abstract class HttpDataSourceProvider extends DataSourceProvider {
   protected HttpDataSourceProvider(String identifier, DataPointService dataPointService,
       DataSourceLocationFactory dataSourceLocationFactory, DataSourceLocationRepository dataSourceLocationRepository,
@@ -30,12 +31,7 @@ public abstract class HttpDataSourceProvider extends DataSourceProvider {
   }
 
   protected DataSourceConfig getDataSourceConfig(DataSourceEntity dataSourceEntity,
-      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableUrlPairs) {
-    if (!dataSourceEntity.getType().equals(DataSourceType.HTTP)) {
-      throw new InvalidRequestException(
-          String.format("Wrong data source type (HTTP) mapped for data source %s and account %s",
-              dataSourceEntity.getIdentifier(), dataSourceEntity.getAccountIdentifier()));
-    }
+      Map<String, String> possibleReplaceableUrlPairs, Map<String, String> replaceableHeaders) {
     HttpDataSourceEntity httpDataSourceEntity = (HttpDataSourceEntity) dataSourceEntity;
     HttpConfig httpConfig = httpDataSourceEntity.getHttpConfig();
     httpConfig.setTarget(replaceUrlsPlaceholdersIfAny(httpConfig.getTarget(), possibleReplaceableUrlPairs));

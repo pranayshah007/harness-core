@@ -8,6 +8,7 @@
 package io.harness.repositories.service.custom;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.SCM_BAD_REQUEST;
+import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
 import static io.harness.springdata.PersistenceUtils.getRetryPolicyWithDuplicateKeyException;
 
 import io.harness.EntityType;
@@ -23,6 +24,7 @@ import io.harness.exception.HintException;
 import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmException;
+import io.harness.exception.UnsupportedOperationException;
 import io.harness.exception.WingsException;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -33,6 +35,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
+import io.harness.ng.core.service.entity.ServiceMoveConfigOperationDTO;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.utils.CDGitXService;
 import io.harness.ng.core.utils.GitXUtils;
@@ -385,5 +388,91 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
   public List<String> getListOfDistinctRepos(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.findDistinct(query, ServiceEntityKeys.repo, ServiceEntity.class, String.class);
+  }
+
+  @Override
+  public ServiceEntity moveServiceEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, ServiceMoveConfigOperationDTO moveConfigOperationDTO, ServiceEntity serviceEntity) {
+    Criteria criteria = Criteria.where(ServiceEntityKeys.accountId)
+                            .is(serviceEntity.getAccountId())
+                            .and(ServiceEntityKeys.orgIdentifier)
+                            .is(serviceEntity.getOrgIdentifier())
+                            .and(ServiceEntityKeys.projectIdentifier)
+                            .is(serviceEntity.getProjectIdentifier())
+                            .and(ServiceEntityKeys.identifier)
+                            .is(serviceEntity.getIdentifier())
+                            .and(ServiceEntityKeys.deleted)
+                            .is(false);
+
+    if (INLINE_TO_REMOTE.equals(moveConfigOperationDTO.getMoveConfigOperationType())) {
+      // add params to git context
+      setupGitContext(moveConfigOperationDTO);
+
+      ServiceEntity serviceToUpdate =
+          serviceEntity.withRepo(moveConfigOperationDTO.getRepoName())
+              .withStoreType(StoreType.REMOTE)
+              .withFilePath(moveConfigOperationDTO.getFilePath())
+              .withConnectorRef(moveConfigOperationDTO.getConnectorRef())
+              .withRepoURL(gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier))
+              .withFallBackBranch(moveConfigOperationDTO.getBranch());
+
+      return moveToRemote(criteria, serviceToUpdate);
+    } else {
+      throw new UnsupportedOperationException(String.format(
+          "Move operation:[%s] not supported for services", moveConfigOperationDTO.getMoveConfigOperationType()));
+    }
+  }
+
+  private ServiceEntity moveToRemote(Criteria criteria, ServiceEntity serviceToMove) {
+    try {
+      Query query = new Query(criteria);
+      Update update = getUpdateOperationsForMovingStoreType(serviceToMove);
+      RetryPolicy<Object> retryPolicy = getRetryPolicy(
+          "[Retrying]: Failed moving Service; attempt: {}", "[Failed]: Failed moving Service; attempt: {}");
+
+      // create remote entity
+      Scope scope = Scope.of(
+          serviceToMove.getAccountIdentifier(), serviceToMove.getOrgIdentifier(), serviceToMove.getProjectIdentifier());
+      String yamlToPush = serviceToMove.getYaml();
+      gitAwareEntityHelper.createEntityOnGit(serviceToMove, yamlToPush, scope);
+
+      // update in db
+      return updateServiceEntityInMongo(query, update, retryPolicy);
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(String.format("Error while moving service [%s]", serviceToMove.getIdentifier()), e);
+      throw e;
+    } catch (Exception e) {
+      log.error(String.format("Unexpected error while moving service [%s]", serviceToMove.getIdentifier()), e);
+      throw new InternalServerErrorException(String.format("Unexpected error while moving service [%s]: [%s]",
+                                                 serviceToMove.getIdentifier(), e.getMessage()),
+          e);
+    }
+  }
+
+  private void setupGitContext(ServiceMoveConfigOperationDTO moveConfigDTO) {
+    GitAwareContextHelper.populateGitDetails(
+        GitEntityInfo.builder()
+            .branch(moveConfigDTO.getBranch())
+            .filePath(moveConfigDTO.getFilePath())
+            .commitMsg(moveConfigDTO.getCommitMessage())
+            .isNewBranch(isNotEmpty(moveConfigDTO.getBranch()) && isNotEmpty(moveConfigDTO.getBaseBranch()))
+            .baseBranch(moveConfigDTO.getBaseBranch())
+            .connectorRef(moveConfigDTO.getConnectorRef())
+            .storeType(StoreType.REMOTE)
+            .repoName(moveConfigDTO.getRepoName())
+            .build());
+  }
+
+  private Update getUpdateOperationsForMovingStoreType(ServiceEntity serviceEntity) {
+    Update update = new Update();
+    update.set(ServiceEntityKeys.repo, serviceEntity.getRepo());
+    update.set(ServiceEntityKeys.storeType, StoreType.REMOTE);
+    update.set(ServiceEntityKeys.filePath, serviceEntity.getFilePath());
+    update.set(ServiceEntityKeys.connectorRef, serviceEntity.getConnectorRef());
+    update.set(ServiceEntityKeys.repoURL,
+        gitAwareEntityHelper.getRepoUrl(serviceEntity.getAccountIdentifier(), serviceEntity.getOrgIdentifier(),
+            serviceEntity.getProjectIdentifier()));
+    update.set(ServiceEntityKeys.fallBackBranch, serviceEntity.getBranch());
+    return update;
   }
 }

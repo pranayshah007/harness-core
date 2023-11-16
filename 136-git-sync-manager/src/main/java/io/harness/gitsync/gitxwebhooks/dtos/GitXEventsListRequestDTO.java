@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,4 +37,5 @@ public class GitXEventsListRequestDTO {
   String repoName;
   String filePath;
   String eventIdentifier;
+  List<String> eventStatus;
 }

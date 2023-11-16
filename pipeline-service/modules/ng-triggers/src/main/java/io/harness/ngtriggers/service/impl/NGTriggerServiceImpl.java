@@ -651,7 +651,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
     return ngTriggerRepository.updateManyTriggerPollingSubscriptionStatusBySignatures(accountId,
         statusUpdate.getSignatures(), statusUpdate.isSuccess(), statusUpdate.getErrorMessage(),
-        statusUpdate.getLastCollectedVersions(), statusUpdate.getLastCollectedTime());
+        statusUpdate.getLastCollectedVersions(), statusUpdate.getLastCollectedTime(),
+        statusUpdate.getErrorStatusValidUntil());
   }
 
   @Override

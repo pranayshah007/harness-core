@@ -57,25 +57,27 @@ public class AbortAllInterruptHandler extends InterruptPropagatorHandler impleme
 
   @Override
   public Interrupt registerInterrupt(Interrupt interrupt) {
-    Interrupt savedInterrupt = validateAndSave(interrupt);
+    Status status = planExecutionService.getStatus(interrupt.getPlanExecutionId());
+    Interrupt savedInterrupt = validateAndSave(interrupt, status);
+    if (status == Status.QUEUED) {
+      planExecutionService.updateStatus(interrupt.getPlanExecutionId(), Status.ABORTED);
+      return savedInterrupt;
+    }
     return isNotEmpty(savedInterrupt.getNodeExecutionId())
         ? handleInterruptForNodeExecution(interrupt, interrupt.getNodeExecutionId())
         : handleInterrupt(savedInterrupt);
   }
 
-  private Interrupt validateAndSave(Interrupt interrupt) {
+  private Interrupt validateAndSave(Interrupt interrupt, Status status) {
     return isNotEmpty(interrupt.getNodeExecutionId()) ? validateAndSaveWithNodeExecution(interrupt)
-                                                      : validateAndSaveWithoutNodeExecution(interrupt);
+                                                      : validateAndSaveWithoutNodeExecution(interrupt, status);
   }
 
-  private Interrupt validateAndSaveWithoutNodeExecution(@Valid @NonNull Interrupt interrupt) {
+  private Interrupt validateAndSaveWithoutNodeExecution(@Valid @NonNull Interrupt interrupt, Status status) {
     List<Interrupt> interrupts = interruptService.fetchActiveInterrupts(interrupt.getPlanExecutionId());
-    // Use projections
-    Status status = planExecutionService.getStatus(interrupt.getPlanExecutionId());
     if (StatusUtils.isFinalStatus(status)) {
       throw new InvalidRequestException(String.format("Execution is already finished with status: [%s]", status));
     }
-
     return processInterrupt(interrupt, interrupts);
   }
 

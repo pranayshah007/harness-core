@@ -1,0 +1,8 @@
+name: Account Ring Information Metrics
+identifier: account_ring_info_metrics
+metricGroup: account_ring_info_entry
+metrics:
+  - metricName: account_ring_info
+    metricDefinition: Account Ring info
+    type: LastValue
+    unit: count

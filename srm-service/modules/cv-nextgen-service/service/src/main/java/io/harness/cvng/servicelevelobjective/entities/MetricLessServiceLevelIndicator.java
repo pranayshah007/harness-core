@@ -53,7 +53,7 @@ public class MetricLessServiceLevelIndicator extends ServiceLevelIndicator {
 
   @Override
   public boolean isUpdatable(ServiceLevelIndicator serviceLevelIndicator) {
-    return false;
+    return true;
   }
 
   @Override

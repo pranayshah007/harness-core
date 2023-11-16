@@ -66,4 +66,5 @@ public abstract class ModuleLicenseDTO {
   Long createdAt;
   Long lastModifiedAt;
   Boolean trialExtended;
+  Integer developerLicenseCount;
 }

@@ -12,6 +12,7 @@ import io.harness.batch.processing.anomalydetection.TimeSeriesMetaData;
 import io.harness.batch.processing.anomalydetection.helpers.AnomalyDetectionHelper;
 import io.harness.batch.processing.anomalydetection.helpers.TimeSeriesUtils;
 import io.harness.batch.processing.config.BatchMainConfig;
+import io.harness.ccm.anomaly.entities.AnomalyCloudProvider;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.billing.graphql.CloudBillingGroupBy;
 import io.harness.ccm.billing.graphql.CloudEntityGroupBy;
@@ -249,6 +250,7 @@ public class AnomalyDetectionBigQueryServiceImpl {
           case projectId:
             currentTimeSeries.setGcpProject(
                 resultSet.getString(PreAggregatedTableSchema.gcpProjectId.getColumnNameSQL()));
+            currentTimeSeries.setCloudProvider(AnomalyCloudProvider.GCP);
             break;
           case product:
             currentTimeSeries.setGcpProduct(
@@ -264,6 +266,7 @@ public class AnomalyDetectionBigQueryServiceImpl {
           case awsLinkedAccount:
             currentTimeSeries.setAwsAccount(
                 resultSet.getString(PreAggregatedTableSchema.awsUsageAccountId.getColumnNameSQL()));
+            currentTimeSeries.setCloudProvider(AnomalyCloudProvider.AWS);
             break;
           case awsService:
             currentTimeSeries.setAwsService(
@@ -341,6 +344,7 @@ public class AnomalyDetectionBigQueryServiceImpl {
           case projectId:
             currentTimeSeries.setGcpProject(
                 row.get(PreAggregatedTableSchema.gcpProjectId.getColumnNameSQL()).getStringValue());
+            currentTimeSeries.setCloudProvider(AnomalyCloudProvider.GCP);
             break;
           case product:
             currentTimeSeries.setGcpProduct(
@@ -357,6 +361,7 @@ public class AnomalyDetectionBigQueryServiceImpl {
           case awsLinkedAccount:
             currentTimeSeries.setAwsAccount(
                 row.get(PreAggregatedTableSchema.awsUsageAccountId.getColumnNameSQL()).getStringValue());
+            currentTimeSeries.setCloudProvider(AnomalyCloudProvider.AWS);
             break;
           case awsService:
             currentTimeSeries.setAwsService(

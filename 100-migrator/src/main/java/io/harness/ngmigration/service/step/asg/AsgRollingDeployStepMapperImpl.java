@@ -30,6 +30,7 @@ import software.wings.beans.GraphNode;
 import software.wings.sm.State;
 import software.wings.sm.states.AwsAmiServiceSetup;
 
+import java.util.Collections;
 import java.util.Map;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
@@ -73,6 +74,8 @@ public class AsgRollingDeployStepMapperImpl extends AsgBaseStepMapper {
     AsgBlueGreenDeployStepNode node = new AsgBlueGreenDeployStepNode();
     baseSetup(state, node, identifierCaseFormat);
     node.setAsgBlueGreenDeployStepInfo(AsgBlueGreenDeployStepInfo.infoBuilder()
+                                           .instances(getAsgInstancesNode(state))
+                                           .loadBalancers(ParameterField.createValueField(Collections.emptyList()))
                                            .loadBalancer(RUNTIME_FIELD)
                                            .prodListener(RUNTIME_FIELD)
                                            .prodListenerRuleArn(RUNTIME_FIELD)
@@ -89,7 +92,9 @@ public class AsgRollingDeployStepMapperImpl extends AsgBaseStepMapper {
     node.setAsgRollingDeployStepInfo(
         AsgRollingDeployStepInfo.infoBuilder()
             .useAlreadyRunningInstances(ParameterField.createValueField(state.isUseCurrentRunningCount()))
+            .instances(getAsgInstancesNode(state))
             .skipMatching(ParameterField.createValueField(true))
+            .minimumHealthyPercentage(ParameterField.createValueField(100))
             .build());
     return node;
   }

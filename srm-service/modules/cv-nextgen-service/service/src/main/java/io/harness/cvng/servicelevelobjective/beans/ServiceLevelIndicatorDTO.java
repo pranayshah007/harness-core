@@ -31,11 +31,11 @@ public class ServiceLevelIndicatorDTO {
 
   @JsonIgnore
   public String getEvaluationAndMetricType() {
-    if (this.getType().equals(SLIEvaluationType.REQUEST)) {
-      return type.name();
-    } else {
+    if (this.getType().equals(SLIEvaluationType.WINDOW)) {
       SLIMetricType sliMetricType = ((WindowBasedServiceLevelIndicatorSpec) this.getSpec()).getSpec().getType();
       return type.name() + "_" + sliMetricType.name();
+    } else {
+      return type.name();
     }
   }
 }

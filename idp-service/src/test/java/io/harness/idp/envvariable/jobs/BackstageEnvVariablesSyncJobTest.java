@@ -99,7 +99,7 @@ public class BackstageEnvVariablesSyncJobTest extends CategoryTest {
 
       // Verify that the executor service was created with the expected arguments
       verify(executorService)
-          .scheduleWithFixedDelay(any(Runnable.class), eq(0L), eq(TimeUnit.HOURS.toMinutes(24)), eq(TimeUnit.MINUTES));
+          .scheduleWithFixedDelay(any(Runnable.class), eq(5L), eq(TimeUnit.HOURS.toMinutes(24)), eq(TimeUnit.MINUTES));
     }
   }
 

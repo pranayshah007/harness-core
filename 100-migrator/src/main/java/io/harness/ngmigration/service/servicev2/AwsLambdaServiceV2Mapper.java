@@ -17,7 +17,6 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.configfile.ConfigFileWrapper;
-import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.AwsLambdaServiceSpec;
 import io.harness.cdng.service.beans.AwsLambdaServiceSpec.AwsLambdaServiceSpecBuilder;
@@ -53,7 +52,7 @@ public class AwsLambdaServiceV2Mapper implements ServiceV2Mapper {
   @Override
   public ServiceDefinition getServiceDefinition(WorkflowService workflowService, MigrationContext migrationContext,
       Service service, List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
-      List<StartupScriptConfiguration> startupScriptConfigurations) {
+      List<NGYamlFile> startupScriptConfigurationFiles) {
     PrimaryArtifact primaryArtifact = getPrimaryArtifactStream(migrationContext.getInputDTO(),
         migrationContext.getEntities(), migrationContext.getGraph(), service, migrationContext.getMigratedEntities());
 

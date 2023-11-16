@@ -120,6 +120,8 @@ import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
+import com.codahale.metrics.annotation.ResponseMetered;
+import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -236,6 +238,8 @@ public class EnvironmentResourceV2 {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "The saved Environment")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<EnvironmentResponse>
   get(@Parameter(description = ENVIRONMENT_PARAM_MESSAGE) @PathParam(
           "environmentIdentifier") @ResourceIdentifier String environmentIdentifier,
@@ -279,6 +283,8 @@ public class EnvironmentResourceV2 {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created Environment")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<EnvironmentResponse>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -346,6 +352,8 @@ public class EnvironmentResourceV2 {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns true if the Environment is deleted")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<Boolean>
   delete(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = ENVIRONMENT_PARAM_MESSAGE) @PathParam(
@@ -382,6 +390,8 @@ public class EnvironmentResourceV2 {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the updated Environment")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<EnvironmentResponse>
   update(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -426,6 +436,8 @@ public class EnvironmentResourceV2 {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the updated Environment")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<EnvironmentResponse>
   upsert(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -469,6 +481,8 @@ public class EnvironmentResourceV2 {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns the list of Environments for a Project")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<PageResponse<EnvironmentResponse>>
   listEnvironment(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                       NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
@@ -595,6 +609,8 @@ public class EnvironmentResourceV2 {
         ApiResponse(description = "Returns the list of Environments for a Project")
       },
       hidden = true)
+  @Timed
+  @ResponseMetered
   public ResponseDTO<PageResponse<EnvironmentResponse>>
   listEnvironmentsV2(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                          NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
@@ -658,6 +674,8 @@ public class EnvironmentResourceV2 {
         ApiResponse(description = "Returns the list of Environments for a Project that are accessible")
       },
       hidden = true)
+  @Timed
+  @ResponseMetered
   public ResponseDTO<List<EnvironmentResponse>>
   listAccessEnvironmentsV2(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                                NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
@@ -715,6 +733,8 @@ public class EnvironmentResourceV2 {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the list of Environments that are accessible")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<List<EnvironmentResponse>>
   listAccessEnvironment(@Parameter(description = NGCommonEntityConstants.PAGE) @QueryParam(
                             NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
@@ -811,6 +831,8 @@ public class EnvironmentResourceV2 {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Upsert ( Create/Update )  a Service Override in an Environment.")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO>
   upsertServiceOverride(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -986,6 +1008,8 @@ public class EnvironmentResourceV2 {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns true if the Service Override is deleted")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<Boolean>
   deleteServiceOverride(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -1039,6 +1063,8 @@ public class EnvironmentResourceV2 {
         ApiResponse(description = "Returns the list of Service Overrides for an Environment."
                 + "serviceIdentifier, if passed, can be used to get the overrides for that particular Service in the Environment")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<PageResponse<ServiceOverrideResponseDTO>>
   listServiceOverrides(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                            NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,

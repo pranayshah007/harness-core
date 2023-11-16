@@ -467,7 +467,8 @@ public class InfrastructureDefinitionServiceImpl implements InfrastructureDefini
             .map(infrastructureDefinition
                 -> InfraDefinitionDetail.builder()
                        .infrastructureDefinition(infrastructureDefinition)
-                       .countDerivedInfraMappings(infraDefinitionIdMappingCount.get(infrastructureDefinition.getUuid()))
+                       .countDerivedInfraMappings(
+                           infraDefinitionIdMappingCount.getOrDefault(infrastructureDefinition.getUuid(), 0))
                        .build())
             .collect(Collectors.toList());
     return PageResponseBuilder.aPageResponse().withResponse(infraDefinitionDetailList).build();

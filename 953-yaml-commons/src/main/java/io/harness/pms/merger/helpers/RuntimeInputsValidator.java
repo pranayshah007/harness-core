@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.merger.helpers;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -50,6 +51,8 @@ public class RuntimeInputsValidator {
   private static final String CHILD_ENVIRONMENT_REF_NODE = "environment.environmentRef";
   private static final String CHILD_INFRA_DEFINITIONS_REF_NODE = "environment.infrastructureDefinitions";
 
+  private static final Set<String> SKIP_VALIDATION_KEY_SET = Set.of("service.gitBranch", "environment.gitBranch");
+
   private static final List<String> useFromStageSiblingNodes = List.of(CHILD_SERVICE_REF_NODE,
       CHILD_SERVICES_VALUES_REF_NODE, CHILD_ENVIRONMENT_REF_NODE, CHILD_INFRA_DEFINITIONS_REF_NODE);
 
@@ -88,7 +91,7 @@ public class RuntimeInputsValidator {
     String dummyNodeToValidateYaml = convertToYaml(dummyNodeToValidate);
 
     return validateInputsAgainstSourceNode(
-        dummyNodeToValidateYaml, sourceNodeInputSetFormatYaml, skipValidationIfAbsentKeySet);
+        dummyNodeToValidateYaml, sourceNodeInputSetFormatYaml, skipValidationIfAbsentKeySet, SKIP_VALIDATION_KEY_SET);
   }
 
   // Assume both have same root node and structure

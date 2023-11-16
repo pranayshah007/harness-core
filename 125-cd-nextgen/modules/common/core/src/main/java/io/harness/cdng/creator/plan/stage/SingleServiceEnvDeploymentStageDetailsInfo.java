@@ -44,18 +44,14 @@ public class SingleServiceEnvDeploymentStageDetailsInfo implements DeploymentSta
 
   @Override
   public CDStageSummaryResponseDTO getFormattedStageSummary() {
-    String environment = StringUtils.isBlank(envName) ? envIdentifier : envName;
-    String service = StringUtils.isBlank(serviceName) ? serviceIdentifier : serviceName;
-    String infra = StringUtils.isBlank(infraName) ? infraIdentifier : infraName;
+    String environment = StringUtils.defaultIfBlank(envName, envIdentifier);
+    String service = StringUtils.defaultIfBlank(serviceName, serviceIdentifier);
+    String infra = StringUtils.defaultIfBlank(infraName, infraIdentifier);
 
     return CDStageSummaryResponseDTO.builder()
-        .service(identityOrElseNAStringIfBlank(service))
-        .infra(identityOrElseNAStringIfBlank(infra))
-        .environment(identityOrElseNAStringIfBlank(environment))
+        .service(StringUtils.defaultIfBlank(service, NOT_AVAILABLE))
+        .infra(StringUtils.defaultIfBlank(infra, NOT_AVAILABLE))
+        .environment(StringUtils.defaultIfBlank(environment, NOT_AVAILABLE))
         .build();
-  }
-
-  public static String identityOrElseNAStringIfBlank(String value) {
-    return StringUtils.isNotBlank(value) ? value : NOT_AVAILABLE;
   }
 }

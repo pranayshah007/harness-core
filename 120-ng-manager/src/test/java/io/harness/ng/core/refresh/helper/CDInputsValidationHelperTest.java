@@ -44,6 +44,7 @@ import io.harness.ng.core.service.services.impl.ServiceEntitySetupUsageHelper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
+import io.harness.ng.core.utils.CDGitXService;
 import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
@@ -113,11 +114,12 @@ public class CDInputsValidationHelperTest extends NgManagerTestBase {
   EnvironmentRefreshHelper environmentRefreshHelper;
   @Mock @Named(DEFAULT_CONNECTOR_SERVICE) private ConnectorService connectorService;
   @Mock EnvironmentFilterHelper environmentFilterHelper;
+  @Mock CDGitXService cdGitXService;
   @Before
   public void setup() throws IOException {
     serviceEntityService = spy(new ServiceEntityServiceImpl(serviceRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, serviceOverrideService, serviceOverridesServiceV2, entitySetupUsageHelper,
-        ngFeatureFlagHelperService, connectorService));
+        ngFeatureFlagHelperService, connectorService, cdGitXService));
     infrastructureEntityService = spy(new InfrastructureEntityServiceImpl(infrastructureRepository, transactionTemplate,
         outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper, hPersistence,
         serviceOverridesServiceV2, overrideV2ValidationHelper, null));

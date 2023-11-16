@@ -28,6 +28,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -80,8 +81,10 @@ public class ServiceDependencyServiceImplTest extends CvNextGenTestBase {
         Sets.newHashSet(ServiceDependencyDTO.builder().monitoredServiceIdentifier(randomAlphanumeric(20)).build(),
             ServiceDependencyDTO.builder()
                 .monitoredServiceIdentifier(randomAlphanumeric(20))
-                .dependencyMetadata(
-                    KubernetesDependencyMetadata.builder().namespace("namespce").workload("workload").build())
+                .dependencyMetadata(KubernetesDependencyMetadata.builder()
+                                        .namespace("namespce")
+                                        .workloads(Collections.singletonList("workload"))
+                                        .build())
                 .build(),
             ServiceDependencyDTO.builder().monitoredServiceIdentifier(randomAlphanumeric(20)).build());
     createOrDeleteFromContext(context, serviceDependencyDTOS);
