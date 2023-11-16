@@ -18,6 +18,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.beans.entities.StepExecutionParameters;
 import io.harness.beans.execution.license.CILicenseService;
+import io.harness.beans.serializer.RunTimeInputHandler;
+import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.CILogKeyMetadata;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
@@ -29,6 +31,7 @@ import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logging.AutoLogContext;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -44,6 +47,7 @@ import io.harness.repositories.CIStageOutputRepository;
 import io.harness.repositories.CIStepStatusRepository;
 import io.harness.repositories.StepExecutionParametersRepository;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.temporal.ChronoUnit;
@@ -201,8 +205,8 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     return LogStreamingStepClientFactory.getLogBaseKey(ambiance);
   }
 
-  private void sendGitStatus(
-      Level level, Ambiance ambiance, Status status, OrchestrationEvent event, String accountId) {
+  @VisibleForTesting
+  public void sendGitStatus(Level level, Ambiance ambiance, Status status, OrchestrationEvent event, String accountId) {
     try {
       if (gitBuildStatusUtility.shouldSendStatus(level.getStepType().getStepCategory())
           || gitBuildStatusUtility.isCodeBaseStepSucceeded(level, status)) {
@@ -226,6 +230,18 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
             }
           } else {
             stepParameters = event.getResolvedStepParameters();
+          }
+          if (stepParameters instanceof StageElementParameters) {
+            StageElementParameters stageElementParameters = (StageElementParameters) stepParameters;
+            IntegrationStageStepParametersPMS integrationStageStepParameters =
+                (IntegrationStageStepParametersPMS) stageElementParameters.getSpecConfig();
+            if (integrationStageStepParameters != null) {
+              boolean enableClone = RunTimeInputHandler.resolveBooleanParameter(
+                  integrationStageStepParameters.getEnableCloneRepo(), false);
+              if (!enableClone) {
+                return;
+              }
+            }
           }
           if (level.getStepType().getStepCategory() == StepCategory.STAGE) {
             gitBuildStatusUtility.sendStatusToGit(status, stepParameters, ambiance, accountId);

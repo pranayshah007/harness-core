@@ -8,18 +8,27 @@
 package io.harness.ci.execution.execution;
 
 import static io.harness.rule.OwnerRule.HARSH;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.app.beans.entities.StepExecutionParameters;
+import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.ListUtils;
+import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.repositories.StepExecutionParametersRepository;
 import io.harness.rule.Owner;
 
@@ -63,5 +72,38 @@ public class PipelineExecutionUpdateEventHandlerTest extends CategoryTest {
     pipelineExecutionUpdateEventHandler.handleEvent(orchestrationEvent);
 
     verify(gitBuildStatusUtility).sendStatusToGit(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testSendGitStatusWhenCloneDisabled() {
+    OrchestrationEvent orchestrationEvent =
+        OrchestrationEvent.builder()
+            .ambiance(Ambiance.newBuilder()
+                          .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
+                              "projectIdentfier", "orgIdentifier", "orgIdentifier"))
+                          .addAllLevels(ListUtils.newArrayList(
+                              Level.newBuilder()
+                                  .setRuntimeId("node1")
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                                  .build()))
+                          .build())
+            .build();
+    IntegrationStageStepParametersPMS integrationStageStepParametersPMS =
+        IntegrationStageStepParametersPMS.builder().enableCloneRepo(ParameterField.createValueField(false)).build();
+    StageElementParameters stageElementParameters =
+        StageElementParameters.builder().specConfig(integrationStageStepParametersPMS).build();
+    when(stepExecutionParametersRepository.findFirstByAccountIdAndRunTimeId(any(), any()))
+        .thenReturn(Optional.of(StepExecutionParameters.builder()
+                                    .accountId("accountId")
+                                    .stepParameters(RecastOrchestrationUtils.toJson(stageElementParameters))
+                                    .build()));
+    when(gitBuildStatusUtility.shouldSendStatus(any())).thenReturn(true);
+    Ambiance ambiance = orchestrationEvent.getAmbiance();
+    Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
+    pipelineExecutionUpdateEventHandler.sendGitStatus(
+        level, ambiance, orchestrationEvent.getStatus(), orchestrationEvent, "accountId");
+    verify(gitBuildStatusUtility, times(0)).sendStatusToGit(any(), any(), any(), any());
   }
 }
