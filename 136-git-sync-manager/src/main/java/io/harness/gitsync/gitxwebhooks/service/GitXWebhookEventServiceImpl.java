@@ -171,6 +171,8 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
   private Criteria buildEventsListCriteria(GitXEventsListRequestDTO gitXEventsListRequestDTO) {
     Criteria criteria = new Criteria();
     criteria.and(GitXWebhookEventKeys.accountIdentifier).is(gitXEventsListRequestDTO.getScope().getAccountIdentifier());
+    criteria.and(GitXWebhookEventKeys.orgIdentifier).is(gitXEventsListRequestDTO.getScope().getOrgIdentifier());
+    criteria.and(GitXWebhookEventKeys.projectIdentifier).is(gitXEventsListRequestDTO.getScope().getProjectIdentifier());
     if (isNotEmpty(gitXEventsListRequestDTO.getWebhookIdentifier())) {
       criteria.and(GitXWebhookEventKeys.webhookIdentifier).is(gitXEventsListRequestDTO.getWebhookIdentifier());
     }

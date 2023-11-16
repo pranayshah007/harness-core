@@ -318,6 +318,8 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
   private Criteria buildListCriteria(ListGitXWebhookRequestDTO listGitXWebhookRequestDTO) {
     Criteria criteria = new Criteria();
     criteria.and(GitXWebhookKeys.accountIdentifier).is(listGitXWebhookRequestDTO.getScope().getAccountIdentifier());
+    criteria.and(GitXWebhookKeys.orgIdentifier).is(listGitXWebhookRequestDTO.getScope().getOrgIdentifier());
+    criteria.and(GitXWebhookKeys.projectIdentifier).is(listGitXWebhookRequestDTO.getScope().getProjectIdentifier());
     if (isNotEmpty(listGitXWebhookRequestDTO.getWebhookIdentifier())) {
       criteria.and(GitXWebhookKeys.identifier).is(listGitXWebhookRequestDTO.getWebhookIdentifier());
     }
