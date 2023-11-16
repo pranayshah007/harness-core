@@ -106,7 +106,7 @@ global:
       secretName: ''
     # -- add annotations to ingress objects
     objects:
-      annotations: { }
+      annotations: {}
   istio:
     # -- create virtualServices objects
     enabled: false
@@ -120,9 +120,7 @@ global:
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
-
 allowedOrigins: ""
-
 redis:
   protocol: ""
   hosts: []
@@ -144,8 +142,7 @@ redis:
               property: ""
             REDIS_PASSWORD:
               name: ""
-              property: "" 
-
+              property: ""
 mongo:
   protocol: ""
   hosts: []
@@ -167,8 +164,7 @@ mongo:
               property: ""
             MONGO_PASSWORD:
               name: ""
-              property: ""              
-
+              property: ""
 image:
   registry: docker.io
   repository: harness/template-service-signed
@@ -177,7 +173,6 @@ image:
   tag: "1.12.1"
   digest: ""
   imagePullSecrets: []
-
 mongoSecrets:
   userName:
     name: harness-secrets
@@ -185,12 +180,10 @@ mongoSecrets:
   password:
     name: mongodb-replicaset-chart
     key: mongodb-root-password
-
 timescaleSecret:
   password:
     name: harness-secrets
     key: timescaledbPostgresPassword
-
 waitForInitContainer:
   image:
     registry: docker.io
@@ -198,15 +191,11 @@ waitForInitContainer:
     pullPolicy: IfNotPresent
     tag: "latest"
     digest: ""
-
 appLogLevel: INFO
-
 java:
   memory: "1024m"
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   # Specifies whether a service account should be created
   create: false
@@ -215,16 +204,13 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: "harness-default"
-
 podAnnotations: {}
-
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
 
 securityContext:
   runAsUser: 65534
   runAsNonRoot: true
-
 service:
   type: ClusterIP
   protocol: TCP
@@ -232,45 +218,34 @@ service:
   grpcport: 15011
   gitsyncgrpcport: 16002
   annotations: {}
-
 resources:
   limits:
     memory: 1400Mi
   requests:
     cpu: 1
     memory: 1400Mi
-
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPU: ""
   targetMemory: ""
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 imagePullSecrets: {}
-
 additionalConfigs: {}
-
 java17flags: ""
-
 # extraVolumes:
 # - name: volume-test
 #   configMap:
 #     name: test-config
 #     readOnly: true
 extraVolumes: []
-
 # extraVolumeMounts:
 #   - name: test-volume-mount
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
-
 # lifecycleHooks:
 #   postStart:
 #     exec:
@@ -285,12 +260,10 @@ extraVolumeMounts: []
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
-
 virtualService:
   annotations: {}
 ingress:
   annotations: {}
-
 # application level secrets
 secrets:
   default:
@@ -308,3 +281,25 @@ secrets:
           OPA_SERVER_SECRET:
             name: ""
             property: ""
+config:
+  CACHE_BACKEND: REDIS
+  CACHE_CONFIG_SENTINEL_MASTER_NAME: harness-redis
+  DEPLOY_MODE: KUBERNETES_ONPREM
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
+  MANAGER_TARGET: harness-manager:9879
+  MANAGER_AUTHORITY: harness-manager:9879
+  NG_MANAGER_GITSYNC_TARGET: ng-manager:13002
+  NG_MANAGER_GITSYNC_AUTHORITY: ng-manager:13002
+  SCM_SERVICE_URI: scm-service:8091
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: harness-redis
+  ENABLE_AUTH: "true"
+  ENABLE_GIT_SYNC: "true"
+  ENABLE_AUDIT: "true"
+  ACCESS_CONTROL_ENABLED: "true"
+  ENFORCEMENT_CHECK_ENABLED: "true"
+  NG_MANAGER_BASE_URL: http://ng-manager:7090/
+  SERVER_PORT: "15002"
+  PMS_GRPC_AUTHORITY: pipeline-service:12011
+  PMS_GRPC_TARGET: pipeline-service:12011
+  MANAGER_CLIENT_BASEURL: http://harness-manager:9090/api/
+  OPA_CONNECTIVITY_ENABLED: "true"

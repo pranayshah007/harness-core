@@ -11,44 +11,44 @@ metadata:
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
-  CACHE_BACKEND: "REDIS"
+  CACHE_BACKEND: {{ .Values.config.CACHE_BACKEND | default 'REDIS' }}
   CACHE_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  CACHE_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
+  CACHE_CONFIG_SENTINEL_MASTER_NAME: {{ .Values.config.CACHE_CONFIG_SENTINEL_MASTER_NAME | default 'harness-redis' }}
   CACHE_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   CACHE_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  DEPLOY_MODE: KUBERNETES_ONPREM
+  DEPLOY_MODE: {{ .Values.config.DEPLOY_MODE | default 'KUBERNETES_ONPREM' }}
   LOGGING_LEVEL: {{ .Values.appLogLevel }}
   LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: {{ .Values.config.LOCK_CONFIG_SENTINEL_MASTER_NAME | default 'harness-redis' }}
   LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   MEMORY: {{ .Values.java.memory | quote }}
-  MANAGER_TARGET: harness-manager:9879
-  MANAGER_AUTHORITY: harness-manager:9879
-  NG_MANAGER_GITSYNC_TARGET: ng-manager:13002
-  NG_MANAGER_GITSYNC_AUTHORITY: ng-manager:13002
-  SCM_SERVICE_URI: "scm-service:8091"
+  MANAGER_TARGET: {{ .Values.config.MANAGER_TARGET | default 'harness-manager:9879' }}
+  MANAGER_AUTHORITY: {{ .Values.config.MANAGER_AUTHORITY | default 'harness-manager:9879' }}
+  NG_MANAGER_GITSYNC_TARGET: {{ .Values.config.NG_MANAGER_GITSYNC_TARGET | default 'ng-manager:13002' }}
+  NG_MANAGER_GITSYNC_AUTHORITY: {{ .Values.config.NG_MANAGER_GITSYNC_AUTHORITY | default 'ng-manager:13002' }}
+  SCM_SERVICE_URI: {{ .Values.config.SCM_SERVICE_URI | default 'scm-service:8091' }}
   EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: {{ .Values.config.EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME | default 'harness-redis' }}
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  ENABLE_AUTH: "true"
-  ENABLE_GIT_SYNC: "true"
-  ENABLE_AUDIT: "true"
-  ACCESS_CONTROL_ENABLED: "true"
-  ENFORCEMENT_CHECK_ENABLED: "true"
-  NG_MANAGER_BASE_URL: 'http://ng-manager:7090/'
+  ENABLE_AUTH: {{ .Values.config.ENABLE_AUTH | default 'true' }}
+  ENABLE_GIT_SYNC: {{ .Values.config.ENABLE_GIT_SYNC | default 'true' }}
+  ENABLE_AUDIT: {{ .Values.config.ENABLE_AUDIT | default 'true' }}
+  ACCESS_CONTROL_ENABLED: {{ .Values.config.ACCESS_CONTROL_ENABLED | default 'true' }}
+  ENFORCEMENT_CHECK_ENABLED: {{ .Values.config.ENFORCEMENT_CHECK_ENABLED | default 'true' }}
+  NG_MANAGER_BASE_URL: {{ .Values.config.NG_MANAGER_BASE_URL | default 'http://ng-manager:7090/' }}
   ACCESS_CONTROL_BASE_URL: 'http://access-control.{{ .Release.Namespace }}.svc.cluster.local:9006/api/'
   AUDIT_SERVICE_BASE_URL: 'http://platform-service.{{ .Release.Namespace }}.svc.cluster.local:9005/api/'
-  SERVER_PORT: "15002"
-  PMS_GRPC_AUTHORITY: pipeline-service:12011
-  PMS_GRPC_TARGET: pipeline-service:12011
-  MANAGER_CLIENT_BASEURL: 'http://harness-manager:9090/api/'
+  SERVER_PORT: {{ .Values.config.SERVER_PORT | default '15002' }}
+  PMS_GRPC_AUTHORITY: {{ .Values.config.PMS_GRPC_AUTHORITY | default 'pipeline-service:12011' }}
+  PMS_GRPC_TARGET: {{ .Values.config.PMS_GRPC_TARGET | default 'pipeline-service:12011' }}
+  MANAGER_CLIENT_BASEURL: {{ .Values.config.MANAGER_CLIENT_BASEURL | default 'http://harness-manager:9090/api/' }}
   ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
   {{- if .Values.global.opa.enabled }}
   OPA_SERVER_BASEURL: 'http://policy-mgmt.{{ .Release.Namespace }}.svc.cluster.local:3000/'
-  OPA_CONNECTIVITY_ENABLED: 'true'
+  OPA_CONNECTIVITY_ENABLED: {{ .Values.config.OPA_CONNECTIVITY_ENABLED | default 'true' }}
   {{- end }}
   PIPELINE_SERVICE_CLIENT_BASEURL: http://pipeline-service.{{ .Release.Namespace }}.svc.cluster.local:12001/api/
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
