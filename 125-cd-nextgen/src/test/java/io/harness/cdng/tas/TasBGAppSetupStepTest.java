@@ -255,6 +255,7 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
                                                      .cfAppNamePrefix(activeApplicationName)
                                                      .isBlueGreen(true)
                                                      .instanceCountType(TasInstanceCountType.FROM_MANIFEST)
+                                                     .olderActiveVersionCountToKeep(3)
                                                      .build();
     TasSetupVariablesOutcome tasSetupVariablesOutcomeReq = TasSetupVariablesOutcome.builder()
                                                                .inActiveAppName(newApplicationInfo.getApplicationName())
@@ -327,6 +328,7 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
                                                      .cfAppNamePrefix(activeApplicationName)
                                                      .isBlueGreen(true)
                                                      .instanceCountType(TasInstanceCountType.FROM_MANIFEST)
+                                                     .olderActiveVersionCountToKeep(3)
                                                      .build();
     TasSetupVariablesOutcome tasSetupVariablesOutcomeReq =
         TasSetupVariablesOutcome.builder()
@@ -372,6 +374,9 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
                                                                 .newApplicationInfo(newApplicationInfo)
                                                                 .unitProgressData(unitProgressData)
                                                                 .build();
+    ((TasBGAppSetupStepParameters) stepElementParametersMatchRunningInstances.getSpec())
+        .setExistingVersionToKeep(ParameterField.createValueField("0"));
+
     StepResponse stepResponse =
         tasBGAppSetupStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParametersMatchRunningInstances,
             TasExecutionPassThroughData.builder()
@@ -399,6 +404,7 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
                                                      .cfAppNamePrefix(activeApplicationName)
                                                      .isBlueGreen(true)
                                                      .instanceCountType(TasInstanceCountType.MATCH_RUNNING_INSTANCES)
+                                                     .olderActiveVersionCountToKeep(0)
                                                      .build();
     TasSetupVariablesOutcome tasSetupVariablesOutcomeReq = TasSetupVariablesOutcome.builder()
                                                                .inActiveAppName(newApplicationInfo.getApplicationName())
@@ -533,6 +539,7 @@ public class TasBGAppSetupStepTest extends CDNGTestBase {
                                                      .cfAppNamePrefix(activeApplicationName)
                                                      .isBlueGreen(true)
                                                      .instanceCountType(TasInstanceCountType.MATCH_RUNNING_INSTANCES)
+                                                     .olderActiveVersionCountToKeep(3)
                                                      .build();
     TasSetupVariablesOutcome tasSetupVariablesOutcomeReq =
         TasSetupVariablesOutcome.builder()
