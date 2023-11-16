@@ -33,4 +33,6 @@ public interface NotificationClient {
   List<NotificationResult> sendBulkNotificationTrigger(List<NotificationTriggerRequest> notificationTriggerRequest);
   NotificationRuleReferenceDTO getNotificationRule(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String notificationEntity, String notificationEvent);
+
+  boolean isDefaultSMTPPresent(String accountId);
 }

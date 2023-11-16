@@ -143,6 +143,7 @@ import io.harness.ng.core.user.PasswordChangeResponse;
 import io.harness.ng.core.user.UserAccountLevelData.UserAccountLevelDataKeys;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
+import io.harness.notification.NotificationRequest;
 import io.harness.notification.Team;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.EmailChannel.EmailChannelBuilder;
@@ -3721,6 +3722,39 @@ public class UserServiceImpl implements UserService {
     }
     log.info("Canny login: successfully created jwt token and redirect URL for user {}", user.getUuid());
     return CannySsoLoginResponse.builder().redirectUrl(redirectUrl).userId(user.getUuid()).build();
+  }
+
+  @Override
+  public void sendNotificationEmailNG(String accountId, List<NotificationRequest.UserGroup> userGroups,
+      String templateId, Map<String, String> templateData, Team team, List<String> recipients) {
+    EmailChannel.EmailChannelBuilder emailChannel = EmailChannel.builder()
+                                                        .recipients(recipients)
+                                                        .accountId(accountId)
+                                                        .templateId(templateId)
+                                                        .templateData(templateData)
+                                                        .team(team)
+                                                        .userGroups(userGroups);
+    log.info("Sending Notification email through NG: templateId: {}  recipients: {} ", templateId, recipients);
+    notificationClient.sendNotificationAsync(emailChannel.build());
+  }
+
+  @Override
+  public boolean sendNotificationEmailCG(String accountId, List<String> to, List<String> cc, List<String> bcc,
+      String subject, String body, String templateName, Map<String, String> templateModel, int retries) {
+    EmailData emailData = EmailData.builder()
+                              .accountId(accountId)
+                              .to(to)
+                              .cc(cc)
+                              .bcc(bcc)
+                              .subject(subject)
+                              .body(body)
+                              .templateName(templateName)
+                              .templateModel(templateModel)
+
+                              .build();
+    emailData.setRetries(2);
+    log.info("Sending Notification email through CG templateId: {}  recipients: {} ", templateName, to);
+    return emailNotificationService.send(emailData);
   }
 
   private String createCannyToken(User user) {

@@ -105,4 +105,9 @@ public class NotificationClientImpl implements NotificationClient {
     return getResponse(notificationHTTPClient.getNotificationRule(
         accountIdentifier, orgIdentifier, projectIdentifier, notificationEntity, notificationEvent));
   }
+
+  @Override
+  public boolean isDefaultSMTPPresent(String accountId) {
+    return getResponse(notificationHTTPClient.isDefaultSMTPPresent(accountId));
+  }
 }
