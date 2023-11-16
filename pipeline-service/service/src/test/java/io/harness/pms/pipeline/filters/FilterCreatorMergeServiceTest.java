@@ -373,5 +373,15 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
         filterCreatorMergeService.getGitConnectorReference(pipelineEntity);
     assertThat(entityDetailProtoDTO.isPresent()).isEqualTo(true);
     assertThat(entityDetailProtoDTO.get().getType()).isEqualTo(EntityTypeProtoEnum.CONNECTORS);
+
+    pipelineEntity = PipelineEntity.builder()
+                         .accountId(ACCOUNT_ID)
+                         .orgIdentifier(ORG_ID)
+                         .projectIdentifier(PROJECT_ID)
+                         .storeType(StoreType.REMOTE)
+                         .build();
+    entityDetailProtoDTO = filterCreatorMergeService.getGitConnectorReference(pipelineEntity);
+    assertThat(entityDetailProtoDTO.isPresent()).isEqualTo(true);
+    assertThat(entityDetailProtoDTO.get().getType()).isEqualTo(EntityTypeProtoEnum.CONNECTORS);
   }
 }
