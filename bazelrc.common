@@ -61,14 +61,5 @@ build --test_env=LC_ALL="en_US.UTF-8"
 test --define=HARNESS_ARGS=
 build --define=HARNESS_ARGS=
 
-# Bazel SonarQube Integration
-coverage --collect_code_coverage
-coverage --combined_report=lcov
-coverage --coverage_report_generator=//tools/bazel/sonarqube:sonarqube_coverage_generator
-coverage --experimental_fetch_all_coverage_outputs
-coverage --experimental_strict_java_deps=off
-coverage --cache_test_results=yes
-coverage --test_output=summary
-coverage --build_runfile_links
 
 build --@rules_jvm_external//settings:stamp_manifest=false
