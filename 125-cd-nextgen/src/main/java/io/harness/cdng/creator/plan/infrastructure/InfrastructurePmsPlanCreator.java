@@ -263,8 +263,13 @@ public class InfrastructurePmsPlanCreator {
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, String whenCondition,
       PlanCreationContext context, boolean isProjectScopedResourceConstraintQueue) {
     YamlField rcYamlField = constructResourceConstraintYamlField(
-        rcParentNode, whenCondition, context, isProjectScopedResourceConstraintQueue);
+        rcParentNode, whenCondition, context, isProjectScopedResourceConstraintQueue, "step", "step");
 
+    return updateResourceConstraintYamlField(rcYamlField, planCreationResponseMap);
+  }
+
+  private YamlField updateResourceConstraintYamlField(
+      YamlField rcYamlField, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap) {
     try {
       YamlUpdates yamlUpdates =
           YamlUpdates.newBuilder()
@@ -305,7 +310,8 @@ public class InfrastructurePmsPlanCreator {
   }
 
   private YamlField constructResourceConstraintYamlField(YamlNode specNode, String whenCondition,
-      PlanCreationContext context, boolean isProjectScopedResourceConstraintQueue) {
+      PlanCreationContext context, boolean isProjectScopedResourceConstraintQueue, String yamlFieldName,
+      String yamlFieldNodeName) {
     String resourceUnit = "<+INFRA_KEY>";
 
     if (isProjectScopedResourceConstraintQueue && context != null) {
@@ -318,7 +324,7 @@ public class InfrastructurePmsPlanCreator {
 
     JsonNode resourceConstraintJsonNode =
         ResourceConstraintUtility.getResourceConstraintJsonNode(resourceUnit, whenCondition);
-    return new YamlField("step", new YamlNode("step", resourceConstraintJsonNode, specNode));
+    return new YamlField(yamlFieldName, new YamlNode(yamlFieldNodeName, resourceConstraintJsonNode, specNode));
   }
 
   private List<AdviserObtainment> getAdviserObtainmentFromMetaDataToExecution(
@@ -468,48 +474,62 @@ public class InfrastructurePmsPlanCreator {
     return getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializer);
   }
 
+  public static List<AdviserObtainment> addResourceConstraintDependencyForV1Schema(
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
+      KryoSerializer kryoSerializer, PlanCreationContext context, boolean isProjectScopedResourceConstraintQueue) {
+    final String whenCondition =
+        String.format("<+%s.addRcStep> == \"true\"", OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT);
+
+    YamlField rcYamlField = constructResourceConstraintYamlField(specField.getNode(), whenCondition, context,
+        isProjectScopedResourceConstraintQueue, "step", "Resource Constraint");
+
+    rcYamlField = updateResourceConstraintYamlField(rcYamlField, planCreationResponseMap);
+
+    return getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializer);
+  }
+
   public static PlanNode createPlanForGitopsClusters_V1(YamlField envField, String infraSectionUuid,
-                                                     EnvironmentPlanCreatorConfig envConfig, KryoSerializer kryoSerializer) {
+      EnvironmentPlanCreatorConfig envConfig, KryoSerializer kryoSerializer) {
     List<AdviserObtainment> adviserObtainmentFromMetaDataToExecution =
-            getAdviserObtainmentFromMetaDataToSpec(envField.getNode(), kryoSerializer);
+        getAdviserObtainmentFromMetaDataToSpec(envField.getNode(), kryoSerializer);
     PlanNodeBuilder planNodeBuilder =
-            ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(infraSectionUuid, envConfig);
+        ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(infraSectionUuid, envConfig);
     planNodeBuilder.adviserObtainments(adviserObtainmentFromMetaDataToExecution);
     return planNodeBuilder.build();
   }
 
   public static PlanNode createPlanForGitopsClusters_V1(YamlField envField, String postServiceSpecUuid,
-                                                     EnvGroupPlanCreatorConfig envGroupPlanCreatorConfig, KryoSerializer kryoSerializer) {
+      EnvGroupPlanCreatorConfig envGroupPlanCreatorConfig, KryoSerializer kryoSerializer) {
     List<AdviserObtainment> adviserObtainmentFromMetaDataToExecution =
-            getAdviserObtainmentFromMetaDataToSpec(envField.getNode(), kryoSerializer);
+        getAdviserObtainmentFromMetaDataToSpec(envField.getNode(), kryoSerializer);
     PlanNodeBuilder planNodeBuilder =
-            ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(postServiceSpecUuid, envGroupPlanCreatorConfig);
+        ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(postServiceSpecUuid, envGroupPlanCreatorConfig);
     planNodeBuilder.adviserObtainments(adviserObtainmentFromMetaDataToExecution);
     return planNodeBuilder.build();
   }
 
   public static PlanNode createPlanForGitopsClusters_V1(YamlField envField, String infraSectionUuid,
-                                                     EnvironmentsPlanCreatorConfig envConfig, KryoSerializer kryoSerializer) {
+      EnvironmentsPlanCreatorConfig envConfig, KryoSerializer kryoSerializer) {
     List<AdviserObtainment> adviserObtainmentFromMetaDataToExecution =
-            getAdviserObtainmentFromMetaDataToSpec(envField.getNode(), kryoSerializer);
+        getAdviserObtainmentFromMetaDataToSpec(envField.getNode(), kryoSerializer);
     PlanNodeBuilder planNodeBuilder =
-            ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(infraSectionUuid, envConfig);
+        ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(infraSectionUuid, envConfig);
     planNodeBuilder.adviserObtainments(adviserObtainmentFromMetaDataToExecution);
     return planNodeBuilder.build();
   }
 
   private List<AdviserObtainment> getAdviserObtainmentFromMetaDataToSpec(
-          YamlNode currentNode, KryoSerializer kryoSerializer) {
+      YamlNode currentNode, KryoSerializer kryoSerializer) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (currentNode != null) {
       YamlField siblingField = currentNode.nextSiblingNodeFromParentObject("spec");
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         adviserObtainments.add(
-                AdviserObtainment.newBuilder()
-                        .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                                OnSuccessAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
-                        .build());
+            AdviserObtainment.newBuilder()
+                .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
+                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                    OnSuccessAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
+                .build());
       }
     }
     adviserObtainments.add(AdviserObtainment.newBuilder().setType(RollbackCustomAdviser.ADVISER_TYPE).build());

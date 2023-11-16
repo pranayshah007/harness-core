@@ -48,6 +48,13 @@ public class StagePlanCreatorHelper {
         planCreationResponseMap, specField, kryoSerializer, context, isProjectScopedResourceConstraintQueue);
   }
 
+  public List<AdviserObtainment> addResourceConstraintDependencyWithWhenConditionForV1Schema(
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
+      PlanCreationContext context, boolean isProjectScopedResourceConstraintQueue) {
+    return InfrastructurePmsPlanCreator.addResourceConstraintDependencyForV1Schema(
+        planCreationResponseMap, specField, kryoSerializer, context, isProjectScopedResourceConstraintQueue);
+  }
+
   public boolean isProjectScopedResourceConstraintQueueByFFOrSetting(PlanCreationContext ctx) {
     return featureFlagHelperService.isEnabled(
                ctx.getAccountIdentifier(), FeatureName.CDS_PROJECT_SCOPED_RESOURCE_CONSTRAINT_QUEUE)

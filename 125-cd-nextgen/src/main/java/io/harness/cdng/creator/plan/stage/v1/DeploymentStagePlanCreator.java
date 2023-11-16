@@ -187,9 +187,11 @@ public class DeploymentStagePlanCreator extends ChildrenPlanCreator<YamlField> {
       // GitOps flow doesn't fork on environments, so handling it in this function.
       return buildPlanCreationResponse(ctx, planCreationResponseMap, deploymentStageNode, specField, stepsField, field);
     }
+
     List<AdviserObtainment> adviserObtainments =
-        stagePlanCreatorHelper.addResourceConstraintDependencyWithWhenCondition(
+        stagePlanCreatorHelper.addResourceConstraintDependencyWithWhenConditionForV1Schema(
             planCreationResponseMap, specField, ctx, isProjectScopedResourceConstraintQueue);
+
     String infraNodeId =
         addInfrastructureNode(planCreationResponseMap, deploymentStageNode, adviserObtainments, specField);
     Optional<String> provisionerIdOptional =
