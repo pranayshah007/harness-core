@@ -36,6 +36,7 @@ import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -63,7 +64,7 @@ public class InputSetResourceImpl implements Resource {
 
   @Override
   public Set<ScopeLevel> getValidScopeLevels() {
-    return EnumSet.of(ScopeLevel.ACCOUNT, ScopeLevel.ORGANIZATION, ScopeLevel.PROJECT);
+    return new HashSet<>();
   }
 
   @Override
