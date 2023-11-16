@@ -109,35 +109,3 @@ VERIFICATION_SERVICE_SECRET: {{ .ctx.Values.secrets.default.VERIFICATION_SERVICE
 {{- define "migrator.pullSecrets" -}}
 {{ include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.waitForInitContainer.image) "global" .Values.global ) }}
 {{- end -}}
-
-{{/*
-Overrride mongoUri if provided, else use the default
-*/}}
-{{- define "migrator.mongoConnection" }}
-{{- $ := . }}
-{{- $type := "MONGO" }}
-{{- $override := .Values.migrator.mongodb.override }}
-{{- $hosts := .Values.migrator.mongodb.hosts }}
-{{- $protocol := .Values.migrator.mongodb.protocol }}
-{{- $extraArgs:= .Values.migrator.mongodb.extraArgs }}
-{{- if $override }}
-{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $extraArgs )}}
-{{- else }}
-{{- include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "harness" "ctx" $) }}
-{{- end }}
-{{- end }}
-
-{{- define "migrator.mongoEnv" }}
-{{- $ := . }}
-{{- $type := "mongo" }}
-{{- $override := .Values.migrator.mongodb.override }}
-{{- $passwordSecret := .Values.migrator.mongodb.secretName }}
-{{- $passwordKey := .Values.migrator.mongodb.passwordKey }}
-{{- $userKey := .Values.migrator.mongodb.userKey }}
-{{- if $override }}
-{{- include "harnesscommon.dbconnection.dbenvuser" (dict "type" $type "secret" $passwordSecret "userKey" $userKey) }}
-{{- include "harnesscommon.dbconnection.dbenvpassword" (dict "type" $type "secret" $passwordSecret "passwordKey" $passwordKey ) }}
-{{- else }}
-{{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) }}
-{{- end }}
-{{- end }}
