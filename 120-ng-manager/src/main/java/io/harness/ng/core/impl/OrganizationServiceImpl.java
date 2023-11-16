@@ -34,7 +34,6 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
-import io.harness.beans.ScopeLevel;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.EntityNotFoundException;
@@ -56,7 +55,6 @@ import io.harness.ng.core.invites.dto.RoleBinding;
 import io.harness.ng.core.remote.OrganizationMapper;
 import io.harness.ng.core.remote.utils.ScopeAccessHelper;
 import io.harness.ng.core.services.OrganizationService;
-import io.harness.ng.core.services.ScopeInfoService;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.core.spring.OrganizationRepository;
@@ -103,14 +101,12 @@ public class OrganizationServiceImpl implements OrganizationService {
   private final ScopeAccessHelper scopeAccessHelper;
   private final OrganizationInstrumentationHelper instrumentationHelper;
   private final DefaultUserGroupService defaultUserGroupService;
-  private final ScopeInfoService scopeInfoService;
 
   @Inject
   public OrganizationServiceImpl(OrganizationRepository organizationRepository, OutboxService outboxService,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, NgUserService ngUserService,
       AccessControlClient accessControlClient, ScopeAccessHelper scopeAccessHelper,
-      OrganizationInstrumentationHelper instrumentationHelper, DefaultUserGroupService defaultUserGroupService,
-      ScopeInfoService scopeInfoService) {
+      OrganizationInstrumentationHelper instrumentationHelper, DefaultUserGroupService defaultUserGroupService) {
     this.organizationRepository = organizationRepository;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
@@ -119,7 +115,6 @@ public class OrganizationServiceImpl implements OrganizationService {
     this.scopeAccessHelper = scopeAccessHelper;
     this.instrumentationHelper = instrumentationHelper;
     this.defaultUserGroupService = defaultUserGroupService;
-    this.scopeInfoService = scopeInfoService;
   }
 
   @Override
@@ -131,8 +126,6 @@ public class OrganizationServiceImpl implements OrganizationService {
     try {
       validate(organization);
       Organization savedOrganization = saveOrganization(organization);
-      scopeInfoService.addScopeInfoToCache(accountIdentifier, savedOrganization.getIdentifier(), null,
-          ScopeLevel.ORGANIZATION, savedOrganization.getUniqueId());
       setupOrganization(Scope.of(accountIdentifier, organizationDTO.getIdentifier(), null));
       log.info(
           String.format("Organization with identifier [%s] was successfully created", organization.getIdentifier()));
@@ -372,7 +365,6 @@ public class OrganizationServiceImpl implements OrganizationService {
   @Override
   public boolean delete(String accountIdentifier, String organizationIdentifier, Long version) {
     try (AutoLogContext ignore0 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
-      scopeInfoService.removeScopeInfoFromCache(accountIdentifier, organizationIdentifier, null);
       return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Organization organization =
             organizationRepository.hardDelete(accountIdentifier, organizationIdentifier, version);

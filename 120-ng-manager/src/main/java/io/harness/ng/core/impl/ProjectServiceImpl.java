@@ -47,7 +47,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.Scope.ScopeKeys;
-import io.harness.beans.ScopeLevel;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.EntityNotFoundException;
@@ -85,7 +84,6 @@ import io.harness.ng.core.remote.ProjectMapper;
 import io.harness.ng.core.remote.utils.ScopeAccessHelper;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
-import io.harness.ng.core.services.ScopeInfoService;
 import io.harness.ng.core.user.entities.UserMembership;
 import io.harness.ng.core.user.entities.UserMembership.UserMembershipKeys;
 import io.harness.ng.core.user.service.NgUserService;
@@ -151,7 +149,6 @@ public class ProjectServiceImpl implements ProjectService {
   private final DefaultUserGroupService defaultUserGroupService;
   private final FavoritesService favoritesService;
   private final UserHelperService userHelperService;
-  private final ScopeInfoService scopeInfoService;
 
   @Inject
   public ProjectServiceImpl(ProjectRepository projectRepository, OrganizationService organizationService,
@@ -159,7 +156,7 @@ public class ProjectServiceImpl implements ProjectService {
       NgUserService ngUserService, AccessControlClient accessControlClient, ScopeAccessHelper scopeAccessHelper,
       ProjectInstrumentationHelper instrumentationHelper, YamlGitConfigService yamlGitConfigService,
       FeatureFlagService featureFlagService, DefaultUserGroupService defaultUserGroupService,
-      FavoritesService favoritesService, UserHelperService userHelperService, ScopeInfoService scopeInfoService) {
+      FavoritesService favoritesService, UserHelperService userHelperService) {
     this.projectRepository = projectRepository;
     this.organizationService = organizationService;
     this.transactionTemplate = transactionTemplate;
@@ -173,7 +170,6 @@ public class ProjectServiceImpl implements ProjectService {
     this.defaultUserGroupService = defaultUserGroupService;
     this.favoritesService = favoritesService;
     this.userHelperService = userHelperService;
-    this.scopeInfoService = scopeInfoService;
   }
 
   @Override
@@ -196,8 +192,6 @@ public class ProjectServiceImpl implements ProjectService {
       validate(project);
       Project createdProject = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Project savedProject = projectRepository.save(project);
-        scopeInfoService.addScopeInfoToCache(accountIdentifier, savedProject.getOrgIdentifier(),
-            savedProject.getIdentifier(), ScopeLevel.PROJECT, savedProject.getUniqueId());
         outboxService.save(new ProjectCreateEvent(project.getAccountIdentifier(), ProjectMapper.writeDTO(project)));
         return savedProject;
       }));
@@ -639,7 +633,6 @@ public class ProjectServiceImpl implements ProjectService {
       @ProjectIdentifier String projectIdentifier, Long version) {
     try (AutoLogContext ignore1 =
              new NgAutoLogContext(projectIdentifier, orgIdentifier, accountIdentifier, OVERRIDE_ERROR)) {
-      scopeInfoService.removeScopeInfoFromCache(accountIdentifier, orgIdentifier, projectIdentifier);
       return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Project deletedProject =
             projectRepository.hardDelete(accountIdentifier, orgIdentifier, projectIdentifier, version);

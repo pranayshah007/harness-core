@@ -328,6 +328,7 @@ public class NextGenConfiguration extends Configuration {
     return HarnessReflections.get()
         .getTypesAnnotatedWith(Path.class)
         .stream()
+        .sorted((a, b) -> { return a.getName().compareTo(b.getName()); })
         .filter(klazz
             -> StringUtils.startsWithAny(klazz.getPackage().getName(), NextGenConfiguration.CORE_PACKAGE,
                 NextGenConfiguration.CONNECTOR_PACKAGE, NextGenConfiguration.GITOPS_PROVIDER_RESOURCE_PACKAGE,
@@ -371,7 +372,7 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.SUPPORT_PACKAGE, NextGenConfiguration.EULA_PACKAGE,
                 NextGenConfiguration.TERRAGRUNT_RESOURCE_PACKAGE, NextGenConfiguration.GITX_WEBHOOKS_PACKAGE,
                 NextGenConfiguration.K8S_RELEASE_DETAILS_PACKAGE, NextGenConfiguration.OIDC_CORE_RESOURCE))
-        .collect(Collectors.toSet());
+        .collect(Collectors.toList());
   }
 
   private static Set<String> getUniquePackages(Collection<Class<?>> classes) {
