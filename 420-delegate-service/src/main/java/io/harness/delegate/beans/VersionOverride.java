@@ -12,6 +12,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
+import io.harness.gitsync.beans.YamlDTO;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
@@ -35,7 +36,7 @@ import org.joda.time.DateTime;
 @SecondaryStoreIn(DbAliases.DMS)
 @Entity(value = "versionOverride", noClassnameStored = true)
 @HarnessEntity(exportable = true)
-public class VersionOverride implements PersistentEntity {
+public class VersionOverride implements PersistentEntity, YamlDTO {
   @Id @NotNull @Builder.Default private final String uuid = generateUuid();
   @NotEmpty private final String accountId;
   private final String version;
@@ -45,5 +46,8 @@ public class VersionOverride implements PersistentEntity {
 
   public static VersionOverrideBuilder builder(final String accountId) {
     return new VersionOverrideBuilder().accountId(accountId);
+  }
+  public static VersionOverrideBuilder auditBuilder(final String version) {
+    return new VersionOverrideBuilder().version(version);
   }
 }
