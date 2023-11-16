@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -114,8 +115,8 @@ public class OrgGitXWebhooksApiImpl implements OrgGitxWebhooksApi {
     Page<GitXWebhookResponse> gitXWebhooks =
         GitXWebhookMapper.buildListGitXWebhookResponse(listGitXWebhookResponseDTO, page, limit);
 
-    Response.ResponseBuilder responseBuilder = Response.ok();
-    Response.ResponseBuilder responseBuilderWithLinks =
+    ResponseBuilder responseBuilder = Response.ok();
+    ResponseBuilder responseBuilderWithLinks =
         ApiUtils.addLinksHeader(responseBuilder, gitXWebhooks.getTotalElements(), page, limit);
     return responseBuilderWithLinks
         .entity(gitXWebhooks.getContent()
@@ -136,8 +137,8 @@ public class OrgGitXWebhooksApiImpl implements OrgGitxWebhooksApi {
 
     Page<GitXWebhookEventResponse> gitXWebhookEvents =
         GitXWebhookMapper.buildListGitXWebhookEventResponse(gitXEventsListResponseDTO, page, limit);
-    Response.ResponseBuilder responseBuilder = Response.ok();
-    Response.ResponseBuilder responseBuilderWithLinks =
+    ResponseBuilder responseBuilder = Response.ok();
+    ResponseBuilder responseBuilderWithLinks =
         ApiUtils.addLinksHeader(responseBuilder, gitXWebhookEvents.getTotalElements(), page, limit);
     return responseBuilderWithLinks
         .entity(gitXWebhookEvents.getContent()

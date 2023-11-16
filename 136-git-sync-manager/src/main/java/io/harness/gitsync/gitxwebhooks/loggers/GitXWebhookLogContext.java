@@ -8,7 +8,9 @@ package io.harness.gitsync.gitxwebhooks.loggers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.NgTriggerAutoLogContext.*;
+import static io.harness.logging.NgTriggerAutoLogContext.ACCOUNT_KEY;
+import static io.harness.logging.NgTriggerAutoLogContext.ORG_KEY;
+import static io.harness.logging.NgTriggerAutoLogContext.PROJECT_KEY;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
