@@ -10,15 +10,28 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
-import io.harness.gitsync.gitxwebhooks.dtos.*;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookResponseDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.DeleteGitXWebhookRequestDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GetGitXWebhookRequestDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GetGitXWebhookResponseDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXEventsListRequestDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXEventsListResponseDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.ListGitXWebhookRequestDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.ListGitXWebhookResponseDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookCriteriaDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookRequestDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookResponseDTO;
 import io.harness.gitsync.gitxwebhooks.mapper.GitXWebhookMapper;
 import io.harness.gitsync.gitxwebhooks.service.GitXWebhookEventService;
 import io.harness.gitsync.gitxwebhooks.service.GitXWebhookService;
 import io.harness.spec.server.ng.v1.OrgGitxWebhooksApi;
-import io.harness.spec.server.ng.v1.model.*;
+import io.harness.spec.server.ng.v1.model.CreateGitXWebhookRequest;
 import io.harness.spec.server.ng.v1.model.CreateGitXWebhookResponse;
+import io.harness.spec.server.ng.v1.model.GitXWebhookEventResponse;
+import io.harness.spec.server.ng.v1.model.GitXWebhookResponse;
+import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookRequest;
+import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookResponse;
 import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
@@ -118,7 +131,7 @@ public class OrgGitXWebhooksApiImpl implements OrgGitxWebhooksApi {
       String eventIdentifier, List<String> eventStatus) {
     GitXEventsListRequestDTO gitXEventsListRequestDTO =
         GitXWebhookMapper.buildEventsListGitXWebhookRequestDTO(webhookIdentifier, eventStartTime, eventEndTime,
-            repoName, filePath, eventIdentifier, eventStatus, Scope.of(harnessAccount));
+            repoName, filePath, eventIdentifier, eventStatus, Scope.of(harnessAccount, org));
     GitXEventsListResponseDTO gitXEventsListResponseDTO = gitXWebhookEventService.listEvents(gitXEventsListRequestDTO);
 
     Page<GitXWebhookEventResponse> gitXWebhookEvents =

@@ -68,6 +68,7 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
   public void processEvent(WebhookDTO webhookDTO) {
     try (GitXWebhookEventLogContext context = new GitXWebhookEventLogContext(webhookDTO)) {
       try {
+        //        TODO: need to change the logic of fetching webhooks
         GitXWebhook gitXWebhook =
             fetchGitXWebhook(webhookDTO.getAccountId(), webhookDTO.getParsedResponse().getPush().getRepo().getName());
         if (gitXWebhook == null) {

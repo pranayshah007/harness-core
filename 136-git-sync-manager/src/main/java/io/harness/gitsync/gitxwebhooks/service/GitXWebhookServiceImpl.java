@@ -133,27 +133,6 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         Criteria criteria =
             buildCriteria(getGitXWebhookRequestDTO.getScope(), getGitXWebhookRequestDTO.getWebhookIdentifier());
         GitXWebhook gitXWebhook = gitXWebhookRepository.find(new Query(criteria));
-        //        List<GitXWebhook> gitXWebhookList = gitXWebhookRepository.find(buildQuery());
-        //            getGitXWebhookRequestDTO.getScope().getAccountIdentifier(),
-        //            getGitXWebhookRequestDTO.getWebhookIdentifier());
-        //        if (isEmpty(gitXWebhookList)) {
-        //          log.info(String.format(
-        //              "For the given key with accountIdentifier %s and gitXWebhookIdentifier %s no webhook found.",
-        //              getGitXWebhookRequestDTO.getScope().getAccountIdentifier(),
-        //              getGitXWebhookRequestDTO.getWebhookIdentifier()));
-        //          return Optional.empty();
-        //        }
-        //        List<GetGitXWebhookResponseDTO> getGitXWebhookResponseList = prepareGitXWebhooks(gitXWebhook);
-        //        if (getGitXWebhookResponseList.size() > 1) {
-        //          log.error(String.format(
-        //              "For the given key with accountIdentifier %s and gitXWebhookIdentifier %s found more than one
-        //              unique record.", getGitXWebhookRequestDTO.getScope().getAccountIdentifier(),
-        //              getGitXWebhookRequestDTO.getWebhookIdentifier()));
-        //          throw new InternalServerErrorException(String.format(
-        //              "For the given key with accountIdentifier %s and gitXWebhookIdentifier %s found more than one
-        //              unique record.", getGitXWebhookRequestDTO.getScope().getAccountIdentifier(),
-        //              getGitXWebhookRequestDTO.getWebhookIdentifier()));
-        //        }
         return Optional.of(prepareGitXWebhooks(gitXWebhook));
       } catch (Exception exception) {
         log.error(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, FETCHING), exception);
