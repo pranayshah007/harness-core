@@ -9,8 +9,15 @@ package io.harness.ng.gitxwebhook;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.Scope;
+import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookRequestDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookResponseDTO;
+import io.harness.gitsync.gitxwebhooks.mapper.GitXWebhookMapper;
+import io.harness.gitsync.gitxwebhooks.service.GitXWebhookEventService;
+import io.harness.gitsync.gitxwebhooks.service.GitXWebhookService;
 import io.harness.spec.server.ng.v1.ProjectGitxWebhooksApi;
 import io.harness.spec.server.ng.v1.model.CreateGitXWebhookRequest;
+import io.harness.spec.server.ng.v1.model.CreateGitXWebhookResponse;
 import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookRequest;
 
 import com.google.inject.Inject;
@@ -26,10 +33,21 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
 public class ProjectGitXWebhooksApiImpl implements ProjectGitxWebhooksApi {
+  GitXWebhookService gitXWebhookService;
+  GitXWebhookEventService gitXWebhookEventService;
+  private final int HTTP_201 = 201;
+  private final int HTTP_404 = 404;
+  private final int HTTP_204 = 204;
   @Override
   public Response createProjectGitxWebhook(
       String org, String project, @Valid CreateGitXWebhookRequest body, String harnessAccount) {
-    return null;
+    CreateGitXWebhookRequestDTO createGitXWebhookRequestDTO = GitXWebhookMapper.buildCreateGitXWebhookRequestDTO(
+        harnessAccount, body, Scope.of(harnessAccount, org, project));
+    CreateGitXWebhookResponseDTO createGitXWebhookResponseDTO =
+        gitXWebhookService.createGitXWebhook(createGitXWebhookRequestDTO);
+    CreateGitXWebhookResponse responseBody =
+        GitXWebhookMapper.buildCreateGitXWebhookResponse(createGitXWebhookResponseDTO);
+    return Response.status(HTTP_201).entity(responseBody).build();
   }
 
   @Override

@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.Scope;
 
 import java.util.List;
 import lombok.AccessLevel;
@@ -30,7 +31,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitXEventsListRequestDTO {
-  String accountIdentifier;
   @Setter String webhookIdentifier;
   Long eventStartTime;
   Long eventEndTime;
@@ -38,4 +38,5 @@ public class GitXEventsListRequestDTO {
   String filePath;
   String eventIdentifier;
   List<String> eventStatus;
+  Scope scope;
 }

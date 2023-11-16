@@ -16,6 +16,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.Scope;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.exception.InternalServerErrorException;
 import io.harness.gitsync.common.beans.GitXWebhookEventStatus;
@@ -93,8 +94,8 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     try (GitXWebhookLogContext context = new GitXWebhookLogContext(gitXEventsListRequestDTO)) {
       try {
         if (isNotEmpty(gitXEventsListRequestDTO.getRepoName())) {
-          GitXWebhook gitXWebhook =
-              fetchGitXWebhook(gitXEventsListRequestDTO.getAccountIdentifier(), gitXEventsListRequestDTO.getRepoName());
+          GitXWebhook gitXWebhook = fetchGitXWebhook(
+              gitXEventsListRequestDTO.getScope().getAccountIdentifier(), gitXEventsListRequestDTO.getRepoName());
           if (gitXWebhook != null) {
             gitXEventsListRequestDTO.setWebhookIdentifier(gitXWebhook.getIdentifier());
           }
@@ -105,8 +106,8 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
             .gitXEventDTOS(prepareGitXWebhookEvents(gitXEventsListRequestDTO.getFilePath(), gitXWebhookEventList))
             .build();
       } catch (Exception exception) {
-        log.error(String.format(
-            "Error occurred while GitX listing events in account %s", gitXEventsListRequestDTO.getAccountIdentifier()));
+        log.error(String.format("Error occurred while GitX listing events in account %s",
+            gitXEventsListRequestDTO.getScope().getAccountIdentifier()));
         throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, LISTING_EVENTS));
       }
     }
@@ -169,7 +170,7 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
 
   private Criteria buildEventsListCriteria(GitXEventsListRequestDTO gitXEventsListRequestDTO) {
     Criteria criteria = new Criteria();
-    criteria.and(GitXWebhookEventKeys.accountIdentifier).is(gitXEventsListRequestDTO.getAccountIdentifier());
+    criteria.and(GitXWebhookEventKeys.accountIdentifier).is(gitXEventsListRequestDTO.getScope().getAccountIdentifier());
     if (isNotEmpty(gitXEventsListRequestDTO.getWebhookIdentifier())) {
       criteria.and(GitXWebhookEventKeys.webhookIdentifier).is(gitXEventsListRequestDTO.getWebhookIdentifier());
     }
@@ -233,8 +234,8 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
 
   private void updateGitXWebhook(GitXWebhook gitXWebhook, long triggerEventTime) {
     gitXWebhookService.updateGitXWebhook(UpdateGitXWebhookCriteriaDTO.builder()
-                                             .accountIdentifier(gitXWebhook.getAccountIdentifier())
                                              .webhookIdentifier(gitXWebhook.getIdentifier())
+                                             .scope(Scope.of(gitXWebhook.getAccountIdentifier()))
                                              .build(),
         UpdateGitXWebhookRequestDTO.builder()
             .lastEventTriggerTime(triggerEventTime)
