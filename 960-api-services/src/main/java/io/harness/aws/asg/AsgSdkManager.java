@@ -23,6 +23,7 @@ import static software.wings.beans.LogWeight.Bold;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.annotations.dev.CodePulse;
@@ -146,6 +147,7 @@ public class AsgSdkManager {
   public static final int STEADY_STATE_INTERVAL_IN_SECONDS = 20;
   private static final String INSTANCE_REFRESH_STATUS_SUCCESSFUL = "Successful";
   private static final String INSTANCE_STATUS_IN_SERVICE = "InService";
+  private static final String NAME_TAG = "Name";
 
   private enum AwsClientType { EC2, ASG }
   public static final String BG_VERSION = "BG_VERSION";
@@ -305,25 +307,11 @@ public class AsgSdkManager {
     }
 
     List<Tag> tags = createAutoScalingGroupRequest.getTags();
-    List<Tag> tagsList = new ArrayList<>();
-    if (isNotEmpty(tags)) {
-      tags.forEach(tag -> {
-        if (tag.getPropagateAtLaunch() == null) {
-          tag.setPropagateAtLaunch(true);
-        }
-        if (tag.getResourceId() == null) {
-          tag.setResourceId(asgName);
-        }
-        if (tag.getResourceType() == null) {
-          tag.setResourceType("auto-scaling-group");
-        }
-        tagsList.add(tag);
-      });
+    List<Tag> tagsList = prepareTags(tags, asgName);
 
-      CreateOrUpdateTagsRequest createOrUpdateTagsRequest = new CreateOrUpdateTagsRequest();
-      createOrUpdateTagsRequest.setTags(tagsList);
-      asgCall(asgClient -> asgClient.createOrUpdateTags(createOrUpdateTagsRequest));
-    }
+    CreateOrUpdateTagsRequest createOrUpdateTagsRequest = new CreateOrUpdateTagsRequest();
+    createOrUpdateTagsRequest.setTags(tagsList);
+    asgCall(asgClient -> asgClient.createOrUpdateTags(createOrUpdateTagsRequest));
   }
 
   private void updateLifecyleHooks(String asgName, CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
@@ -971,5 +959,32 @@ public class AsgSdkManager {
                          .build())
             .build();
     elbV2Client.modifyRule(awsInternalConfig, modifyRuleRequest, region);
+  }
+
+  public List<Tag> prepareTags(Collection<Tag> tags, String asgName) {
+    List<Tag> result = new ArrayList<>();
+    if (isNotEmpty(tags)) {
+      result = tags.stream()
+                   .filter(tagDescription -> !NAME_TAG.equals(tagDescription.getKey()))
+                   /**
+                    * In case of dynamic base Asg provisioning the base Asg would have a tags like the following,
+                    * which a user can't create. So we must filter those ones out
+                    * - aws:cloudformation:logical-id
+                    * - aws:cloudformation:stack-id
+                    * - aws:cloudformation:stack-name
+                    */
+                   .filter(tagDescription -> !tagDescription.getKey().startsWith("aws:"))
+                   .map(tagDescription
+                       -> new Tag()
+                              .withKey(tagDescription.getKey())
+                              .withValue(tagDescription.getValue())
+                              .withPropagateAtLaunch(tagDescription.getPropagateAtLaunch() == null
+                                  || tagDescription.getPropagateAtLaunch())
+                              .withResourceType("auto-scaling-group")
+                              .withResourceId(asgName))
+                   .collect(toList());
+      result.add(new Tag().withKey(NAME_TAG).withValue(asgName).withPropagateAtLaunch(true));
+    }
+    return result;
   }
 }
