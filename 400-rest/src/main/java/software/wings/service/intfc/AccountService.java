@@ -310,5 +310,5 @@ public interface AccountService {
 
   List<Account> listAccountsMarkedForDeletion(int limit);
 
-  List<Account> getByLastUpdated(long timestamp);
+  List<Account> getAccountsUpdatedSinceTimestamp(long timestamp);
 }

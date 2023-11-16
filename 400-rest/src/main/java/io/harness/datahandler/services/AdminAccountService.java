@@ -81,6 +81,4 @@ public interface AdminAccountService {
   Account createGlobalDelegateAccount(Account account, String adminUserEmail);
 
   List<Account> getAccountsUpdatedSinceTimestamp(long timestamp);
-
-  List<AccountSummary> getAccountSummaries(List<String> accountIds);
 }

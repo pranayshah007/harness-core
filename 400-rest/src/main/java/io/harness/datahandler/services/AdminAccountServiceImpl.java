@@ -232,10 +232,4 @@ public class AdminAccountServiceImpl implements AdminAccountService {
   public List<Account> getAccountsUpdatedSinceTimestamp(long timestamp) {
     return accountService.getAccountsUpdatedSinceTimestamp(timestamp);
   }
-
-  @Override
-  public List<AccountSummary> getAccountSummaries(List<String> accountId) {
-    List<Account> accounts = accountService.getAccounts(accountId);
-    return accountSummaryHelper.getAccountSummariesFromAccounts(accounts);
-  }
 }

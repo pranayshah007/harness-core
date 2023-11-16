@@ -34,7 +34,6 @@ import io.harness.limits.impl.model.StaticLimit;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.common.beans.Generation;
-import io.harness.persistence.UuidAware;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.Account;
@@ -49,7 +48,6 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -86,12 +84,13 @@ public class AdminAccountResource {
   @Inject
   public AdminAccountResource(AdminAccountService adminAccountService, AdminUserService adminUserService,
       AccessControlAdminClient accessControlAdminClient, DelegateService delegateService,
-      AdminLicenseHttpClient adminLicenseHttpClient) {
+      AdminLicenseHttpClient adminLicenseHttpClient, AccountSummaryHelper accountSummaryHelper) {
     this.adminAccountService = adminAccountService;
     this.adminUserService = adminUserService;
     this.accessControlAdminClient = accessControlAdminClient;
     this.delegateService = delegateService;
     this.adminLicenseHttpClient = adminLicenseHttpClient;
+    this.accountSummaryHelper = accountSummaryHelper;
   }
 
   @Inject CEDataCleanupRequestDao ceDataCleanupRequestDao;
