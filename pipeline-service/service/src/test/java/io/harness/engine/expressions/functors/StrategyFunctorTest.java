@@ -156,7 +156,6 @@ public class StrategyFunctorTest extends PipelineServiceTestBase {
               .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(StepCategory.STAGE).build())
               .setStrategyMetadata(
                   StrategyMetadata.newBuilder()
-                      .setIdentifierPostFix("_1")
                       .setMatrixMetadata(
                           MatrixMetadata.newBuilder().addMatrixCombination(1).putMatrixValues("a", "1").build())
                       .build())
