@@ -10,6 +10,9 @@ package io.harness.delegate.task.pcf.request;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import static software.wings.beans.TaskType.TAS_BG_SETUP;
+import static software.wings.beans.TaskType.TAS_BG_SETUP_V2;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.CodePulse;
@@ -40,10 +43,13 @@ import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.pcf.model.CfCliVersion;
 
+import software.wings.beans.TaskType;
+
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PCF})
 @Data
 @OwnedBy(CDP)
@@ -79,6 +85,13 @@ public class CfBlueGreenSetupRequestNG extends AbstractTasTaskRequest {
     this.useAppAutoScalar = useAppAutoScalar;
     this.tasManifestsPackage = tasManifestsPackage;
     this.tempRoutes = tempRoutes;
+  }
+
+  public TaskType getDelegateTaskType() {
+    if (this.olderActiveVersionCountToKeep == 0) {
+      return TAS_BG_SETUP_V2;
+    } else
+      return TAS_BG_SETUP;
   }
 
   @Override

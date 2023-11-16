@@ -538,8 +538,8 @@ public enum TaskType {
   HELM_COMMAND_TASK_NG_JOBS_STEADY_STATE_CHECK(
       TaskGroup.HELM, "Helm Command Task with Steady state check for jobs depending on account settings."),
   ARTIFACT_BUNDLE_FETCH_TASK(TaskGroup.ARTIFACT_BUNDLE, "Artifact bundle fetch task in NG", true),
-  AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V3(TaskGroup.ASG, "AWS Asg Blue Green Deploy V3 with Shift Traffic support");
-
+  AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V3(TaskGroup.ASG, "AWS Asg Blue Green Deploy V3 with Shift Traffic support"),
+  TAS_BG_SETUP_V2(TaskGroup.TAS, "Tas BG Setup task V2", true);
   private final TaskGroup taskGroup;
   private final String displayName;
   // Flag to denote whether the java based delegate supports this task or not

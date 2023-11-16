@@ -167,6 +167,10 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
               getParameterFieldValue(tasBGAppSetupStepParameters.getAdditionalRoutes())),
           tasExecutionPassThroughData.getTasManifestsPackage());
       tasSetupDataOutcomeBuilder.routeMaps(routeMaps);
+      int olderActiveVersionCountToKeep =
+          new BigDecimal(getParameterFieldValue(tasBGAppSetupStepParameters.getExistingVersionToKeep()))
+              .intValueExact();
+      tasSetupDataOutcomeBuilder.olderActiveVersionCountToKeep(olderActiveVersionCountToKeep);
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME,
           tasSetupDataOutcomeBuilder.build(), StepCategory.STEP.name());
 
@@ -228,7 +232,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
     }
     Integer olderActiveVersionCountToKeep =
         new BigDecimal(getParameterFieldValue(tasBGAppSetupStepParameters.getExistingVersionToKeep())).intValueExact();
-    TaskParameters taskParameters =
+    CfBlueGreenSetupRequestNG taskParameters =
         CfBlueGreenSetupRequestNG.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
             .cfCommandTypeNG(CfCommandTypeNG.TAS_BG_SETUP)
@@ -250,14 +254,14 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
 
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {taskParameters})
-                            .taskType(TaskType.TAS_BG_SETUP.name())
+                            .taskType(taskParameters.getDelegateTaskType().name())
                             .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
                             .async(true)
                             .build();
 
     final TaskRequest taskRequest =
         TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
-            executionPassThroughData.getCommandUnits(), TaskType.TAS_BG_SETUP.getDisplayName(),
+            executionPassThroughData.getCommandUnits(), taskParameters.getDelegateTaskType().getDisplayName(),
             TaskSelectorYaml.toTaskSelector(tasBGAppSetupStepParameters.getDelegateSelectors()),
             stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()

@@ -57,4 +57,5 @@ public class TasSetupDataOutcome implements Outcome, ExecutionSweepingOutput {
   @Builder.Default Boolean isBlueGreen = Boolean.FALSE;
   boolean useAppAutoScalar;
   @Expression(ALLOW_SECRETS) TasManifestsPackage manifestsPackage;
+  Integer olderActiveVersionCountToKeep;
 }

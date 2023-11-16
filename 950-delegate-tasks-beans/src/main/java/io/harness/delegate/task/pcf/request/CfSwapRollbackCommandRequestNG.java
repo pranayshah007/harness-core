@@ -51,6 +51,7 @@ public class CfSwapRollbackCommandRequestNG extends AbstractTasTaskRequest {
   boolean swapRouteOccurred;
   @Expression(ALLOW_SECRETS) List<String> tempRoutes;
   boolean upsizeInActiveApp;
+  Integer olderActiveVersionCountToKeep;
 
   @Builder
   public CfSwapRollbackCommandRequestNG(String accountId, CfCommandTypeNG cfCommandTypeNG, String commandName,
@@ -61,7 +62,7 @@ public class CfSwapRollbackCommandRequestNG extends AbstractTasTaskRequest {
       TasApplicationInfo newApplicationDetails, String cfAppNamePrefix, Integer activeAppRevision,
       TasApplicationInfo inActiveApplicationDetails, boolean enforceSslValidation, boolean useAppAutoScalar,
       String existingAppNamingStrategy, boolean downsizeOldApplication, boolean swapRouteOccurred,
-      List<String> tempRoutes, boolean upsizeInActiveApp) {
+      List<String> tempRoutes, boolean upsizeInActiveApp, Integer olderActiveVersionCountToKeep) {
     super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
         cfCliVersion);
 
@@ -79,6 +80,7 @@ public class CfSwapRollbackCommandRequestNG extends AbstractTasTaskRequest {
     this.swapRouteOccurred = swapRouteOccurred;
     this.tempRoutes = tempRoutes;
     this.upsizeInActiveApp = upsizeInActiveApp;
+    this.olderActiveVersionCountToKeep = olderActiveVersionCountToKeep;
   }
 
   @Override

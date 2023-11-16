@@ -15,6 +15,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.TaskGroup;
 import io.harness.rule.Owner;
 
 import software.wings.beans.TaskType;
@@ -527,6 +528,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(487, "HELM_COMMAND_TASK_NG_JOBS_STEADY_STATE_CHECK");
     taskTypeOrdinalMapping.put(488, "ARTIFACT_BUNDLE_FETCH_TASK");
     taskTypeOrdinalMapping.put(489, "AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V3");
+    taskTypeOrdinalMapping.put(490, "TAS_BG_SETUP_V2");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
