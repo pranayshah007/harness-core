@@ -85,6 +85,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -328,7 +329,6 @@ public class NextGenConfiguration extends Configuration {
     return HarnessReflections.get()
         .getTypesAnnotatedWith(Path.class)
         .stream()
-        .sorted((a, b) -> { return a.getName().compareTo(b.getName()); })
         .filter(klazz
             -> StringUtils.startsWithAny(klazz.getPackage().getName(), NextGenConfiguration.CORE_PACKAGE,
                 NextGenConfiguration.CONNECTOR_PACKAGE, NextGenConfiguration.GITOPS_PROVIDER_RESOURCE_PACKAGE,
@@ -372,6 +372,7 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.SUPPORT_PACKAGE, NextGenConfiguration.EULA_PACKAGE,
                 NextGenConfiguration.TERRAGRUNT_RESOURCE_PACKAGE, NextGenConfiguration.GITX_WEBHOOKS_PACKAGE,
                 NextGenConfiguration.K8S_RELEASE_DETAILS_PACKAGE, NextGenConfiguration.OIDC_CORE_RESOURCE))
+        .sorted(Comparator.comparing(Class::getName))
         .collect(Collectors.toList());
   }
 
