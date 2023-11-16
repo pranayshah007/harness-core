@@ -176,7 +176,7 @@ public class DelegateOutboxEventHandlerTest extends CategoryTest {
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
   public void testDelegateVersionOverrideUpsertAuditEvent() throws Exception {
-    VersionOverride versionOverride = VersionOverride.auditBuilder("v2", accountIdentifier).build();
+    VersionOverride versionOverride = VersionOverride.auditBuilder(accountIdentifier, "v2").build();
     DelegateVersionOverrideEvent delegateVersionOverrideEvent = DelegateVersionOverrideEvent.builder()
                                                                     .accountIdentifier(accountIdentifier)
                                                                     .versionOverride(versionOverride)
@@ -204,8 +204,8 @@ public class DelegateOutboxEventHandlerTest extends CategoryTest {
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
   public void testDelegateVersionOverrideUpsertWithExistingVersionOverrideAuditEvent() throws Exception {
-    VersionOverride versionOverride = VersionOverride.auditBuilder("v2", accountIdentifier).build();
-    VersionOverride versionOverride_old = VersionOverride.auditBuilder("v1", accountIdentifier).build();
+    VersionOverride versionOverride = VersionOverride.auditBuilder(accountIdentifier, "v2").build();
+    VersionOverride versionOverride_old = VersionOverride.auditBuilder(accountIdentifier, "v2").build();
     DelegateVersionOverrideEvent delegateVersionOverrideEvent = DelegateVersionOverrideEvent.builder()
                                                                     .accountIdentifier(accountIdentifier)
                                                                     .versionOverride(versionOverride)

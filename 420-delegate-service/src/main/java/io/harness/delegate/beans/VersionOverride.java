@@ -47,7 +47,7 @@ public class VersionOverride implements PersistentEntity, YamlDTO {
   public static VersionOverrideBuilder builder(final String accountId) {
     return new VersionOverrideBuilder().accountId(accountId);
   }
-  public static VersionOverrideBuilder auditBuilder(final String version, final String accountId) {
+  public static VersionOverrideBuilder auditBuilder(final String accountId, final String version) {
     return new VersionOverrideBuilder().version(version);
   }
 }

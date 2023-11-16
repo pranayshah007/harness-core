@@ -76,14 +76,13 @@ public class AdminDelegateVersionService {
       updateOperation.set(VersionOverrideKeys.validUntil, validity.toDate());
       log.info("Setting {} with {} for accountID, will be valid till {} days ", overrideType, overrideValue, validFor);
     }
-    String OldVersion = persistence.upsert(filter, updateOperation, HPersistence.upsertReturnOldOptions).getVersion();
-    if (isNotEmpty(OldVersion)) {
-      outboxService.save(
-          DelegateVersionOverrideEvent.builder()
-              .accountIdentifier(accountId)
-              .versionOverride(VersionOverride.auditBuilder(overrideValue, accountId).build())
-              .versionOverrideOld(VersionOverride.auditBuilder(filter.get().getVersion(), accountId).build())
-              .build());
+    String oldVersion = persistence.upsert(filter, updateOperation, HPersistence.upsertReturnOldOptions).getVersion();
+    if (isNotEmpty(oldVersion)) {
+      outboxService.save(DelegateVersionOverrideEvent.builder()
+                             .accountIdentifier(accountId)
+                             .versionOverride(VersionOverride.auditBuilder(accountId, overrideValue).build())
+                             .versionOverrideOld(VersionOverride.auditBuilder(accountId, oldVersion).build())
+                             .build());
     }
     return overrideValue;
   }
