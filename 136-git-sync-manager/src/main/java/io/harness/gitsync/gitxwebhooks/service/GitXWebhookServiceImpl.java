@@ -133,7 +133,6 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         Criteria criteria =
             buildCriteria(getGitXWebhookRequestDTO.getScope(), getGitXWebhookRequestDTO.getWebhookIdentifier());
         GitXWebhook gitXWebhook = gitXWebhookRepository.find(new Query(criteria));
-
         //        List<GitXWebhook> gitXWebhookList = gitXWebhookRepository.find(buildQuery());
         //            getGitXWebhookRequestDTO.getScope().getAccountIdentifier(),
         //            getGitXWebhookRequestDTO.getWebhookIdentifier());
@@ -144,7 +143,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         //              getGitXWebhookRequestDTO.getWebhookIdentifier()));
         //          return Optional.empty();
         //        }
-        List<GetGitXWebhookResponseDTO> getGitXWebhookResponseList = prepareGitXWebhooks(Arrays.asList(gitXWebhook));
+        //        List<GetGitXWebhookResponseDTO> getGitXWebhookResponseList = prepareGitXWebhooks(gitXWebhook);
         //        if (getGitXWebhookResponseList.size() > 1) {
         //          log.error(String.format(
         //              "For the given key with accountIdentifier %s and gitXWebhookIdentifier %s found more than one
@@ -155,7 +154,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         //              unique record.", getGitXWebhookRequestDTO.getScope().getAccountIdentifier(),
         //              getGitXWebhookRequestDTO.getWebhookIdentifier()));
         //        }
-        return Optional.of(getGitXWebhookResponseList.get(0));
+        return Optional.of(prepareGitXWebhooks(gitXWebhook));
       } catch (Exception exception) {
         log.error(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, FETCHING), exception);
         throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, FETCHING));
@@ -290,6 +289,19 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
                    .eventTriggerTime(gitXWebhookResponseDTO.getLastEventTriggerTime())
                    .build())
         .collect(Collectors.toList());
+  }
+
+  private GetGitXWebhookResponseDTO prepareGitXWebhooks(GitXWebhook gitXWebhook) {
+    return GetGitXWebhookResponseDTO.builder()
+        .accountIdentifier(gitXWebhook.getAccountIdentifier())
+        .webhookIdentifier(gitXWebhook.getIdentifier())
+        .webhookName(gitXWebhook.getName())
+        .connectorRef(gitXWebhook.getConnectorRef())
+        .folderPaths(gitXWebhook.getFolderPaths())
+        .isEnabled(gitXWebhook.getIsEnabled())
+        .repoName(gitXWebhook.getRepoName())
+        .eventTriggerTime(gitXWebhook.getLastEventTriggerTime())
+        .build();
   }
 
   private Criteria buildCriteria(Scope scope, String webhookIdentifier) {
