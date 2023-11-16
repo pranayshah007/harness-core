@@ -45,6 +45,7 @@ import io.harness.steps.approval.step.jira.beans.JiraApprovalResponseData;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
 import io.harness.steps.executables.PipelineAsyncExecutable;
 import io.harness.tasks.ResponseData;
+import io.harness.telemetry.helpers.ApprovalInstrumentationHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -65,12 +66,15 @@ public class JiraApprovalStep extends PipelineAsyncExecutable {
   @Inject private JiraApprovalHelperService jiraApprovalHelperService;
   @Inject private IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
   @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
+  @Inject ApprovalInstrumentationHelper instrumentationHelper;
+
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     JiraApprovalInstance approvalInstance = JiraApprovalInstance.fromStepParameters(ambiance, stepParameters);
+    instrumentationHelper.sendApprovalEvent(approvalInstance);
     jiraApprovalHelperService.getJiraConnector(AmbianceUtils.getAccountId(ambiance),
         AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
         approvalInstance.getConnectorRef());

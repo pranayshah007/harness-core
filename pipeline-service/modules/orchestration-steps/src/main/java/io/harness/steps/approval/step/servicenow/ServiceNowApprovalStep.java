@@ -40,6 +40,7 @@ import io.harness.steps.approval.step.servicenow.beans.ServiceNowApprovalRespons
 import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
 import io.harness.steps.executables.PipelineAsyncExecutable;
 import io.harness.tasks.ResponseData;
+import io.harness.telemetry.helpers.ApprovalInstrumentationHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -59,6 +60,7 @@ public class ServiceNowApprovalStep extends PipelineAsyncExecutable {
   @Inject private ServiceNowApprovalHelperService serviceNowApprovalHelperService;
   @Inject private IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
   @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
+  @Inject ApprovalInstrumentationHelper instrumentationHelper;
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
@@ -67,6 +69,7 @@ public class ServiceNowApprovalStep extends PipelineAsyncExecutable {
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     ServiceNowApprovalInstance approvalInstance =
         ServiceNowApprovalInstance.fromStepParameters(ambiance, stepParameters);
+    instrumentationHelper.sendApprovalEvent(approvalInstance);
     serviceNowApprovalHelperService.getServiceNowConnector(AmbianceUtils.getAccountId(ambiance),
         AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
         approvalInstance.getConnectorRef());

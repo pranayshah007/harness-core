@@ -43,6 +43,7 @@ import io.harness.steps.approval.step.custom.beans.CustomApprovalResponseData;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
 import io.harness.steps.executables.PipelineAsyncExecutable;
 import io.harness.tasks.ResponseData;
+import io.harness.telemetry.helpers.ApprovalInstrumentationHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -63,11 +64,13 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepExecutionEntityService stepExecutionEntityService;
   @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
+  @Inject ApprovalInstrumentationHelper instrumentationHelper;
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     CustomApprovalInstance approvalInstance = CustomApprovalInstance.fromStepParameters(ambiance, stepParameters);
+    instrumentationHelper.sendApprovalEvent(approvalInstance);
     openLogStream(ambiance, approvalInstance);
     approvalInstance = (CustomApprovalInstance) approvalInstanceService.save(approvalInstance);
     irregularApprovalInstanceHandler.wakeup();
