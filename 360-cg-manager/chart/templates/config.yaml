@@ -12,7 +12,7 @@ metadata:
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
-  GITOPS_SERVICE_CLIENT_BASEURL: http://gitops:7908/api/v1/
+  GITOPS_SERVICE_CLIENT_BASEURL: {{ .Values.config.GITOPS_SERVICE_CLIENT_BASEURL | default 'http://gitops:7908/api/v1/' }}
   ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
   API_URL: '{{  .Values.global.loadbalancerURL }}'
   DELEGATE_METADATA_URL: '{{  .Values.global.loadbalancerURL }}/storage/wingsdelegates/delegateprod.txt'
@@ -20,49 +20,49 @@ data:
   WATCHER_METADATA_URL: '{{  .Values.global.loadbalancerURL }}/storage/wingswatchers/watcherprod.txt'
   LOG_STREAMING_SERVICE_BASEURL: 'http://log-service.{{ .Release.Namespace }}.svc.cluster.local:8079/'
   LOG_STREAMING_SERVICE_EXTERNAL_URL: '{{ .Values.global.loadbalancerURL }}/log-service/'
-  ATMOSPHERE_BACKEND: REDIS
-  BACKGROUND_SCHEDULER_CLUSTERED: "true"
-  CACHE_BACKEND: REDIS
-  CAPSULE_JAR: rest-capsule.jar
+  ATMOSPHERE_BACKEND: {{ .Values.config.ATMOSPHERE_BACKEND | default 'REDIS' }}
+  BACKGROUND_SCHEDULER_CLUSTERED: {{ .Values.config.BACKGROUND_SCHEDULER_CLUSTERED | default 'true' }}
+  CACHE_BACKEND: {{ .Values.config.CACHE_BACKEND | default 'REDIS' }}
+  CAPSULE_JAR: {{ .Values.config.CAPSULE_JAR | default 'rest-capsule.jar' }}
   DELEGATE_DOCKER_IMAGE: {{ include "harness-manager.delegate_docker_image" . }}
   IMMUTABLE_DELEGATE_ENABLED: '{{ .Values.global.useImmutableDelegate }}'
   IMMUTABLE_DELEGATE_DOCKER_IMAGE: {{ include "harness-manager.immutable_delegate_docker_image" . }}
   UPGRADER_DOCKER_IMAGE: {{ include "harness-manager.upgrader_docker_image" . }}
-  DELEGATE_SERVICE_TARGET: harness-manager:9879
-  DELEGATE_SERVICE_AUTHORITY: harness-manager:9879
-  DISTRIBUTED_LOCK_IMPLEMENTATION: REDIS
-  DEPLOY_MODE: KUBERNETES_ONPREM
-  DISABLE_NEW_RELIC: "true"
-  ENABLE_G1GC: "true"
+  DELEGATE_SERVICE_TARGET: {{ .Values.config.DELEGATE_SERVICE_TARGET | default 'harness-manager:9879' }}
+  DELEGATE_SERVICE_AUTHORITY: {{ .Values.config.DELEGATE_SERVICE_AUTHORITY | default 'harness-manager:9879' }}
+  DISTRIBUTED_LOCK_IMPLEMENTATION: {{ .Values.config.DISTRIBUTED_LOCK_IMPLEMENTATION | default 'REDIS' }}
+  DEPLOY_MODE: {{ .Values.config.DEPLOY_MODE | default 'KUBERNETES_ONPREM' }}
+  DISABLE_NEW_RELIC: {{ .Values.config.DISABLE_NEW_RELIC | default 'true' }}
+  ENABLE_G1GC: {{ .Values.config.ENABLE_G1GC | default 'true' }}
   EXTERNAL_GRAPHQL_RATE_LIMIT: '{{ .Values.external_graphql_rate_limit }}'
   FEATURES: {{ include "harness-manager.ffString" . | quote }}
   HAZELCAST_NAMESPACE: '{{ .Release.Namespace }}'
-  HAZELCAST_SERVICE: harness-manager
-  HZ_CLUSTER_NAME: harness-manager
+  HAZELCAST_SERVICE: {{ .Values.config.HAZELCAST_SERVICE | default 'harness-manager' }}
+  HZ_CLUSTER_NAME: {{ .Values.config.HZ_CLUSTER_NAME | default 'harness-manager' }}
   LOGGING_LEVEL: '{{ .Values.appLogLevel }}'
   MEMORY: '{{ .Values.java.memory }}'
   REDIS_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  REDIS_MASTER_NAME: 'harness-redis'
+  REDIS_MASTER_NAME: {{ .Values.config.REDIS_MASTER_NAME | default 'harness-redis' }}
   REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   REDIS_NETTY_THREADS: '{{ .Values.redisConfig.nettyThreads }}'
-  SERVER_PORT: "9090"
-  SERVICE_ACC: /opt/harness/svc/service_acc.json
+  SERVER_PORT: {{ .Values.config.SERVER_PORT | default '9090' }}
+  SERVICE_ACC: {{ .Values.config.SERVICE_ACC | default '/opt/harness/svc/service_acc.json' }}
   VERSION: '{{ .Values.version }}'
   STACK_DRIVER_LOGGING_ENABLED: '{{ .Values.global.stackDriverLoggingEnabled }}'
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: {{ .Values.config.EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME | default 'harness-redis' }}
   EVENTS_FRAMEWORK_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM: "true"
-  HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: "true"
+  EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM: {{ .Values.config.EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM | default 'true' }}
+  HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: {{ .Values.config.HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER | default 'true' }}
   {{- if .Values.global.mongoSSL }}
-  MONGO_SSL_CONFIG: "true"
-  MONGO_SSL_CA_TRUST_STORE_PATH: /opt/harness/keystore.jks
-  MONGO_SSL_CA_TRUST_STORE_PASSWORD: password
+  MONGO_SSL_CONFIG: {{ .Values.config.MONGO_SSL_CONFIG | default 'true' }}
+  MONGO_SSL_CA_TRUST_STORE_PATH: {{ .Values.config.MONGO_SSL_CA_TRUST_STORE_PATH | default '/opt/harness/keystore.jks' }}
+  MONGO_SSL_CA_TRUST_STORE_PASSWORD: {{ .Values.config.MONGO_SSL_CA_TRUST_STORE_PASSWORD | default 'password' }}
   {{- end }}
-  ENABLE_ITERATORS: 'true'
-  ITERATOR_CONFIG_PATH: '/opt/harness/config'
+  ENABLE_ITERATORS: {{ .Values.config.ENABLE_ITERATORS | default 'true' }}
+  ITERATOR_CONFIG_PATH: {{ .Values.config.ITERATOR_CONFIG_PATH | default '/opt/harness/config' }}
   {{- if .Values.global.proxy.enabled }}
   PROXY_ENABLED: '{{ .Values.global.proxy.enabled }}'
   PROXY_HOST: {{ .Values.global.proxy.host }}
@@ -79,12 +79,12 @@ data:
   AWS_SERVICE_ENDPOINT_URLS_CLOUDWATCH_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.cloudwatchEndPointUrl }}
   {{- end }}
   {{- if .Values.global.ng.enabled }}
-  NG_MANAGER_BASE_URL: 'http://ng-manager:7090/'
-  ACCESS_CONTROL_ENABLED: "true"
-  ACCESS_CONTROL_BASE_URL: 'http://access-control:9006/api/'
-  ENABLE_AUDIT: 'true'
-  AUDIT_CLIENT_BASEURL: 'http://platform-service:9005/api/'
-  NOTIFICATION_BASE_URL: 'http://platform-service:9005/api/'
+  NG_MANAGER_BASE_URL: {{ .Values.config.NG_MANAGER_BASE_URL | default 'http://ng-manager:7090/' }}
+  ACCESS_CONTROL_ENABLED: {{ .Values.config.ACCESS_CONTROL_ENABLED | default 'true' }}
+  ACCESS_CONTROL_BASE_URL: {{ .Values.config.ACCESS_CONTROL_BASE_URL | default 'http://access-control:9006/api/' }}
+  ENABLE_AUDIT: {{ .Values.config.ENABLE_AUDIT | default 'true' }}
+  AUDIT_CLIENT_BASEURL: {{ .Values.config.AUDIT_CLIENT_BASEURL | default 'http://platform-service:9005/api/' }}
+  NOTIFICATION_BASE_URL: {{ .Values.config.NOTIFICATION_BASE_URL | default 'http://platform-service:9005/api/' }}
   {{- end }}
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   {{- if .Values.additionalConfigs }}
@@ -93,352 +93,352 @@ data:
   {{- include "harnesscommon.monitoring.config" . | nindent 2 }}
 
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: iterator-config
+  apiVersion: {{ .Values.config.apiVersion | default 'v1' }}
+  kind: {{ .Values.config.kind | default 'ConfigMap' }}
+  metadata: {{ .Values.config.metadata | default '' }}
+  name: {{ .Values.config.name | default 'iterator-config' }}
   {{- if .Values.global.commonLabels }}
-  labels:
+  labels: {{ .Values.config.labels | default '' }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
   {{- end }}
   {{- if .Values.global.commonAnnotations }}
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
-  iterator_config.json: |
+  iterator_config.json: {{ .Values.config.iterator_config.json | default '|' }}
     [
       {
-        "name": "AlertReconciliation",
-        "enabled": true,
-        "threadPoolSize": 3,
-        "threadPoolIntervalInSeconds": 60,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 600,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'AlertReconciliation",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '3,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '60,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '600,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "ArtifactCollection",
-        "enabled": true,
-        "threadPoolSize": 20,
-        "threadPoolIntervalInSeconds": 10,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 60,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'ArtifactCollection",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '20,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '10,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '60,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "ArtifactCleanup",
-        "enabled": true,
-        "threadPoolSize": 5,
-        "threadPoolIntervalInSeconds": 300,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 7200,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'ArtifactCleanup",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '5,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '300,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '7200,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "EventDelivery",
-        "enabled": true,
-        "threadPoolSize": 25,
-        "threadPoolIntervalInSeconds": 60,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 5,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'EventDelivery",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '25,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '60,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '5,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "InstanceSync",
-        "enabled": true,
-        "threadPoolSize": 10,
-        "threadPoolIntervalInSeconds": 30,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 600,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'InstanceSync",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '10,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '30,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '600,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "LicenseExpiryCheck",
-        "enabled": true,
-        "threadPoolSize": 2,
-        "threadPoolIntervalInSeconds": 30,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 3600,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'LicenseExpiryCheck",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '2,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '30,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '3600,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "ApprovalPolling",
-        "enabled": true,
-        "threadPoolSize": 5,
-        "threadPoolIntervalInSeconds": 10,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 60,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'ApprovalPolling",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '5,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '10,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '60,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "GCPBilling",
-        "enabled": true,
-        "threadPoolSize": 2,
-        "threadPoolIntervalInSeconds": 1800,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 3600,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'GCPBilling",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '2,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '1800,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '3600,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "SegmentGroupEventJob",
-        "enabled": true,
-        "threadPoolSize": 2,
-        "threadPoolIntervalInSeconds": 1800,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 86400,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'SegmentGroupEventJob",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '2,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '1800,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '86400,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "BarrierInstanceMonitor",
-        "enabled": true,
-        "threadPoolSize": 2,
-        "threadPoolIntervalInSeconds": 60,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 60,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'BarrierInstanceMonitor",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '2,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '60,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '60,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "EntityAuditRecordProcessor",
-        "enabled": true,
-        "threadPoolSize": 2,
-        "threadPoolIntervalInSeconds": 30,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 1800,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'EntityAuditRecordProcessor",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '2,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '30,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '1800,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "UsageMetricsHandler",
-        "enabled": true,
-        "threadPoolSize": 2,
-        "threadPoolIntervalInSeconds": 30,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 86400,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'UsageMetricsHandler",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '2,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '30,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '86400,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "ResourceConstraint-Backup",
-        "enabled": true,
-        "threadPoolSize": 10,
-        "threadPoolIntervalInSeconds": 60,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 30,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'ResourceConstraint-Backup",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '10,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '60,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '30,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "WorkflowExecutionMonitor",
-        "enabled": true,
-        "threadPoolSize": 5,
-        "threadPoolIntervalInSeconds": 10,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 60,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'WorkflowExecutionMonitor",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '5,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '10,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '60,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "SettingAttributeValidateConnectivity",
-        "enabled": true,
-        "threadPoolSize": 5,
-        "threadPoolIntervalInSeconds": 600,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 10800,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'SettingAttributeValidateConnectivity",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '5,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '600,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '10800,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "VaultSecretManagerRenewalHandler",
-        "enabled": true,
-        "threadPoolSize": 5,
-        "threadPoolIntervalInSeconds": 5,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 31,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'VaultSecretManagerRenewalHandler",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '5,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '5,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '31,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "SettingAttributesSecretsMigrationHandler",
-        "enabled": true,
-        "threadPoolSize": 2,
-        "threadPoolIntervalInSeconds": 30,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 1800,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'SettingAttributesSecretsMigrationHandler",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '2,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '30,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '1800,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "GitSyncEntityExpiryCheck",
-        "enabled": true,
-        "threadPoolSize": 2,
-        "threadPoolIntervalInSeconds": 600,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 43200,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'GitSyncEntityExpiryCheck",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '2,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '600,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '43200,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "ExportExecutionsRequestHandler",
-        "enabled": true,
-        "threadPoolSize": 3,
-        "threadPoolIntervalInSeconds": 60,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 1800,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'ExportExecutionsRequestHandler",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '3,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '60,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '1800,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "ExportExecutionsRequestCleanupHandler",
-        "enabled": true,
-        "threadPoolSize": 2,
-        "threadPoolIntervalInSeconds": 3600,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 2700,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'ExportExecutionsRequestCleanupHandler",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '2,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '3600,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '2700,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "DeploymentFreezeActivities",
-        "enabled": true,
-        "threadPoolSize": 3,
-        "threadPoolIntervalInSeconds": 0,
-        "nextIterationMode": "THROTTLE",
-        "targetIntervalInSeconds": 0,
-        "throttleIntervalInSeconds": 45
+  "name": {{ .Values.config."name" | default 'DeploymentFreezeActivities",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '3,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '0,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'THROTTLE",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '0,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '45' }}
       },
       {
-        "name": "DeploymentFreezeDeactivation",
-        "enabled": true,
-        "threadPoolSize": 3,
-        "threadPoolIntervalInSeconds": 0,
-        "nextIterationMode": "THROTTLE",
-        "targetIntervalInSeconds": 0,
-        "throttleIntervalInSeconds": 45
+  "name": {{ .Values.config."name" | default 'DeploymentFreezeDeactivation",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '3,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '0,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'THROTTLE",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '0,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '45' }}
       },
       {
-        "name": "CeLicenceExpiryProcessor",
-        "enabled": true,
-        "threadPoolSize": 2,
-        "threadPoolIntervalInSeconds": 86400,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 86400,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'CeLicenceExpiryProcessor",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '2,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '86400,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '86400,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "DeleteAccountIterator",
-        "enabled": false,
-        "threadPoolSize": 2,
-        "threadPoolIntervalInSeconds": 60,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 18000,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'DeleteAccountIterator",' }}
+  "enabled": {{ .Values.config."enabled" | default 'false,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '2,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '60,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '18000,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "DeletedEntityIterator",
-        "enabled": false,
-        "threadPoolSize": 2,
-        "threadPoolIntervalInSeconds": 60,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 43200,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'DeletedEntityIterator",' }}
+  "enabled": {{ .Values.config."enabled" | default 'false,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '2,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '60,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '43200,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "ResourceLookupTagLinkSync",
-        "enabled": true,
-        "threadPoolSize": 1,
-        "threadPoolIntervalInSeconds": 43200,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 43200,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'ResourceLookupTagLinkSync",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '1,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '43200,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '43200,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "AccessRequestHandler",
-        "enabled": true,
-        "threadPoolSize": 2,
-        "threadPoolIntervalInSeconds": 5,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 15,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'AccessRequestHandler",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '2,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '5,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '15,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "ScheduledTrigger",
-        "enabled": true,
-        "threadPoolSize": 8,
-        "threadPoolIntervalInSeconds": 0,
-        "nextIterationMode": "THROTTLE",
-        "targetIntervalInSeconds": 0,
-        "throttleIntervalInSeconds": 45
+  "name": {{ .Values.config."name" | default 'ScheduledTrigger",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '8,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '0,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'THROTTLE",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '0,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '45' }}
       },
       {
-        "name": "LdapGroupScheduled",
-        "enabled": true,
-        "threadPoolSize": 8,
-        "threadPoolIntervalInSeconds": 0,
-        "nextIterationMode": "THROTTLE",
-        "targetIntervalInSeconds": 0,
-        "throttleIntervalInSeconds": 45
+  "name": {{ .Values.config."name" | default 'LdapGroupScheduled",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '8,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '0,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'THROTTLE",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '0,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '45' }}
       },
       {
-        "name": "EncryptedDataLocalToGcpKmsMigrationHandler",
-        "enabled": true,
-        "threadPoolSize": 5,
-        "threadPoolIntervalInSeconds": 30,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 72000,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'EncryptedDataLocalToGcpKmsMigrationHandler",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '5,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '30,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '72000,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "TimeoutEngine",
-        "enabled": true,
-        "threadPoolSize": 5,
-        "threadPoolIntervalInSeconds": 10,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 10,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'TimeoutEngine",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '5,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '10,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '10,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "GitSyncPollingIterator",
-        "enabled": true,
-        "threadPoolSize": 2,
-        "threadPoolIntervalInSeconds": 60,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 300,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'GitSyncPollingIterator",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '2,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '60,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '300,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "PerpetualTaskAssignment",
-        "enabled": true,
-        "threadPoolSize": 5,
-        "threadPoolIntervalInSeconds": 60,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 60,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'PerpetualTaskAssignment",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '5,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '60,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '60,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "DelegateDisconnectDetector",
-        "enabled": true,
-        "threadPoolSize": 2,
-        "threadPoolIntervalInSeconds": 60,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 60,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'DelegateDisconnectDetector",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '2,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '60,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '60,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "DelegateTaskFail",
-        "enabled": true,
-        "threadPoolSize": 2,
-        "threadPoolIntervalInSeconds": 30,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 30,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'DelegateTaskFail",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '2,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '30,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '30,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       },
       {
-        "name": "DelegateTaskFailOnDMS",
-        "enabled": true,
-        "threadPoolSize": 10,
-        "threadPoolIntervalInSeconds": 30,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 30,
-        "throttleIntervalInSeconds": 0,
-        "iteratorMode": "PUMP"
+  "name": {{ .Values.config."name" | default 'DelegateTaskFailOnDMS",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '10,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '30,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '30,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0,' }}
+  "iteratorMode": {{ .Values.config."iteratorMode" | default 'PUMP' }}
       },
       {
-        "name": "DelegateTelemetryPublisherIteration",
-        "enabled": true,
-        "threadPoolSize": 1,
-        "threadPoolIntervalInSeconds": 600,
-        "nextIterationMode": "TARGET",
-        "targetIntervalInSeconds": 86400,
-        "throttleIntervalInSeconds": 0
+  "name": {{ .Values.config."name" | default 'DelegateTelemetryPublisherIteration",' }}
+  "enabled": {{ .Values.config."enabled" | default 'true,' }}
+  "threadPoolSize": {{ .Values.config."threadPoolSize" | default '1,' }}
+  "threadPoolIntervalInSeconds": {{ .Values.config."threadPoolIntervalInSeconds" | default '600,' }}
+  "nextIterationMode": {{ .Values.config."nextIterationMode" | default 'TARGET",' }}
+  "targetIntervalInSeconds": {{ .Values.config."targetIntervalInSeconds" | default '86400,' }}
+  "throttleIntervalInSeconds": {{ .Values.config."throttleIntervalInSeconds" | default '0' }}
       }
     ]
