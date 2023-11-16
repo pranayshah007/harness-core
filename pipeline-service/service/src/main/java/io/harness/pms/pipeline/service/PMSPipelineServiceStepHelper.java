@@ -28,7 +28,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,7 +94,6 @@ public class PMSPipelineServiceStepHelper {
     for (StepInfo stepType : ffEnabledStepInfoList) {
       addToTopLevel(stepCategory, stepType, featureRestrictionNameBooleanMap);
     }
-
     return stepCategory;
   }
 
