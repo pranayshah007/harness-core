@@ -166,27 +166,19 @@ public class ChronicleEventTailer extends AbstractScheduledService {
       if (!batchToSend.isEmpty()) {
         PublishRequest publishRequest = PublishRequest.newBuilder().addAllMessages(batchToSend.getMessages()).build();
         try {
-          publishMessagesOverRest(publishRequest);
+          if (blockingStub == null) {
+            log.info("::: blockingStub is not initialized :::: ");
+            return;
+          }
+          log.info("Trying to publish over GRPC");
+          blockingStub.withDeadlineAfter(30, TimeUnit.SECONDS).publish(publishRequest);
+          log.info("Published {} messages successfully over grpc", batchToSend.size());
           fileDeletionManager.setSentIndex(readTailer.index());
           scheduler.recordSuccess();
-          log.info("Published {} messages successfully over rest", batchToSend.size());
-        } catch (IOException e) {
-          log.error("Something wrong with publishing over rest", e);
-          try {
-            if (blockingStub == null) {
-              log.info("::: blockingStub is not initialized :::: ");
-              return;
-            }
-            log.info("Trying to publish over GRPC");
-            blockingStub.withDeadlineAfter(30, TimeUnit.SECONDS).publish(publishRequest);
-            log.info("Published {} messages successfully over grpc", batchToSend.size());
-            fileDeletionManager.setSentIndex(readTailer.index());
-            scheduler.recordSuccess();
-          } catch (Exception err) {
-            log.warn("Exception during message publish", err);
-            QueueUtils.moveToIndex(readTailer, fileDeletionManager.getSentIndex());
-            scheduler.recordFailure();
-          }
+        } catch (Exception err) {
+          log.warn("Exception during message publish", err);
+          QueueUtils.moveToIndex(readTailer, fileDeletionManager.getSentIndex());
+          scheduler.recordFailure();
         }
       } else {
         fileDeletionManager.setSentIndex(readTailer.index());
