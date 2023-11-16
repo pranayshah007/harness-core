@@ -87,6 +87,21 @@ public class GitXWebhookEvent implements PersistentEntity, UuidAccess {
                  .field(GitXWebhookEventKeys.projectIdentifier)
                  .field(GitXWebhookEventKeys.eventIdentifier)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountIdentifier_orgIdentifier_eventIdentifier_unique_idx")
+                 .unique(true)
+                 .field(GitXWebhookEventKeys.accountIdentifier)
+                 .field(GitXWebhookEventKeys.orgIdentifier)
+                 .field(GitXWebhookEventKeys.eventIdentifier)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountIdentifier_orgIdentifier_projectIdentifier_eventIdentifier_unique_idx")
+                 .unique(true)
+                 .field(GitXWebhookEventKeys.accountIdentifier)
+                 .field(GitXWebhookEventKeys.orgIdentifier)
+                 .field(GitXWebhookEventKeys.projectIdentifier)
+                 .field(GitXWebhookEventKeys.eventIdentifier)
+                 .build())
         .build();
   }
 }
