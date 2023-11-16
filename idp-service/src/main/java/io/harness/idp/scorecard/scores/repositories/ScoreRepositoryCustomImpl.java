@@ -8,6 +8,7 @@ package io.harness.idp.scorecard.scores.repositories;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.DOT_SEPARATOR;
+import static io.harness.idp.common.DateUtils.yesterdayInMilliseconds;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -72,7 +73,9 @@ public class ScoreRepositoryCustomImpl implements ScoreRepositoryCustom {
     Criteria criteria = Criteria.where(ScoreEntity.ScoreKeys.accountIdentifier)
                             .is(accountIdentifier)
                             .and(ScoreEntity.ScoreKeys.scorecardIdentifier)
-                            .in(scorecardIdentifiers);
+                            .in(scorecardIdentifiers)
+                            .and(ScoreEntity.ScoreKeys.lastComputedTimestamp)
+                            .gt(yesterdayInMilliseconds());
     ProjectionOperation projectionOperation =
         Aggregation.project()
             .andExpression(Constants.ID_KEY)
