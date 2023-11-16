@@ -63,7 +63,6 @@ import java.util.Map;
 import java.util.Objects;
 import org.apache.commons.codec.digest.DigestUtils;
 
-
 public class IACMStepsUtils {
   private static final String ENV_VARIABLE = "env";
   private static final String TF_VARIABLE = "tf";
@@ -98,7 +97,7 @@ public class IACMStepsUtils {
   }
 
   public String generateHashedGitRepoInfo(String repo, String connector, String branch, String commit, String path) {
-   return DigestUtils.md5Hex(String.format("%s_%s_%s_%s_%s", repo, connector, branch, commit, path));
+    return DigestUtils.md5Hex(String.format("%s_%s_%s_%s_%s", repo, connector, branch, commit, path));
   }
 
   public String generateVariableFileBasePath(String hashedGitRepoInfo) {
@@ -150,20 +149,24 @@ public class IACMStepsUtils {
     pluginEnvs.put("PLUGIN_HARNESS_INFRACOST_KEY", getHarnessInfracostKey());
     pluginEnvs.put("PLUGIN_PRICING_API_ENDPOINT", getInfracostAPIEndpoint());
 
-
     if (workspaceInfo.getTerraform_variable_files() != null) {
       for (VariablesRepo variablesRepo : workspaceInfo.getTerraform_variable_files()) {
-        String hashedGitInfo = this.generateHashedGitRepoInfo(variablesRepo.getRepository(), variablesRepo.getRepository_connector(),
-                variablesRepo.getRepository_branch(), variablesRepo.getRepository_commit(),variablesRepo.getRepository_path());
+        String hashedGitInfo = this.generateHashedGitRepoInfo(variablesRepo.getRepository(),
+            variablesRepo.getRepository_connector(), variablesRepo.getRepository_branch(),
+            variablesRepo.getRepository_commit(), variablesRepo.getRepository_path());
 
-        if (Objects.equals(variablesRepo.getRepository_connector(), workspaceInfo.getRepository_connector()) &&
-                Objects.equals(variablesRepo.getRepository(), workspaceInfo.getRepository()) &&
-                Objects.equals(variablesRepo.getRepository_branch(), Objects.toString(workspaceInfo.getRepository_branch(), "")) &&
-                Objects.equals(variablesRepo.getRepository_commit(), Objects.toString(workspaceInfo.getRepository_commit(), ""))) {
-          pluginEnvs.put(String.format("PLUGIN_VARIABLE_CONNECTOR_%s", hashedGitInfo), "/harness/" + variablesRepo.getRepository_path());
+        if (Objects.equals(variablesRepo.getRepository_connector(), workspaceInfo.getRepository_connector())
+            && Objects.equals(variablesRepo.getRepository(), workspaceInfo.getRepository())
+            && Objects.equals(
+                variablesRepo.getRepository_branch(), Objects.toString(workspaceInfo.getRepository_branch(), ""))
+            && Objects.equals(
+                variablesRepo.getRepository_commit(), Objects.toString(workspaceInfo.getRepository_commit(), ""))) {
+          pluginEnvs.put(String.format("PLUGIN_VARIABLE_CONNECTOR_%s", hashedGitInfo),
+              "/harness/" + variablesRepo.getRepository_path());
           continue;
         }
-        pluginEnvs.put(String.format("PLUGIN_VARIABLE_CONNECTOR_%s", hashedGitInfo), this.generateVariableFileBasePath(hashedGitInfo) + variablesRepo.getRepository_path());
+        pluginEnvs.put(String.format("PLUGIN_VARIABLE_CONNECTOR_%s", hashedGitInfo),
+            this.generateVariableFileBasePath(hashedGitInfo) + variablesRepo.getRepository_path());
       }
     }
     for (WorkspaceVariables variable : variables) {
