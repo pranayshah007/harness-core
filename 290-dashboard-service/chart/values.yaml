@@ -79,9 +79,7 @@ global:
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
-
 appLogLevel: "INFO"
-
 image:
   registry: docker.io
   repository: harness/ng-dashboard-aggregator-signed
@@ -90,20 +88,15 @@ image:
   tag: "80211"
   digest: ""
   imagePullSecrets: []
-
 ceGcpSetupConfigGcpProjectId: "placeHolderGcpProjectId"
-
 timescaleSecret:
   password:
     name: harness-secrets
     key: timescaledbPostgresPassword
-
 java:
   memory: "2048m"
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   # Specifies whether a service account should be created
   create: false
@@ -112,11 +105,8 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: "harness-default"
-
 podAnnotations: {}
-
 imagePullSecrets: {}
-
 podSecurityContext: {}
 # fsGroup: 2000
 
@@ -129,7 +119,6 @@ securityContext:
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
-
 probes:
   readinessProbe:
     httpGet:
@@ -147,14 +136,11 @@ probes:
     timeoutSeconds: 10
     periodSeconds: 10
     failureThreshold: 3
-
 service:
   annotations: {}
   type: ClusterIP
   protocol: TCP
   port: 7100
-
-
 resources:
   limits:
     cpu: 1
@@ -162,24 +148,23 @@ resources:
   requests:
     cpu: 1
     memory: 4096Mi
-
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPU: ""
   targetMemory: ""
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 additionalConfigs: {}
 java17flags: ""
-
 virtualService:
   annotations: {}
 ingress:
   annotations: {}
+config:
+  DEPLOY_MODE: KUBERNETES_ONPREM
+  CD_CLIENT_BASEURL: http://pipeline-service:12001/api/
+  MANAGER_CLIENT_BASEURL: http://harness-manager:9090/api/
+  NG_MANAGER_CLIENT_BASEURL: http://ng-manager:7090/
