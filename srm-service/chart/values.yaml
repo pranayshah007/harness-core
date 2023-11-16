@@ -38,7 +38,7 @@ global:
             keys:
               MONGO_USER: ""
               MONGO_PASSWORD: ""
-        secretManagement: 
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -57,7 +57,7 @@ global:
       hosts:
         - timescaledb-single-chart:5432
       # -- Enable TimescaleDB SSL
-      sslEnabled: false  
+      sslEnabled: false
       secretName: ""
       userKey: ""
       passwordKey: ""
@@ -70,7 +70,7 @@ global:
               TIMESCALEDB_USERNAME: ""
               TIMESCALEDB_PASSWORD: ""
               TIMESCALEDB_SSL_ROOT_CERT: ""
-        secretManagement: 
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -102,7 +102,7 @@ global:
             keys:
               REDIS_USERNAME: ""
               REDIS_PASSWORD: ""
-        secretManagement: 
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -128,7 +128,7 @@ global:
       secretName: ''
     # -- add annotations to ingress objects
     objects:
-      annotations: { }
+      annotations: {}
   istio:
     # -- create virtualServices objects
     enabled: false
@@ -142,11 +142,9 @@ global:
   ha: false
   imagePullSecrets: []
   stackDriverLoggingEnabled: false
-
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
-
 config:
   DEPLOY_MODE: KUBERNETES_ONPREM
   ENV: KUBERNETES_ONPREM
@@ -156,20 +154,19 @@ config:
   EVENTS_FRAMEWORK_USE_SENTINEL: true
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: harness-redis
   EVENTS_FRAMEWORK_REDIS_SENTINELS:
-  SHOULD_CONFIGURE_WITH_PMS: true
-  PMS_TARGET:
-  PMS_AUTHORITY:
-  GRPC_SERVER_PORT: 9979
+  SHOULD_CONFIGURE_WITH_PMS: "true"
+  PMS_TARGET: pipeline-service:12011
+  PMS_AUTHORITY: pipeline-service:12011
+  GRPC_SERVER_PORT: "9979"
   CACHE_CONFIG_REDIS_URL:
   CACHE_BACKEND: REDIS
   CACHE_CONFIG_REDIS_SENTINELS:
   CACHE_CONFIG_SENTINEL_MASTER_NAME: harness-redis
   CACHE_CONFIG_USE_SENTINEL: true
-  MOCK_ACCESS_CONTROL_SERVICE: false
+  MOCK_ACCESS_CONTROL_SERVICE: "false"
   ACCESS_CONTROL_ENABLED: true
-
-  
-
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
+  ENABLE_DASHBOARD_TIMESCALE: "true"
 image:
   registry: docker.io
   repository: harness/cv-nextgen-signed
@@ -178,7 +175,6 @@ image:
   tag: "1.6.1"
   digest: ""
   imagePullSecrets: []
-
 mongoSecrets:
   userName:
     name: harness-secrets
@@ -186,12 +182,10 @@ mongoSecrets:
   password:
     name: mongodb-replicaset-chart
     key: mongodb-root-password
-
 timescaleSecret:
   password:
     name: harness-secrets
     key: timescaledbPostgresPassword
-
 waitForInitContainer:
   image:
     registry: docker.io
@@ -199,8 +193,6 @@ waitForInitContainer:
     pullPolicy: IfNotPresent
     tag: "latest"
     digest: ""
-
-
 redis:
   protocol: ""
   hosts: []
@@ -211,7 +203,7 @@ redis:
         keys:
           REDIS_USERNAME: ""
           REDIS_PASSWORD": ""
-    secretManagement: 
+    secretManagement:
       externalSecretsOperator:
         - secretStore:
             name: ""
@@ -223,7 +215,6 @@ redis:
             REDIS_PASSWORD":
               name: ""
               property: ""
-
 timescaledb:
   # -- TimescaleDB host names
   hosts: []
@@ -237,7 +228,7 @@ timescaledb:
           TIMESCALEDB_USERNAME: ""
           TIMESCALEDB_PASSWORD: ""
           TIMESCALEDB_SSL_ROOT_CERT: ""
-    secretManagement: 
+    secretManagement:
       externalSecretsOperator:
         - secretStore:
             name: ""
@@ -252,7 +243,6 @@ timescaledb:
             TIMESCALEDB_SSL_ROOT_CERT:
               name: ""
               property: ""
-
 mongo:
   protocol: "mongodb"
   hosts: []
@@ -263,7 +253,7 @@ mongo:
         keys:
           MONGO_USER: ""
           MONGO_PASSWORD: ""
-    secretManagement: 
+    secretManagement:
       externalSecretsOperator:
         - secretStore:
             name: ""
@@ -277,12 +267,9 @@ mongo:
               property: ""
 java:
   memory: 4096
-
 appLogLevel: INFO
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   # Specifies whether a service account should be created
   create: false
@@ -291,11 +278,9 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: "harness-default"
-
 podAnnotations: {}
-
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
 
 securityContext:
   runAsUser: 65534
@@ -306,13 +291,11 @@ securityContext:
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
-
 service:
   type: ClusterIP
   port: 6060
   grpcport: 9979
   annotations: {}
-
 resources:
   limits:
     cpu: 1
@@ -320,7 +303,6 @@ resources:
   requests:
     cpu: 1
     memory: 6144Mi
-
 autoscaling:
   enabled: false
   minReplicas: 1
@@ -328,27 +310,20 @@ autoscaling:
   targetCPU: ""
   targetMemory: ""
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 additionalConfigs: {}
-
 java17flags: ""
-
 # extraVolumes:
 # - name: volume-test
 #   configMap:
 #     name: test-config
 #     readOnly: true
 extraVolumes: []
-
 # extraVolumeMounts:
 #   - name: test-volume-mount
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
-
 # lifecycleHooks:
 #   postStart:
 #     exec:
@@ -362,26 +337,23 @@ extraVolumeMounts: []
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
-
 virtualService:
   annotations: {}
 ingress:
   annotations: {}
-
-
 secrets:
   default:
     VERIFICATION_SERVICE_SECRET: "59MR5RlVARcdH7zb7pNx6GzqiglBmXR8"
   kubernetesSecrets:
-  - secretName: ""
-    keys:
-      VERIFICATION_SERVICE_SECRET: ""
-  secretManagement: 
+    - secretName: ""
+      keys:
+        VERIFICATION_SERVICE_SECRET: ""
+  secretManagement:
     externalSecretsOperator:
-    - secretStore:
-        name: ""
-        kind: ""
-      remoteKeys:
-        VERIFICATION_SERVICE_SECRET:
+      - secretStore:
           name: ""
-          property: ""   
+          kind: ""
+        remoteKeys:
+          VERIFICATION_SERVICE_SECRET:
+            name: ""
+            property: ""

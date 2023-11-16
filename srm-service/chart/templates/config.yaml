@@ -26,25 +26,25 @@ data:
   ET_SERVICE_BASE_URL: http://et-service.{{ .Release.Namespace }}.svc.cluster.local:9191/api/
   EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   EVENTS_FRAMEWORK_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: {{ .Values.config.EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME | default 'harness-redis' }}
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  SHOULD_CONFIGURE_WITH_PMS: "true"
+  SHOULD_CONFIGURE_WITH_PMS: {{ .Values.config.SHOULD_CONFIGURE_WITH_PMS | default 'true' }}
   LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: {{ .Values.config.LOCK_CONFIG_SENTINEL_MASTER_NAME | default 'harness-redis' }}
   LOCK_CONFIG_USE_SENTINEL:  '{{ .Values.global.database.redis.installed }}'
-  PMS_TARGET: pipeline-service:12011
-  PMS_AUTHORITY: pipeline-service:12011
-  GRPC_SERVER_PORT: "9979"
+  PMS_TARGET: {{ .Values.config.PMS_TARGET | default 'pipeline-service:12011' }}
+  PMS_AUTHORITY: {{ .Values.config.PMS_AUTHORITY | default 'pipeline-service:12011' }}
+  GRPC_SERVER_PORT: {{ .Values.config.GRPC_SERVER_PORT | default '9979' }}
   CACHE_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  CACHE_BACKEND: "REDIS"
+  CACHE_BACKEND: {{ .Values.config.CACHE_BACKEND | default 'REDIS' }}
   CACHE_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  CACHE_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
+  CACHE_CONFIG_SENTINEL_MASTER_NAME: {{ .Values.config.CACHE_CONFIG_SENTINEL_MASTER_NAME | default 'harness-redis' }}
   CACHE_CONFIG_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  MOCK_ACCESS_CONTROL_SERVICE: "false"
+  MOCK_ACCESS_CONTROL_SERVICE: {{ .Values.config.MOCK_ACCESS_CONTROL_SERVICE | default 'false' }}
   ACCESS_CONTROL_BASE_URL:  http://access-control.{{ .Release.Namespace }}.svc.cluster.local:9006/api/
   ACCESS_CONTROL_ENABLED: '{{ .Values.config.ACCESS_CONTROL_ENABLED }}'
-  ENABLE_DASHBOARD_TIMESCALE: "true"
+  ENABLE_DASHBOARD_TIMESCALE: {{ .Values.config.ENABLE_DASHBOARD_TIMESCALE | default 'true' }}
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
