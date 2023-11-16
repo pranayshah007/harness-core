@@ -61,6 +61,7 @@ import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.steps.approval.step.harness.outcomes.HarnessApprovalStepOutcome;
 import io.harness.steps.executables.PipelineAsyncExecutable;
 import io.harness.tasks.ResponseData;
+import io.harness.telemetry.helpers.ApprovalInstrumentationHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.utils.TimeStampUtils;
 
@@ -90,6 +91,7 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Inject private StepExecutionEntityService stepExecutionEntityService;
+  @Inject ApprovalInstrumentationHelper instrumentationHelper;
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
@@ -98,6 +100,7 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
 
     HarnessApprovalInstance approvalInstance = HarnessApprovalInstance.fromStepParameters(ambiance, stepParameters);
+    instrumentationHelper.sendApprovalEvent(approvalInstance);
     final List<String> userGroups = approvalInstance.getApprovers().getUserGroups();
 
     HarnessApprovalSpecParameters specParameters = (HarnessApprovalSpecParameters) stepParameters.getSpec();

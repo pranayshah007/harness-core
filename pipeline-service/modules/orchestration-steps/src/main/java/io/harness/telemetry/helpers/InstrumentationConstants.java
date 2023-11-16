@@ -16,4 +16,12 @@ public class InstrumentationConstants {
   public static final String ARTIFACT_ORG = "artifact_org";
   public static final String ARTIFACT_PROJECT = "artifact_project";
   public static final String IS_ARTIFACT_PRIMARY = "is_artifact_primary";
+  public static final String ACCOUNT = "account";
+  public static final String ORG = "org";
+  public static final String PROJECT = "project";
+  public static final String APPROVAL_TYPE = "approval_type";
+  public static final String RETRY_INTERNAL = "retry_interval";
+  public static final String REJECTION_CRITERIA_SPEC_TYPE = "rejection_criteria_spec_type";
+  public static final String APPROVAL_CRITERIA_SPEC_TYPE = "approval_criteria_spec_type";
+  public static final String AUTO_APPROVAL = "auto_approval";
 }
