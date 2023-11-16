@@ -11,6 +11,8 @@ import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
@@ -37,6 +39,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -87,14 +90,14 @@ public class CCMNotificationsResource {
       EmailChannel emailChannel =
           new EmailChannel(notificationChannelDTO.getAccountId(), notificationChannelDTO.getUserGroups(),
               notificationChannelDTO.getTemplateId(), notificationChannelDTO.getTemplateData(),
-              notificationChannelDTO.getTeam(), notificationChannelDTO.getEmailRecipients());
+              notificationChannelDTO.getTeam(), notificationChannelDTO.getEmailRecipients(), List.of(), EMPTY, EMPTY);
       notificationResult = notificationClient.sendNotificationAsync(emailChannel);
     }
     if (isNotEmpty(notificationChannelDTO.getWebhookUrls())) {
       SlackChannel slackChannel =
           new SlackChannel(notificationChannelDTO.getAccountId(), notificationChannelDTO.getUserGroups(),
               notificationChannelDTO.getTemplateId(), notificationChannelDTO.getTemplateData(),
-              notificationChannelDTO.getTeam(), notificationChannelDTO.getWebhookUrls(), null, null, 0);
+              notificationChannelDTO.getTeam(), notificationChannelDTO.getWebhookUrls(), null, null, 0, EMPTY);
       notificationResult = notificationClient.sendNotificationAsync(slackChannel);
     }
     return ResponseDTO.newResponse(notificationResult);
