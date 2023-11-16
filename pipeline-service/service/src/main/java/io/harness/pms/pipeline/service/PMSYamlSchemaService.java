@@ -21,7 +21,8 @@ import java.util.List;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PMSYamlSchemaService {
-  boolean validateYamlSchema(String accountId, String orgId, String projectId, JsonNode jsonNode);
+  boolean validateYamlSchema(
+      String accountId, String orgId, String projectId, JsonNode jsonNode, String harnessVersion);
 
   void validateUniqueFqn(String yaml);
 

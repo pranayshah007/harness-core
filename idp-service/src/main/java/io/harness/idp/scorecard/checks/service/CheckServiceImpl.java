@@ -13,6 +13,7 @@ import static io.harness.idp.common.CommonUtils.addGlobalAccountIdentifierAlong;
 import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
 import static io.harness.idp.common.DateUtils.getPreviousDay24HourTimeFrame;
+import static io.harness.idp.common.DateUtils.yesterdayInMilliseconds;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
@@ -62,6 +63,7 @@ import com.google.inject.name.Named;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -198,8 +200,7 @@ public class CheckServiceImpl implements CheckService {
                 entities.stream().map(entity -> entity.getMetadata().getUid()).collect(Collectors.toList()),
                 scorecardIdentifiers, null, identifier, custom)
             .stream()
-            .collect(Collectors.toMap(
-                EntityIdentifierAndCheckStatus::getEntityIdentifier, EntityIdentifierAndCheckStatus::getStatus));
+            .collect(HashMap::new, (m, v) -> m.put(v.getEntityIdentifier(), v.getStatus()), HashMap::putAll);
     return CheckStatsMapper.toDTO(entities, statusMap, checkEntity.getName());
   }
 
@@ -261,7 +262,7 @@ public class CheckServiceImpl implements CheckService {
         .isCustom(checkEntity.isCustom())
         .passCount(totalPassed)
         .total(total)
-        .timestamp(System.currentTimeMillis())
+        .timestamp(yesterdayInMilliseconds())
         .build();
   }
 

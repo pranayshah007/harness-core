@@ -25,8 +25,10 @@ public interface DelegateMetricsService {
 
   void recordDelegateMetricsPerAccount(String accountId, String metricName);
 
-  void recordDelegateHeartBeatMetricsPerAccount(String accountId, String accountName, String companyName,
-      DelegateRing delegateRing, String orgId, String projectId, String delegateName, String delegateId,
-      String delegateVersion, String delegateConnectionStatus, String delegateEventType, boolean isNg,
-      boolean isImmutable, long lastHB, String metricName);
+  void recordDelegateHeartBeatMetricsPerAccount(String accountId, String accountName, String companyName, String orgId,
+      String projectId, String delegateName, String delegateId, String delegateVersion, String delegateConnectionStatus,
+      String delegateEventType, boolean isNg, boolean isImmutable, long lastHB, String metricName);
+
+  void recordAccountRingInfoMetric(
+      String accountId, String accountName, DelegateRing delegateRing, long time, String metricName);
 }

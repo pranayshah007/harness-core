@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -168,9 +169,11 @@ public class TerraformApplyTaskHandlerTest extends CategoryTest {
         .when(terraformBaseHelper)
         .checkoutRemoteVarFileAndConvertToVarFilePaths(any(), any(), any(), any(), any(), any(), anyBoolean(), any());
 
+    TerraformTaskNGParameters tfTaskParams = getTerraformTaskParametersBuilder().encryptedTfPlan(null).build();
+
     assertThatThrownBy(()
                            -> terraformApplyTaskHandler.executeTaskInternal(
-                               getTerraformTaskParameters(), "delegateId", "taskId", logCallback, isAborted))
+                               tfTaskParams, "delegateId", "taskId", logCallback, isAborted))
         .isInstanceOf(InterruptedException.class);
 
     verify(terraformBaseHelper)
@@ -237,6 +240,78 @@ public class TerraformApplyTaskHandlerTest extends CategoryTest {
     Files.deleteIfExists(Paths.get("sourceDir"));
     verify(terraformBaseHelper).fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), eq(false));
     verify(terraformBaseHelper, times(1)).uploadTfStateFile(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testApplyAndSkipFetchVarFilesIfItInheritsFromPlan()
+      throws IOException, TimeoutException, InterruptedException {
+    when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
+    when(terraformBaseHelper.getGitBaseRequestForConfigFile(any(), any(), any())).thenReturn(any());
+    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
+             any(), any(), any(), any(), logCallback, any(), any(), anyBoolean()))
+        .thenReturn("sourceDir");
+    doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
+    when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
+    FileIo.createDirectoryIfDoesNotExist("sourceDir");
+    File outputFile = new File("sourceDir/terraform-output.tfvars");
+    FileUtils.touch(outputFile);
+
+    when(terraformBaseHelper.executeTerraformApplyStep(any()))
+        .thenReturn(
+            TerraformStepResponse.builder()
+                .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+                .build());
+
+    TerraformTaskNGResponse response = terraformApplyTaskHandler.executeTaskInternal(
+        getTerraformTaskParameters(), "delegateId", "taskId", logCallback, new AtomicBoolean());
+    assertThat(response).isNotNull();
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    verify(terraformBaseHelper)
+        .fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), any(), eq(false));
+    verify(terraformBaseHelper, times(1)).uploadTfStateFile(any(), any(), any(), any(), any());
+    verify(terraformBaseHelper, times(0))
+        .checkoutRemoteVarFileAndConvertToVarFilePaths(any(), any(), any(), any(), any(), any(), anyBoolean(), any());
+    Files.deleteIfExists(Paths.get(outputFile.getPath()));
+    Files.deleteIfExists(Paths.get("sourceDir"));
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testApplyAndFetchVarFilesWhenApplyDoNotInherit()
+      throws IOException, TimeoutException, InterruptedException {
+    when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
+    when(terraformBaseHelper.getGitBaseRequestForConfigFile(any(), any(), any())).thenReturn(any());
+    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
+             any(), any(), any(), any(), logCallback, any(), any(), anyBoolean()))
+        .thenReturn("sourceDir");
+    doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
+    when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
+    FileIo.createDirectoryIfDoesNotExist("sourceDir");
+    File outputFile = new File("sourceDir/terraform-output.tfvars");
+    FileUtils.touch(outputFile);
+
+    when(terraformBaseHelper.executeTerraformApplyStep(any()))
+        .thenReturn(
+            TerraformStepResponse.builder()
+                .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+                .build());
+
+    TerraformTaskNGParameters tfTaskParams = getTerraformTaskParametersBuilder().encryptedTfPlan(null).build();
+
+    TerraformTaskNGResponse response = terraformApplyTaskHandler.executeTaskInternal(
+        tfTaskParams, "delegateId", "taskId", logCallback, new AtomicBoolean());
+    assertThat(response).isNotNull();
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    verify(terraformBaseHelper)
+        .fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), any(), eq(false));
+    verify(terraformBaseHelper, times(1)).uploadTfStateFile(any(), any(), any(), any(), any());
+    verify(terraformBaseHelper, times(1))
+        .checkoutRemoteVarFileAndConvertToVarFilePaths(any(), any(), any(), any(), any(), any(), anyBoolean(), any());
+    Files.deleteIfExists(Paths.get(outputFile.getPath()));
+    Files.deleteIfExists(Paths.get("sourceDir"));
   }
 
   @Test

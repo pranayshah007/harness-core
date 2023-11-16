@@ -166,6 +166,8 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
                     .manifests(Arrays.asList(asgConfigurationContent))
                     .overrideProperties(asgConfigurationOverrideProperties)
                     .useAlreadyRunningInstances(useAlreadyRunningInstances)
+                    .alreadyRunningInstanceCapacity(
+                        asgTaskHelper.getRunningInstanceCapacity(asgSdkManager, useAlreadyRunningInstances, asgName))
                     .awsInternalConfig(awsInternalConfig)
                     .region(region)
                     .build())

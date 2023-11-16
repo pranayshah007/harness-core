@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.ngmigration.service.step.verification.VerificationBaseService.getMonitoredServiceEntity;
+
 import static software.wings.ngmigration.NGMigrationEntityType.MONITORED_SERVICE_TEMPLATE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -14,6 +16,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.encryption.Scope;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -43,7 +46,6 @@ import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
 import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.resources.beans.yaml.NGTemplateInfoConfig;
 
-import software.wings.beans.GraphNode;
 import software.wings.beans.Workflow;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
@@ -115,9 +117,17 @@ public class MonitoredServiceMigrationService extends NgMigrationService {
     String workflowId = CGMonitoredServiceEntity.getWorkflowIdFromMonitoredServiceId(entityId);
     String stepId = CGMonitoredServiceEntity.getStepIdFromMonitoredServiceId(entityId);
     Workflow workflow = workflowService.readWorkflow(appId, workflowId);
-    GraphNode graphNode =
-        MigratorUtility.getSteps(workflow).stream().filter(gn -> gn.getId().equals(stepId)).findFirst().get();
-    return discover(CGMonitoredServiceEntity.builder().workflow(workflow).stepNode(graphNode).build());
+
+    CGMonitoredServiceEntity monitoredServiceEntity = null;
+    if (workflow != null) {
+      monitoredServiceEntity = getMonitoredServiceEntity(stepId, workflow);
+    }
+
+    if (null != monitoredServiceEntity) {
+      return discover(monitoredServiceEntity);
+    }
+
+    throw new InvalidRequestException("Monitored service not found!");
   }
 
   @Override

@@ -167,6 +167,10 @@ public class SSCAManagerModule extends AbstractModule {
         .withEndpointConfiguration(
             new AwsClientBuilder.EndpointConfiguration(configuration.getS3Config().getEndpoint(), "auto"))
         .withCredentials(new AWSStaticCredentialsProvider(googleCreds))
+        /*Added this as suggested here: https://github.com/aws/aws-sdk-java-v2/issues/3524#issue-1426861417 to fix the
+         * DNS issue
+         */
+        .withPathStyleAccessEnabled(Boolean.TRUE)
         .build();
   }
 

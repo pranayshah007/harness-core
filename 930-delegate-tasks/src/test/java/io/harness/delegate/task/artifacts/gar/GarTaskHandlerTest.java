@@ -21,6 +21,7 @@ import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.gar.beans.GarInternalConfig;
 import io.harness.artifacts.gar.beans.GarPackageVersionResponse;
 import io.harness.artifacts.gar.beans.GarTags;
+import io.harness.artifacts.gar.beans.GarVersions;
 import io.harness.artifacts.gar.service.GARApiServiceImpl;
 import io.harness.artifacts.gar.service.GarApiService;
 import io.harness.category.element.UnitTests;
@@ -343,9 +344,17 @@ public class GarTaskHandlerTest extends CategoryTest {
             .version(
                 "projects/cd-play/locations/us/repositories/vivek-repo/packages/mongo/versions/sha256:2548c62c97b3f328d1938d9f6dcc0e85476fb88fcf1a01751940148c6824dc93")
             .build();
-    GarPackageVersionResponse tagsPage =
-        GarPackageVersionResponse.builder().Tags(Collections.singletonList(garTag)).build();
-    List<BuildDetailsInternal> processedPage = garApiServiceLocal.processPage(tagsPage, "tag*", garInternalConfig);
+    GarVersions garVersion =
+        GarVersions.builder()
+            .name(
+                "projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:33908b2777fab67fb40ba604c2796cf6b83e88129a10e345466cb584049c33b0")
+            .createTime("2022-07-26T10:01:04.563871Z")
+            .updateTime("2022-10-18T05:35:23.602863Z")
+            .relatedTags(Collections.singletonList(garTag))
+            .build();
+    GarPackageVersionResponse tagVersions =
+        GarPackageVersionResponse.builder().versions(Collections.singletonList(garVersion)).build();
+    List<BuildDetailsInternal> processedPage = garApiServiceLocal.processPage(tagVersions, "tag*", garInternalConfig);
     assertThat(processedPage.get(0).getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("tag1");
     assertThat(processedPage.get(0).getMetadata().get(ArtifactMetadataKeys.IMAGE))
         .isEqualTo("us-docker.pkg.dev/cd-play/vivek-repo/mongo:tag1");

@@ -16,7 +16,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.beans.BuildDetailsInternal;
-import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
+import io.harness.artifacts.comparator.BuildDetailsInternalTimeComparator;
 import io.harness.artifacts.gar.beans.GarInternalConfig;
 import io.harness.artifacts.gar.service.GarApiService;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
@@ -92,7 +92,7 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
         garInternalConfig, attributesRequest.getVersionRegex(), attributesRequest.getMaxBuilds());
     List<GarDelegateResponse> garArtifactDelegateResponseList =
         builds.stream()
-            .sorted(new BuildDetailsInternalComparatorDescending())
+            .sorted(new BuildDetailsInternalTimeComparator())
             .map(build -> toGarResponse(build, attributesRequest))
             .collect(Collectors.toList());
     return getSuccessTaskExecutionResponse(garArtifactDelegateResponseList);

@@ -89,11 +89,9 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
     String asgName = chainState.getAsgName();
     AutoScalingGroup autoScalingGroup = asgSdkManager.getASG(asgName);
 
-    AsgInstanceCapacity asgInstanceCapacity =
-        getRunningInstanceCapacity(autoScalingGroup, asgConfigurationManifestRequest);
+    AsgInstanceCapacity asgInstanceCapacity = asgConfigurationManifestRequest.getAlreadyRunningInstanceCapacity();
 
-    if (asgConfigurationManifestRequest.isUseAlreadyRunningInstances()
-        && asgInstanceCapacity.getDesiredCapacity() != null && asgInstanceCapacity.getDesiredCapacity() > 0) {
+    if (asgInstanceCapacity != null) {
       Map<String, Object> capacityOverrideProperties = new HashMap<>();
       capacityOverrideProperties.put(OverrideProperties.minSize, asgInstanceCapacity.getMinCapacity());
       capacityOverrideProperties.put(OverrideProperties.maxSize, asgInstanceCapacity.getMaxCapacity());
@@ -213,26 +211,6 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  AsgInstanceCapacity getRunningInstanceCapacity(
-      AutoScalingGroup autoScalingGroup, AsgConfigurationManifestRequest asgConfigurationManifestRequest) {
-    AsgInstanceCapacity asgInstanceCapacity = asgConfigurationManifestRequest.getAlreadyRunningInstanceCapacity();
-    // for Canary and Rolling alreadyRunningInstanceCapacity is NULL, for BG default is with null properties.
-    boolean isBGDeployment = asgInstanceCapacity != null;
-
-    if (!isBGDeployment) {
-      if (autoScalingGroup != null) {
-        return AsgInstanceCapacity.builder()
-            .minCapacity(autoScalingGroup.getMinSize())
-            .desiredCapacity(autoScalingGroup.getDesiredCapacity())
-            .maxCapacity(autoScalingGroup.getMaxSize())
-            .build();
-      }
-      return AsgInstanceCapacity.builder().build();
-    }
-
-    return asgInstanceCapacity;
   }
 
   void prepareCreateAutoScalingGroupRequest(CreateAutoScalingGroupRequest req, String asgName) {

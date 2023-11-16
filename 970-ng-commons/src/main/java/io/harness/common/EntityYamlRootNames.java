@@ -207,6 +207,7 @@ public class EntityYamlRootNames {
   public static final String FREEZE = "freeze";
   public static final String CHAOS_STEP = "Chaos";
   public static final String CHAOS_INFRASTRUCTURE = "ChaosInfrastructure";
+  public static final String CHAOS_HUB = "ChaosHub";
   public static final String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   public static final String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
   public static final String IACM_STAGE = "IACMStage";
@@ -276,4 +277,5 @@ public class EntityYamlRootNames {
   public static final String AWS_CDK_ROLLBACK = "AwsCdkRollback";
 
   public static final String OVERRIDES = "Overrides";
+  public static final String IDP_STAGE = "IdpStage";
 }

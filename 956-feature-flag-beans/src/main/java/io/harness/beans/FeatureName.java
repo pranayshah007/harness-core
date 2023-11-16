@@ -185,10 +185,11 @@ public enum FeatureName {
   CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG(
       "To encrypt and decrypt terraform and terragrunt plan on manager side instead of delegate side for NG",
       HarnessTeam.CDP),
+  CDS_TERRAFORM_SUPPORT_OPTIONAL_VAR_FILE_PATHS_NG(
+      "Feature flag to support remote optional var file paths", HarnessTeam.CDP),
   CDS_TERRAGRUNT_CLI_OPTIONS_NG("Enable terragrunt CLI Options", HarnessTeam.CDP),
   CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG(
       "Enable unique directory to support terragrunt run in parallel", HarnessTeam.CDP),
-  CDS_TRIGGER_ACTIVITY_PAGE("NG Triggers Activity page", HarnessTeam.CDC),
   CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG(
       "This is to diable checking for the HTTP status code and instead just check for a valid response",
       HarnessTeam.CDP),
@@ -329,6 +330,7 @@ public enum FeatureName {
   DELEGATE_TASK_CAPACITY_CHECK("Enable delegate task capacity check", HarnessTeam.DEL),
   DELEGATE_TASK_LOAD_DISTRIBUTION("Delegate task load distribution among delegates", HarnessTeam.DEL),
   DEL_FETCH_TASK_LOG_API("FF to enable fetch delegate task logs from stackdriver", HarnessTeam.DEL),
+  DEL_NOTIFICATION("FF to enable notifications for delegate events", HarnessTeam.DEL),
   DEL_SELECTION_LOGS_READ_FROM_GOOGLE_DATA_STORE(
       "Enables the fetching of delegate selection records from google data store instead of mongo", HarnessTeam.DEL),
   DEPLOYMENT_RECONCILIATION_LOGIC_QUERY_OPTIMIZATIONS(
@@ -424,7 +426,6 @@ public enum FeatureName {
       "Enables the error return when the database transaction was not completed due to reaching the transaction limit.",
       SPG),
   SPG_CG_FIXING_PIPELINE_RESUME("This fixes pipeline resume when a loop state is skipped", HarnessTeam.SPG),
-  GITOPS_FLUX_FLAMINGO("Support for flux via flamingo in GitOps", HarnessTeam.GITOPS),
   GITOPS_UPDATE_APP_STEP("Support for Update GitOps App step in GitOps pipeline flow", HarnessTeam.GITOPS),
   GITOPS_GITHUB_RESTRAINT_FOR_STEPS("Add restraining on git steps for GitOps", HarnessTeam.GITOPS),
   GIT_HOST_CONNECTIVITY,
@@ -541,7 +542,6 @@ public enum FeatureName {
   PIE_USE_SECRET_FUNCTOR_WITH_RBAC("Perform Rbac on secrets when used in pipeline execution", HarnessTeam.PIPELINE),
   PIPELINE_GOVERNANCE,
   PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION,
-  PIPELINE_ROLLBACK("Flag to enable/disable Pipeline Rollback", HarnessTeam.PIPELINE),
   PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", GTM),
   PL_CG_SHOW_MEMBER_ID_COUNT(
       "Shows memberId count instead of member names on CG UserGroupListing page", HarnessTeam.PL),
@@ -946,7 +946,10 @@ public enum FeatureName {
 
   CDS_PRESERVE_WINRM_WORKING_DIR_FOR_COMMAND_UNITS("Use the correct working directory for WinRm deployments", CDC),
   CDS_K8S_APPLY_MANIFEST_WITHOUT_SERVICE_NG(
-      "Allows users to apply manifests from sources that are not related to the service", HarnessTeam.CDP);
+      "Allows users to apply manifests from sources that are not related to the service", HarnessTeam.CDP),
+  CDS_APPROVAL_AND_STAGE_NOTIFICATIONS_WITH_CD_METADATA(
+      "Improves approval and stage notifications with cd metadata", HarnessTeam.CDC),
+  GTM_DEVELOPER_LICENSING("Enable new developer licensing changes", GTM);
 
   // keep-sorted end
 

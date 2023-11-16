@@ -10,6 +10,7 @@ package io.harness.artifact;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.Date;
 import lombok.experimental.UtilityClass;
 
 /*
@@ -131,5 +132,9 @@ public class ComparatorUtils {
 
   public int compareDescending(String s1, String s2) {
     return compare(s2, s1);
+  }
+
+  public int compareDescending(Date d1, Date d2) {
+    return d2.compareTo(d1);
   }
 }

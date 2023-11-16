@@ -40,7 +40,6 @@ import io.harness.ci.cache.CICacheManagementService;
 import io.harness.ci.cache.CICacheManagementServiceImpl;
 import io.harness.ci.enforcement.CIBuildEnforcer;
 import io.harness.ci.enforcement.CIBuildEnforcerImpl;
-import io.harness.ci.event.AccountEntityListener;
 import io.harness.ci.execution.buildstate.SecretDecryptorViaNg;
 import io.harness.ci.execution.execution.DelegateTaskEventListener;
 import io.harness.ci.execution.queue.CIInitTaskMessageProcessor;
@@ -324,10 +323,10 @@ public class CIManagerServiceModule extends AbstractModule {
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
     bind(ScheduledExecutorService.class)
-        .annotatedWith(Names.named("ciDataDeleteScheduler"))
+        .annotatedWith(Names.named(this.configurationOverride.getModulePrefix() + "DataDeleteScheduler"))
         .toInstance(new ScheduledThreadPoolExecutor(1,
             new ThreadFactoryBuilder()
-                .setNameFormat("ci-data-delete-Thread-%d")
+                .setNameFormat(this.configurationOverride.getModulePrefix() + "-data-delete-Thread-%d")
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
     bind(AwsClient.class).to(AwsClientImpl.class);
@@ -484,7 +483,7 @@ public class CIManagerServiceModule extends AbstractModule {
           .to(DelegateTaskEventListener.class);
       bind(MessageListener.class)
           .annotatedWith(Names.named(ACCOUNT_ENTITY + ENTITY_CRUD))
-          .to(AccountEntityListener.class);
+          .to(this.configurationOverride.getAccountEntityListenerClass());
 
       bind(Producer.class)
           .annotatedWith(Names.named(orchestrationEvent))

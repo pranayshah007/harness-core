@@ -103,6 +103,7 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
       }
     } catch (Exception e) {
       log.error("Exception while syncing user groups", e);
+      throw e;
     }
   }
 

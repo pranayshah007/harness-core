@@ -50,6 +50,7 @@ import com.google.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -144,9 +145,14 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
     handleAborted(isAborted);
 
     String tfVarDirectory = Paths.get(baseDir, TF_VAR_FILES_DIR).toString();
-    List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
-        taskParameters.getVarFileInfos(), scriptDirectory, logCallback, taskParameters.getAccountId(), tfVarDirectory,
-        commitIdToFetchedFilesMap, taskParameters.isTerraformCloudCli(), keyVersionMap);
+    List<String> varFilePaths = new ArrayList<>();
+    boolean isDestroyInheritFromPlan = taskParameters.getEncryptedTfPlan() != null;
+
+    if (!isDestroyInheritFromPlan) {
+      varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(taskParameters.getVarFileInfos(),
+          scriptDirectory, logCallback, taskParameters.getAccountId(), tfVarDirectory, commitIdToFetchedFilesMap,
+          taskParameters.isTerraformCloudCli(), keyVersionMap);
+    }
 
     if (taskParameters.isTerraformCloudCli() && !varFilePaths.isEmpty()) {
       logCallback.saveExecutionLog(format("Var files are moved in %s having a suffix: .auto.tfvars", scriptDirectory),

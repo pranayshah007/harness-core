@@ -15,13 +15,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
-import io.harness.aws.asg.manifest.request.AsgInstanceCapacity;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
@@ -150,33 +148,6 @@ public class AsgBlueGreenDeployCommandTaskHandlerTest extends CategoryTest {
     AsgBlueGreenDeployResult result = response.getAsgBlueGreenDeployResult();
 
     assertThat(result.getProdAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME);
-  }
-
-  @Test
-  @Owner(developers = VITALIE)
-  @Category(UnitTests.class)
-  public void getNrOfAlreadyRunningInstancesTest() {
-    AsgSdkManager asgSdkManager = mock(AsgSdkManager.class);
-    doReturn(
-        new AutoScalingGroup().withAutoScalingGroupName(ASG_NAME).withDesiredCapacity(2).withMinSize(1).withMaxSize(3))
-        .when(asgSdkManager)
-        .getASG(anyString());
-
-    AsgInstanceCapacity ret = taskHandler.getRunningInstanceCapacity(asgSdkManager, true, false, "test");
-    assertThat(ret.getMinCapacity()).isEqualTo(1);
-    assertThat(ret.getDesiredCapacity()).isEqualTo(2);
-    assertThat(ret.getMaxCapacity()).isEqualTo(3);
-
-    ret = taskHandler.getRunningInstanceCapacity(asgSdkManager, false, false, "test");
-    assertThat(ret.getDesiredCapacity()).isNull();
-
-    ret = taskHandler.getRunningInstanceCapacity(asgSdkManager, true, true, "test");
-    assertThat(ret.getDesiredCapacity()).isNull();
-
-    asgSdkManager = mock(AsgSdkManager.class);
-    doReturn(null).when(asgSdkManager).getASG(anyString());
-    ret = taskHandler.getRunningInstanceCapacity(asgSdkManager, true, false, "test");
-    assertThat(ret.getDesiredCapacity()).isNull();
   }
 
   private AsgLoadBalancerConfig getAsgLoadBalancerConfig() {

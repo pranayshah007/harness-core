@@ -13,15 +13,14 @@ import static io.harness.idp.scorecard.datapoints.constants.DataPoints.PULL_REQU
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
-import io.harness.idp.scorecard.datapoints.parser.bitbucket.BitbucketIsBranchProtectedParser;
-import io.harness.idp.scorecard.datapoints.parser.bitbucket.BitbucketMeanTimeToMergeParser;
-import io.harness.idp.scorecard.datapoints.parser.factory.DataPointParserFactory;
+import io.harness.idp.scorecard.datapoints.parser.scm.bitbucket.BitbucketIsBranchProtectedParser;
+import io.harness.idp.scorecard.datapoints.parser.scm.bitbucket.BitbucketMeanTimeToMergeParser;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
 
-@OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@OwnedBy(HarnessTeam.IDP)
 public class BitbucketDataPointParserFactory implements DataPointParserFactory {
   private BitbucketMeanTimeToMergeParser bitbucketMeanTimeToMergeParser;
   private BitbucketIsBranchProtectedParser bitbucketIsBranchProtectedParser;

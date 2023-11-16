@@ -534,7 +534,9 @@ public enum TaskType {
   AWS_ASG_SHIFT_TRAFFIC_TASK_NG(TaskGroup.ASG, "AWS Asg Shift Traffic"),
   AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V3(TaskGroup.ASG, "AWS Asg Blue Green Rollback V3 with Shift Traffic support"),
   AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V3(
-      TaskGroup.ASG, "AWS Asg Blue Green Prepare Rollback Data for Shift Traffic");
+      TaskGroup.ASG, "AWS Asg Blue Green Prepare Rollback Data for Shift Traffic"),
+  HELM_COMMAND_TASK_NG_JOBS_STEADY_STATE_CHECK(
+      TaskGroup.HELM, "Helm Command Task with Steady state check for jobs depending on account settings.");
 
   private final TaskGroup taskGroup;
   private final String displayName;
