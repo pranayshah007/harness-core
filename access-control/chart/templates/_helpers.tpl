@@ -86,59 +86,124 @@ Helper function for pullSecrets at chart level or global level.
 {{ include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.waitForInitContainer.image) "global" .Values.global ) }}
 {{- end -}}
 
-{{/* Generates comma separated list of Mongo Host names based off environment 
+{{/* 
+Generates comma separated list of Mongo Protocol
+*/}}
+{{- define "access-control.mongoProtocol" }}
+    {{- $ := .ctx }}
+    {{- $database := .database }}
+    {{- if empty $database }}
+        {{- fail "ERROR: missing input argument - database" }}
+    {{- end }}
+    {{- $instanceName := include "harnesscommon.dbv3.generateInstanceName" (dict "database" $database) }}
+    {{- if empty $instanceName }}
+        {{- fail "ERROR: invalid instanceName value" }}
+    {{- end }}
+    {{- $localDBCtx := get $.Values.database.mongo $instanceName }}
+    {{- $globalDBCtx := $.Values.global.database.mongo }}
+    {{- if and $ $localDBCtx $globalDBCtx }}
+        {{- $localEnabled := dig "enabled" false $localDBCtx }}
+        {{- $installed := dig "installed" true $globalDBCtx }}
+        {{- $protocol := "" }}
+        {{- if $localEnabled }}
+            {{- $protocol = $localDBCtx.protocol }}
+        {{- else if $installed }}
+            {{- $protocol = "mongodb://" }}
+        {{- else }}
+            {{- $protocol = $globalDBCtx.protocol }}
+        {{- end }}
+{{- printf "%s://" $protocol | quote }}
+    {{- else }}
+        {{- fail (printf "ERROR: invalid contexts") }}
+    {{- end }}
+{{- end }}
+
+{{/* 
+Generates comma separated list of Mongo Host names based off environment 
 */}}
 {{- define "access-control.mongohosts" }}
-{{- $type := "mongo" }}
-{{- $hosts := default (default .Values.global.database.mongo.hosts .Values.mongo.hosts) .Values.mongoHosts }}
-{{- $installed := (pluck $type .Values.global.database | first ).installed }}
-{{- if $installed }}
-  {{- $namespace := .Release.Namespace }}
-  {{- if .Values.global.ha -}}
-    {{- printf " 'mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017'" $namespace $namespace $namespace -}}
-  {{- else }}
-    {{- printf " 'mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc'" $namespace -}}
-  {{- end }}
-{{- else }}
-    {{- printf "%s" (join "," $hosts ) -}}
-{{- end }}
+    {{- $ := .ctx }}
+    {{- $database := .database }}
+    {{- if empty $database }}
+        {{- fail "ERROR: missing input argument - database" }}
+    {{- end }}
+    {{- $instanceName := include "harnesscommon.dbv3.generateInstanceName" (dict "database" $database) }}
+    {{- if empty $instanceName }}
+        {{- fail "ERROR: invalid instanceName value" }}
+    {{- end }}
+    {{- $localDBCtx := get $.Values.database.mongo $instanceName }}
+    {{- $globalDBCtx := $.Values.global.database.mongo }}
+    {{- if and $ $localDBCtx $globalDBCtx }}
+        {{- $localEnabled := dig "enabled" false $localDBCtx }}
+        {{- $installed := dig "installed" true $globalDBCtx }}
+        {{- $mongoHosts := "" }}
+        {{- if $localEnabled }}
+            {{- $hosts := $localDBCtx.hosts }}
+            {{- $mongoHosts = (join "," $hosts ) }}
+        {{- else if $installed }}
+            {{- $namespace := $.Release.Namespace }}
+            {{- if $.Values.global.ha }}
+                {{- $mongoHosts = printf "'mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017'" $namespace $namespace $namespace }}
+            {{- else }}
+                {{- $mongoHosts = printf "'mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc'" $namespace }}
+            {{- end }}
+        {{- else }}
+            {{- $hosts := $globalDBCtx.hosts }}
+            {{- $mongoHosts = (join "," $hosts ) }}
+        {{- end }}
+{{- printf "%s" $mongoHosts }}
+    {{- else }}
+        {{- fail (printf "ERROR: invalid contexts") }}
+    {{- end }}
 {{- end }}
 
 {{/* Generates Mongo Connection string
 {{ include "access-control.mongoConnectionUrl" (dict "database" "foo" "context" $) }}
 */}}
 {{- define "access-control.mongoConnectionUrl" }}
-  {{- $ := .context }}
-  {{- $type := "mongo" }}
-  {{- $dbType := $type | upper}}
-  {{- $installed := true }}
-  {{- if eq $.Values.global.database.mongo.installed false }}
-      {{- $installed = false }}
-  {{- end }}
-  {{- $hosts := list }}
-  {{- if gt (len $.Values.mongo.hosts) 0 }}
-      {{- $hosts = $.Values.mongo.hosts }}
-  {{- else }}
-      {{- $hosts = $.Values.global.database.mongo.hosts }}
-  {{- end }}
-  {{- $protocol := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "string" "keys" (list ".Values.global.database.mongo.protocol" ".Values.mongo.protocol"))) }}
-  {{- $extraArgs := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "string" "keys" (list ".Values.global.database.mongo.extraArgs" ".Values.mongo.extraArgs"))) }}
-  {{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName }}
-  {{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName }}
-  {{- if $installed }}
-      {{- $namespace := $.Release.Namespace }}
-      {{- if $.Values.global.ha }}
-      {{- printf "'mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017/%s?replicaSet=rs0&authSource=admin'" $namespace $namespace $namespace .database }}
-      {{- else }}
-          {{- printf "'mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $namespace .database }}
-      {{- end }}
-  {{- else }}
-      {{- $args := (printf "/%s?%s" .database $extraArgs )}}
-      {{- $finalhost := (index $hosts  0) }}
-      {{- range $host := (rest $hosts ) }}
-          {{- $finalhost = printf "%s,%s" $finalhost $host }}
-      {{- end }}
-      {{- $connectionString := (printf "%s%s" $finalhost $args) }}
-      {{- printf "%s" $connectionString }}
-  {{- end }}
+    {{- $ := .ctx }}
+    {{- $database := .database }}
+    {{- if empty $database }}
+        {{- fail "ERROR: missing input argument - database" }}
+    {{- end }}
+    {{- $instanceName := include "harnesscommon.dbv3.generateInstanceName" (dict "database" $database) }}
+    {{- if empty $instanceName }}
+        {{- fail "ERROR: invalid instanceName value" }}
+    {{- end }}
+    {{- $localDBCtx := get $.Values.database.mongo $instanceName }}
+    {{- $globalDBCtx := $.Values.global.database.mongo }}
+    {{- if and $ $localDBCtx $globalDBCtx }}
+        {{- $localEnabled := dig "enabled" false $localDBCtx }}
+        {{- $installed := dig "installed" true $globalDBCtx }}
+        {{- if $localEnabled }}
+            {{- $hosts := $localDBCtx.hosts }}
+            {{- $extraArgs := $localDBCtx.extraArgs }}
+            {{- $args := (printf "/%s?%s" $database $extraArgs ) }}
+            {{- $finalhost := (index $hosts  0) }}
+            {{- range $host := (rest $hosts ) }}
+                {{- $finalhost = printf "%s,%s" $finalhost $host }}
+            {{- end }}
+            {{- $connectionString := (printf "%s%s" $finalhost $args) }}
+            {{- printf "%s" $connectionString }}
+        {{- else if $installed }}
+            {{- $namespace := $.Release.Namespace }}
+            {{- if $.Values.global.ha }}
+            {{- printf "'mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017/%s?replicaSet=rs0&authSource=admin'" $namespace $namespace $namespace .database }}
+            {{- else }}
+                {{- printf "'mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $namespace .database }}
+            {{- end }}
+        {{- else }}
+            {{- $hosts := $globalDBCtx.hosts }}
+            {{- $extraArgs := $globalDBCtx.extraArgs }}
+            {{- $args := (printf "/%s?%s" $database $extraArgs ) }}
+            {{- $finalhost := (index $hosts  0) }}
+            {{- range $host := (rest $hosts ) }}
+                {{- $finalhost = printf "%s,%s" $finalhost $host }}
+            {{- end }}
+            {{- $connectionString := (printf "%s%s" $finalhost $args) }}
+            {{- printf "%s" $connectionString }}
+        {{- end }}
+    {{- else }}
+        {{- fail (printf "ERROR: invalid contexts") }}
+    {{- end }}
 {{- end }}

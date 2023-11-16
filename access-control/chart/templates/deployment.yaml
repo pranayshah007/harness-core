@@ -140,23 +140,15 @@ spec:
           env:
             {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_CONFIG_REDIS_USERNAME" "passwordVariableName" "EVENTS_CONFIG_REDIS_PASSWORD") | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 12 }}
-            {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 12 }}
-            {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $ "userVariableName" "MONGODB_USER" "passwordVariableName" "MONGODB_PASSWORD") | indent 12 }}
-            {{- if .Values.global.database.mongo.installed }}
             - name: MONGODB_CONNECTION_PROTOCOL
-              value: "mongodb://"
-              {{- else }}
-            - name: MONGODB_CONNECTION_PROTOCOL
-              value: '{{ printf "%s://" (default .Values.global.database.mongo.protocol .Values.mongo.protocol) }}'
-              {{- end }}
+              value: {{ include "access-control.mongoProtocol" (dict "ctx" $ "database" "accesscontrol") }}
             - name: MONGODB_HOSTS
-              value: {{ include "access-control.mongohosts" . }}
-            - name: MONGO_URI
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "accesscontrol" "ctx" $) }}
-            - name: OFFSET_STORAGE_FILE_FILENAME
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "accesscontrol" "ctx" $) }}
+              value: {{ include "access-control.mongohosts" (dict "ctx" $ "database" "accesscontrol") }}
             - name: MONGODB_CONNECTION_URL
-              value: {{ include "access-control.mongoConnectionUrl" (dict "database" "accesscontrol" "context" $) }}
+              value: {{ include "access-control.mongoConnectionUrl" (dict "database" "accesscontrol" "ctx" $) }}
+            {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "accesscontrol") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "accesscontrol" "connectionURIVariableName" "MONGO_URI") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "accesscontrol" "connectionURIVariableName" "OFFSET_STORAGE_FILE_FILENAME") | indent 12 }}
             {{- if .Values.extraEnvVars }}
             {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
