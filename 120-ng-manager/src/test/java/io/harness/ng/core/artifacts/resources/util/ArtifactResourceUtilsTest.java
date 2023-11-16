@@ -72,6 +72,7 @@ import io.harness.cdng.artifact.resources.gcr.dtos.GcrRequestDTO;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrResponseDTO;
 import io.harness.cdng.artifact.resources.gcr.service.GcrResourceService;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARRepositoryDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
@@ -354,6 +355,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
       IdentifierRefHelper.getIdentifierRef(CONNECTOR_REF, ACCOUNT_ID, ORG_ID, PROJECT_ID);
 
   private static final GARBuildDetailsDTO GAR_BUILD_DETAILS_DTO = GARBuildDetailsDTO.builder().build();
+  private static final GARRepositoryDTO GAR_REPOSITORY_DTO = GARRepositoryDTO.builder().build();
 
   @Test
   @Owner(developers = INDER)
@@ -1334,6 +1336,100 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                                        "a", "o", "p", "p", "", imagePathInput, "fqn", null, null, null)
                                    .getValue();
     assertThat(resolvedImagePath).isEqualTo(expectedImagePath);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetRepositoriesV2GAR_ValuesFromConfig() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    GoogleArtifactRegistryConfig googleArtifactRegistryConfig =
+        GoogleArtifactRegistryConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value(CONNECTOR_REF).build())
+            .region(ParameterField.<String>builder().value(REGION).build())
+            .build();
+
+    doReturn(googleArtifactRegistryConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(GAR_REPOSITORY_DTO)
+        .when(garResourceService)
+        .getRepositories(eq(IDENTIFIER_REF), eq(REGION), eq(PROJECT), eq(ORG_ID), eq(PROJECT_ID));
+
+    assertThat(spyartifactResourceUtils.getRepositoriesV2GAR(null, null, PROJECT, ACCOUNT_ID, ORG_ID, PIPELINE_ID, FQN,
+                   SERVICE_REF, pipelineYamlWithoutTemplates, PROJECT_ID, GIT_ENTITY_FIND_INFO_DTO))
+        .isSameAs(GAR_REPOSITORY_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetRepositoriesV2GAR_ValuesFromParams() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    GoogleArtifactRegistryConfig googleArtifactRegistryConfig = GoogleArtifactRegistryConfig.builder().build();
+
+    doReturn(googleArtifactRegistryConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(GAR_REPOSITORY_DTO)
+        .when(garResourceService)
+        .getRepositories(eq(IDENTIFIER_REF), eq(REGION), eq(PROJECT), eq(ORG_ID), eq(PROJECT_ID));
+
+    assertThat(spyartifactResourceUtils.getRepositoriesV2GAR(CONNECTOR_REF, REGION, PROJECT, ACCOUNT_ID, ORG_ID,
+                   PIPELINE_ID, FQN, SERVICE_REF, pipelineYamlWithoutTemplates, PROJECT_ID, GIT_ENTITY_FIND_INFO_DTO))
+        .isSameAs(GAR_REPOSITORY_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetRepositoriesV2GAR_ValuesFromResolvedExpression() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    GoogleArtifactRegistryConfig googleArtifactRegistryConfig = GoogleArtifactRegistryConfig.builder().build();
+
+    doReturn(googleArtifactRegistryConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(CONNECTOR_REF).build())
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(REGION).build())
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+
+    doReturn(GAR_REPOSITORY_DTO)
+        .when(garResourceService)
+        .getRepositories(eq(IDENTIFIER_REF), eq(REGION), eq(PROJECT), eq(ORG_ID), eq(PROJECT_ID));
+
+    assertThat(spyartifactResourceUtils.getRepositoriesV2GAR(CONNECTOR_REF_2, REGION_2, PROJECT, ACCOUNT_ID, ORG_ID,
+                   PIPELINE_ID, FQN, SERVICE_REF, pipelineYamlWithoutTemplates, PROJECT_ID, GIT_ENTITY_FIND_INFO_DTO))
+        .isSameAs(GAR_REPOSITORY_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test

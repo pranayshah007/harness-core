@@ -116,10 +116,10 @@ public class GARApiServiceImpl implements GarApiService {
   }
 
   @Override
-  public List<BuildDetailsInternal> getRepository(GarInternalConfig garInternalConfig, String region) {
+  public List<BuildDetailsInternal> getRepository(GarInternalConfig garinternalConfig, String region) {
     try {
-      GarRestClient garRestClient = getGarRestClient(garInternalConfig);
-      return getRepositories(garInternalConfig, garRestClient, region);
+      GarRestClient garRestClient = getGarRestClient(garinternalConfig);
+      return getRepositories(garinternalConfig, garRestClient, region);
     } catch (IOException e) {
       throw NestedExceptionUtils.hintWithExplanationException("Could not fetch versions for the package",
           "Please check if the package exists and if the permissions are scoped for the authenticated user",
@@ -204,7 +204,7 @@ public class GARApiServiceImpl implements GarApiService {
     String nextPage = "";
     do {
       Response<GarRepositoryResponse> response =
-          garRestClient.getRepository(garinternalConfig.getBearerToken(), project, region, 1000, nextPage).execute();
+          garRestClient.getrepository(garinternalConfig.getBearerToken(), project, region, 1000, nextPage).execute();
 
       if (response == null) {
         throw NestedExceptionUtils.hintWithExplanationException("Response Is Null",
