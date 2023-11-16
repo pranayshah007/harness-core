@@ -193,15 +193,22 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     int stepIndex = 0;
     List<String> processedRepos = new ArrayList<>();
     List<ExecutionWrapperConfig> innerSteps = new ArrayList<>();
-    log.warn(workspace.getRepository() + " " + workspace.getRepository_connector() + " " + workspace.getRepository_commit() + "" + workspace.getRepository_branch() + "" + workspace.getRepository_path());
+
+    String workspaceBranch = "";
+    String workspaceCommit = "";
+    if (workspace.getRepository_commit() != null) {
+      workspaceCommit = workspace.getRepository_commit();
+    }
+    if (workspace.getRepository_branch() != null) {
+      workspaceBranch =  workspace.getRepository_branch();
+    }
 
     for (VariablesRepo variablesRepo : workspace.getTerraform_variable_files()) {
       // if the connector, repo, branch and commit are the same as the workspace repo we can skip
-      log.warn(variablesRepo.getRepository() + " " + variablesRepo.getRepository_connector() + " " + variablesRepo.getRepository_commit() + "" + variablesRepo.getRepository_branch() + "" + variablesRepo.getRepository_path());
       if (Objects.equals(variablesRepo.getRepository_connector(), workspace.getRepository_connector()) &&
               Objects.equals(variablesRepo.getRepository(), workspace.getRepository()) &&
-              Objects.equals(variablesRepo.getRepository_branch(), workspace.getRepository_branch()) &&
-              Objects.equals(variablesRepo.getRepository_commit(), workspace.getRepository_commit())) {
+              Objects.equals(variablesRepo.getRepository_branch(), workspaceBranch) &&
+              Objects.equals(variablesRepo.getRepository_commit(), workspaceCommit)) {
         continue;
       }
 

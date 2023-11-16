@@ -102,7 +102,7 @@ public class IACMStepsUtils {
   }
 
   public String generateVariableFileBasePath(String hashedGitRepoInfo) {
-    return String.format("/harness/.iacm/%s", hashedGitRepoInfo);
+    return String.format("/harness/.iacm/%s/", hashedGitRepoInfo);
   }
 
   public String populatePipelineIds(Ambiance ambiance, String json) {
@@ -150,6 +150,15 @@ public class IACMStepsUtils {
     pluginEnvs.put("PLUGIN_HARNESS_INFRACOST_KEY", getHarnessInfracostKey());
     pluginEnvs.put("PLUGIN_PRICING_API_ENDPOINT", getInfracostAPIEndpoint());
 
+    String workspaceBranch = "";
+    String workspaceCommit = "";
+    if (workspaceInfo.getRepository_commit() != null) {
+      workspaceCommit = workspaceInfo.getRepository_commit();
+    }
+    if (workspaceInfo.getRepository_branch() != null) {
+      workspaceBranch =  workspaceInfo.getRepository_branch();
+    }
+
     if (workspaceInfo.getTerraform_variable_files() != null) {
       for (VariablesRepo variablesRepo : workspaceInfo.getTerraform_variable_files()) {
         String hashedGitInfo = this.generateHashedGitRepoInfo(variablesRepo.getRepository(), variablesRepo.getRepository_connector(),
@@ -157,8 +166,8 @@ public class IACMStepsUtils {
 
         if (Objects.equals(variablesRepo.getRepository_connector(), workspaceInfo.getRepository_connector()) &&
                 Objects.equals(variablesRepo.getRepository(), workspaceInfo.getRepository()) &&
-                    Objects.equals(variablesRepo.getRepository_branch(), workspaceInfo.getRepository_branch()) &&
-                        Objects.equals(variablesRepo.getRepository_commit(), workspaceInfo.getRepository_commit())) {
+                    Objects.equals(variablesRepo.getRepository_branch(), workspaceBranch) &&
+                        Objects.equals(variablesRepo.getRepository_commit(), workspaceCommit)) {
 
           pluginEnvs.put(String.format("PLUGIN_VARIABLE_CONNECTOR_%s", hashedGitInfo), "/harness/" + variablesRepo.getRepository_path());
           continue;
