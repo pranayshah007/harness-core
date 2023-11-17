@@ -11,6 +11,7 @@ metadata:
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   DEPLOY_MODE: '{{ .Values.config.DEPLOY_MODE }}'
   LOGGING_LEVEL: '{{ .Values.config.LOGGING_LEVEL }}'
   EVENTS_CONFIG_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'

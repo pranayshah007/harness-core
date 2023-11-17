@@ -565,3 +565,4 @@ secrets:
           IDENTITY_SERVICE_SECRET:
             name: ""
             property: ""
+configData: {}
