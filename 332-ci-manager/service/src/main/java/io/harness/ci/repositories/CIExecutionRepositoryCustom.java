@@ -10,10 +10,11 @@ package io.harness.repositories;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ci.execution.execution.CIExecutionMetadata;
 
 @HarnessRepo
 @OwnedBy(HarnessTeam.CI)
 public interface CIExecutionRepositoryCustom {
   void updateQueueId(String AccountID, String runtimeId, String queueId);
-  void updateExecutionStatus(String AccountID, String runtimeId, String Status);
+  CIExecutionMetadata updateExecutionStatus(String AccountID, String runtimeId, String Status);
 }
