@@ -62,7 +62,7 @@ import io.harness.cdng.artifact.resources.gcr.dtos.GcrRequestDTO;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrResponseDTO;
 import io.harness.cdng.artifact.resources.gcr.service.GcrResourceService;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
-import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARRepositoryDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARRepositoryDTOList;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
@@ -1034,7 +1034,7 @@ public class ArtifactResourceUtils {
         resolvedPackage, version, versionRegex, orgIdentifier, projectIdentifier);
   }
 
-  public GARRepositoryDTO getRepositoriesV2GAR(String gcpConnectorIdentifier, String region, String project,
+  public GARRepositoryDTOList getRepositoriesV2GAR(String gcpConnectorIdentifier, String region, String project,
       String accountId, String orgIdentifier, String pipelineIdentifier, String fqnPath, String serviceRef,
       String runtimeInputYaml, String projectIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo) {
     if (StringUtils.isNotBlank(serviceRef)) {

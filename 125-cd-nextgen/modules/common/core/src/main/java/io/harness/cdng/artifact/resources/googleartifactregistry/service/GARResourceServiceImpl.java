@@ -21,7 +21,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
-import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARRepositoryDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARRepositoryDTOList;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
@@ -104,7 +104,7 @@ public class GARResourceServiceImpl implements GARResourceService {
   }
 
   @Override
-  public GARRepositoryDTO getRepositories(IdentifierRef googleArtifactRegistryRef, String region, String project,
+  public GARRepositoryDTOList getRepositories(IdentifierRef googleArtifactRegistryRef, String region, String project,
       String orgIdentifier, String projectIdentifier) {
     ArtifactUtils.validateIfAllValuesAssigned(
         MutablePair.of(NGArtifactConstants.REGION, region), MutablePair.of(NGArtifactConstants.PROJECT, project));
@@ -287,7 +287,7 @@ public class GARResourceServiceImpl implements GARResourceService {
     return toGarResponse(garDelegateResponses);
   }
 
-  private GARRepositoryDTO getGarRepositoryDTOList(ArtifactTaskExecutionResponse artifactTaskExecutionResponse) {
+  private GARRepositoryDTOList getGarRepositoryDTOList(ArtifactTaskExecutionResponse artifactTaskExecutionResponse) {
     List<GarDelegateResponse> garDelegateResponses =
         artifactTaskExecutionResponse.getArtifactDelegateResponses()
             .stream()

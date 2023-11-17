@@ -121,8 +121,8 @@ public class GARApiServiceImpl implements GarApiService {
       GarRestClient garRestClient = getGarRestClient(garinternalConfig);
       return getRepositories(garinternalConfig, garRestClient, region);
     } catch (IOException e) {
-      throw NestedExceptionUtils.hintWithExplanationException("Could not fetch versions for the package",
-          "Please check if the package exists and if the permissions are scoped for the authenticated user",
+      throw NestedExceptionUtils.hintWithExplanationException("Could not fetch repository for the region",
+          "Please check if the repository exists and if the permissions are scoped for the authenticated user",
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
     }
   }
@@ -204,11 +204,11 @@ public class GARApiServiceImpl implements GarApiService {
     String nextPage = "";
     do {
       Response<GarRepositoryResponse> response =
-          garRestClient.getrepository(garinternalConfig.getBearerToken(), project, region, 1000, nextPage).execute();
+          garRestClient.getRepository(garinternalConfig.getBearerToken(), project, region, 1000, nextPage).execute();
 
       if (response == null) {
         throw NestedExceptionUtils.hintWithExplanationException("Response Is Null",
-            "Please Check Whether Artifact exists or not",
+            "Please Check Whether repository exists or not",
             new InvalidArtifactServerException(response.errorBody().toString(), USER));
       }
       if (!response.isSuccessful()) {
@@ -359,15 +359,15 @@ public class GARApiServiceImpl implements GarApiService {
           RepositoryPage.getRepositories()
               .stream()
               .map(repo -> {
-                String RepoName = repo.getName().substring(index + 1);
-                String RepoFormat = repo.getFormat();
+                String repoName = repo.getName().substring(index + 1);
+                String repoFormat = repo.getFormat();
                 String createTime = repo.getCreateTime();
-                String UpdateTime = repo.getUpdateTime();
+                String updateTime = repo.getUpdateTime();
                 Map<String, String> metadata = new HashMap();
-                metadata.put("Format", RepoFormat);
+                metadata.put("Format", repoFormat);
                 metadata.put("createTime", createTime);
-                metadata.put("updateTime", UpdateTime);
-                return BuildDetailsInternal.builder().uiDisplayName(RepoName).metadata(metadata).build();
+                metadata.put("updateTime", updateTime);
+                return BuildDetailsInternal.builder().uiDisplayName(repoName).metadata(metadata).build();
               })
               .filter(build
                   -> StringUtils.isBlank(versionRegex) || new RegexFunctor().match(versionRegex, build.getNumber()))

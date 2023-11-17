@@ -110,10 +110,7 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
     }
     builds = garApiService.getRepository(garInternalConfig, attributesRequest.getRegion());
     List<GarDelegateResponse> garArtifactDelegateResponseList =
-        builds.stream()
-            .sorted(new BuildDetailsInternalComparatorDescending())
-            .map(build -> toGarResponse(build, attributesRequest))
-            .collect(Collectors.toList());
+        builds.stream().map(build -> toGarResponse(build, attributesRequest)).collect(Collectors.toList());
     return getSuccessTaskExecutionResponse(garArtifactDelegateResponseList);
   }
   private GarInternalConfig getGarInternalConfig(GarDelegateRequest attributesRequest) throws IOException {

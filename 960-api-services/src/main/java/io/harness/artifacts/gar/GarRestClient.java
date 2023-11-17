@@ -40,7 +40,7 @@ public interface GarRestClient {
       @Path(value = "tag", encoded = true) String version);
 
   @GET("/v1/projects/{project}/locations/{region}/repositories")
-  Call<GarRepositoryResponse> getrepository(@Header("Authorization") String bearerAuthHeader,
+  Call<GarRepositoryResponse> getRepository(@Header("Authorization") String bearerAuthHeader,
       @Path(value = "project", encoded = true) String project, @Path(value = "region", encoded = true) String region,
       @Query(value = "pageSize", encoded = true) int pageSize,
       @Query(value = "pageToken", encoded = true) String pageToken);

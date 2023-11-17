@@ -24,7 +24,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
-import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARRepositoryDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARRepositoryDTOList;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceServiceImpl;
@@ -650,9 +650,9 @@ public class GarResourceServiceImplTest extends CategoryTest {
                     ArtifactTaskExecutionResponse.builder().artifactDelegateResponses(new ArrayList<>()).build())
                 .build());
 
-    GARRepositoryDTO garRepositoryDTO =
+    GARRepositoryDTOList garRepositoryDTOList =
         garResourceService.getRepositories(connectorRef, REGION, project, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
-    assertThat(garRepositoryDTO).isNotNull();
+    assertThat(garRepositoryDTOList).isNotNull();
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
     verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
