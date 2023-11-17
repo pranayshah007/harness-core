@@ -12,6 +12,7 @@ metadata:
   {{- end }}
 data:
   {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   DEPLOY_MODE: {{ .Values.global.deployMode | quote }}
   MEMORY: {{ .Values.java.memory | quote }}
   REPLICA: {{ .Values.replicaCount | quote }}

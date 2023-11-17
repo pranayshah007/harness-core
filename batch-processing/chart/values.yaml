@@ -400,19 +400,4 @@ secrets:
           HARNESS_CE_AZURE_TENANTID:
             name: ""
             property: ""
-configData:
-  MONGO_INDEX_MANAGER_MODE: AUTO
-  EVEMTS_MONGO_INDEX_MANAGER_MODE: AUTO
-  GOOGLE_CREDENTIALS_PATH: /opt/harness/svc/ce_batch_gcp_credentials.json
-  CE_GCP_CREDENTIALS_PATH: /opt/harness/svc/ce_batch_gcp_credentials.json
-  GOOGLE_APPLICATION_CREDENTIALS: /opt/harness/svc/ce_gcp_home_project_creds.json
-  SEGMENT_ENABLED: "false"
-  ANOMALY_DETECTION_USE_PROPHET: "true"
-  BANZAI_CONFIG_PORT: "8082"
-  METRICS_COLLECTION_DISABLED: "true"
-  CONNECTOR_HEALTH_UPDATE_CRON: 0 0 10 * * ?
-  GCP_USE_NEW_PIPELINE: "true"
-  AWS_USE_NEW_PIPELINE: "true"
-  GCP_SYNC_ENABLED: "true"
-  CONNECTOR_HEALTH_UPDATE_JOB_ENABLED: "true"
-  GCP_BQ_UPDATE_BATCH_ENABLED: "false"
+configData: {}
