@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.sdk;
+
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_FACILITATOR_EVENT_TOPIC;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_FACILITATOR_EVENT_TOPIC_WITH_SERVICE_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_INTERRUPT_TOPIC;
@@ -184,44 +185,33 @@ public class PmsSdkInitHelper {
   }
 
   private static List<SdkStep> mapToSdkStep(List<StepType> stepTypeList, List<StepInfo> stepInfos) {
-    Map<String, StepType> stepTypeStringToStepType = stepTypeList.stream().collect(
-        Collectors.toMap(StepType::getType, stepType -> stepType, (stepType1, stepType2) -> stepType1, LinkedHashMap::new));
+    Map<String, StepType> stepTypeStringToStepType = stepTypeList.stream().collect(Collectors.toMap(
+        StepType::getType, stepType -> stepType, (stepType1, stepType2) -> stepType1, LinkedHashMap::new));
     Map<String, StepInfo> stepTypeStringToStepInfo = new LinkedHashMap<>();
     for (StepInfo stepInfo : stepInfos) {
       stepTypeStringToStepInfo.put(stepInfo.getType(), stepInfo);
     }
 
+    // We are keeping the order of steps sent by respective services so, iterating over the stepTypeStringToStepInfo
+    // first.
     List<SdkStep> pmsSdkStepTypeWithInfos = new ArrayList<>();
-    for(String stepType: stepTypeStringToStepInfo.keySet()){
-      if(stepTypeStringToStepType.containsKey(stepType)){
+    for (String stepType : stepTypeStringToStepInfo.keySet()) {
+      if (stepTypeStringToStepType.containsKey(stepType)) {
         SdkStep.Builder sdkStepWrapper = SdkStep.newBuilder();
         sdkStepWrapper.setStepType(stepTypeStringToStepType.get(stepType));
         sdkStepWrapper.setIsPartOfStepPallete(true);
         sdkStepWrapper.setStepInfo(stepTypeStringToStepInfo.get(stepType));
         pmsSdkStepTypeWithInfos.add(sdkStepWrapper.build());
       }
-
-
     }
 
-    for(String  stepType: stepTypeStringToStepType.keySet()){
-      if(!stepTypeStringToStepInfo.containsKey(stepType)){
+    for (String stepType : stepTypeStringToStepType.keySet()) {
+      if (!stepTypeStringToStepInfo.containsKey(stepType)) {
         SdkStep.Builder sdkStepWrapper = SdkStep.newBuilder();
         sdkStepWrapper.setStepType(stepTypeStringToStepType.get(stepType));
         pmsSdkStepTypeWithInfos.add(sdkStepWrapper.build());
       }
     }
-
-//    List<SdkStep> pmsSdkStepTypeWithInfos = new ArrayList<>();
-//    for (String stepType : stepTypeStringToStepType.keySet()) {
-//      SdkStep.Builder sdkStepWrapper = SdkStep.newBuilder();
-//      sdkStepWrapper.setStepType(stepTypeStringToStepType.get(stepType));
-//      if (stepTypeStringToStepInfo.containsKey(stepType)) {
-//        sdkStepWrapper.setIsPartOfStepPallete(true);
-//        sdkStepWrapper.setStepInfo(stepTypeStringToStepInfo.get(stepType));
-//      }
-//      pmsSdkStepTypeWithInfos.add(sdkStepWrapper.build());
-//    }
     return pmsSdkStepTypeWithInfos;
   }
 
