@@ -40,7 +40,7 @@ global:
             keys:
               MONGO_USER: ""
               MONGO_PASSWORD: ""
-        secretManagement: 
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -59,7 +59,7 @@ global:
       hosts:
         - timescaledb-single-chart:5432
       # -- Enable TimescaleDB SSL
-      sslEnabled: false        
+      sslEnabled: false
       secretName: ""
       userKey: ""
       passwordKey: ""
@@ -73,7 +73,7 @@ global:
               TIMESCALEDB_USERNAME: ""
               TIMESCALEDB_PASSWORD: ""
               TIMESCALEDB_SSL_ROOT_CERT: ""
-        secretManagement: 
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -94,7 +94,6 @@ global:
       # --  provide default values if redis.installed is set to false
       hosts:
         - redis:6379
- 
       secretName: ""
       userKey: ""
       passwordKey: ""
@@ -105,7 +104,7 @@ global:
             keys:
               REDIS_USERNAME: ""
               REDIS_PASSWORD: ""
-        secretManagement: 
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -131,7 +130,7 @@ global:
       secretName: ''
     # -- add annotations to ingress objects
     objects:
-      annotations: { }
+      annotations: {}
   istio:
     # -- create virtualServices objects
     enabled: false
@@ -142,7 +141,7 @@ global:
     virtualService:
       gateways:
       hosts:
-  ssca: 
+  ssca:
     enabled: false
 enableAuth: true
 replicaCount: 1
@@ -301,7 +300,6 @@ podAnnotations: {}
 podSecurityContext: {}
 # fsGroup: 2000
 
-
 redis:
   protocol: ""
   hosts: []
@@ -312,7 +310,7 @@ redis:
         keys:
           REDIS_USERNAME: ""
           REDIS_PASSWORD: ""
-    secretManagement: 
+    secretManagement:
       externalSecretsOperator:
         - secretStore:
             name: ""
@@ -337,7 +335,7 @@ timescaledb:
           TIMESCALEDB_USERNAME: ""
           TIMESCALEDB_PASSWORD: ""
           TIMESCALEDB_SSL_ROOT_CERT: ""
-    secretManagement: 
+    secretManagement:
       externalSecretsOperator:
         - secretStore:
             name: ""
@@ -362,7 +360,7 @@ mongo:
         keys:
           MONGO_USER: ""
           MONGO_PASSWORD: ""
-    secretManagement: 
+    secretManagement:
       externalSecretsOperator:
         - secretStore:
             name: ""
@@ -373,8 +371,7 @@ mongo:
               property: ""
             MONGO_PASSWORD:
               name: ""
-              property: ""                            
-
+              property: ""
 securityContext:
   runAsUser: 65534
   runAsNonRoot: true
@@ -406,30 +403,69 @@ tolerations: []
 affinity: {}
 additionalConfigs: {}
 java17flags: ""
-
 virtualService:
   annotations: {}
 ingress:
   annotations: {}
-
 secrets:
   default:
     LOG_SERVICE_GLOBAL_TOKEN: "Yzc2ZTU2N2EtYjM0MS00MDRkLWE4ZGQtZDk3Mzg3MTRlYjgyCg=="
     TI_SERVICE_GLOBAL_TOKEN: "59MR5RlVARcdH7zb7pNx6GzqiglBmXR8"
   kubernetesSecrets:
-  - secretName: ""
-    keys:
-      LOG_STREAMING_SERVICE_TOKEN: ""
-      VERIFICATION_SERVICE_SECRET: ""
-  secretManagement: 
+    - secretName: ""
+      keys:
+        LOG_STREAMING_SERVICE_TOKEN: ""
+        VERIFICATION_SERVICE_SECRET: ""
+  secretManagement:
     externalSecretsOperator:
-    - secretStore:
-        name: ""
-        kind: ""
-      remoteKeys:
-        LOG_STREAMING_SERVICE_TOKEN:
+      - secretStore:
           name: ""
-          property: ""
-        VERIFICATION_SERVICE_SECRET:
-          name: ""
-          property: "" 
+          kind: ""
+        remoteKeys:
+          LOG_STREAMING_SERVICE_TOKEN:
+            name: ""
+            property: ""
+          VERIFICATION_SERVICE_SECRET:
+            name: ""
+            property: ""
+configData:
+  CACHE_BACKEND: REDIS
+  CACHE_CONFIG_SENTINEL_MASTER_NAME: harness-redis
+  DEPLOY_MODE: KUBERNETES_ONPREM
+  MANAGER_TARGET: harness-manager:9879
+  MANAGER_AUTHORITY: harness-manager:9879
+  SCM_SERVICE_URI: scm-service:8091
+  PMS_TARGET: pipeline-service:12011
+  PMS_AUTHORITY: pipeline-service:12011
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: harness-redis
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
+  SHOULD_CONFIGURE_WITH_PMS: "true"
+  ENABLE_DASHBOARD_TIMESCALE: "true"
+  USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
+  DEFAULT_INTERNAL_IMAGE_CONNECTOR: account.harnessImage
+  MANAGER_URL: http://harness-manager:9090/api/
+  LOG_SERVICE_INTERNAL_URL: http://log-service:8079/
+  TI_SERVICE_INTERNAL_URL: http://ti-service:8078/
+  SSCA_MANAGER_ENABLED: "true"
+  GITNESS_INTERNAL_URL: http://code-api:80/
+  ANCHORE_IMAGE: harness/anchore-job-runner:latest
+  AWS_ECR_IMAGE: harness/aws-ecr-job-runner:latest
+  AWS_SECURITY_HUB_IMAGE: harness/aws-security-hub-job-runner:latest
+  AQUA_TRIVY_IMAGE: harness/aqua-trivy-job-runner:latest
+  BANDIT_IMAGE: harness/bandit-job-runner:latest
+  BLACKDUCK_IMAGE: harness/blackduckhub-job-runner:latest
+  BRAKEMAN_IMAGE: harness/brakeman-job-runner:latest
+  STO_IMAGE: harness/sto-plugin:latest
+  FOSSA_IMAGE: harness/fossa-job-runner:latest
+  GRYPE_IMAGE: harness/grype-job-runner:latest
+  NMAP_IMAGE: harness/nmap-job-runner:latest
+  NIKTO_IMAGE: harness/nikto-job-runner:latest
+  OWASP_IMAGE: harness/owasp-dependency-check-job-runner:latest
+  SYNK_IMAGE: harness/snyk-job-runner:latest
+  SONARQUBE_IMAGE: harness/sonarqube-agent-job-runner:latest
+  PROWLER_IMAGE: harness/prowler-job-runner:latest
+  TWISTLOCK_IMAGE: harness/twistlock-job-runner:latest
+  CHECKMARX_IMAGE: harness/checkmarx-job-runner:latest
+  VERACODE_IMAGE: harness/veracode-agent-job-runner:latest
+  ZAP_IMAGE: harness/zap-job-runner:latest
+  WHITE_SOURCE_IMAGE: harness/whitesource-agent-job-runner:latest
