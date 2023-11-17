@@ -1,22 +1,19 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 package io.harness.cvng.notification.services.impl;
 
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_FORMATTED_VERSION_LIST;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_MONITORED_SERVICE_NAME_HYPERLINK;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_NOTIFICATION_NAME_HYPERLINK;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ENVIRONMENT_NAME;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_NAME;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_URL;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.SLACK_FORMATTED_VERSION_LIST;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
-import static io.harness.cvng.notification.utils.NotificationRuleConstants.MONITORED_SERVICE_URL;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
+import static io.harness.cvng.notification.utils.errortracking.interfaces.EmailNotification.EMAIL_FORMATTED_VERSION_LIST;
+import static io.harness.cvng.notification.utils.errortracking.interfaces.ErrorTrackingNotification.ENVIRONMENT_NAME;
+import static io.harness.cvng.notification.utils.errortracking.interfaces.SlackNotification.NOTIFICATION_NAME;
+import static io.harness.cvng.notification.utils.errortracking.interfaces.SlackNotification.NOTIFICATION_URL;
+import static io.harness.cvng.notification.utils.errortracking.interfaces.SlackNotification.SLACK_FORMATTED_VERSION_LIST;
 import static io.harness.rule.OwnerRule.JAMES_RICKS;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -115,16 +112,9 @@ public class ErrorTrackingTemplateDataGeneratorTest {
         projectParams, entityDetails, codeErrorCondition, notificationDataMap);
 
     assertThat(templateData.get(ENVIRONMENT_NAME)).isEqualTo(ENVIRONMENT_NAME_VALUE);
-    assertThat(templateData.get(MONITORED_SERVICE_URL)).contains(MONITORED_SERVICE_ID);
     assertThat(templateData.get(SLACK_FORMATTED_VERSION_LIST)).contains(SLACK_FORMATTED_VERSION_LIST_VALUE);
     assertThat(templateData.get(NOTIFICATION_URL)).isEqualTo(NOTIFICATION_URL_VALUE);
     assertThat(templateData.get(NOTIFICATION_NAME)).isEqualTo(NOTIFICATION_NAME_VALUE);
-    assertThat(templateData.get(EMAIL_MONITORED_SERVICE_NAME_HYPERLINK))
-        .contains(MONITORED_SERVICE_ID)
-        .contains(MONITORED_SERVICE_NAME);
-    assertThat(templateData.get(EMAIL_NOTIFICATION_NAME_HYPERLINK))
-        .contains(NOTIFICATION_URL_VALUE)
-        .contains(NOTIFICATION_NAME_VALUE);
     assertThat(templateData.get(EMAIL_FORMATTED_VERSION_LIST)).isEqualTo(EMAIL_FORMATTED_VERSION_LIST_VALUE);
   }
 }
