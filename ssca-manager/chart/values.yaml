@@ -226,12 +226,4 @@ redis:
             REDIS_PASSWORD:
               name: ""
               property: ""
-configData:
-  SERVER_PORT: "8188"
-  LOGGING_LEVEL: INFO
-  MONGO_INDEX_MANAGER_MODE: AUTO
-  DEPLOY_MODE: KUBERNETES_ONPREM
-  CACHE_BACKEND: REDIS
-  CACHE_CONFIG_SENTINEL_MASTER_NAME: harness-redis
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: harness-redis
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
+configData: {}

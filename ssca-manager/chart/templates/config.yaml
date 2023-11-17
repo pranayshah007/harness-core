@@ -13,6 +13,7 @@ metadata:
   {{- end }}
 data:
   {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   NG_MANAGER_BASE_URL: http://ng-manager.{{ .Release.Namespace }}.svc.cluster.local:7090
   MEMORY: {{ .Values.java.memory | quote }}
   STACK_DRIVER_LOGGING_ENABLED: '{{ .Values.global.stackDriverLoggingEnabled }}'
