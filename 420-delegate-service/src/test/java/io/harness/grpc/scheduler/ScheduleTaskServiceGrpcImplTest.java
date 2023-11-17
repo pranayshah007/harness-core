@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.IntegrationTests;
+import io.harness.delegate.CleanupInfraRequest;
 import io.harness.delegate.Execution;
 import io.harness.delegate.ExecutionInput;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
@@ -108,8 +109,20 @@ public class ScheduleTaskServiceGrpcImplTest {
   @Test
   @Owner(developers = MARKO)
   @Category(IntegrationTests.class)
-  public void testInitTaskFailNoSchedulingConfig() {
+  public void testInitTaskFailNoAccountId() {
     final var request = SetupExecutionInfrastructureRequest.newBuilder().build();
+
+    assertThatThrownBy(() -> underTest.initTask(request))
+        .isInstanceOf(StatusRuntimeException.class)
+        .hasMessageContaining("accountId is mandatory")
+        .matches(e -> ((StatusRuntimeException) e).getStatus().getCode() == Status.INVALID_ARGUMENT.getCode());
+  }
+
+  @Test
+  @Owner(developers = MARKO)
+  @Category(IntegrationTests.class)
+  public void testInitTaskFailNoSchedulingConfig() {
+    final var request = SetupExecutionInfrastructureRequest.newBuilder().setAccountId(ACCOUNT_ID).build();
 
     assertThatThrownBy(() -> underTest.initTask(request))
         .isInstanceOf(StatusRuntimeException.class)
@@ -122,6 +135,7 @@ public class ScheduleTaskServiceGrpcImplTest {
   @Category(IntegrationTests.class)
   public void testInitTaskUnsupportedRunner() {
     final var request = SetupExecutionInfrastructureRequest.newBuilder()
+                            .setAccountId(ACCOUNT_ID)
                             .setConfig(SchedulingConfig.newBuilder().setRunnerType("UnsupportedRunner").build())
                             .build();
 
@@ -215,6 +229,20 @@ public class ScheduleTaskServiceGrpcImplTest {
   @Test
   @Owner(developers = MARKO)
   @Category(IntegrationTests.class)
+  public void testExecuteTaskFailNoAccountId() {
+    final var request = ScheduleTaskRequest.newBuilder()
+                            .setConfig(SchedulingConfig.newBuilder().setRunnerType(RUNNER_TYPE_K8S).build())
+                            .build();
+
+    assertThatThrownBy(() -> underTest.executeTask(request))
+        .isInstanceOf(StatusRuntimeException.class)
+        .hasMessageContaining("accountId is mandatory")
+        .matches(e -> ((StatusRuntimeException) e).getStatus().getCode() == Status.INVALID_ARGUMENT.getCode());
+  }
+
+  @Test
+  @Owner(developers = MARKO)
+  @Category(IntegrationTests.class)
   public void testExecuteTaskFailNoExecution() {
     final var request = ScheduleTaskRequest.newBuilder()
                             .setAccountId(ACCOUNT_ID)
@@ -272,4 +300,75 @@ public class ScheduleTaskServiceGrpcImplTest {
         .isInstanceOf(StatusRuntimeException.class)
         .matches(e -> ((StatusRuntimeException) e).getStatus().getCode() == Status.INTERNAL.getCode());
   }
+
+  @Test
+  @Owner(developers = MARKO)
+  @Category(IntegrationTests.class)
+  public void testCleanupTask() {
+    final var taskId = "newTaskId";
+    final var infraRefId = "infraRefId";
+
+    when(migrationHelper.generateDelegateTaskUUID()).thenReturn(taskId);
+    when(infraService.getExecutionInfra(ACCOUNT_ID, infraRefId))
+        .thenReturn(ExecutionInfraLocation.builder().runnerType(RUNNER_TYPE_K8S).delegateGroupName("delegate").build());
+    final CleanupInfraRequest request =
+        CleanupInfraRequest.newBuilder().setAccountId(ACCOUNT_ID).setInfraRefId(infraRefId).build();
+
+    final var actual = underTest.cleanupInfra(request);
+
+    verify(infraService).getExecutionInfra(ACCOUNT_ID, infraRefId);
+    verify(taskClient).sendTask(any());
+    assertThat(actual.getTaskId().getId()).isEqualTo(taskId);
+  }
+
+  @Test
+  @Owner(developers = MARKO)
+  @Category(IntegrationTests.class)
+  public void testCleanupTaskFailNoAccountId() {
+    final var request = CleanupInfraRequest.newBuilder().build();
+
+    assertThatThrownBy(() -> underTest.cleanupInfra(request))
+        .isInstanceOf(StatusRuntimeException.class)
+        .hasMessageContaining("accountId is mandatory")
+        .matches(e -> ((StatusRuntimeException) e).getStatus().getCode() == Status.INVALID_ARGUMENT.getCode());
+  }
+
+  @Test
+  @Owner(developers = MARKO)
+  @Category(IntegrationTests.class)
+  public void testCleanupTaskFailNoEligibleDelegates() {
+    final var infraRefId = "infraRefId";
+    final CleanupInfraRequest request =
+            CleanupInfraRequest.newBuilder().setAccountId(ACCOUNT_ID).setInfraRefId(infraRefId).build();
+
+    when(migrationHelper.generateDelegateTaskUUID()).thenReturn("taskId");
+    when(infraService.getExecutionInfra(ACCOUNT_ID, infraRefId))
+            .thenReturn(ExecutionInfraLocation.builder().runnerType(RUNNER_TYPE_K8S).delegateGroupName("delegate").build());
+
+    doThrow(new NoEligibleDelegatesInAccountException("fail")).when(taskClient).sendTask(any());
+
+    assertThatThrownBy(() -> underTest.cleanupInfra(request))
+            .isInstanceOf(StatusRuntimeException.class)
+            .matches(e -> ((StatusRuntimeException) e).getStatus().getCode() == Status.FAILED_PRECONDITION.getCode());
+  }
+
+  @Test
+  @Owner(developers = MARKO)
+  @Category(IntegrationTests.class)
+  public void testCleanupTaskFailGenericException() {
+    final var infraRefId = "infraRefId";
+    final CleanupInfraRequest request =
+            CleanupInfraRequest.newBuilder().setAccountId(ACCOUNT_ID).setInfraRefId(infraRefId).build();
+
+    when(migrationHelper.generateDelegateTaskUUID()).thenReturn("taskId");
+    when(infraService.getExecutionInfra(ACCOUNT_ID, infraRefId))
+            .thenReturn(ExecutionInfraLocation.builder().runnerType(RUNNER_TYPE_K8S).delegateGroupName("delegate").build());
+
+    doThrow(new NullPointerException("fail")).when(taskClient).sendTask(any());
+
+    assertThatThrownBy(() -> underTest.cleanupInfra(request))
+            .isInstanceOf(StatusRuntimeException.class)
+            .matches(e -> ((StatusRuntimeException) e).getStatus().getCode() == Status.INTERNAL.getCode());
+  }
+
 }

@@ -72,6 +72,11 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
   @Override
   public void initTask(final SetupExecutionInfrastructureRequest request,
       final StreamObserver<SetupExecutionInfrastructureResponse> responseObserver) {
+    if (StringUtils.isEmpty(request.getAccountId())) {
+      log.error("accountId is empty");
+      responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("accountId is mandatory").asRuntimeException());
+    }
+
     if (!request.hasConfig()) {
       log.error("Scheduling config is empty");
       responseObserver.onError(
@@ -107,6 +112,11 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
   public void executeTask(
       final ScheduleTaskRequest request, final StreamObserver<ScheduleTaskResponse> responseObserver) {
     final Execution execution = request.getExecution();
+    if (StringUtils.isEmpty(request.getAccountId())) {
+      log.error("accountId is empty");
+      responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("accountId is mandatory").asRuntimeException());
+    }
+
     if (!request.hasExecution() && StringUtils.isEmpty(execution.getInfraRefId())) {
       log.error("Infra ref id is empty for account {}", request.getAccountId());
       responseObserver.onError(
@@ -130,6 +140,11 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
   @Override
   public void cleanupInfra(
       final CleanupInfraRequest request, final StreamObserver<CleanupInfraResponse> responseObserver) {
+    if (StringUtils.isEmpty(request.getAccountId())) {
+      log.error("accountId is empty");
+      responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("accountId is mandatory").asRuntimeException());
+    }
+
     if (StringUtils.isEmpty(request.getInfraRefId())) {
       log.error("Infra ref id is empty for account {}", request.getAccountId());
       responseObserver.onError(
