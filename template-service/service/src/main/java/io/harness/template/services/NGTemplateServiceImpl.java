@@ -1516,7 +1516,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
             templateIdentifier, versionLabel));
       }
 
-      if (templateEntityOptional.get().getStoreType().equals(StoreType.REMOTE)) {
+      if (StoreType.REMOTE.equals(templateEntityOptional.get().getStoreType())) {
         throw new InvalidRequestException(String.format(
             "Template with the given Identifier: %s and versionLabel %s cannot be moved to Git as it is already Remote Type",
             templateIdentifier, versionLabel));
