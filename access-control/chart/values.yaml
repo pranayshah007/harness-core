@@ -565,6 +565,4 @@ secrets:
           IDENTITY_SERVICE_SECRET:
             name: ""
             property: ""
-configData:
-  EVENTS_CONFIG_SENTINEL_MASTER_NAME: harness-redis
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
+configData: {}
