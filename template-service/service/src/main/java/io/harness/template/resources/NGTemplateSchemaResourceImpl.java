@@ -38,8 +38,13 @@ public class NGTemplateSchemaResourceImpl implements NGTemplateSchemaResource {
   public ResponseDTO<JsonNode> getTemplateSchema(@NotNull TemplateEntityType templateEntityType,
       String projectIdentifier, String orgIdentifier, Scope scope, @NotNull String accountIdentifier,
       String templateChildType) {
-    JsonNode schema =
-        ngTemplateSchemaService.getIndividualStaticSchema(templateEntityType.getNodeGroup(), templateChildType, "v0");
+    JsonNode schema = ngTemplateSchemaService.getIndividualStaticSchema(
+        templateEntityType.getRootYamlName(), templateChildType, "v0");
+    // TODO (Shalini): remove this once ui and schema changes are also done
+    if (schema == null) {
+      schema = ngTemplateSchemaService.getIndividualStaticSchema(
+          templateEntityType.getYamlTypeV1(), templateChildType, "v0");
+    }
     return ResponseDTO.newResponse(schema);
   }
 }

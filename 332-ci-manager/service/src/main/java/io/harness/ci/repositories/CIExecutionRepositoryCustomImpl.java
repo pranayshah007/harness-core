@@ -26,7 +26,7 @@ public class CIExecutionRepositoryCustomImpl implements CIExecutionRepositoryCus
   MongoTemplate mongoTemplate;
 
   @Override
-  public void updateExecutionStatus(String accountID, String runtimeId, String status) {
+  public CIExecutionMetadata updateExecutionStatus(String accountID, String runtimeId, String status) {
     Criteria criteria = Criteria.where(CIExecutionMetadataKeys.accountId)
                             .is(accountID)
                             .and(CIExecutionMetadataKeys.stageExecutionId)
@@ -34,8 +34,8 @@ public class CIExecutionRepositoryCustomImpl implements CIExecutionRepositoryCus
     Query query = new Query(criteria);
     Update update = new Update();
     update.set(CIExecutionMetadataKeys.status, status);
-    mongoTemplate.findAndModify(
-        query, update, new FindAndModifyOptions().returnNew(true).upsert(true), CIExecutionMetadata.class);
+    return mongoTemplate.findAndModify(
+        query, update, new FindAndModifyOptions().returnNew(true).upsert(false), CIExecutionMetadata.class);
   }
 
   @Override
@@ -48,6 +48,6 @@ public class CIExecutionRepositoryCustomImpl implements CIExecutionRepositoryCus
     Update update = new Update();
     update.set(CIExecutionMetadataKeys.queueId, queueId);
     mongoTemplate.findAndModify(
-        query, update, new FindAndModifyOptions().returnNew(true).upsert(true), CIExecutionMetadata.class);
+        query, update, new FindAndModifyOptions().returnNew(true).upsert(false), CIExecutionMetadata.class);
   }
 }

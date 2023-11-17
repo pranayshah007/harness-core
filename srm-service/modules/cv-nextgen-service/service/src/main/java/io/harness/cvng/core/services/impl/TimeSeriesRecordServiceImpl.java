@@ -544,6 +544,21 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
     return timeSeriesRecordsQuery.asList();
   }
 
+  private List<TimeSeriesRecord> getTimeSeriesRecords(
+      String verificationTaskId, List<Instant> startTimes, String metricName, Set<String> hosts) {
+    Query<TimeSeriesRecord> timeSeriesRecordsQuery =
+        hPersistence.createQuery(TimeSeriesRecord.class, excludeAuthority)
+            .filter(TimeSeriesRecordKeys.verificationTaskId, verificationTaskId)
+            .field(TimeSeriesRecordKeys.bucketStartTime)
+            .in(startTimes);
+    if (isNotEmpty(hosts)) {
+      timeSeriesRecordsQuery.field(TimeSeriesRecordKeys.host).hasAnyOf(hosts);
+    }
+    if (isNotEmpty(metricName)) {
+      timeSeriesRecordsQuery = timeSeriesRecordsQuery.filter(TimeSeriesRecordKeys.metricName, metricName);
+    }
+    return timeSeriesRecordsQuery.asList();
+  }
   @Override
   public List<TimeSeriesRecordDTO> getTimeSeriesRecordDTOs(
       String verificationTaskId, Instant startTime, Instant endTime) {
@@ -567,6 +582,11 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
       }
     });
     return timeSeriesRecordDTOS;
+  }
+
+  @Override
+  public List<TimeSeriesRecord> getTimeSeriesRecords(String verificationTaskId, List<Instant> startTimes) {
+    return getTimeSeriesRecords(verificationTaskId, startTimes, null, null);
   }
 
   @Override

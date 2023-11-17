@@ -31,6 +31,7 @@ import dev.morphia.annotations.Id;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -120,6 +121,27 @@ public final class MonitoredService implements PersistentEntity, UuidAware, Acco
       return Collections.emptyList();
     }
     return notificationRuleRefs;
+  }
+
+  public String getTemplateIdentifier() {
+    if (templateIdentifier == null && !Objects.isNull(templateMetadata)) {
+      return templateMetadata.getTemplateIdentifier();
+    }
+    return templateIdentifier;
+  }
+
+  public String getTemplateVersionLabel() {
+    if (templateVersionLabel == null && !Objects.isNull(templateMetadata)) {
+      return templateMetadata.getVersionLabel();
+    }
+    return templateVersionLabel;
+  }
+
+  public boolean isTemplateByReference() {
+    if (!Objects.isNull(templateMetadata)) {
+      return templateMetadata.isTemplateByReference();
+    }
+    return false;
   }
 
   @Override

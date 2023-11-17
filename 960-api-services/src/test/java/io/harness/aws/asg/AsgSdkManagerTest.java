@@ -665,4 +665,48 @@ public class AsgSdkManagerTest extends CategoryTest {
     doReturn(updateAutoScalingGroupResult).when(amazonAutoScalingClient).updateAutoScalingGroup(any());
     asgSdkManager.downSizeToZero("abc");
   }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void modifyDefaultListenerRule() {
+    String region = "us-west-2";
+    String listenerArn = "listenerArn";
+    AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
+
+    TargetGroupTuple stageTargetGroupTuple =
+        TargetGroupTuple.builder().targetGroupArn("stageTargetGroupArn").weight(10).build();
+
+    TargetGroupTuple prodTargetGroupTuple =
+        TargetGroupTuple.builder().targetGroupArn("prodTargetGroupArn").weight(90).build();
+
+    List<TargetGroupTuple> targetGroupTuples = Arrays.asList(stageTargetGroupTuple, prodTargetGroupTuple);
+
+    // Calling the modifySpecificListenerRule method
+    asgSdkManager.modifySpecificListenerRule(region, listenerArn, awsInternalConfig, targetGroupTuples);
+
+    verify(elbV2Client, times(1)).modifyRule(eq(awsInternalConfig), any(), eq(region));
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void modifySpecificListenerRule() {
+    String region = "us-west-2";
+    String listenerRuleArn = "listenerRuleArn";
+    AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
+
+    TargetGroupTuple stageTargetGroupTuple =
+        TargetGroupTuple.builder().targetGroupArn("stageTargetGroupArn").weight(10).build();
+
+    TargetGroupTuple prodTargetGroupTuple =
+        TargetGroupTuple.builder().targetGroupArn("prodTargetGroupArn").weight(90).build();
+
+    List<TargetGroupTuple> targetGroupTuples = Arrays.asList(stageTargetGroupTuple, prodTargetGroupTuple);
+
+    // Calling the modifySpecificListenerRule method
+    asgSdkManager.modifySpecificListenerRule(region, listenerRuleArn, awsInternalConfig, targetGroupTuples);
+
+    verify(elbV2Client, times(1)).modifyRule(eq(awsInternalConfig), any(), eq(region));
+  }
 }

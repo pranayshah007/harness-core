@@ -1,5 +1,5 @@
 global:
-  ggIngress:
+  globalIngress:
     enabled: false
     className: "harness-global"
     hosts:

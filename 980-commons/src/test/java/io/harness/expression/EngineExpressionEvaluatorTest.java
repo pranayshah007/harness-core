@@ -236,6 +236,9 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
   public void testValidNestedExpressions() {
+    Map<String, String> map = new HashMap<>();
+    map.put("var1", "<+e>");
+    map.put("var2", "<+g>");
     EngineExpressionEvaluator evaluator =
         prepareEngineExpressionEvaluator(new ImmutableMap.Builder<String, Object>()
                                              .put("a", 5)
@@ -248,8 +251,11 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
                                              .put("v1", "<+v2>")
                                              .put("v2", "<+v3>")
                                              .put("v3", "<+lastPublished.tag>.regex()")
+                                             .put("v4", map)
                                              .build());
 
+    assertThat(evaluator.resolve("<+v4>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("{\"var2\":\"def\",\"var1\":\"5\"}");
     assertThat(evaluator.resolve("<+v1>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
         .isEqualTo("<+lastPublished.tag>.regex()");
     assertThatThrownBy(() -> evaluator.resolve("<+v1>", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
@@ -353,6 +359,28 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testValidNestedExpressionsForResolveAndEvaluateWithConcatenate() {
+    Map<String, Object> map = new HashMap<>();
+    map.put("v1", "<+f><+g>");
+    // At any level -> both type of concat if present will not combine as its a difficult problem to
+    // solve, so use either one
+    map.put("v2", "'harness' + '<+f><+g>'");
+    map.put("v3", "<+f><+g>harness");
+    map.put("v4", "<+f> + <+g>");
+    map.put("v5", "archit-harness");
+    map.put("v6", "<+secrets.getValue('org.v2')>");
+    map.put("v7", "<+secret1>");
+    map.put("v8", "<+company>/archit-<+f>");
+    map.put("v9", "<+company>/archit-<+f1>");
+    map.put("v10", "<+company> <+<+w>.replace('-','')>");
+    map.put("v11", "<+company> <+(<+w>).replace('-','')>");
+    map.put("v12", "<+f>><+company>");
+    map.put("v13", "<+company><+j><+f>");
+    map.put("v14", "<+company>><+j>");
+    map.put("v15", "<+company> > <+j>");
+    map.put("v16", "<+secret1>");
+    map.put("v17", "<+c>");
+    map.put("v18", "<+w>.replaceAll(\"-\",\"_\")><+<+w>.replaceAll(\"-\",\"_\").concat(\".py\")>");
+
     EngineExpressionEvaluator evaluator = prepareEngineExpressionEvaluator(
         new ImmutableMap.Builder<String, Object>()
             .put("a", 5)
@@ -371,26 +399,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("nested2", "<+nested3>")
             .put("nested3", "<+lastPublished.tag>.regex('1')")
             .put("secret1", "<+secrets.getValue('org.v2')>")
-            .put("variables",
-                new ImmutableMap.Builder<String, Object>()
-                    .put("v1", "<+f><+g>")
-                    // At any level -> both type of concat if present will not combine as its a difficult problem to
-                    // solve, so use either one
-                    .put("v2", "'harness' + '<+f><+g>'")
-                    .put("v3", "<+f><+g>harness")
-                    .put("v4", "<+f> + <+g>")
-                    .put("v5", "archit-harness")
-                    .put("v6", "<+secrets.getValue('org.v2')>")
-                    .put("v7", "<+secret1>")
-                    .put("v8", "<+company>/archit-<+f>")
-                    .put("v9", "<+company>/archit-<+f1>")
-                    .put("v10", "<+company> <+<+w>.replace('-','')>")
-                    .put("v11", "<+company> <+(<+w>).replace('-','')>")
-                    .put("v12", "<+f>><+company>")
-                    .put("v13", "<+company><+j><+f>")
-                    .put("v14", "<+company>><+j>")
-                    .put("v15", "<+company> > <+j>")
-                    .build())
+            .put("variables", map)
             .put("var1", "'archit' + <+company>")
             .put("var2", "'archit<+f>' + <+company>")
             .put("var3", "concatenate1")
@@ -400,8 +409,18 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("var7", "[{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"xyz\"}}]")
             .put("var8", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"<+g>\"}}]")
             .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY,
-                Arrays.asList("PIE_EXPRESSION_CONCATENATION", "CDS_METHOD_INVOCATION_NEW_FLOW_EXPRESSION_ENGINE"))
+                Arrays.asList("PIE_EXPRESSION_CONCATENATION", "CDS_METHOD_INVOCATION_NEW_FLOW_EXPRESSION_ENGINE",
+                    "PIE_EXECUTION_JSON_SUPPORT"))
             .build());
+
+    assertThat(evaluator.resolve("<+variables>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo(
+            "{\"v6\":\"${ngSecretManager.obtain(\\\"org.v2\\\", 123)}\",\"v7\":\"${ngSecretManager.obtain(\\\"org.v2\\\", 123)}\",\"v8\":\"harness/archit-abc\",\"v9\":\"harness/archit-<+f1>\",\"v10\":\"harness architharness\",\"v12\":\"false\",\"v11\":\"harness architharness\",\"v14\":\"true\",\"v13\":\"harnessabc\",\"v16\":\"${ngSecretManager.obtain(\\\"org.v2\\\", 123)}\",\"v1\":\"abcdef\",\"v15\":\"true\",\"v2\":\"harnessabcdef\",\"v18\":\"false\",\"v3\":\"abcdefharness\",\"v17\":\"29\",\"v4\":\"abcdef\",\"v5\":\"archit-harness\"}");
+
+    assertThat(evaluator.evaluateExpression("<+if ((<+j> == null) || (empty(<+j>))) {\"emptyVar\";} else {<+f>;}>   "))
+        .isEqualTo("emptyVar");
+    assertThat(evaluator.evaluateExpression("<+if ((<+f> == null) || (empty(<+f>))) {\"emptyVar\";} else {<+f>;}>   "))
+        .isEqualTo("abc");
     // concat expressions
     assertThat(evaluator.resolve("archit-<+company>", true)).isEqualTo("archit-harness");
     assertThat(evaluator.evaluateExpression("archit-<+company>")).isEqualTo("archit-harness");
@@ -550,6 +569,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.resolve("<+variables.v13>", true)).isEqualTo("harnessabc");
     assertThat(evaluator.resolve("<+variables.v14>", true)).isEqualTo("true");
     assertThat(evaluator.resolve("<+variables.v15>", true)).isEqualTo("true");
+    assertThat(evaluator.resolve("<+variables.v18>", true)).isEqualTo("false");
 
     // an expression used in path of existing expression
     assertThat(evaluator.resolve("<+variables.<+h>>", true)).isEqualTo("harnessabcdef");

@@ -10,7 +10,7 @@ package io.harness.cdng.manifest.yaml;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.delegate.task.pcf.artifact.TasArtifactBundledArtifactType;
+import io.harness.delegate.task.artifactBundle.ArtifactBundledArtifactType;
 import io.harness.pms.yaml.ParameterField;
 
 import lombok.Builder;
@@ -22,7 +22,7 @@ import lombok.Value;
 public class ArtifactBundleStoreDTO {
   String manifestPath;
   String deployableUnitPath;
-  TasArtifactBundledArtifactType artifactBundleType;
+  ArtifactBundledArtifactType artifactBundleType;
 
   public ArtifactBundleStore toGitStoreConfig() {
     return ArtifactBundleStore.builder()

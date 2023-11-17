@@ -40,6 +40,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.file.NGFileServiceModule;
 import io.harness.filestore.NgFileStoreModule;
 import io.harness.filter.FiltersModule;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.persistance.NoOpGitSyncSdkServiceImpl;
 import io.harness.gitsync.persistance.testing.GitSyncablePersistenceTestModule;
@@ -241,6 +242,7 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
             .annotatedWith(Names.named(EventsFrameworkConstants.SETUP_USAGE))
             .toInstance(mock(NoOpProducer.class));
         bind(ClusterService.class).to(ClusterServiceImpl.class);
+        bind(GitAwareEntityHelper.class).toProvider(() -> mock(GitAwareEntityHelper.class));
         bind(InfrastructureEntityService.class).to(InfrastructureEntityServiceImpl.class);
         bind(NGSettingsClient.class).toInstance(mock(NGSettingsClient.class));
         bind(EnvironmentService.class).to(EnvironmentServiceImpl.class);

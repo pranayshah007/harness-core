@@ -29,7 +29,7 @@ java_binary(
         "//953-events-api:module",
         "//959-ng-persistence:module",
         "//960-persistence:module",
-        "//965-api-key-filter:module",
+        "//965-ng-filter:module",
         "//980-commons/src/main/java/io/harness/health:module",
         "//980-commons/src/main/java/io/harness/logging:module",
         "//980-commons/src/main/java/io/harness/maintenance:module",

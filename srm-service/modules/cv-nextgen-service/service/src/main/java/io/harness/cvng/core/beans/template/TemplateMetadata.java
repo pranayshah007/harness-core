@@ -8,7 +8,11 @@
 package io.harness.cvng.core.beans.template;
 
 import javax.validation.constraints.NotNull;
+import lombok.Builder;
+import lombok.Data;
 
+@Data
+@Builder
 public class TemplateMetadata {
   @NotNull String templateIdentifier;
   String versionLabel;
@@ -16,4 +20,15 @@ public class TemplateMetadata {
   String inputSetYaml;
   boolean isTemplateByReference;
   long lastReconciliationTime;
+
+  public static TemplateMetadata fromTemplateDTO(TemplateDTO templateDTO) {
+    return TemplateMetadata.builder()
+        .templateIdentifier(templateDTO.getTemplateRef())
+        .versionLabel(templateDTO.getVersionLabel())
+        .templateVersionNumber(templateDTO.getTemplateVersionNumber())
+        .inputSetYaml(templateDTO.getInputSetYaml())
+        .isTemplateByReference(templateDTO.isTemplateByReference())
+        .lastReconciliationTime(templateDTO.getLastReconciliationTime())
+        .build();
+  }
 }

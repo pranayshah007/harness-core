@@ -165,7 +165,6 @@ public class AwsCdkDeployStep extends AbstractContainerStepV2<StepElementParamet
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    awsCdkStepHelper.validateFeatureEnabled(ambiance);
     awsCdkStepHelper.validateRuntimePermissions(ambiance, (AwsCdkBaseStepInfo) stepParameters.getSpec());
   }
 

@@ -38,11 +38,12 @@ public class IdpServiceResponseInterceptor implements ContainerResponseFilter {
       int status = containerResponseContext.getStatus();
       String accountIdentifier = getAccountIdentifier(containerRequestContext);
       String path = containerRequestContext.getUriInfo().getPath();
+      String method = containerRequestContext.getMethod();
       long startTime = (long) containerRequestContext.getProperty(REQUEST_START_TIME);
       long duration = System.currentTimeMillis() - startTime;
-      log.info("ACCOUNT {} - API REQUEST {} - RESPONSE STATUS {}", accountIdentifier, path, status);
+      log.info("ACCOUNT {} - API REQUEST {} - METHOD {} - RESPONSE STATUS {}", accountIdentifier, path, method, status);
       if (StringUtils.isNotBlank(accountIdentifier)) {
-        idpServiceApiMetricsPublisher.recordMetric(accountIdentifier, path, status, duration);
+        idpServiceApiMetricsPublisher.recordMetric(accountIdentifier, path, status, method, duration);
       }
     } catch (Exception e) {
       log.warn("Error intercepting response", e);

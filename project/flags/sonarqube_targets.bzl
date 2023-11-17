@@ -14,7 +14,7 @@ def get_sonarqube_targets():
         "//970-ng-commons:sonarqube": "970-ng-commons",
         "//970-grpc:sonarqube": "970-grpc",
         "//970-api-services-beans:sonarqube": "970-api-services-beans",
-        "//965-api-key-filter:sonarqube": "965-api-key-filter",
+        "//965-ng-filter:sonarqube": "965-ng-filter",
         "//960-yaml-sdk:sonarqube": "960-yaml-sdk",
         "//960-watcher:sonarqube": "960-watcher",
         "//960-persistence:sonarqube": "960-persistence",

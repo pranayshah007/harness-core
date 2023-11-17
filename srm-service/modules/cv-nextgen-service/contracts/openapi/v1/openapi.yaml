@@ -125,6 +125,70 @@ paths:
         id: qz7cxcokqykq6
       tags:
         - ServiceLevelObjective
+  '/v1/orgs/{org}/projects/{project}/metric-graph/{slo-identifier}':
+    parameters:
+      - name: org
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Organization identifier
+      - name: project
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Project identifier
+      - name: slo-identifier
+        in: path
+        required: true
+        schema:
+          type: string
+        description: SLO identifier.
+    get:
+      summary: Get Metric Graph For SLO
+      responses:
+        '200':
+          $ref: '#/components/responses/MetricGraphResponse'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+        '502':
+          description: Bad Gateway
+      operationId: getMetricGraphForSLO
+      x-stoplight:
+        id: f1vltsr4z8970
+      description: Get Underlying Metrics Graph for SLO
+      parameters:
+        - schema:
+            type: integer
+            format: int64
+          in: query
+          name: start_time
+          description: 'Start Time for the metric graphs. '
+        - schema:
+            type: integer
+            format: int64
+          in: query
+          name: end_time
+          description: End Time for the metric graphs.
+          allowEmptyValue: false
+        - schema:
+            type: string
+          in: header
+          name: Harness-Account
+          description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+      security:
+        - x-api-key: [ ]
+      tags:
+        - ServiceLevelObjective
 components:
   schemas:
     SLOHealthListView:
@@ -430,6 +494,84 @@ components:
       required:
         - failed_state
       description: SLO Error Details.
+    MetricGraph:
+      title: MetricGraph
+      x-stoplight:
+        id: ray9v00ftisz7
+      type: object
+      description: Metric Graph
+      allOf:
+        - $ref: '#/components/schemas/TimeGraph'
+        - type: object
+          properties:
+            metric_name:
+              type: string
+              x-stoplight:
+                id: 86on0x2mlaced
+              description: |
+                Name of the Metric.
+            metric_identifier:
+              type: string
+              x-stoplight:
+                id: bgmmjiufygne1
+              description: |
+                Identifier of the Metric.
+    TimeGraph:
+      title: TimeGraph
+      x-stoplight:
+        id: m0tfzuhi08rpw
+      type: object
+      description: Representation of a time based graph.
+      discriminator:
+        propertyName: type
+        mapping:
+          MetricGraph : '#/components/schemas/MetricGraph'
+      properties:
+        start_time:
+          type: integer
+          x-stoplight:
+            id: mhxkdubm30k00
+          description: Start time of the Graph Values.
+          format: int64
+          nullable: true
+        end_time:
+          type: integer
+          x-stoplight:
+            id: qil4bsosqnqja
+          description: End time of the Graph Values.
+          format: int64
+          nullable: true
+        data_points:
+          type: array
+          x-stoplight:
+            id: clums1jkzsdib
+          description: List of the Data points between start and end times.
+          items:
+            $ref: '#/components/schemas/DataPoints'
+      required:
+        - start_time
+    DataPoints:
+      title: DataPoint
+      x-stoplight:
+        id: byl2sbm0jd27h
+      type: object
+      description: Representation of one data point.
+      properties:
+        value:
+          type: number
+          x-stoplight:
+            id: csji6101ywk4d
+          description: Value of the data point.
+          format: double
+        timestamp:
+          type: integer
+          x-stoplight:
+            id: 589e0kc5d6f3r
+          description: Timestamp of the data point.
+          format: int64
+          nullable: true
+      required:
+        - timestamp
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -488,6 +630,13 @@ components:
       schema:
         type: string
       description: Organization identifier
+    SLOParam:
+      name: slo-identifier
+      in: path
+      required: true
+      schema:
+        type: string
+      description: SLO identifier.
     ProjectParam:
       name: project
       in: path
@@ -529,4 +678,25 @@ components:
           schema:
             type: integer
           description: Maximum page size in Paginated response.
+    MetricGraphResponse:
+      description: Metric Graph response
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties:
+              $ref: '#/components/schemas/MetricGraph'
+              type: object
+        application/xml:
+          schema:
+            type: object
+            additionalProperties:
+              $ref: '#/components/schemas/MetricGraph'
+              type: object
+        multipart/form-data:
+          schema:
+            type: object
+            additionalProperties:
+              $ref: '#/components/schemas/MetricGraph'
+              type: object
   requestBodies: {}

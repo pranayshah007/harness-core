@@ -7,6 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
+import static io.harness.cvng.core.services.CVNextGenConstants.SLI_RECORD_BUCKET_SIZE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeAuthorityCount;
 
@@ -47,7 +48,6 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 public class SLIRecordBucketServiceImpl implements SLIRecordBucketService {
   private static final int RETRY_COUNT = 3;
-  public static final int SLI_RECORD_BUCKET_SIZE = 5;
 
   @Inject SRMPersistence hPersistence;
   @Override

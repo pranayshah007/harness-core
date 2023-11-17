@@ -81,7 +81,7 @@ directories:
   960-ng-license-usage-beans
   960-persistence
   960-yaml-sdk
-  965-api-key-filter
+  965-ng-filter
   967-walktree-visitor
   970-api-services-beans
   970-grpc

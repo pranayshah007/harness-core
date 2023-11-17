@@ -19,12 +19,9 @@ import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.offset;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.entities.Activity;
@@ -308,39 +305,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
-  public void testGetPaginated_withMetadata() {
-    Activity harnessCDActivity_1 = builderFactory.getDeploymentActivityBuilder()
-                                       .pipelineId("pipelineId")
-                                       .runSequence("23")
-                                       .eventTime(Instant.ofEpochSecond(100))
-                                       .build();
-    Activity harnessCDActivity_2 = builderFactory.getKubernetesClusterActivityBuilder()
-                                       .newYaml("newYaml")
-                                       .oldYaml("oldYaml")
-                                       .eventTime(Instant.ofEpochSecond(200))
-                                       .build();
-    hPersistence.save(Arrays.asList(harnessCDActivity_1, harnessCDActivity_2));
-    when(featureFlagService.isFeatureFlagEnabled(eq(builderFactory.getContext().getAccountId()),
-             eq(FeatureName.SRM_OPTIMISE_CHANGE_EVENTS_API_RESPONSE.name())))
-        .thenReturn(false);
-    PageResponse<ChangeEventDTO> firstPage = changeEventService.getChangeEvents(
-        builderFactory.getContext().getProjectParams(), null, null, null, null, Instant.ofEpochSecond(100),
-        Instant.ofEpochSecond(400), PageRequest.builder().pageIndex(0).pageSize(2).build());
-
-    assertThat(firstPage.getContent().size()).isEqualTo(2);
-    KubernetesChangeEventMetadata kubernetesChangeEventMetadata =
-        (KubernetesChangeEventMetadata) firstPage.getContent().get(0).getMetadata();
-    assertThat(kubernetesChangeEventMetadata.getNewYaml()).isEqualTo("newYaml");
-    assertThat(kubernetesChangeEventMetadata.getOldYaml()).isEqualTo("oldYaml");
-    HarnessCDEventMetadata harnessCDEventMetadata =
-        (HarnessCDEventMetadata) firstPage.getContent().get(1).getMetadata();
-    assertThat(harnessCDEventMetadata.getPipelineId()).isEqualTo("pipelineId");
-    assertThat(harnessCDEventMetadata.getRunSequence()).isEqualTo("23");
-  }
-
-  @Test
-  @Owner(developers = DHRUVX)
-  @Category(UnitTests.class)
   public void testGetPaginated_withoutMetadata() {
     Activity harnessCDActivity_1 = builderFactory.getDeploymentActivityBuilder()
                                        .pipelineId("pipelineId")
@@ -353,9 +317,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
                                        .eventTime(Instant.ofEpochSecond(200))
                                        .build();
     hPersistence.save(Arrays.asList(harnessCDActivity_1, harnessCDActivity_2));
-    when(featureFlagService.isFeatureFlagEnabled(eq(builderFactory.getContext().getAccountId()),
-             eq(FeatureName.SRM_OPTIMISE_CHANGE_EVENTS_API_RESPONSE.name())))
-        .thenReturn(true);
+
     PageResponse<ChangeEventDTO> firstPage = changeEventService.getChangeEvents(
         builderFactory.getContext().getProjectParams(), null, null, null, null, Instant.ofEpochSecond(100),
         Instant.ofEpochSecond(400), PageRequest.builder().pageIndex(0).pageSize(2).build());
