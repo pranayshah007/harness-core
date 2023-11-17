@@ -61,37 +61,26 @@ public class NodeExecutionMonitorServiceImpl implements NodeExecutionMonitorServ
     }
 
     for (ExecutionCountWithAccountResult accountResult : executionStatistics.getAccountStats()) {
-      Map<String, String> metricContextMap =
-          ImmutableMap.<String, String>builder()
-              .put(PmsEventMonitoringConstants.ACCOUNT_ID, accountResult.getAccountId())
-              .build();
-
-      try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {
-        metricService.recordMetric(NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_METRIC_NAME, accountResult.getCount());
-      }
+      populateMetric(PmsEventMonitoringConstants.ACCOUNT_ID, accountResult.getAccountId(),
+          NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_METRIC_NAME, accountResult.getCount());
     }
 
     for (ExecutionCountWithModuleResult moduleResult : executionStatistics.getModuleStats()) {
-      Map<String, String> metricContextMap = ImmutableMap.<String, String>builder()
-                                                 .put(PmsEventMonitoringConstants.MODULE, moduleResult.getModule())
-                                                 .build();
-
-      try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {
-        metricService.recordMetric(
-            NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_PER_MODULE_METRIC_NAME, moduleResult.getCount());
-      }
+      populateMetric(PmsEventMonitoringConstants.MODULE, moduleResult.getModule(),
+          NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_PER_MODULE_METRIC_NAME, moduleResult.getCount());
     }
 
     for (ExecutionCountWithStepTypeResult stepTypeResult : executionStatistics.getStepTypeStats()) {
-      Map<String, String> metricContextMap =
-          ImmutableMap.<String, String>builder()
-              .put(PmsEventMonitoringConstants.STEP_TYPE, stepTypeResult.getStepType())
-              .build();
+      populateMetric(PmsEventMonitoringConstants.STEP_TYPE, stepTypeResult.getStepType(),
+          NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_PER_STEP_TYPE_METRIC_NAME, stepTypeResult.getCount());
+    }
+  }
 
-      try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {
-        metricService.recordMetric(
-            NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_PER_STEP_TYPE_METRIC_NAME, stepTypeResult.getCount());
-      }
+  private void populateMetric(String key, String keyValue, String metricName, Integer metricValue) {
+    Map<String, String> metricContextMap = ImmutableMap.<String, String>builder().put(key, keyValue).build();
+
+    try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {
+      metricService.recordMetric(metricName, metricValue);
     }
   }
 }
