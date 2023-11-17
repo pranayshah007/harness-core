@@ -11,6 +11,7 @@ metadata:
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   CACHE_BACKEND: {{ .Values.config.CACHE_BACKEND | default 'REDIS' }}
   CACHE_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   CACHE_CONFIG_SENTINEL_MASTER_NAME: {{ .Values.config.CACHE_CONFIG_SENTINEL_MASTER_NAME | default 'harness-redis' }}

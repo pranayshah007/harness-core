@@ -420,3 +420,4 @@ config:
   ENABLE_AUDIT: "true"
   AUDIT_SERVICE_BASE_URL: http://platform-service:9005/api/
   SSCA_MANAGER_ENABLED: "true"
+configData: {}
