@@ -26,4 +26,8 @@ public class InstrumentationConstants {
   public static final String AUTO_APPROVAL = "auto_approval";
   public static final String APPROVAL_STEP = "approval_step";
   public static final String PIPELINE_ID = "pipeline_id";
+  public static final String ENV_TYPE = "env_type";
+  public static final String ENV_ID = "env_id";
+  public static final String ENV_NAME = "env_name";
+  public static final String STORE_TYPE = "store_type";
 }

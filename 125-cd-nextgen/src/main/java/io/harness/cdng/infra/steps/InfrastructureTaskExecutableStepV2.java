@@ -122,6 +122,7 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
 import io.harness.tasks.ResponseData;
+import io.harness.telemetry.helpers.EnvironmentInstrumentationHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.walktree.visitor.entityreference.beans.VisitedSecretReference;
@@ -170,6 +171,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private InfrastructureProvisionerHelper infrastructureProvisionerHelper;
   @Inject private SecretRuntimeUsageService secretRuntimeUsageService;
   @Inject private EnvironmentService environmentService;
+  @Inject private EnvironmentInstrumentationHelper instrumentationHelper;
 
   @Override
   public Class<InfrastructureTaskExecutableStepV2Params> getStepParametersClass() {
@@ -189,6 +191,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     final InfrastructureConfig infrastructureConfig =
         fetchInfraConfigFromOrThrow(ambiance, stepParameters, stepParameters.getGitBranch());
+    Optional<Environment> environment = environmentService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), infrastructureConfig.getInfrastructureDefinitionConfig().getEnvironmentRef(), false);
+    environment.ifPresent(value -> instrumentationHelper.sendEnvironmentEvent(value));
     final Infrastructure infraSpec = infrastructureConfig.getInfrastructureDefinitionConfig().getSpec();
     boolean skipInstances = ParameterFieldHelper.getBooleanParameterFieldValue(stepParameters.getSkipInstances());
 
