@@ -11,10 +11,7 @@ metadata:
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
-  LOGGING_LEVEL: "INFO"
-  MONGO_INDEX_MANAGER_MODE: "AUTO"
-  EVEMTS_MONGO_INDEX_MANAGER_MODE: "AUTO"
-  DEPLOY_MODE: "KUBERNETES_ONPREM"
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   STACK_DRIVER_LOGGING_ENABLED: '{{ .Values.global.stackDriverLoggingEnabled }}'
   MEMORY: '{{ .Values.java.memory }}'
   {{- if .Values.additionalConfigs }}
