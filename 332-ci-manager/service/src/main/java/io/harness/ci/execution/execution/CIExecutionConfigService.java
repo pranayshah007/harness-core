@@ -632,7 +632,7 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getSlsaVerificationConfig();
       case SLSA_VERIFICATION_GCR:
         return ciExecutionServiceConfig.getStepConfig().getSlsaVerificationGcrConfig();
-      case IACM_TERRAFORM_PLUGIN:
+      case IACM:
       case IACM_APPROVAL:
         return ciExecutionServiceConfig.getStepConfig().getIacmTerraform();
       default:
@@ -694,7 +694,7 @@ public class CIExecutionConfigService {
             stepInfoType, accountLevelImageConfig.getArtifactoryUpload(), globalImageConfig.getArtifactoryUpload());
       case GIT_CLONE:
         return getApplicableImage(stepInfoType, accountLevelImageConfig.getGitClone(), globalImageConfig.getGitClone());
-      case IACM_TERRAFORM_PLUGIN:
+      case IACM:
       case IACM_APPROVAL:
         return getApplicableImage(
             stepInfoType, accountLevelImageConfig.getIacmTerraform(), globalImageConfig.getIacmTerraform());
@@ -759,7 +759,7 @@ public class CIExecutionConfigService {
         break;
       case SECURITY:
       case UPLOAD_ARTIFACTORY:
-      case IACM_TERRAFORM_PLUGIN:
+      case IACM:
       case IACM_APPROVAL:
       case SSCA_ORCHESTRATION:
       case SSCA_ENFORCEMENT:
@@ -800,7 +800,7 @@ public class CIExecutionConfigService {
         return vmImageConfig.getArtifactoryUpload();
       case GIT_CLONE:
         return vmImageConfig.getGitClone();
-      case IACM_TERRAFORM_PLUGIN:
+      case IACM:
       case IACM_APPROVAL:
         return vmImageConfig.getIacmTerraform();
       case SSCA_ORCHESTRATION:
