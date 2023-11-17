@@ -54,7 +54,6 @@ import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoDecorat
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
 import io.harness.rule.Owner;
-import io.harness.ssca.beans.SscaConstants;
 import io.harness.ssca.cd.execution.filtercreator.CdSscaStepFilterJsonCreator;
 import io.harness.ssca.cd.execution.variablecreator.CdSscaStepVariableCreator;
 import io.harness.ssca.plancreator.CdSscaEnforcementStepPlanCreator;
