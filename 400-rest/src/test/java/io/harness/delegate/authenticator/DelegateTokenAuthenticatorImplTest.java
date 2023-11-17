@@ -7,11 +7,32 @@
 
 package io.harness.delegate.authenticator;
 
-import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.google.inject.Inject;
-import dev.morphia.query.FieldEnd;
-import dev.morphia.query.MorphiaIterator;
-import dev.morphia.query.Query;
+import static io.harness.annotations.dev.HarnessTeam.DEL;
+import static io.harness.rule.OwnerRule.ANUBHAW;
+import static io.harness.rule.OwnerRule.ANUPAM;
+import static io.harness.rule.OwnerRule.BRETT;
+import static io.harness.rule.OwnerRule.JENNY;
+import static io.harness.rule.OwnerRule.JOHANNES;
+import static io.harness.rule.OwnerRule.LUCAS;
+import static io.harness.rule.OwnerRule.MARKO;
+import static io.harness.rule.OwnerRule.UJJAWAL;
+import static io.harness.rule.OwnerRule.VLAD;
+
+import static software.wings.utils.WingsTestConstants.ACCOUNT1_ID;
+import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.initMocks;
+
 import io.harness.agent.utils.AgentMtlsVerifier;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,6 +49,18 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.security.AccountCheckAndCleanupService;
 import io.harness.security.TokenGenerator;
+
+import software.wings.WingsBaseTest;
+import software.wings.beans.Service;
+
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.google.inject.Inject;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
@@ -35,36 +68,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import software.wings.WingsBaseTest;
-import software.wings.beans.Service;
-
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import java.security.NoSuchAlgorithmException;
-
-import static io.harness.annotations.dev.HarnessTeam.DEL;
-import static io.harness.rule.OwnerRule.ANUBHAW;
-import static io.harness.rule.OwnerRule.ANUPAM;
-import static io.harness.rule.OwnerRule.BRETT;
-import static io.harness.rule.OwnerRule.JENNY;
-import static io.harness.rule.OwnerRule.JOHANNES;
-import static io.harness.rule.OwnerRule.LUCAS;
-import static io.harness.rule.OwnerRule.MARKO;
-import static io.harness.rule.OwnerRule.UJJAWAL;
-import static io.harness.rule.OwnerRule.VLAD;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
-import static software.wings.utils.WingsTestConstants.ACCOUNT1_ID;
-import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 
 @OwnedBy(DEL)
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
