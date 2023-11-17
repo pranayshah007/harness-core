@@ -14,6 +14,7 @@ metadata:
 data:
   {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
   API_URL: '{{  .Values.global.loadbalancerURL }}'
   DELEGATE_METADATA_URL: '{{  .Values.global.loadbalancerURL }}/storage/wingsdelegates/delegateprod.txt'
@@ -77,6 +78,7 @@ metadata:
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData2 "context" $) | nindent 2}}
   {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData2 "context" $) | nindent 2}}
   {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData2 "context" $) | nindent 2}}
   iterator_config.json: |
