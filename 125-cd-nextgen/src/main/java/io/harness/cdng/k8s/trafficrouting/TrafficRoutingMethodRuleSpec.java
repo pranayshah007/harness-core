@@ -12,6 +12,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.validation.OneOfField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import lombok.AccessLevel;
@@ -32,4 +33,23 @@ public class TrafficRoutingMethodRuleSpec extends TrafficRoutingRuleSpec {
   List<Method> values;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> value;
   MatchType matchType;
+
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  enum Method {
+    GET,
+    POST,
+    PUT,
+    DELETE,
+    HEAD,
+    CONNECT,
+    OPTION,
+    TRACE,
+    PATCH;
+
+    @JsonValue
+    @Override
+    public String toString() {
+      return name();
+    }
+  }
 }

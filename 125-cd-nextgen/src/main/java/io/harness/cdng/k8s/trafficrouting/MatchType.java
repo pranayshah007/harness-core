@@ -7,9 +7,6 @@
 
 package io.harness.cdng.k8s.trafficrouting;
 
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.AllArgsConstructor;

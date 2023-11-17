@@ -7,8 +7,6 @@
 
 package io.harness.cdng.k8s.trafficrouting;
 
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
 

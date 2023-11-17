@@ -31,7 +31,7 @@ public class Route {
   @FieldDefaults(level = AccessLevel.PRIVATE)
   @JsonIgnoreProperties(ignoreUnknown = true)
   static class RouteSpec {
-    @NotNull RouteSpec.RouteType type;
+    @NotNull RouteType type;
     @NotEmpty List<TrafficRoutingRule> rules;
 
     @AllArgsConstructor

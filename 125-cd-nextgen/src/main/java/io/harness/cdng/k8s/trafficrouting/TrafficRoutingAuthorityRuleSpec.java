@@ -27,6 +27,6 @@ import lombok.experimental.SuperBuilder;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @NoArgsConstructor
 public class TrafficRoutingAuthorityRuleSpec extends TrafficRoutingRuleSpec {
-  @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH) ParameterField<String> value;
+  @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> value;
   @NotEmpty MatchType matchType;
 }
