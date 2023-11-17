@@ -12,9 +12,7 @@ go_library(
     visibility = ["//:__pkg__"],
     deps = [
         "//product/log-service/cli",
-        "//product/log-service/metric",
         "@com_github_joho_godotenv//autoload",
-        "@com_github_prometheus_client_golang//prometheus/promhttp:go_default_library",
         "@org_uber_go_automaxprocs//:automaxprocs",
     ],
 )

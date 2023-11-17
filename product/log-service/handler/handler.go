@@ -6,7 +6,6 @@
 package handler
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/pprof"
@@ -26,6 +25,7 @@ import (
 	"github.com/harness/harness-core/product/log-service/queue"
 	"github.com/harness/harness-core/product/log-service/store"
 	"github.com/harness/harness-core/product/log-service/stream"
+    "github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // Handler returns an http.Handler that exposes the
@@ -78,6 +78,8 @@ func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store s
 		r.Mount("/info/debug/getheap", pprof.Handler("heap"))
 	}
 
+    r.Mount("/metrics", promhttp.Handler())
+
 	// Log stream endpoints
 	// Format: /token?accountID=&key=
 	r.Mount("/stream", func() http.Handler {
@@ -108,8 +110,7 @@ func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store s
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				startTime := time.Now() // Record the start time before processing the request
 				defer func() {
-					fmt.Printf("Blob API Latency: %v\n", time.Since(startTime).Seconds())
-					metric.BLOB_API_LATENCY.Set(time.Since(startTime).Seconds())
+					metric.BlobAPILatency.Set(time.Since(startTime).Seconds())
 				}()
 				next.ServeHTTP(w, r)
 			})

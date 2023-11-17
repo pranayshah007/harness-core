@@ -36,22 +36,20 @@ var (
 		"Total number of put requests to stream api",
 		"put",
 	)
-
 	GetCount = CreatePrometheusCounter(
 		"log_service_stream_api_get_count",
 		"Total number of get requests to stream api",
 		"get",
 	)
-
-	STREAM_API_GET_Latency = CreatePrometheusGauge(
+	StreamAPIGetLatency = CreatePrometheusGauge(
 		"log_service_stream_api_get_latency",
 		"Latency distribution of stream api requests",
 	)
-	STREAM_API_PUT_Latency = CreatePrometheusGauge(
+	StreamAPIPutLatency = CreatePrometheusGauge(
 		"log_service_stream_api_put_latency",
 		"Latency distribution of stream api requests",
 	)
-	BLOB_API_LATENCY = CreatePrometheusGauge(
+	BlobAPILatency = CreatePrometheusGauge(
 		"blob_api_latency",
 		"Latency for blob api for get, put, and delete requests",
 	)
@@ -60,7 +58,7 @@ var (
 func RegisterMetrics() {
 	prometheus.MustRegister(PutCount)
 	prometheus.MustRegister(GetCount)
-	prometheus.MustRegister(STREAM_API_GET_Latency)
-	prometheus.MustRegister(STREAM_API_PUT_Latency)
-	prometheus.MustRegister(BLOB_API_LATENCY)
+	prometheus.MustRegister(StreamAPIGetLatency)
+	prometheus.MustRegister(StreamAPIPutLatency)
+	prometheus.MustRegister(BlobAPILatency)
 }
