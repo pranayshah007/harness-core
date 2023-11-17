@@ -380,43 +380,4 @@ secrets:
           OPA_SERVER_SECRET:
             name: ""
             property: ""
-configData:
-  CACHE_BACKEND: REDIS
-  CACHE_CONFIG_SENTINEL_MASTER_NAME: harness-redis
-  DEPLOY_MODE: KUBERNETES_ONPREM
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
-  MANAGER_TARGET: harness-manager:9879
-  MANAGER_AUTHORITY: harness-manager:9879
-  GRPC_SERVER_PORT: "12011"
-  NG_MANAGER_TARGET: ng-manager:9979
-  NG_MANAGER_AUTHORITY: ng-manager:9979
-  NG_MANAGER_GITSYNC_TARGET: ng-manager:13002
-  NG_MANAGER_GITSYNC_AUTHORITY: ng-manager:13002
-  CI_MANAGER_TARGET: ci-manager:9979
-  CI_MANAGER_AUTHORITY: ci-manager:9979
-  SCM_SERVICE_URI: scm-service:8091
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: harness-redis
-  MANAGER_BASE_URL: http://harness-manager:9090/api/
-  NG_MANAGER_BASE_URL: http://ng-manager:7090/
-  ACCESS_CONTROL_BASE_URL: http://access-control:9006/api/
-  NOTIFICATION_BASE_URL: http://platform-service:9005/api/
-  TEMPLATE_SERVICE_ENDPOINT: http://template-service:15002/api/
-  CI_MANAGER_BASE_URL: http://ci-manager:7090/
-  MANAGER_CLIENT_BASEURL: http://harness-manager:9090/api/
-  AUTH_ENABLED: "true"
-  USE_REDIS_FOR_INTERRUPTS: "true"
-  USE_REDIS_FOR_ORCHESTRATION_EVENTS: "true"
-  USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
-  MOCK_ACCESS_CONTROL_SERVICE: "false"
-  ACCESS_CONTROL_ENABLED: "true"
-  ENABLE_DASHBOARD_TIMESCALE: "true"
-  SHOULD_USE_INSTANCE_CACHE: "false"
-  STO_MANAGER_BASE_URL: http://sto-manager:7090/
-  STO_MANAGER_AUTHORITY: sto-manager:9979
-  STO_MANAGER_TARGET: sto-manager:9979
-  CV_MANAGER_BASE_URL: http://cv-nextgen:6060/cv/api/
-  CVNG_MANAGER_AUTHORITY: cv-nextgen:9979
-  CVNG_MANAGER_TARGET: cv-nextgen:9979
-  ENABLE_AUDIT: "true"
-  AUDIT_SERVICE_BASE_URL: http://platform-service:9005/api/
-  SSCA_MANAGER_ENABLED: "true"
+configData: {}
