@@ -53,8 +53,9 @@ public class ApprovalInstrumentationHelper extends InstrumentationHelper {
       case SERVICENOW_APPROVAL:
         return publishServiceNowApprovalInfo(
             (ServiceNowApprovalInstance) approvalInstance, APPROVAL_STEP, eventPropertiesMap);
+      default:
+        return null;
     }
-    return null;
   }
 
   private CompletableFuture<Void> publishCustomApprovalInfo(
