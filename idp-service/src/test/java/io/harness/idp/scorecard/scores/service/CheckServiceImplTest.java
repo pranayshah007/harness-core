@@ -329,11 +329,21 @@ public class CheckServiceImplTest extends CategoryTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testGetCheckGraph() {
+    when(checkRepository.findByAccountIdentifierAndIdentifier(ACCOUNT_ID, GITHUB_CHECK_ID))
+        .thenReturn(getCheckEntities().get(0));
     when(checkStatusRepository.findByAccountIdentifierAndIdentifierAndIsCustom(ACCOUNT_ID, GITHUB_CHECK_ID, true))
         .thenReturn(getCheckStatusEntities());
     List<CheckGraph> checkGraphs = checkServiceImpl.getCheckGraph(ACCOUNT_ID, GITHUB_CHECK_ID, true);
     assertEquals(1, checkGraphs.size());
     assertEquals(5, (int) checkGraphs.get(0).getCount());
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testGetGraphStatsThrowsException() {
+    when(checkRepository.findByAccountIdentifierAndIdentifier(any(), any())).thenReturn(null);
+    checkServiceImpl.getCheckGraph(ACCOUNT_ID, GITHUB_CHECK_ID, Boolean.FALSE);
   }
 
   @Test
