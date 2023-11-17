@@ -17,8 +17,6 @@ import static io.harness.provision.TerraformConstants.WORKSPACE_DIR_BASE;
 import static io.harness.provision.TerraformConstants.WORKSPACE_STATE_FILE_PATH_FORMAT;
 
 import static java.lang.String.format;
-import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ExceptionUtils;
@@ -28,14 +26,9 @@ import io.harness.terraform.beans.TerraformVersion;
 import com.google.common.base.Throwables;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.UUID;
 import lombok.experimental.UtilityClass;
@@ -71,7 +64,6 @@ public class TerraformHelperUtils {
     File src = new File(sourceDir);
     deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
     FileUtils.copyDirectory(src, dest);
-    //  Files.walkFileTree(src.toPath(), new CopyFileVisitor(src.toPath(), dest.toPath()));
     FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
   }
 
@@ -128,43 +120,5 @@ public class TerraformHelperUtils {
 
   public String getAutoApproveArgument(TerraformVersion version) {
     return version.minVersion(0, 15) ? "-auto-approve" : "-force";
-  }
-
-  static class CopyFileVisitor extends SimpleFileVisitor<Path> {
-    private final Path sourceDirectory;
-    private final Path targetDirectory;
-
-    public CopyFileVisitor(Path sourceDirectory, Path targetDirectory) {
-      this.sourceDirectory = sourceDirectory;
-      this.targetDirectory = targetDirectory;
-    }
-
-    @Override
-    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-      Path targetFile = targetDirectory.resolve(sourceDirectory.relativize(file));
-      Files.copy(file, targetFile, REPLACE_EXISTING, NOFOLLOW_LINKS);
-      return FileVisitResult.CONTINUE;
-    }
-
-    @Override
-    public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-      // Handle failure, e.g., log it and continue
-      System.err.println("Failed to visit file: " + file);
-      return FileVisitResult.CONTINUE;
-    }
-
-    @Override
-    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-      Path targetDir = targetDirectory.resolve(sourceDirectory.relativize(dir));
-      Files.createDirectories(targetDir);
-      return FileVisitResult.CONTINUE;
-    }
-
-    public FileVisitResult visitFileSymbolicLink(Path link, BasicFileAttributes attrs) throws IOException {
-      // Copy symbolic links as links (without resolving)
-      Path targetLink = targetDirectory.resolve(sourceDirectory.relativize(link));
-      Files.createSymbolicLink(targetLink, Files.readSymbolicLink(link));
-      return FileVisitResult.CONTINUE;
-    }
   }
 }
