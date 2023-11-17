@@ -158,6 +158,23 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
   }
 
   @Override
+  public List<GitXWebhook> getGitXWebhookForGivenScope(Scope scope, String repoName) {
+    return gitXWebhookRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierRepoName(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), repoName);
+  }
+
+  @Override
+  public List<GitXWebhook> getAllGitXWebhooksForRepo(String accountIdentifier, String repoName) {
+    List<GitXWebhook> gitXWebhookList =
+        gitXWebhookRepository.findByAccountIdentifierAndRepoName(accountIdentifier, repoName);
+    if (isEmpty(gitXWebhookList)) {
+      log.info(String.format("For the given key with accountIdentifier %s and repoName %s no webhook found.",
+          accountIdentifier, repoName));
+    }
+    return gitXWebhookList;
+  }
+
+  @Override
   public UpdateGitXWebhookResponseDTO updateGitXWebhook(UpdateGitXWebhookCriteriaDTO updateGitXWebhookCriteriaDTO,
       UpdateGitXWebhookRequestDTO updateGitXWebhookRequestDTO) {
     try (GitXWebhookLogContext context =

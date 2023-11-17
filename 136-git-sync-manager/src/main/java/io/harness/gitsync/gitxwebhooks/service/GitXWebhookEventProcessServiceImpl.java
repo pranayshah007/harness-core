@@ -40,7 +40,6 @@ import io.harness.security.dto.ServicePrincipal;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -75,8 +74,8 @@ public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProce
       try {
         SecurityContextBuilder.setContext(new ServicePrincipal(NG_MANAGER.getServiceId()));
         log.info(String.format("Picked the event %s from the queue.", gitXWebhookEvent.getEventIdentifier()));
-        GitXWebhook gitXWebhook = getGitXWebhook(gitXWebhookEvent);
-        if (gitXWebhook == null) {
+        List<GitXWebhook> gitXWebhookList = getGitXWebhook(gitXWebhookEvent);
+        if (isEmpty(gitXWebhookList)) {
           log.info(String.format(
               "The webhook event %s will be SKIPPED as there is no webhook configured for webhookIdentifier %s.",
               gitXWebhookEvent.getEventIdentifier(), gitXWebhookEvent.getWebhookIdentifier()));
@@ -84,11 +83,11 @@ public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProce
               GitXWebhookEventStatus.SKIPPED);
           return;
         }
-        ScmConnector scmConnector = getScmConnector(
-            gitXWebhook.getAccountIdentifier(), gitXWebhook.getConnectorRef(), gitXWebhook.getRepoName());
+        //        TODO: which webhooks connector to use?
+        ScmConnector scmConnector = getScmConnector(gitXWebhookList.get(0));
         List<String> modifiedFilePaths =
-            parsePayloadAndGetModifiedFilePaths(gitXWebhook, gitXWebhookEvent, scmConnector);
-        List<String> processingFilePaths = getMatchingFilePaths(modifiedFilePaths, gitXWebhook);
+            parsePayloadAndGetModifiedFilePaths(gitXWebhookList, gitXWebhookEvent, scmConnector);
+        List<String> processingFilePaths = getMatchingFilePaths(modifiedFilePaths, gitXWebhookList);
         if (isEmpty(processingFilePaths)) {
           log.info(String.format(
               "The webhook event %s will be SKIPPED as the webhook is disabled or the folder paths don't match.",
@@ -100,7 +99,7 @@ public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProce
               "Submitting the task for PROCESSING the webhook event %s as the webhook is enabled and the folder paths match.",
               gitXWebhookEvent.getEventIdentifier()));
           gitXWebhookCacheUpdateHelper.submitTask(gitXWebhookEvent.getEventIdentifier(),
-              buildGitXWebhookRunnableRequest(gitXWebhook, gitXWebhookEvent, modifiedFilePaths, scmConnector));
+              buildGitXWebhookRunnableRequest(gitXWebhookList, gitXWebhookEvent, modifiedFilePaths, scmConnector));
           updateEventStatus(gitXWebhookEvent.getAccountIdentifier(), gitXWebhookEvent.getEventIdentifier(),
               GitXWebhookEventStatus.PROCESSING, processingFilePaths);
         }
@@ -144,22 +143,19 @@ public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProce
     return new ArrayList<>();
   }
 
-  private List<String> getMatchingFilePaths(List<String> modifiedFilePaths, GitXWebhook gitXWebhook) {
-    if (isEmpty(gitXWebhook.getFolderPaths())) {
-      log.info(String.format("No folderPaths mentioned in the webhook %s, parsing all the modifiedFilePaths",
-          gitXWebhook.getIdentifier()));
+  private List<String> getMatchingFilePaths(List<String> modifiedFilePaths, List<GitXWebhook> gitXWebhookList) {
+    List<String> combinedFolderPaths = GitXWebhookUtils.getCombinedFolderPathsOfAllWebhooks(gitXWebhookList);
+    if (isEmpty(combinedFolderPaths)) {
+      log.info(String.format(
+          "No folderPaths mentioned in the webhook %s, parsing all the modifiedFilePaths", gitXWebhookList));
       return modifiedFilePaths;
     }
-    return GitXWebhookUtils.compareFolderPaths(gitXWebhook.getFolderPaths(), modifiedFilePaths);
+    return GitXWebhookUtils.compareFolderPaths(combinedFolderPaths, modifiedFilePaths);
   }
 
-  private GitXWebhook getGitXWebhook(GitXWebhookEvent gitXWebhookEvent) {
-    Optional<GitXWebhook> optionalGitXWebhook = gitXWebhookService.getGitXWebhook(
-        gitXWebhookEvent.getAccountIdentifier(), gitXWebhookEvent.getWebhookIdentifier(), null);
-    if (optionalGitXWebhook.isEmpty()) {
-      return null;
-    }
-    return optionalGitXWebhook.get();
+  private List<GitXWebhook> getGitXWebhook(GitXWebhookEvent gitXWebhookEvent) {
+    return gitXWebhookService.getAllGitXWebhooksForRepo(
+        gitXWebhookEvent.getAccountIdentifier(), gitXWebhookEvent.getRepo());
   }
 
   public List<String> getDiffFilesUsingSCM(
@@ -183,10 +179,13 @@ public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProce
         .collect(Collectors.toList());
   }
 
-  public ScmConnector getScmConnector(String accountIdentifier, String connectorRef, String repoName) {
-    ScmConnector scmConnector = gitSyncConnectorService.getScmConnector(accountIdentifier, "", "", connectorRef);
-    scmConnector.setUrl(gitRepoHelper.getRepoUrl(scmConnector, repoName));
-    return gitSyncConnectorService.getDecryptedConnectorForNewGitX(accountIdentifier, "", "", scmConnector);
+  public ScmConnector getScmConnector(GitXWebhook gitXWebhook) {
+    gitXWebhook.getAccountIdentifier() ScmConnector scmConnector =
+        gitSyncConnectorService.getScmConnector(gitXWebhook.getAccountIdentifier(), gitXWebhook.getOrgIdentifier(),
+            gitXWebhook.getProjectIdentifier(), gitXWebhook.getConnectorRef());
+    scmConnector.setUrl(gitRepoHelper.getRepoUrl(scmConnector, gitXWebhook.getRepoName()));
+    return gitSyncConnectorService.getDecryptedConnectorForNewGitX(gitXWebhook.getAccountIdentifier(),
+        gitXWebhook.getOrgIdentifier(), gitXWebhook.getProjectIdentifier(), scmConnector);
   }
 
   private void updateEventStatus(

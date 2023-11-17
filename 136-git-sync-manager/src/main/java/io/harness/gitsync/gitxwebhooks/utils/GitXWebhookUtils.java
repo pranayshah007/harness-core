@@ -14,9 +14,12 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,5 +47,17 @@ public class GitXWebhookUtils {
       });
     });
     return matchingFolderPaths;
+  }
+
+  public List<String> getCombinedFolderPathsOfAllWebhooks(List<GitXWebhook> gitXWebhookList) {
+    Set<String> res = new HashSet<>();
+    for (GitXWebhook gitXWebhook : gitXWebhookList) {
+      if (isEmpty(gitXWebhook.getFolderPaths())) {
+        return new ArrayList<>();
+      } else {
+        res.addAll(gitXWebhook.getFolderPaths());
+      }
+    }
+    return new ArrayList<>(res);
   }
 }

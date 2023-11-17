@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.Scope;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookResponseDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.DeleteGitXWebhookRequestDTO;
@@ -25,6 +26,7 @@ import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookResponseDTO;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
 
+import java.util.List;
 import java.util.Optional;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
@@ -35,6 +37,10 @@ public interface GitXWebhookService {
   Optional<GetGitXWebhookResponseDTO> getGitXWebhook(GetGitXWebhookRequestDTO getGitXWebhookRequestDTO);
 
   Optional<GitXWebhook> getGitXWebhook(String accountIdentifier, String webhookIdentifier, String repoName);
+
+  List<GitXWebhook> getGitXWebhookForGivenScope(Scope scope, String repoName);
+
+  List<GitXWebhook> getAllGitXWebhooksForRepo(String accountIdentifier, String repoName);
 
   UpdateGitXWebhookResponseDTO updateGitXWebhook(UpdateGitXWebhookCriteriaDTO updateGitXWebhookCriteriaDTO,
       UpdateGitXWebhookRequestDTO updateGitXWebhookRequestDTO);

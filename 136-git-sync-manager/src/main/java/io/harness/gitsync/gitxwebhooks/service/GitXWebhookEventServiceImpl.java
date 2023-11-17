@@ -69,16 +69,16 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     try (GitXWebhookEventLogContext context = new GitXWebhookEventLogContext(webhookDTO)) {
       try {
         //        TODO: need to change the logic of fetching webhooks
-        GitXWebhook gitXWebhook =
+        List<GitXWebhook> gitXWebhookList =
             fetchGitXWebhook(webhookDTO.getAccountId(), webhookDTO.getParsedResponse().getPush().getRepo().getName());
-        if (gitXWebhook == null) {
+        if (gitXWebhookList == null) {
           log.info(
               String.format("Skipping processing of event [%s] as no GitX Webhook found.", webhookDTO.getEventId()));
           return;
         }
-        GitXWebhookEvent gitXWebhookEvent = buildGitXWebhookEvent(webhookDTO, gitXWebhook.getIdentifier());
+        GitXWebhookEvent gitXWebhookEvent = buildGitXWebhookEvent(webhookDTO, gitXWebhookList.getIdentifier());
         GitXWebhookEvent createdGitXWebhookEvent = gitXWebhookEventsRepository.create(gitXWebhookEvent);
-        updateGitXWebhook(gitXWebhook, webhookDTO.getTime());
+        updateGitXWebhook(gitXWebhookList, webhookDTO.getTime());
         enqueueWebhookEvents(webhookDTO);
         log.info(
             String.format("Successfully created the webhook event %s", createdGitXWebhookEvent.getEventIdentifier()));
@@ -95,8 +95,8 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     try (GitXWebhookLogContext context = new GitXWebhookLogContext(gitXEventsListRequestDTO)) {
       try {
         if (isNotEmpty(gitXEventsListRequestDTO.getRepoName())) {
-          GitXWebhook gitXWebhook = fetchGitXWebhook(
-              gitXEventsListRequestDTO.getScope().getAccountIdentifier(), gitXEventsListRequestDTO.getRepoName());
+          GitXWebhook gitXWebhook = fetchGitXWebhookForGivenScope(
+              gitXEventsListRequestDTO.getScope(), gitXEventsListRequestDTO.getRepoName());
           if (gitXWebhook != null) {
             gitXEventsListRequestDTO.setWebhookIdentifier(gitXWebhook.getIdentifier());
           }
@@ -202,12 +202,20 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     return query;
   }
 
-  private GitXWebhook fetchGitXWebhook(String accountIdentifier, String repoName) {
-    Optional<GitXWebhook> optionalGitXWebhook = gitXWebhookService.getGitXWebhook(accountIdentifier, null, repoName);
-    if (optionalGitXWebhook.isEmpty()) {
+  private List<GitXWebhook> fetchGitXWebhook(String accountIdentifier, String repoName) {
+    List<GitXWebhook> gitXWebhookList = gitXWebhookService.getAllGitXWebhooksForRepo(accountIdentifier, repoName);
+    if (isEmpty(gitXWebhookList)) {
       return null;
     }
-    return optionalGitXWebhook.get();
+    return gitXWebhookList;
+  }
+  private GitXWebhook fetchGitXWebhookForGivenScope(Scope scope, String repoName) {
+    List<GitXWebhook> gitXWebhookList = gitXWebhookService.getGitXWebhookForGivenScope(scope, repoName);
+    if (isEmpty(gitXWebhookList)) {
+      return null;
+    }
+    //    TODO: better error handling
+    return gitXWebhookList.get(0);
   }
 
   private GitXWebhookEvent buildGitXWebhookEvent(WebhookDTO webhookDTO, String webhookIdentifier) {
@@ -235,15 +243,17 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     return Author.builder().name(webhookDTO.getParsedResponse().getPush().getCommit().getAuthor().getName()).build();
   }
 
-  private void updateGitXWebhook(GitXWebhook gitXWebhook, long triggerEventTime) {
-    gitXWebhookService.updateGitXWebhook(UpdateGitXWebhookCriteriaDTO.builder()
-                                             .webhookIdentifier(gitXWebhook.getIdentifier())
-                                             .scope(Scope.of(gitXWebhook.getAccountIdentifier()))
-                                             .build(),
-        UpdateGitXWebhookRequestDTO.builder()
-            .lastEventTriggerTime(triggerEventTime)
-            .folderPaths(gitXWebhook.getFolderPaths())
-            .build());
+  private void updateGitXWebhook(List<GitXWebhook> gitXWebhookList, long triggerEventTime) {
+    gitXWebhookList.forEach(gitXWebhook -> {
+      gitXWebhookService.updateGitXWebhook(UpdateGitXWebhookCriteriaDTO.builder()
+                                               .webhookIdentifier(gitXWebhook.getIdentifier())
+                                               .scope(Scope.of(gitXWebhook.getAccountIdentifier()))
+                                               .build(),
+          UpdateGitXWebhookRequestDTO.builder()
+              .lastEventTriggerTime(triggerEventTime)
+              .folderPaths(gitXWebhook.getFolderPaths())
+              .build());
+    });
   }
 
   private void enqueueWebhookEvents(WebhookDTO webhookDTO) {
