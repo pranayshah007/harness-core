@@ -35,7 +35,7 @@ COPY --chown=65534:65534 --from=builder \
  /app/dist/batch-processing/batch-processing-config.yml \
  /app/dist/batch-processing/protocol.info \
  /app/dist/batch-processing/scripts \
- /app/dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh \
+ /app/dockerization/base-images/apm/*.sh \
  /opt/harness/
 
 RUN pip3 install awscli

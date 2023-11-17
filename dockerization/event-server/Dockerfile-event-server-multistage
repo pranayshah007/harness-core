@@ -32,7 +32,7 @@ COPY --chown=65534:65534 --from=builder \
  /app/dist/event-serverr/cert.pem \
  /app/dist/event-server/protocol.info \
  /app/dist/event-server/scripts /opt/harness \
- /app/dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh \
+ /app/dockerization/base-images/apm/*.sh \
  /opt/harness/
 
 RUN GRPC_HEALTH_PROBE_VERSION=v0.3.0 \

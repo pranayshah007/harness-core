@@ -180,6 +180,7 @@ function copy_event_server_jars(){
 	cp ../../350-event-server/cert.pem .
 	cp ../../350-event-server/event-service-config.yml .
 	cp ../../dockerization/event-server/Dockerfile-event-server-cie-jdk Dockerfile-cie-jdk
+	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/event-server/scripts/ .
 

@@ -35,7 +35,7 @@ COPY --chown=65534:65534 --from=builder \
     /app/dist/ce-nextgen/default.jfc \
     /app/dist/ce-nextgen/profile.jfc \
     /app/dist/ce-nextgen/scripts /opt/harness \
-    /app/dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh \
+    /app/dockerization/base-images/apm/*.sh \
     /opt/harness/
 
 RUN chmod +x /opt/harness/*.sh
