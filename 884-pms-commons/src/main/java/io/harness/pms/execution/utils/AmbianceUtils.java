@@ -92,6 +92,14 @@ public class AmbianceUtils {
     throw new InvalidRequestException("Stage not present");
   }
 
+  public String getStrategySetupIdAmbiance(Ambiance ambiance) {
+    Optional<Level> strategyLevel = getStrategyLevelFromAmbiance(ambiance);
+    if (strategyLevel.isPresent()) {
+      return strategyLevel.get().getSetupId();
+    }
+    throw new InvalidRequestException("Strategy not present");
+  }
+
   public static Ambiance cloneForChild(@NonNull Ambiance ambiance, @NonNull Level level) {
     Ambiance.Builder builder = cloneBuilder(ambiance, ambiance.getLevelsList().size());
     return builder.addLevels(level).build();

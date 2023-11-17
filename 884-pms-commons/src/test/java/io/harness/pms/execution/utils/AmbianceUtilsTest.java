@@ -335,6 +335,15 @@ public class AmbianceUtilsTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetStrategySetupIdAmbiance() {
+    Ambiance ambiance = buildAmbianceUsingStrategyMetadata();
+    String strategySetupId = AmbianceUtils.getStrategySetupIdAmbiance(ambiance);
+    assertThat(strategySetupId).isEqualTo("STRATEGY_SETUP_ID");
+  }
+
+  @Test
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testIsCurrentStrategyLevelAtStage() {
