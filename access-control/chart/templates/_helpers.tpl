@@ -138,7 +138,7 @@ Generates comma separated list of Mongo Host names based off environment
         {{- $installed := dig "installed" true $globalDBCtx }}
         {{- $mongoHosts := "" }}
         {{- if $localEnabled }}
-            {{- $hosts := $localDBCtx.hosts }}
+            {{- $hosts := $.Values.mongoHosts}}
             {{- $mongoHosts = (join "," $hosts ) }}
         {{- else if $installed }}
             {{- $namespace := $.Release.Namespace }}
@@ -148,7 +148,7 @@ Generates comma separated list of Mongo Host names based off environment
                 {{- $mongoHosts = printf "'mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc'" $namespace }}
             {{- end }}
         {{- else }}
-            {{- $hosts := $globalDBCtx.hosts }}
+            {{- $hosts := $.Values.mongoHosts}}
             {{- $mongoHosts = (join "," $hosts ) }}
         {{- end }}
 {{- printf "%s" $mongoHosts }}
