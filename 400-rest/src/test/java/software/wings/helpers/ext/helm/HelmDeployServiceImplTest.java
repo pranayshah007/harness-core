@@ -877,7 +877,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
 
     verify(helmTaskHelper, times(1))
         .downloadChartFiles(chartConfigParamsArgumentCaptor.capture(), stringArgumentCaptor.capture(),
-            eq(LONG_TIMEOUT_INTERVAL), commandFlagCaptor.capture());
+            eq(LONG_TIMEOUT_INTERVAL), commandFlagCaptor.capture(), null);
 
     HelmChartConfigParams helmChartConfigParams = chartConfigParamsArgumentCaptor.getValue();
     String directory = stringArgumentCaptor.getValue();

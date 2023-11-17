@@ -132,6 +132,8 @@ public final class HelmConstants {
     public static final String HELM_REPO_FLAGS = " --repository-config ${HELM_CACHE_HOME}/repo-${REPO_NAME}.yaml";
     public static final String HELM_CACHE_HOME = "XDG_CACHE_HOME";
     public static final String HELM_CACHE_HOME_PATH = "${HELM_CACHE_HOME}/repo-${REPO_NAME}";
+    public static final String HELM_CACHE_INDEX_FILE =
+        "${HELM_CACHE_HOME}/repo-${REPO_NAME}/helm/repository/${REPO_NAME}-index.yaml";
     public static final String HELM_CHART_VERSION_FLAG = " --version ${CHART_VERSION}";
     public static final String HELM_REPO_ADD_FORCE_UPDATE = " --force-update";
     public static final String REGISTRY_CONFIG_SUFFIX = "--registry-config ${REGISTRY_CONFIG}";

@@ -3072,7 +3072,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     verify(helmTaskHelperBase, times(1)).initHelm("manifest", HelmVersion.V3, 9000L);
     verify(helmTaskHelperBase, times(1))
         .printHelmChartInfoWithVersionInExecutionLogs("manifest", manifestDelegateConfig, executionLogCallback);
-    verify(helmTaskHelperBase, times(1)).downloadChartFilesFromHttpRepo(manifestDelegateConfig, "manifest", 9000L);
+    verify(helmTaskHelperBase, times(1))
+        .downloadChartFilesFromHttpRepo(manifestDelegateConfig, "manifest", 9000L, executionLogCallback);
   }
 
   @Test
@@ -3148,7 +3149,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     verify(helmTaskHelperBase, times(1)).initHelm("manifest", HelmVersion.V2, 9000L);
     verify(helmTaskHelperBase, times(1))
         .printHelmChartInfoWithVersionInExecutionLogs("manifest", manifestDelegateConfig, executionLogCallback);
-    verify(helmTaskHelperBase, times(1)).downloadChartFilesUsingChartMuseum(manifestDelegateConfig, "manifest", 9000L);
+    verify(helmTaskHelperBase, times(1))
+        .downloadChartFilesUsingChartMuseum(manifestDelegateConfig, "manifest", 9000L, executionLogCallback);
   }
 
   @Test

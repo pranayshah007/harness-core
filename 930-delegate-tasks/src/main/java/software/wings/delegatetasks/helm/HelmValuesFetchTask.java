@@ -90,7 +90,7 @@ public class HelmValuesFetchTask extends AbstractDelegateRunnableTask {
 
       Map<String, List<String>> mapK8sValuesLocationToContent = helmTaskHelper.getValuesYamlFromChart(
           helmChartConfigParams, taskParams.getTimeoutInMillis(), taskParams.getHelmCommandFlag(),
-          ((HelmValuesFetchTaskParameters) parameters).getMapK8sValuesLocationToFilePaths());
+          ((HelmValuesFetchTaskParameters) parameters).getMapK8sValuesLocationToFilePaths(), executionLogCallback);
 
       helmTaskHelper.printHelmChartInfoInExecutionLogs(helmChartConfigParams, executionLogCallback);
 

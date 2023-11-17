@@ -521,8 +521,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
           helmChartConfigParams, timeoutInMillis, workingDirectory, commandRequest.getHelmCommandFlag());
     } else {
       workingDirectory = Paths.get(getWorkingDirectory(commandRequest)).toString();
-      helmTaskHelper.downloadChartFiles(
-          helmChartConfigParams, workingDirectory, timeoutInMillis, commandRequest.getHelmCommandFlag());
+      helmTaskHelper.downloadChartFiles(helmChartConfigParams, workingDirectory, timeoutInMillis,
+          commandRequest.getHelmCommandFlag(), commandRequest.getExecutionLogCallback());
     }
     commandRequest.setWorkingDir(getChartDirectory(workingDirectory, helmChartConfigParams.getChartName()));
 

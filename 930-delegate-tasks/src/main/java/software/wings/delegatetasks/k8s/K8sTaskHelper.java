@@ -534,8 +534,8 @@ public class K8sTaskHelper {
         FileUtils.copyDirectory(src, dest);
         FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
       } else {
-        helmTaskHelper.downloadChartFiles(
-            helmChartConfigParams, destinationDirectory, timeoutInMillis, delegateManifestConfig.getHelmCommandFlag());
+        helmTaskHelper.downloadChartFiles(helmChartConfigParams, destinationDirectory, timeoutInMillis,
+            delegateManifestConfig.getHelmCommandFlag(), executionLogCallback);
       }
       executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
       executionLogCallback.saveExecutionLog(k8sTaskHelperBase.getManifestFileNamesInLogFormat(destinationDirectory));
