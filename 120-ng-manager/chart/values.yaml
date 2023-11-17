@@ -508,39 +508,4 @@ secrets:
           CE_AWS_TEMPLATE_URL:
             name: ""
             property: ""
-configData:
-  GITOPS_SERVICE_CLIENT_BASEURL: http://gitops:7908/api/v1/
-  CACHE_BACKEND: REDIS
-  DEPLOY_MODE: KUBERNETES_ONPREM
-  MANAGER_TARGET: harness-manager:9879
-  MANAGER_AUTHORITY: harness-manager:9879
-  NG_MANAGER_TARGET: ng-manager:13002
-  NG_MANAGER_AUTHORITY: ng-manager:13002
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: harness-redis
-  GRPC_SERVER_PORT: "9979"
-  SHOULD_CONFIGURE_WITH_PMS: "true"
-  PMS_GITSYNC_TARGET: pipeline-service:14002
-  PMS_GITSYNC_AUTHORITY: pipeline-service:14002
-  TEMPLATE_GITSYNC_TARGET: template-service:16002
-  TEMPLATE_GITSYNC_AUTHORITY: template-service:16002
-  PMS_TARGET: pipeline-service:12011
-  PMS_AUTHORITY: pipeline-service:12011
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
-  USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
-  MOCK_ACCESS_CONTROL_SERVICE: "false"
-  ACCESS_CONTROL_ENABLED: "true"
-  ENABLE_DEFAULT_RESOURCE_GROUP_CREATION: "true"
-  ENABLE_DASHBOARD_TIMESCALE: "true"
-  AUDIT_ENABLED: "true"
-  SCM_SERVICE_URI: scm-service:8091
-  NG_MANAGER_CLIENT_BASEURL: http://ng-manager:7090/
-  NG_MANAGER_API_URL: http://ng-manager:7090/
-  HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: "true"
-  MONGO_TRANSACTIONS_ALLOWED: "false"
-  OPA_CONNECTIVITY_ENABLED: "true"
-  NOTIFICATION_BASE_URL: http://platform-service:9005/api/
-  TEMPLATE_SERVICE_ENDPOINT: http://template-service:15002/api/
-  PIPELINE_SERVICE_CLIENT_BASEURL: http://pipeline-service:12001/api/
-  CI_MANAGER_SERVICE_CLIENT_BASEURL: http://ci-manager:7090/
-  CVNG_SERVICE_CLIENT_BASEURL: http://cv-nextgen:6060/cv/api/
-  STO_CORE_SERVICE_CLIENT_BASEURL: http://sto-core:4000/api/
+configData: {}
