@@ -110,6 +110,13 @@ spec:
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "JWT_IDENTITY_SERVICE_SECRET" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "JWT_IDENTITY_SERVICE_SECRET") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "NOTIFICATION_CLIENT_SECRET" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "NOTIFICATION_CLIENT_SECRET") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "ACCESS_CONTROL_SECRET" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "ACCESS_CONTROL_SECRET") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "AWS_ACCESS_KEY" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "AWS_ACCESS_KEY") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "AWS_ACCOUNT_ID" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "AWS_ACCOUNT_ID") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "AWS_DESTINATION_BUCKET" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "AWS_DESTINATION_BUCKET") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "AWS_SECRET_KEY" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "AWS_SECRET_KEY") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "AWS_TEMPLATE_LINK" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "AWS_TEMPLATE_LINK") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "AZURE_APP_CLIENT_SECRET" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "AZURE_APP_CLIENT_SECRET") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "CE_AWS_TEMPLATE_URL" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "CE_AWS_TEMPLATE_URL") | indent 12 }}
             - name: EVENTS_MONGO_DB_URL
               value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "events" ) }}
             - name: NOTIFICATION_MONGO_URI
