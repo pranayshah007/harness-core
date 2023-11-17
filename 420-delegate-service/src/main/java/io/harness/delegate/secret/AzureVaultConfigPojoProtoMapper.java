@@ -10,32 +10,31 @@ package io.harness.delegate.secret;
 import io.harness.delegate.core.beans.EncryptionConfig;
 
 import software.wings.beans.AzureVaultConfig;
-import software.wings.beans.VaultConfig;
 
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
 @Mapper(uses = {SecretManagerTypePojoProtoMapper.class, EncryptionTypePojoProtoMapper.class,
-            VaultConfigPojoProtoMapper.class, AzureVaultConfigPojoProtoMapper.class},
-    nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS, unmappedSourcePolicy = ReportingPolicy.ERROR,
+            AzureVaultConfigPojoProtoMapper.class},
+    nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS, unmappedSourcePolicy = ReportingPolicy.IGNORE,
     collectionMappingStrategy = CollectionMappingStrategy.ADDER_PREFERRED)
-public interface EncryptionConfigPojoProtoMapper {
-  EncryptionConfigPojoProtoMapper INSTANCE = Mappers.getMapper(EncryptionConfigPojoProtoMapper.class);
+public interface AzureVaultConfigPojoProtoMapper {
+  AzureVaultConfigPojoProtoMapper INSTANCE = Mappers.getMapper(AzureVaultConfigPojoProtoMapper.class);
 
-  @Mapping(target = "secretManagerType", source = "type")
-  @Mapping(target = "uuid", source = "uuid",
+  @Mapping(target = "azureVaultConfig.clientId", source = "clientId",
       nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_DEFAULT)
-  @Mapping(target = "accountId", source = "accountId",
+  @Mapping(target = "azureVaultConfig.secretKey", source = "secretKey",
       nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_DEFAULT)
-  @Mapping(target = "name", source = "name",
+  @Mapping(target = "azureVaultConfig.tenantId", source = "tenantId",
       nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_DEFAULT)
-  @Mapping(target = "encryptionServiceUrl", source = "encryptionServiceUrl",
+  @Mapping(target = "azureVaultConfig.vaultName", source = "vaultName",
       nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_DEFAULT)
-  @Mapping(target = "isGlobalKms", source = "globalKms",
+  @Mapping(target = "azureVaultConfig.subscription", source = "subscription",
       nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_DEFAULT)
-  @BeanMapping(ignoreUnmappedSourceProperties = {"numOfEncryptedValue", "default", "validationCriteria"})
-  @SubclassMapping(target = EncryptionConfig.class, source = VaultConfig.class)
-  @SubclassMapping(target = EncryptionConfig.class, source = AzureVaultConfig.class)
+  @Mapping(target = "azureVaultConfig.useManagedIdentity", source = "useManagedIdentity",
+      nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+  @Mapping(target = "azureVaultConfig.managedClientId", source = "managedClientId",
+      nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
   EncryptionConfig
-  map(io.harness.security.encryption.EncryptionConfig config);
+  map(AzureVaultConfig config);
 }

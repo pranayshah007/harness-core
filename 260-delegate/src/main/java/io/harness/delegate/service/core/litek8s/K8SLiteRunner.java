@@ -27,6 +27,7 @@ import io.harness.delegate.service.core.k8s.K8SSecret;
 import io.harness.delegate.service.core.k8s.K8SService;
 import io.harness.delegate.service.core.util.ApiExceptionLogger;
 import io.harness.delegate.service.core.util.K8SResourceHelper;
+import io.harness.delegate.service.core.util.K8SVolumeUtils;
 import io.harness.delegate.service.handlermapping.context.Context;
 import io.harness.delegate.service.runners.itfc.Runner;
 import io.harness.logging.CommandExecutionStatus;
@@ -42,14 +43,12 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1EnvFromSource;
-import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.*;
 import io.kubernetes.client.util.Yaml;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -60,6 +59,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import net.minidev.json.JSONObject;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Inject)
@@ -67,6 +67,7 @@ public class K8SLiteRunner implements Runner {
   private static final String LOG_SERVICE_TOKEN_VARIABLE = "HARNESS_LOG_SERVICE_TOKEN";
   private static final String LOG_SERVICE_ENDPOINT_VARIABLE = "HARNESS_LOG_SERVICE_ENDPOINT";
   private static final String HARNESS_LOG_PREFIX_VARIABLE = "HARNESS_LOG_PREFIX";
+  private static final String DELEGATE_SECRET_MNT_PATH = "/etc/secret-values";
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
   private final DelegateConfiguration delegateConfiguration;
@@ -116,6 +117,33 @@ public class K8SLiteRunner implements Runner {
       final var volumes = VolumeBuilder.createVolumes(protoVolumes);
       final var volumeMounts = VolumeBuilder.createVolumeMounts(protoVolumes);
 
+      //      List<V1Volume> secretVolumes = new ArrayList<>();
+      //      List<V1VolumeMount> secretVolumeMounts = new ArrayList<>();
+      for (Map.Entry<String, List<V1Secret>> entry : taskSecrets.entrySet()) {
+        List<V1Secret> value = entry.getValue();
+        for (V1Secret secretVal : value) {
+          V1Volume volume = K8SVolumeUtils.fromSecret(secretVal, secretVal.getMetadata().getName());
+          volumes.add(volume);
+          volumeMounts.add(
+              K8SVolumeUtils.volumeMount(volume, DELEGATE_SECRET_MNT_PATH + secretVal.getMetadata().getName()));
+        }
+      }
+
+      //      JSONObject jsonData = new JSONObject();
+      //      jsonData.putAll(decrypted);
+      //
+      //
+      //      V1Volume volume = new V1Volume();
+      //      volume.setName("json-data-volume");
+      //      V1HostPathVolumeSource hostPath = new V1HostPathVolumeSource();
+      //      hostPath.setPath("/tmp/secrets/mnt"); // Replace with the path where you saved the JSON file
+      //      volume.setHostPath(hostPath);
+      //
+      //      V1VolumeMount secretVolumeMount = new V1VolumeMount();
+      //      secretVolumeMount.setName("secrets-volume");
+      //      secretVolumeMount.setMountPath("/tmp/secrets/mnt");
+      //      volumeMounts.add(secretVolumeMount);
+
       // Step 3 - create service endpoint for LE communication
       final var namespace = config.getNamespace();
       V1Service v1Service =
@@ -133,6 +161,11 @@ public class K8SLiteRunner implements Runner {
       coreApi.createNamespacedPod(namespace, pod, null, null, DELEGATE_FIELD_MANAGER, "Warn");
 
       log.info("Done creating the task pod for {}!!", infraId);
+      //      try (FileWriter fileWriter = new FileWriter("/tmp/secrets/mnt/data.json")) {
+      //        fileWriter.write(jsonData.toString());
+      //      } catch (IOException e) {
+      //        e.printStackTrace();
+      //      }
       // Step 5 - Watch pod logs - normally stop when init finished, but if LE sends response then that's not possible
       // (e.g. delegate replicaset), but we can stop on watch status
       //    Watch<CoreV1Event> watch =
