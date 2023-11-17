@@ -292,23 +292,4 @@ virtualService:
   annotations: {}
 ingress:
   annotations: {}
-configData:
-  DEPLOY_MODE: KUBERNETES_ONPREM
-  GRPC_MANAGER_TARGET: harness-manager:9879
-  GRPC_MANAGER_AUTHORITY: harness-manager:9879
-  ENABLE_AUDIT_SERVICE: "true"
-  MOCK_ACCESS_CONTROL_SERVICE: "false"
-  AUDIT_ENABLED: "true"
-  ENABLE_RESOURCE_GROUP: "true"
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: harness-redis
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
-  ACCESS_CONTROL_ENABLED: "true"
-  DISTRIBUTED_LOCK_IMPLEMENTATION: REDIS
-  MANAGER_CLIENT_BASEURL: http://harness-manager:9090/api/
-  RBAC_URL: http://ng-manager:7090/
-  NG_MANAGER_CLIENT_BASEURL: http://ng-manager:7090/
-  PIPELINE_SERVICE_CLIENT_BASEURL: http://pipeline-service:12001/api/
-  TEMPLATE_SERVICE_CLIENT_BASEURL: http://template-service:15002/api/
-  TEMPLATE_SERVICE_BASE_URL: http://template-service:15002/api/
-  name: platform-service
-  labels: ""
+configData: {}
