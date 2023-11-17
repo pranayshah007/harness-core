@@ -713,8 +713,6 @@ public enum FeatureName {
   SPG_WORKFLOW_RBAC_ON_TRIGGER_RESOURCE(
       "Create a binding with Workflow/Pipeline RBAC on triggers resource", HarnessTeam.SPG),
   SRM_CODE_ERROR_NOTIFICATIONS("Feature flag for Code Error notification condition", HarnessTeam.CV),
-  SRM_COMMON_MONITORED_SERVICE(
-      "Flag to be used in UI for controlling common monitored service listing", HarnessTeam.CV),
   SRM_ENABLE_BASELINE_BASED_VERIFICATION("This is used to enable baseline based verification.", HarnessTeam.CV),
   SRM_ENABLE_GRAFANA_LOKI_LOGS("This is used to enable Grafana Loki logs health source.", HarnessTeam.CV),
   SRM_ENABLE_AZURE_LOGS("Will enable Azure logs health source.", HarnessTeam.CV),
@@ -734,7 +732,6 @@ public enum FeatureName {
       HarnessTeam.CV),
   SRM_SLO_ANNOTATIONS("Flag to start creating SLO annotations", HarnessTeam.CV),
   SRM_SLO_TOGGLE,
-  SRM_TELEMETRY("Will enable telemetry for verify step result", HarnessTeam.CV),
   SRM_ENABLE_ANALYZE_DEPLOYMENT_STEP("This is used to enable analyze deployment step in the pipeline", HarnessTeam.CV),
   SSCA_ENABLED("FF to enable SSCA on Harness", HarnessTeam.SSCA),
   SSH_JSCH_LOGS,
