@@ -8,6 +8,9 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
@@ -72,4 +75,43 @@ func writeError(w http.ResponseWriter, err error, status int) {
 		Message string `json:"error_msg"`
 	}{err.Error()}
 	WriteJSON(w, &out, status)
+}
+
+type harnessClaims struct {
+	Type     string `json:"type"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Username string `json:"username"`
+	jwt.RegisteredClaims
+}
+
+func GenerateJWTToken(jwtSecret string) (string, error) {
+	var (
+		tokenTypeService = "SERVICE"
+		tokenIssuer      = "Harness Inc"
+	)
+
+	// Valid from an hour ago
+	issuedTime := jwt.NewNumericDate(time.Now().Add(-time.Hour))
+
+	// Expires in an hour from now
+	expiryTime := jwt.NewNumericDate(time.Now().Add(time.Hour))
+
+	harnessClaims := harnessClaims{
+		Type: tokenTypeService,
+		Name: "LOG_SVC",
+	}
+
+	harnessClaims.Issuer = tokenIssuer
+	harnessClaims.IssuedAt = issuedTime
+	harnessClaims.NotBefore = issuedTime
+	harnessClaims.ExpiresAt = expiryTime
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, harnessClaims)
+	signedJwt, err := token.SignedString([]byte(jwtSecret))
+	if err != nil {
+		return "", err
+	}
+
+	return signedJwt, nil
 }

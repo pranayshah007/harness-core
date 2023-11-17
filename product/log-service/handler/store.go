@@ -413,12 +413,11 @@ func getVanityURLFromCache(ctx context.Context, accountID, prefix string, c cach
 
 // getVanityURLFromPlatform gets the vanity URL for the account
 func getVanityURLFromPlatform(ctx context.Context, accountID string, c cache.Cache, cfg config.Config, r *http.Request, ngClient *client.HTTPClient) (string, error) {
-	cookieToken, err := r.Cookie("token")
+	token, err := GenerateJWTToken(cfg.Platform.ManagerSecret)
 	if err != nil {
-		return "", fmt.Errorf("Could not fetch token from Cookie: %v", err)
+		return "", fmt.Errorf("failed to generate jwt token: %v", err)
 	}
-
-	vanityURL, err := ngClient.GetVanityURL(ctx, accountID, "Bearer "+cookieToken.Value)
+	vanityURL, err := ngClient.GetVanityURL(ctx, accountID, "Bearer "+token)
 	if err != nil {
 		return vanityURL, fmt.Errorf("api: cannot fetch the vanity url: %v", err)
 	}

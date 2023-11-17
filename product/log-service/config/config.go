@@ -28,6 +28,7 @@ type Config struct {
 		VanityBaseURL    string        `envconfig:"LOG_SERVICE_PLATFORM_VANITY_BASE_URL"`
 		VanityURLEnabled bool          `envconfig:"LOG_SERVICE_VANITY_URL_ENABLED"`
 		VanityURLTTL     time.Duration `envconfig:"LOG_SERVICE_VANITY_URL_TTL" default:"1h"`
+		ManagerSecret    string        `envconfig:"LOG_SERVICE_MANAGER_SECRET" default:"IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"`
 	}
 
 	Server struct {
