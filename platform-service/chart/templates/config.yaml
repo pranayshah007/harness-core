@@ -1,33 +1,17 @@
 apiVersion: v1
 data:
-  DEPLOY_MODE: KUBERNETES_ONPREM
-  GRPC_MANAGER_TARGET: harness-manager:9879
-  GRPC_MANAGER_AUTHORITY: harness-manager:9879
-  ENABLE_AUDIT_SERVICE: 'true'
-  MOCK_ACCESS_CONTROL_SERVICE: 'false'
-  AUDIT_ENABLED: 'true'
-  ENABLE_RESOURCE_GROUP: 'true'
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: 'harness-redis'
   LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  ACCESS_CONTROL_ENABLED: 'true'
   LOGGING_LEVEL: {{ .Values.appLogLevel }}
-  DISTRIBUTED_LOCK_IMPLEMENTATION: REDIS
-  MANAGER_CLIENT_BASEURL: 'http://harness-manager:9090/api/'
-  RBAC_URL: 'http://ng-manager:7090/'
   ACCESS_CONTROL_BASE_URL: 'http://access-control.{{ .Release.Namespace }}.svc.cluster.local:9006/api/'
   RESOURCE_GROUP_CLIENT_BASE_URL: 'http://platform-service.{{ .Release.Namespace }}.svc.cluster.local:9005/api/'
-  NG_MANAGER_CLIENT_BASEURL: 'http://ng-manager:7090/'
-  PIPELINE_SERVICE_CLIENT_BASEURL: 'http://pipeline-service:12001/api/'
-  TEMPLATE_SERVICE_CLIENT_BASEURL: 'http://template-service:15002/api/'
   AUDIT_CLIENT_BASEURL: 'http://platform-service.{{ .Release.Namespace }}.svc.cluster.local:9005/api/'
-  TEMPLATE_SERVICE_BASE_URL: 'http://template-service:15002/api/'
   MEMORY: {{ .Values.java.memory | quote }}
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   {{- if .Values.additionalConfigs }}
@@ -36,9 +20,7 @@ data:
 
 kind: ConfigMap
 metadata:
-  name: platform-service
   namespace: {{ .Release.Namespace }}
-  labels:
     {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
