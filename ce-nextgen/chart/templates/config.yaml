@@ -12,6 +12,7 @@ metadata:
   {{- end }}
 data:
   {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   MANAGER_CLIENT_BASEURL: "http://harness-manager.{{ .Release.Namespace }}.svc.cluster.local:9090/api/"
   NG_MANAGER_CLIENT_BASEURL: "http://ng-manager.{{ .Release.Namespace }}.svc.cluster.local:7090/"
   MANAGER_URL: "http://harness-manager.{{ .Release.Namespace }}.svc.cluster.local:9090/api/"

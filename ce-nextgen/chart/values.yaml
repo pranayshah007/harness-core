@@ -398,21 +398,4 @@ secrets:
           ACCESS_CONTROL_SECRET:
             name: ""
             property: ""
-configData:
-  LOGGING_LEVEL: INFO
-  MANAGER_TARGET: harness-manager:9879
-  MANAGER_AUTHORITY: harness-manager:9879
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: harness-redis
-  EVENTS_FRAMEWORK_ENV_NAMESPACE: ""
-  EVENTS_FRAMEWORK_REDIS_SSL_ENABLED: "false"
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
-  GOOGLE_CREDENTIALS_PATH: /opt/harness/svc/ceng_gcp_credentials.json
-  GOOGLE_APPLICATION_CREDENTIALS: /opt/harness/svc/ceng_gcp_credentials.json
-  CE_GCP_CREDENTIALS_PATH: /opt/harness/svc/ceng_gcp_credentials.json
-  EVENTS_MONGO_INDEX_MANAGER_MODE: AUTO
-  AZURE_ENABLE_FILE_CHECK_AT_SOURCE: "true"
-  SEGMENT_ENABLED: "false"
-  AUDIT_ENABLED: "true"
-  ACCESS_CONTROL_ENABLED: "true"
-  MOCK_ACCESS_CONTROL_SERVICE: "false"
-  ENABLE_APPDYNAMICS: "false"
+configData: {}
