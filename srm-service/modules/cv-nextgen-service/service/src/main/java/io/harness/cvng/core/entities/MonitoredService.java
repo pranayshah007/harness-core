@@ -86,6 +86,10 @@ public final class MonitoredService implements PersistentEntity, UuidAware, Acco
   @FdIndex private long nextErrorTrackingNotificationIteration;
   String templateIdentifier;
   String templateVersionLabel;
+  String templateVersionNumber;
+  String inputSetYaml;
+  boolean isTemplateByReference;
+  long lastReconciliationTime;
 
   @NotNull @Singular @Size(max = 128) List<NGTag> tags;
   // usage of this should be replaced with environmentIdentifierList. A better type based api is needed.

@@ -330,6 +330,7 @@ public enum FeatureName {
   DELEGATE_TASK_CAPACITY_CHECK("Enable delegate task capacity check", HarnessTeam.DEL),
   DELEGATE_TASK_LOAD_DISTRIBUTION("Delegate task load distribution among delegates", HarnessTeam.DEL),
   DEL_FETCH_TASK_LOG_API("FF to enable fetch delegate task logs from stackdriver", HarnessTeam.DEL),
+  DEL_NOTIFICATION("FF to enable notifications for delegate events", HarnessTeam.DEL),
   DEL_SELECTION_LOGS_READ_FROM_GOOGLE_DATA_STORE(
       "Enables the fetching of delegate selection records from google data store instead of mongo", HarnessTeam.DEL),
   DEPLOYMENT_RECONCILIATION_LOGIC_QUERY_OPTIMIZATIONS(
@@ -542,7 +543,6 @@ public enum FeatureName {
   PIE_USE_SECRET_FUNCTOR_WITH_RBAC("Perform Rbac on secrets when used in pipeline execution", HarnessTeam.PIPELINE),
   PIPELINE_GOVERNANCE,
   PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION,
-  PIPELINE_ROLLBACK("Flag to enable/disable Pipeline Rollback", HarnessTeam.PIPELINE),
   PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", GTM),
   PL_CG_SHOW_MEMBER_ID_COUNT(
       "Shows memberId count instead of member names on CG UserGroupListing page", HarnessTeam.PL),
@@ -949,7 +949,8 @@ public enum FeatureName {
   CDS_K8S_APPLY_MANIFEST_WITHOUT_SERVICE_NG(
       "Allows users to apply manifests from sources that are not related to the service", HarnessTeam.CDP),
   CDS_APPROVAL_AND_STAGE_NOTIFICATIONS_WITH_CD_METADATA(
-      "Improves approval and stage notifications with cd metadata", HarnessTeam.CDC);
+      "Improves approval and stage notifications with cd metadata", HarnessTeam.CDC),
+  GTM_DEVELOPER_LICENSING("Enable new developer licensing changes", GTM);
 
   // keep-sorted end
 

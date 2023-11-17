@@ -38,7 +38,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.configfile.ConfigFileWrapper;
-import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
@@ -425,7 +424,7 @@ public class ServiceMigrationService extends NgMigrationService {
     List<ManifestConfigWrapper> ecsServiceSpecs =
         ecsServiceSpecMigrationService.getServiceSpec(migrationContext, serviceDefs);
     List<ManifestConfigWrapper> taskDefSpecs = containerTaskMigrationService.getTaskSpecs(migrationContext, taskDefs);
-    List<StartupScriptConfiguration> startupScriptConfigurations =
+    List<NGYamlFile> startupScriptConfigurations =
         amiStartupScriptMigrationService.getStartupScriptConfiguration(migrationContext, startupScriptDefs);
     manifestConfigWrapperList.addAll(taskDefSpecs);
     manifestConfigWrapperList.addAll(ecsServiceSpecs);

@@ -52,6 +52,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.ListUtils;
@@ -164,8 +165,10 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
     ArrayNode inputs = mapper.createArrayNode();
     List<Variable> customArtifactTemplateVariables = template.getVariables();
     if (isNotEmpty(customArtifactTemplateVariables)) {
-      Map<String, String> templateVariableMap =
-          customArtifactTemplateVariables.stream().collect(Collectors.toMap(Variable::getName, Variable::getValue));
+      Map<String, String> templateVariableMap = customArtifactTemplateVariables.stream()
+                                                    .filter(Objects::nonNull)
+                                                    .filter(variable -> variable.getName() != null)
+                                                    .collect(Collectors.toMap(Variable::getName, Variable::getValue));
 
       customArtifactTemplateVariables.forEach(v -> {
         ObjectNode variable = mapper.createObjectNode();

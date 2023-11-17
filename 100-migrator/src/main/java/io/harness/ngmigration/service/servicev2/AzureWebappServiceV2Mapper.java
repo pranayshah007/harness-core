@@ -20,7 +20,6 @@ import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
 import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
 import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.cdng.configfile.ConfigFileWrapper;
-import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
@@ -55,7 +54,7 @@ public class AzureWebappServiceV2Mapper implements ServiceV2Mapper {
   @Override
   public ServiceDefinition getServiceDefinition(WorkflowService workflowService, MigrationContext migrationContext,
       Service service, List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
-      List<StartupScriptConfiguration> startupScriptConfigurations) {
+      List<NGYamlFile> startupScriptConfigurations) {
     Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
     Map<CgEntityId, Set<CgEntityId>> graph = migrationContext.getGraph();
@@ -127,10 +126,10 @@ public class AzureWebappServiceV2Mapper implements ServiceV2Mapper {
     return clonedStoreConfig;
   }
 
-  private StartupCommandConfiguration getStartupCommand(List<StartupScriptConfiguration> startupScriptConfigurations) {
+  private StartupCommandConfiguration getStartupCommand(List<NGYamlFile> startupScriptConfigurations) {
     StartupCommandConfiguration result = null;
-    if (isNotEmpty(startupScriptConfigurations) && null != startupScriptConfigurations.get(0).getStore()) {
-      StoreConfigWrapper store = startupScriptConfigurations.get(0).getStore();
+    if (isNotEmpty(startupScriptConfigurations) && null != startupScriptConfigurations.get(0)) {
+      StoreConfigWrapper store = getConfigFileWrapper(startupScriptConfigurations.get(0)).getStore();
       result = StartupCommandConfiguration.builder().store(store).build();
     }
     return result;

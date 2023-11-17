@@ -16,6 +16,7 @@ import io.harness.account.accesscontrol.ResourceTypes;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
+import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import io.swagger.annotations.Api;
@@ -69,7 +70,7 @@ public interface DockerRunnerResource {
   @io.swagger.v3.oas.annotations.Operation(operationId = "dockerRunnerCommand", summary = "get docker-runner command",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "command") })
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
-  String
+  RestResponse<String>
   get(@QueryParam("accountId") @NotEmpty String accountId, @QueryParam("os") String os, @QueryParam("arch") String arch)
       throws Exception;
 }

@@ -915,7 +915,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
           Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
           log.error("Error Occurred while getting aws auth variables for terraform task. {} at {}",
               sanitizeException.getMessage(), sanitizeException.getStackTrace());
-          throw new InvalidRequestException(sanitizeException.getMessage());
+          throw new InvalidRequestException(
+              "Error Occurred while getting aws auth variables for terraform task. " + sanitizeException.getMessage());
         }
       }
     }

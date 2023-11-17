@@ -16,7 +16,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.delegate.beans.DelegateEntityOwner.DelegateEntityOwnerKeys;
+import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -47,7 +49,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Entity(value = "delegateGroups", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.DEL)
-public class DelegateGroup implements PersistentEntity, UuidAware {
+public class DelegateGroup implements PersistentEntity, UuidAware, PersistentRegularIterable {
   public static final Duration TTL = ofDays(7);
   // Custom limit for delegate-name as 63 characters because kubernetes component name can be at most 63 characters.
   public static final int MAX_LENGTH_SUPPORTED_BY_DELEGATE = 63;
@@ -86,6 +88,10 @@ public class DelegateGroup implements PersistentEntity, UuidAware {
 
   private long upgraderLastUpdated;
 
+  private long delegatesExpireOn;
+
+  @FdIndex Long delegateExpiryAlertNextIteration;
+
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -103,6 +109,23 @@ public class DelegateGroup implements PersistentEntity, UuidAware {
                  .field(DelegateGroupKeys.ng)
                  .build())
         .build();
+  }
+
+  @Override
+  public Long obtainNextIteration(String fieldName) {
+    if (DelegateGroupKeys.delegateExpiryAlertNextIteration.equals(fieldName)) {
+      return this.delegateExpiryAlertNextIteration;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
+  }
+
+  @Override
+  public void updateNextIteration(String fieldName, long nextIteration) {
+    if (DelegateGroupKeys.delegateExpiryAlertNextIteration.equals(fieldName)) {
+      this.delegateExpiryAlertNextIteration = nextIteration;
+      return;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
   @UtilityClass

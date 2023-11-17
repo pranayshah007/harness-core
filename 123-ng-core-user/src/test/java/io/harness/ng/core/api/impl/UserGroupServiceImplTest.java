@@ -16,6 +16,7 @@ import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
 import static io.harness.ng.core.user.entities.UserGroup.UserGroupBuilder;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -80,6 +82,7 @@ import io.harness.utils.PageUtils;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -87,8 +90,14 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+import javax.validation.ConstraintViolation;
+import javax.validation.Path;
+import javax.validation.Validator;
+import javax.validation.metadata.ConstraintDescriptor;
+import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -113,6 +122,7 @@ public class UserGroupServiceImplTest extends CategoryTest {
   @Mock private AccessControlClient accessControlClient;
   @Mock private ScopeNameMapper scopeNameMapper;
   @Mock private LastAdminCheckService lastAdminCheckService;
+  @Mock private Validator validator;
   @Spy @Inject @InjectMocks private UserGroupServiceImpl userGroupService;
 
   private static final String ACCOUNT_IDENTIFIER = "A1";
@@ -123,7 +133,7 @@ public class UserGroupServiceImplTest extends CategoryTest {
   List<UserGroup> permittedUserGroups = new ArrayList<>();
   List<AccessControlDTO> accessControlDTOS = new ArrayList<>();
   @Before
-  public void setup() {
+  public void setup() throws IllegalAccessException {
     initMocks(this);
     UserGroupBuilder userGroupBuilder = UserGroup.builder()
                                             .accountIdentifier(ACCOUNT_IDENTIFIER)
@@ -343,6 +353,10 @@ public class UserGroupServiceImplTest extends CategoryTest {
                                            .users(Lists.newArrayList("abc", "def", "ok"))
                                            .build();
     when(userGroupRepository.save(userGroup)).thenReturn(userGroup);
+    ConstraintViolation<Object> mockviolation = mock(ConstraintViolation.class);
+    Set<ConstraintViolation<Object>> violations = new HashSet<>();
+    violations.add(mockviolation);
+    when(validator.validate(any())).thenReturn(violations);
     UserGroup updatedUserGroup = userGroupService.updateWithCheckThatSCIMFieldsAreNotModified(updatedUserGroupDTO);
     assertThat(updatedUserGroup).isNotNull();
   }
@@ -383,6 +397,30 @@ public class UserGroupServiceImplTest extends CategoryTest {
     assertThatThrownBy(() -> userGroupService.updateWithCheckThatSCIMFieldsAreNotModified(updatedUserGroupDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("The name cannot be updated for externally managed group");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testUpdateUserGroupWithNameNull_throwsJerseyViolation() {
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    String userGroupIdentifier = randomAlphabetic(10);
+    UserGroupDTO updatedUserGroupDTO = UserGroupDTO.builder()
+                                           .accountIdentifier(scope.getAccountIdentifier())
+                                           .orgIdentifier(scope.getOrgIdentifier())
+                                           .projectIdentifier(scope.getProjectIdentifier())
+                                           .identifier(userGroupIdentifier)
+                                           .externallyManaged(true)
+                                           .isSsoLinked(true)
+                                           .users(Lists.newArrayList("abc", "def", "ok"))
+                                           .build();
+    ConstraintViolation<Object> mockviolation = createDummyViolation("name", "cannot be null or empty");
+    Set<ConstraintViolation<Object>> violations = new HashSet<>();
+    violations.add(mockviolation);
+    when(validator.validateValue(any(), anyString(), any())).thenReturn(violations);
+    assertThatThrownBy(() -> userGroupService.update(updatedUserGroupDTO))
+        .isInstanceOf(JerseyViolationException.class)
+        .hasMessage("name: cannot be null or empty");
   }
 
   @Test
@@ -1525,5 +1563,64 @@ public class UserGroupServiceImplTest extends CategoryTest {
         .findAll(userGroupCriteriaArgumentCaptor.capture());
     userGroupService.getUserGroupsForUser(ACCOUNT_IDENTIFIER, "testUserId");
     verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture());
+  }
+
+  private static ConstraintViolation<Object> createDummyViolation(String propertyPath, String message) {
+    return new ConstraintViolation<Object>() {
+      @Override
+      public Object getRootBean() {
+        return null;
+      }
+
+      @Override
+      public Class<Object> getRootBeanClass() {
+        return Object.class;
+      }
+
+      @Override
+      public Object getLeafBean() {
+        return null;
+      }
+
+      @Override
+      public Object[] getExecutableParameters() {
+        return new Object[0];
+      }
+
+      @Override
+      public Object getExecutableReturnValue() {
+        return null;
+      }
+
+      @Override
+      public Path getPropertyPath() {
+        return PathImpl.createPathFromString(propertyPath);
+      }
+
+      @Override
+      public Object getInvalidValue() {
+        return null;
+      }
+
+      @Override
+      public ConstraintDescriptor<?> getConstraintDescriptor() {
+        return null;
+      }
+
+      @Override
+      public <U> U unwrap(Class<U> type) {
+        return null;
+      }
+
+      @Override
+      public String getMessage() {
+        return message;
+      }
+
+      @Override
+      public String getMessageTemplate() {
+        return null;
+      }
+    };
   }
 }

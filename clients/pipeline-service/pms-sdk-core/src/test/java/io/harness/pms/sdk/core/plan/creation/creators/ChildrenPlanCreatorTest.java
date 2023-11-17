@@ -8,6 +8,7 @@
 package io.harness.pms.sdk.core.plan.creation.creators;
 
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,10 +17,15 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.utils.TimeoutUtils;
+import io.harness.yaml.core.timeout.Timeout;
 
 import java.util.ArrayList;
 import org.junit.Before;
@@ -73,5 +79,29 @@ public class ChildrenPlanCreatorTest extends CategoryTest {
             PlanCreationContext.builder().build(), dummyChildrenPlanCreatorParam, new ArrayList<>());
     Mockito.verify(testChildrenPlanCreator)
         .getLayoutNodeInfo(PlanCreationContext.builder().build(), dummyChildrenPlanCreatorParam);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testCreatePlanForFieldTimeout() {
+    PlanNodeBuilder planNodeBuilder = testChildrenPlanCreator.setStageTimeoutObtainment(
+        ParameterField.createValueField(Timeout.builder().timeoutString("10m").build()), PlanNode.builder());
+    assertThat(planNodeBuilder).isNotNull();
+    assertThat(planNodeBuilder.build()
+                   .getTimeoutObtainments()
+                   .get(0)
+                   .getParameters()
+                   .prepareTimeoutParameters()
+                   .getTimeoutMillis())
+        .isEqualTo(600000L);
+    planNodeBuilder = testChildrenPlanCreator.setStageTimeoutObtainment(
+        ParameterField.createExpressionField(true, "<+stage.timeout>", null, true), PlanNode.builder());
+    assertThat(planNodeBuilder.build().getTimeoutObtainments().get(0).getParameters().equals(
+                   AbsoluteSdkTimeoutTrackerParameters.builder()
+                       .timeout(TimeoutUtils.getParameterTimeoutString(
+                           ParameterField.createExpressionField(true, "<+stage.timeout>", null, true)))
+                       .build()))
+        .isTrue();
   }
 }

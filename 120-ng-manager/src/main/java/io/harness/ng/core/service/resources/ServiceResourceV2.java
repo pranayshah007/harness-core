@@ -8,6 +8,7 @@
 package io.harness.ng.core.service.resources;
 
 import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
+import static io.harness.NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.rbac.NGResourceType.SERVICE;
@@ -57,6 +58,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.gitaware.helper.MoveConfigOperationType;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
@@ -83,6 +85,9 @@ import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
+import io.harness.ng.core.service.entity.ServiceMoveConfigOperationDTO;
+import io.harness.ng.core.service.entity.ServiceMoveConfigRequestDTO;
+import io.harness.ng.core.service.entity.ServiceMoveConfigResponse;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
@@ -1080,5 +1085,46 @@ public class ServiceResourceV2 {
     RepoListResponseDTO repoListResponseDTO = serviceEntityService.getListOfRepos(
         accountIdentifier, orgIdentifier, projectIdentifier, includeAllServicesAccessibleAtScope);
     return ResponseDTO.newResponse(repoListResponseDTO);
+  }
+
+  @POST
+  @Path("/move-config/{serviceIdentifier}")
+  @ApiOperation(value = "Move Service YAML from inline to remote", nickname = "moveServiceConfigs")
+  @Operation(operationId = "moveServiceConfigs", summary = "Move Service YAML from inline to remote",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Fetches Service YAML from Harness DB and creates a remote entity")
+      })
+  @Hidden
+  public ResponseDTO<ServiceMoveConfigResponse>
+  moveConfig(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                 NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = SERVICE_PARAM_MESSAGE) @PathParam(SERVICE_IDENTIFIER_KEY)
+      @ResourceIdentifier String serviceIdentifier, @BeanParam ServiceMoveConfigRequestDTO serviceRequestDTO) {
+    // check for service update permission
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(NGResourceType.SERVICE, serviceIdentifier), SERVICE_UPDATE_PERMISSION);
+
+    ServiceMoveConfigOperationDTO moveConfigOperationDTO =
+        ServiceMoveConfigOperationDTO.builder()
+            .repoName(serviceRequestDTO.getRepoName())
+            .branch(serviceRequestDTO.getBranch())
+            .moveConfigOperationType(
+                MoveConfigOperationType.getMoveConfigType(serviceRequestDTO.getMoveConfigOperationType()))
+            .connectorRef(serviceRequestDTO.getConnectorRef())
+            .baseBranch(serviceRequestDTO.getBaseBranch())
+            .commitMessage(serviceRequestDTO.getCommitMsg())
+            .isNewBranch(serviceRequestDTO.getIsNewBranch())
+            .filePath(serviceRequestDTO.getFilePath())
+            .build();
+
+    ServiceMoveConfigResponse serviceMoveConfigResponse = serviceEntityService.moveServiceStoreTypeConfig(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, moveConfigOperationDTO);
+    return ResponseDTO.newResponse(serviceMoveConfigResponse);
   }
 }

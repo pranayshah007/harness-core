@@ -29,6 +29,7 @@ import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookResponseDTO;
 import io.harness.spec.server.ng.v1.model.CreateGitXWebhookRequest;
 import io.harness.spec.server.ng.v1.model.CreateGitXWebhookResponse;
 import io.harness.spec.server.ng.v1.model.GitXWebhookEventResponse;
+import io.harness.spec.server.ng.v1.model.GitXWebhookEventResponse.EventStatusEnum;
 import io.harness.spec.server.ng.v1.model.GitXWebhookResponse;
 import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookRequest;
 import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookResponse;
@@ -154,7 +155,7 @@ public class GitXWebhookMapper {
 
   public GitXEventsListRequestDTO buildEventsListGitXWebhookRequestDTO(String accountIdentifier,
       String webhookIdentifier, Long eventStartTime, Long eventEndTime, String repoName, String filePath,
-      String eventIdentifier, String eventStatus) {
+      String eventIdentifier, List<String> eventStatus) {
     if ((eventStartTime == null && eventEndTime != null) || (eventStartTime != null && eventEndTime == null)) {
       throw new InvalidRequestException(String.format(
           "Either the Event start time [%d] or the Event end time [%d] not provided.", eventStartTime, eventEndTime));
@@ -183,7 +184,7 @@ public class GitXWebhookMapper {
               gitXWebhookEventResponse.setEventTriggerTime(gitXEventDTO.getEventTriggerTime());
               gitXWebhookEventResponse.setPayload(gitXEventDTO.getPayload());
               gitXWebhookEventResponse.setAuthorName(gitXEventDTO.getAuthorName());
-              gitXWebhookEventResponse.setEventStatus(gitXEventDTO.getEventStatus());
+              gitXWebhookEventResponse.setEventStatus(getEventStatus(gitXEventDTO.getEventStatus()));
               return gitXWebhookEventResponse;
             })
             .collect(Collectors.toList());
@@ -199,6 +200,23 @@ public class GitXWebhookMapper {
     responseBody.setAuthorName(gitXWebhookEventResponse.getAuthorName());
     responseBody.setEventStatus(gitXWebhookEventResponse.getEventStatus());
     return responseBody;
+  }
+
+  private EventStatusEnum getEventStatus(String eventStatus) {
+    switch (eventStatus) {
+      case "FAILED":
+        return EventStatusEnum.FAILED;
+      case "SKIPPED":
+        return EventStatusEnum.SKIPPED;
+      case "SUCCESSFUL":
+        return EventStatusEnum.SUCCESSFUL;
+      case "QUEUED":
+        return EventStatusEnum.QUEUED;
+      case "PROCESSING":
+        return EventStatusEnum.PROCESSING;
+      default:
+        return EventStatusEnum.UNKNOWN;
+    }
   }
 
   private List<String> getFolderPaths(List<String> folderPaths) {

@@ -9,6 +9,7 @@ package io.harness.serializer.morphia;
 
 import io.harness.credit.entities.CICredit;
 import io.harness.credit.entities.Credit;
+import io.harness.licensing.entities.developer.DeveloperMapping;
 import io.harness.licensing.entities.modules.CDModuleLicense;
 import io.harness.licensing.entities.modules.CEModuleLicense;
 import io.harness.licensing.entities.modules.CETModuleLicense;
@@ -49,6 +50,7 @@ public class LicenseManagerMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(CICredit.class);
     set.add(CETModuleLicense.class);
     set.add(IDPModuleLicense.class);
+    set.add(DeveloperMapping.class);
   }
 
   @Override

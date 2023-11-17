@@ -188,14 +188,14 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   }
 
   @Override
-  public ModuleLicenseDTO createModuleLicense(ModuleLicenseDTO moduleLicense) {
-    ModuleLicense savedEntity = createModuleLicense(licenseObjectConverter.toEntity(moduleLicense));
+  public ModuleLicenseDTO createModuleLicense(ModuleLicenseDTO moduleLicenseDTO) {
+    ModuleLicense savedEntity = createModuleLicense(licenseObjectConverter.toEntity(moduleLicenseDTO));
     return licenseObjectConverter.toDTO(savedEntity);
   }
 
   @Override
-  public ModuleLicenseDTO updateModuleLicense(ModuleLicenseDTO moduleLicense) {
-    ModuleLicense updatedLicense = updateModuleLicense(licenseObjectConverter.toEntity(moduleLicense));
+  public ModuleLicenseDTO updateModuleLicense(ModuleLicenseDTO moduleLicenseDTO) {
+    ModuleLicense updatedLicense = updateModuleLicense(licenseObjectConverter.toEntity(moduleLicenseDTO));
     return licenseObjectConverter.toDTO(updatedLicense);
   }
 

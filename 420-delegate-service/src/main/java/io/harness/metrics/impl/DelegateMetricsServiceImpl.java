@@ -7,6 +7,8 @@
 
 package io.harness.metrics.impl;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
@@ -14,6 +16,7 @@ import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateRing;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.metrics.AutoMetricContext;
+import io.harness.metrics.beans.AccountRingInfoMetricContext;
 import io.harness.metrics.beans.DelegateAccountMetricContext;
 import io.harness.metrics.beans.DelegateTaskTypeMetricContext;
 import io.harness.metrics.beans.HeartbeatMetricContext;
@@ -61,6 +64,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String TASK_TYPE_SUFFIX = "_by_type";
 
   public static final String HEARTBEAT_RECEIVED = "heartbeat_received";
+  public static final String ACCOUNT_RING_INFO = "account_ring_info";
   public static final String HEARTBEAT_CONNECTED = "CONNECTED";
   public static final String HEARTBEAT_RECONNECTED = "RE_CONNECTED";
   public static final String HEARTBEAT_DISCONNECTED = "DISCONNECTED";
@@ -152,15 +156,25 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
 
   @Override
   public void recordDelegateHeartBeatMetricsPerAccount(String accountId, String accountName, String companyName,
-      DelegateRing delegateRing, String orgId, String projectId, String delegateName, String delegateId,
-      String delegateVersion, String delegateConnectionStatus, String delegateEventType, boolean isNg,
-      boolean isImmutable, long lastHB, String metricName) {
-    try (HeartbeatMetricContext ignore = new HeartbeatMetricContext(accountId, accountName, companyName,
+      String orgId, String projectId, String delegateName, String delegateId, String delegateVersion,
+      String delegateConnectionStatus, String delegateEventType, boolean isNg, boolean isImmutable, long lastHB,
+      String metricName) {
+    try (HeartbeatMetricContext ignore =
+             new HeartbeatMetricContext(accountId, accountName, companyName, orgId, projectId, delegateName, delegateId,
+                 delegateVersion, delegateConnectionStatus, delegateEventType, isNg, isImmutable)) {
+      metricService.recordMetric(metricName, lastHB);
+    }
+  }
+
+  @Override
+  public void recordAccountRingInfoMetric(
+      String accountId, String accountName, DelegateRing delegateRing, long time, String metricName) {
+    try (AccountRingInfoMetricContext ignore = new AccountRingInfoMetricContext(accountId, accountName,
              delegateRing.getRingName(), delegateRing.getDelegateImageTag(), delegateRing.getUpgraderImageTag(),
              delegateRing.getWatcherVersions(), delegateRing.getWatcherJREVersion(),
-             delegateRing.getDelegateJREVersion(), orgId, projectId, delegateName, delegateId, delegateVersion,
-             delegateConnectionStatus, delegateEventType, isNg, isImmutable)) {
-      metricService.recordMetric(metricName, lastHB);
+             delegateRing.getDelegateJREVersion(),
+             isNotEmpty(delegateRing.getDelegateVersions()) ? delegateRing.getDelegateVersions().get(0) : null)) {
+      metricService.recordMetric(metricName, time);
     }
   }
 }
