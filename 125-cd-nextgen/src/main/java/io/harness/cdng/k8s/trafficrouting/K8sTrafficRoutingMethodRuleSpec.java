@@ -7,49 +7,50 @@
 
 package io.harness.cdng.k8s.trafficrouting;
 
-import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
-import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
-
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.validation.OneOfField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.List;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Value;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
 
-@Value
-@Builder
+@Data
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@OneOfField(fields = {"values", "value"})
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
-public class TrafficRoutingRule {
-  Rule rule;
+public class K8sTrafficRoutingMethodRuleSpec extends K8sTrafficRoutingRuleSpec {
+  List<Method> values;
+  Method value;
+  MatchType matchType;
 
-  @Builder
-  @FieldDefaults(level = AccessLevel.PRIVATE)
   @JsonIgnoreProperties(ignoreUnknown = true)
-  public static class Rule {
-    RuleType type;
-    @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-    TrafficRoutingRuleSpec spec;
+  enum Method {
+    GET,
+    POST,
+    PUT,
+    DELETE,
+    HEAD,
+    CONNECT,
+    OPTION,
+    TRACE,
+    PATCH;
 
-    @AllArgsConstructor
-    public enum RuleType {
-      URI(TrafficRoutingConst.URI),
-      SCHEME(TrafficRoutingConst.SCHEME),
-      METHOD(TrafficRoutingConst.METHOD),
-      AUTHORITY(TrafficRoutingConst.AUTHORITY),
-      HEADER(TrafficRoutingConst.HEADER),
-      PORT(TrafficRoutingConst.PORT);
-
-      @JsonValue @Getter private final String displayName;
+    @JsonValue
+    @Override
+    public String toString() {
+      return name();
     }
   }
 }

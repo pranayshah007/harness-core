@@ -10,27 +10,41 @@ package io.harness.cdng.k8s.trafficrouting;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.beans.SwaggerConstants;
-import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.swagger.annotations.ApiModelProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.List;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Value;
 import lombok.experimental.FieldDefaults;
-import lombok.experimental.SuperBuilder;
 
-@Data
-@NoArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-@SuperBuilder
+@Value
+@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
-public class TrafficRoutingSchemeRuleSpec extends TrafficRoutingRuleSpec {
-  @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> value;
-  @NotEmpty MatchType matchType;
+public class K8sTrafficRoutingRoute {
+  @NotNull RouteSpec route;
+
+  @Value
+  @Builder
+  @FieldDefaults(level = AccessLevel.PRIVATE)
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  static class RouteSpec {
+    @NotNull RouteType type;
+    @NotEmpty List<K8sTrafficRoutingRule> rules;
+
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    enum RouteType {
+      HTTP(K8sTrafficRoutingConst.HTTP);
+      @JsonValue @Getter final String displayName;
+    }
+  }
 }

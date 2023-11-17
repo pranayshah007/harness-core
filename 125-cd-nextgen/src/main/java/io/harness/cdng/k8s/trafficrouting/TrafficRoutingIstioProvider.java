@@ -10,10 +10,11 @@ package io.harness.cdng.k8s.trafficrouting;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.validation.OneOfField;
+import io.harness.beans.SwaggerConstants;
+import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -28,29 +29,8 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@OneOfField(fields = {"values", "value"})
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
-public class TrafficRoutingMethodRuleSpec extends TrafficRoutingRuleSpec {
-  List<Method> values;
-  Method value;
-  MatchType matchType;
-
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  enum Method {
-    GET,
-    POST,
-    PUT,
-    DELETE,
-    HEAD,
-    CONNECT,
-    OPTION,
-    TRACE,
-    PATCH;
-
-    @JsonValue
-    @Override
-    public String toString() {
-      return name();
-    }
-  }
+public class TrafficRoutingIstioProvider extends K8sTrafficRoutingProvider {
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH) ParameterField<List<String>> gateways;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH) ParameterField<List<String>> hosts;
 }

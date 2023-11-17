@@ -12,7 +12,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
-public interface TrafficRoutingConst {
+public interface K8sTrafficRoutingConst {
   String SMI = "smi";
   String ISTIO = "istio";
   String HTTP = "http";

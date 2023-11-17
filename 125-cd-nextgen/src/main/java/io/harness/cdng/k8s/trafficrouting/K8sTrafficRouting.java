@@ -1,8 +1,8 @@
 /*
- * Copyright 2023 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * Copyright 2021 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
 package io.harness.cdng.k8s.trafficrouting;
@@ -17,35 +17,38 @@ import io.harness.pms.yaml.YamlNode;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.List;
-import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.Value;
 import lombok.experimental.FieldDefaults;
-import lombok.experimental.SuperBuilder;
 
-@JsonTypeInfo(use = NAME, property = "provider", include = EXTERNAL_PROPERTY, visible = true)
-@JsonSubTypes({
-  @JsonSubTypes.Type(value = SMIProvider.class, name = TrafficRoutingConst.SMI)
-  , @JsonSubTypes.Type(value = IstioProvider.class, name = TrafficRoutingConst.ISTIO)
-})
-@FieldDefaults(level = AccessLevel.PROTECTED)
-@SuperBuilder
-@Data
-@NoArgsConstructor
+@Value
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
-public abstract class TrafficRoutingProvider {
+public class K8sTrafficRouting {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
+  @NotNull ProviderType provider;
 
-  @NotEmpty List<Route> routes;
-  @NotEmpty List<TrafficRouteDestination> destinations;
+  @JsonTypeInfo(use = NAME, property = "provider", include = EXTERNAL_PROPERTY, visible = true)
+  @NotNull
+  K8sTrafficRoutingProvider spec;
+
+  @AllArgsConstructor
+  public enum ProviderType {
+    SMI(K8sTrafficRoutingConst.SMI),
+    ISTIO(K8sTrafficRoutingConst.ISTIO);
+
+    @JsonValue final String displayName;
+  }
 }

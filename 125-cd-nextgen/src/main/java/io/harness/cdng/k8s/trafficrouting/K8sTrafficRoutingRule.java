@@ -7,15 +7,16 @@
 
 package io.harness.cdng.k8s.trafficrouting;
 
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonValue;
-import java.util.List;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,23 +29,27 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
-public class Route {
-  @NotNull RouteSpec route;
+public class K8sTrafficRoutingRule {
+  Rule rule;
 
-  @Value
   @Builder
   @FieldDefaults(level = AccessLevel.PRIVATE)
   @JsonIgnoreProperties(ignoreUnknown = true)
-  static class RouteSpec {
-    @NotNull RouteType type;
-    @NotEmpty List<TrafficRoutingRule> rules;
+  public static class Rule {
+    RuleType type;
+    @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
+    K8sTrafficRoutingRuleSpec spec;
 
     @AllArgsConstructor
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    @FieldDefaults(level = AccessLevel.PRIVATE)
-    enum RouteType {
-      HTTP(TrafficRoutingConst.HTTP);
-      @JsonValue @Getter final String displayName;
+    public enum RuleType {
+      URI(K8sTrafficRoutingConst.URI),
+      SCHEME(K8sTrafficRoutingConst.SCHEME),
+      METHOD(K8sTrafficRoutingConst.METHOD),
+      AUTHORITY(K8sTrafficRoutingConst.AUTHORITY),
+      HEADER(K8sTrafficRoutingConst.HEADER),
+      PORT(K8sTrafficRoutingConst.PORT);
+
+      @JsonValue @Getter private final String displayName;
     }
   }
 }

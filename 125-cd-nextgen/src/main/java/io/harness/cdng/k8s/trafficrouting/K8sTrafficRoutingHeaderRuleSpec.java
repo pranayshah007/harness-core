@@ -12,15 +12,18 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.validation.OneOfField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotEmpty;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 
@@ -30,9 +33,17 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@OneOfField(fields = {"values", "value"})
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
-public class TrafficRoutingPortRuleSpec extends TrafficRoutingRuleSpec {
-  @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH) ParameterField<Integer> value;
-  List<Integer> values;
+public class K8sTrafficRoutingHeaderRuleSpec extends K8sTrafficRoutingRuleSpec {
+  List<HeaderSpec> values;
+  @FieldDefaults(level = AccessLevel.PRIVATE)
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  @Value
+  @Builder
+  @AllArgsConstructor
+  static class HeaderSpec {
+    @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> key;
+    @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> value;
+    MatchType matchType;
+  }
 }

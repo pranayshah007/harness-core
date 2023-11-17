@@ -15,25 +15,22 @@ import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotEmpty;
 import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
 
-@Value
-@Builder
+@Data
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
-public class TrafficRouteDestination {
-  DestinationSpec destination;
-
-  @Value
-  @Builder
-  @FieldDefaults(level = AccessLevel.PRIVATE)
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  static class DestinationSpec {
-    @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> host;
-    @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH) ParameterField<Integer> weight;
-  }
+public class K8sTrafficRoutingAuthorityRuleSpec extends K8sTrafficRoutingRuleSpec {
+  @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> value;
+  @NotEmpty MatchType matchType;
 }

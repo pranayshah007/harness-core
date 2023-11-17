@@ -30,12 +30,12 @@ import lombok.experimental.SuperBuilder;
 
 @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
 @JsonSubTypes({
-  @JsonSubTypes.Type(value = TrafficRoutingURIRuleSpec.class, name = TrafficRoutingConst.URI)
-  , @JsonSubTypes.Type(value = TrafficRoutingMethodRuleSpec.class, name = TrafficRoutingConst.METHOD),
-      @JsonSubTypes.Type(value = TrafficRoutingHeaderRuleSpec.class, name = TrafficRoutingConst.HEADER),
-      @JsonSubTypes.Type(value = TrafficRoutingPortRuleSpec.class, name = TrafficRoutingConst.PORT),
-      @JsonSubTypes.Type(value = TrafficRoutingSchemeRuleSpec.class, name = TrafficRoutingConst.SCHEME),
-      @JsonSubTypes.Type(value = TrafficRoutingAuthorityRuleSpec.class, name = TrafficRoutingConst.AUTHORITY)
+  @JsonSubTypes.Type(value = K8sTrafficRoutingURIRuleSpec.class, name = K8sTrafficRoutingConst.URI)
+  , @JsonSubTypes.Type(value = K8sTrafficRoutingMethodRuleSpec.class, name = K8sTrafficRoutingConst.METHOD),
+      @JsonSubTypes.Type(value = K8sTrafficRoutingHeaderRuleSpec.class, name = K8sTrafficRoutingConst.HEADER),
+      @JsonSubTypes.Type(value = K8sTrafficRoutingPortRuleSpec.class, name = K8sTrafficRoutingConst.PORT),
+      @JsonSubTypes.Type(value = K8sTrafficRoutingSchemaRuleSpec.class, name = K8sTrafficRoutingConst.SCHEME),
+      @JsonSubTypes.Type(value = K8sTrafficRoutingAuthorityRuleSpec.class, name = K8sTrafficRoutingConst.AUTHORITY)
 })
 @FieldDefaults(level = AccessLevel.PROTECTED)
 @SuperBuilder
@@ -43,6 +43,6 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
-public abstract class TrafficRoutingRuleSpec {
+public abstract class K8sTrafficRoutingRuleSpec {
   @Getter @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> name;
 }
