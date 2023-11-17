@@ -46,6 +46,7 @@ import lombok.experimental.NonFinal;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Value
 public class YamlNode implements Visitable {
+  public static final String UUID_FIELD_NAME_V1 = "uuid";
   public static final String UUID_FIELD_NAME = "__uuid";
   public static final String IDENTIFIER_FIELD_NAME = "identifier";
   public static final String TYPE_FIELD_NAME = "type";
@@ -367,6 +368,21 @@ public class YamlNode implements Visitable {
 
   public String getUuid() {
     String uuidValue = getStringValue(UUID_FIELD_NAME);
+    // This means that current node is of array type
+    if (uuidValue == null && parentNode != null && parentNode.isObject()) {
+      List<YamlField> childFields = parentNode.fields();
+      for (YamlField childField : childFields) {
+        if (compareFirstChildOfArrayNode(childField.getNode(), this)) {
+          return parentNode.getUuid() + childField.getName();
+        }
+      }
+      return null;
+    }
+    return uuidValue;
+  }
+
+  public String getUUID() {
+    String uuidValue = getStringValue(UUID_FIELD_NAME_V1);
     // This means that current node is of array type
     if (uuidValue == null && parentNode != null && parentNode.isObject()) {
       List<YamlField> childFields = parentNode.fields();

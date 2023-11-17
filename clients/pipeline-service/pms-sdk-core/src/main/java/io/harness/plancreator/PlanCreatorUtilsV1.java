@@ -24,6 +24,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
 import io.harness.plancreator.stages.stage.v1.AbstractStageNodeV1;
@@ -47,6 +48,7 @@ import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameter
 import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -66,7 +68,9 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -464,5 +468,38 @@ public class PlanCreatorUtilsV1 {
   public interface GetAdviserForActionType {
     AdviserObtainment getAdviserForActionType(KryoSerializer kryoSerializer, FailureStrategyActionConfigV1 action,
         Set<FailureType> failureTypes, NGFailureActionTypeV1 actionType, String nextNodeUuid);
+  }
+
+  public YamlField getStageConfig(YamlField yamlField, String stageIdentifier) {
+    if (EmptyPredicate.isEmpty(stageIdentifier)) {
+      return null;
+    }
+    if (yamlField.getName().equals(YAMLFieldNameConstants.PIPELINE)
+        || yamlField.getName().equals(YAMLFieldNameConstants.STAGES)) {
+      return null;
+    }
+    YamlNode stages = YamlUtils.getGivenYamlNodeFromParentPath(yamlField.getNode(), YAMLFieldNameConstants.STAGES);
+    List<YamlField> stageYamlFields = getStageYamlFields(stages);
+    for (YamlField stageYamlField : stageYamlFields) {
+      if (stageIdentifier.equals(stageYamlField.getNode().getField("id").getNode().asText())) {
+        return stageYamlField;
+      }
+    }
+    return null;
+  }
+
+  private List<YamlField> getStageYamlFields(YamlNode stagesYamlNode) {
+    List<YamlNode> yamlNodes = Optional.of(stagesYamlNode.asArray()).orElse(Collections.emptyList());
+    List<YamlField> stageFields = new LinkedList<>();
+
+    yamlNodes.forEach(yamlNode -> {
+      String stageFieldType = yamlNode.getStringValue("type");
+      if (YAMLFieldNameConstants.PARALLEL.equalsIgnoreCase(stageFieldType)) {
+        stageFields.addAll(getStageYamlFields(yamlNode));
+      } else {
+        stageFields.add(new YamlField(yamlNode));
+      }
+    });
+    return stageFields;
   }
 }
