@@ -47,11 +47,11 @@ public enum ErrorBudgetRisk {
 
   public static ErrorBudgetRisk fromString(String stringValue) {
     if (MapUtils.isEmpty(STRING_TO_TYPE_MAP)) {
-      STRING_TO_TYPE_MAP = Arrays.stream(ErrorBudgetRisk.values())
-                               .collect(Collectors.toMap(ErrorBudgetRisk::getDisplayName, Function.identity()));
+      STRING_TO_TYPE_MAP =
+          Arrays.stream(ErrorBudgetRisk.values()).collect(Collectors.toMap(ErrorBudgetRisk::name, Function.identity()));
     }
     if (!STRING_TO_TYPE_MAP.containsKey(stringValue)) {
-      throw new IllegalArgumentException("DowntimeStatus should be in : " + STRING_TO_TYPE_MAP.keySet());
+      throw new IllegalArgumentException("ErrorBudgetRisk should be in : " + STRING_TO_TYPE_MAP.keySet());
     }
     return STRING_TO_TYPE_MAP.get(stringValue);
   }

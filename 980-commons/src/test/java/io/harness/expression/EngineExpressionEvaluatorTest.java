@@ -390,6 +390,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
                     .put("v13", "<+company><+j><+f>")
                     .put("v14", "<+company>><+j>")
                     .put("v15", "<+company> > <+j>")
+                    .put("v16", "<+w>.replaceAll(\"-\",\"_\")><+<+w>.replaceAll(\"-\",\"_\").concat(\".py\")>")
                     .build())
             .put("var1", "'archit' + <+company>")
             .put("var2", "'archit<+f>' + <+company>")
@@ -400,8 +401,13 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("var7", "[{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"xyz\"}}]")
             .put("var8", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"<+g>\"}}]")
             .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY,
-                Arrays.asList("PIE_EXPRESSION_CONCATENATION", "CDS_METHOD_INVOCATION_NEW_FLOW_EXPRESSION_ENGINE"))
+                Arrays.asList("PIE_EXPRESSION_CONCATENATION", "CDS_METHOD_INVOCATION_NEW_FLOW_EXPRESSION_ENGINE",
+                    "PIE_EXECUTION_JSON_SUPPORT"))
             .build());
+    assertThat(evaluator.evaluateExpression("<+if ((<+j> == null) || (empty(<+j>))) {\"emptyVar\";} else {<+f>;}>   "))
+        .isEqualTo("emptyVar");
+    assertThat(evaluator.evaluateExpression("<+if ((<+f> == null) || (empty(<+f>))) {\"emptyVar\";} else {<+f>;}>   "))
+        .isEqualTo("abc");
     // concat expressions
     assertThat(evaluator.resolve("archit-<+company>", true)).isEqualTo("archit-harness");
     assertThat(evaluator.evaluateExpression("archit-<+company>")).isEqualTo("archit-harness");
@@ -550,6 +556,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.resolve("<+variables.v13>", true)).isEqualTo("harnessabc");
     assertThat(evaluator.resolve("<+variables.v14>", true)).isEqualTo("true");
     assertThat(evaluator.resolve("<+variables.v15>", true)).isEqualTo("true");
+    assertThat(evaluator.resolve("<+variables.v16>", true)).isEqualTo("false");
 
     // an expression used in path of existing expression
     assertThat(evaluator.resolve("<+variables.<+h>>", true)).isEqualTo("harnessabcdef");

@@ -15,6 +15,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
+import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.repositories.ArtifactRepository;
 import io.harness.repositories.CdInstanceSummaryRepo;
 import io.harness.repositories.EnforcementResultRepo;
@@ -183,6 +184,7 @@ public class SSCAManagerTestRule implements InjectorRuleMixin, MethodRule, Mongo
         bind(S3StoreService.class).to(S3StoreServiceImpl.class);
         bind(TokenApi.class).to(TokenApiImpl.class);
         bind(MongoTemplate.class).toInstance(mock(MongoTemplate.class));
+        bind(PipelineServiceClient.class).toInstance(mock(PipelineServiceClient.class));
       }
     });
     modules.add(TimeModule.getInstance());

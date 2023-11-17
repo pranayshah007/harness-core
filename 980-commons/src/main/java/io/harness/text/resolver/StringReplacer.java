@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_EXPRESSION_ENGINE})
@@ -194,7 +195,8 @@ public class StringReplacer {
         } else {
           return false;
         }
-      } else if (checkIfStringMathematicalOperator(c) || checkBooleanOperators(buf, expressionStartPos, true)) {
+      } else if (checkIfStringMathematicalOperator(c) || checkBooleanOperators(buf, expressionStartPos, true)
+          || checkConditionalOrLoopOperators(buf, expressionStartPos)) {
         return false;
       } else if (!skipNonCriticalCharacters(c)) {
         return true;
@@ -281,6 +283,27 @@ public class StringReplacer {
             && (s.charAt(currentPos - 1) == ' ' || s.charAt(currentPos - 1) == '\n')
             && (s.charAt(currentPos + i) == ' ' || s.charAt(currentPos + i) == '\n')) {
           return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private boolean checkConditionalOrLoopOperators(StringBuffer s, int currentPos) {
+    String leftSubString = s.substring(0, currentPos + 1);
+    Set<String> jexlKeywordOperators = Set.of("if", "else", "for", "while", "do");
+    int minLength = 2;
+    int maxLength = 5;
+    // checking if any of the jexl operators are present in the left substring as the whole word
+    for (int i = 0; i < leftSubString.length(); i++) {
+      for (int j = minLength; j <= maxLength; j++) {
+        if (i + j <= leftSubString.length()) {
+          String substring = leftSubString.substring(i, i + j);
+          if (jexlKeywordOperators.contains(substring)
+              && (i == 0 || !StringUtils.isAlphanumeric(String.valueOf(s.charAt(i - 1))))
+              && (i + j == leftSubString.length() || !(StringUtils.isAlphanumeric(String.valueOf(s.charAt(i + j)))))) {
+            return true;
+          }
         }
       }
     }
