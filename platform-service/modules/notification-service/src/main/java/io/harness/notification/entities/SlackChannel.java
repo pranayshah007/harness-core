@@ -8,6 +8,7 @@
 package io.harness.notification.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.notification.NotificationRequest.Slack;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -35,12 +36,14 @@ public class SlackChannel implements Channel {
   String message;
   @Override
   public Object toObjectofProtoSchema() {
-    return Slack.newBuilder()
-        .addAllSlackWebHookUrls(slackWebHookUrls)
-        .putAllTemplateData(templateData)
-        .addAllUserGroup(NotificationUserGroupMapper.toProto(userGroups))
-        .setMessage(message)
-        .build();
+    Slack.Builder builder = Slack.newBuilder()
+                                .addAllSlackWebHookUrls(slackWebHookUrls)
+                                .putAllTemplateData(templateData)
+                                .addAllUserGroup(NotificationUserGroupMapper.toProto(userGroups));
+    if (isNotEmpty(message)) {
+      builder.setMessage(message);
+    }
+    return builder.build();
   }
 
   @Override

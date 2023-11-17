@@ -8,6 +8,7 @@
 package io.harness.notification.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.notification.NotificationRequest.Webhook;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -36,13 +37,16 @@ public class WebhookChannel implements Channel {
   String message;
   @Override
   public Object toObjectofProtoSchema() {
-    return Webhook.newBuilder()
-        .addAllUrls(webHookUrls)
-        .putAllTemplateData(templateData)
-        .addAllUserGroup(NotificationUserGroupMapper.toProto(userGroups))
-        .putAllHeaders(headers)
-        .setMessage(message)
-        .build();
+    Webhook.Builder builder = Webhook.newBuilder()
+                                  .addAllUrls(webHookUrls)
+                                  .putAllTemplateData(templateData)
+                                  .addAllUserGroup(NotificationUserGroupMapper.toProto(userGroups))
+                                  .putAllHeaders(headers);
+
+    if (isNotEmpty(message)) {
+      builder.setMessage(message);
+    }
+    return builder.build();
   }
 
   @Override

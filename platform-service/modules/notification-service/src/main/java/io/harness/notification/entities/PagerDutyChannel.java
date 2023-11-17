@@ -8,6 +8,7 @@
 package io.harness.notification.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.notification.NotificationRequest.PagerDuty;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -38,14 +39,18 @@ public class PagerDutyChannel implements Channel {
 
   @Override
   public Object toObjectofProtoSchema() {
-    return PagerDuty.newBuilder()
-        .addAllPagerDutyIntegrationKeys(pagerDutyIntegrationKeys)
-        .putAllTemplateData(templateData)
-        .setTemplateId(templateId)
-        .addAllUserGroup(NotificationUserGroupMapper.toProto(userGroups))
-        .setSummary(summary)
-        .putAllLinks(links)
-        .build();
+    PagerDuty.Builder builder = PagerDuty.newBuilder()
+                                    .addAllPagerDutyIntegrationKeys(pagerDutyIntegrationKeys)
+                                    .putAllTemplateData(templateData)
+                                    .setTemplateId(templateId)
+                                    .addAllUserGroup(NotificationUserGroupMapper.toProto(userGroups));
+    if (isNotEmpty(summary)) {
+      builder.setSummary(summary);
+    }
+    if (isNotEmpty(links)) {
+      builder.putAllLinks(links);
+    }
+    return builder.build();
   }
 
   @Override
