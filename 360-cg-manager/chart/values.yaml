@@ -507,41 +507,5 @@ secrets:
           VERIFICATION_SERVICE_SECRET:
             name: ""
             property: ""
-configData:
-  GITOPS_SERVICE_CLIENT_BASEURL: http://gitops:7908/api/v1/
-  ATMOSPHERE_BACKEND: REDIS
-  BACKGROUND_SCHEDULER_CLUSTERED: "true"
-  CACHE_BACKEND: REDIS
-  CAPSULE_JAR: rest-capsule.jar
-  DELEGATE_SERVICE_TARGET: harness-manager:9879
-  DELEGATE_SERVICE_AUTHORITY: harness-manager:9879
-  DISTRIBUTED_LOCK_IMPLEMENTATION: REDIS
-  DEPLOY_MODE: KUBERNETES_ONPREM
-  DISABLE_NEW_RELIC: "true"
-  ENABLE_G1GC: "true"
-  HAZELCAST_SERVICE: harness-manager
-  HZ_CLUSTER_NAME: harness-manager
-  REDIS_MASTER_NAME: harness-redis
-  SERVER_PORT: "9090"
-  SERVICE_ACC: /opt/harness/svc/service_acc.json
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: harness-redis
-  EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM: "true"
-  HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: "true"
-  MONGO_SSL_CONFIG: "true"
-  MONGO_SSL_CA_TRUST_STORE_PATH: /opt/harness/keystore.jks
-  MONGO_SSL_CA_TRUST_STORE_PASSWORD: password
-  ENABLE_ITERATORS: "true"
-  ITERATOR_CONFIG_PATH: /opt/harness/config
-  NG_MANAGER_BASE_URL: http://ng-manager:7090/
-  ACCESS_CONTROL_ENABLED: "true"
-  ACCESS_CONTROL_BASE_URL: http://access-control:9006/api/
-  ENABLE_AUDIT: "true"
-  AUDIT_CLIENT_BASEURL: http://platform-service:9005/api/
-  NOTIFICATION_BASE_URL: http://platform-service:9005/api/
-  enabled: true,
-  threadPoolSize: 1,
-  threadPoolIntervalInSeconds: 600,
-  targetIntervalInSeconds: 86400,
-  throttleIntervalInSeconds: "0"
-  iteratorMode: PUMP
+configData: {}
 configData2: {}
