@@ -11,6 +11,7 @@ metadata:
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   LOG_SERVICE_S3_BUCKET: {{ .Values.s3.bucketName }}
   LOG_SERVICE_S3_REGION: {{ .Values.s3.region }}
   {{- if .Values.s3.endpoint }}
@@ -18,14 +19,11 @@ data:
   {{- else }}
   LOG_SERVICE_S3_ENDPOINT: 'http://minio.{{ .Release.Namespace }}.svc.cluster.local:9000'
   {{- end }}
-  LOG_SERVICE_S3_PATH_STYLE: "true"
-  LOG_SERVICE_DISABLE_AUTH: "true"
   # Disable redis integration with log-service CI-9000
   {{- if false -}}
   # Protocol needs to be set to empty because ti-service uses go-redis library which doesn't accept protocol based strings
 {{/*  {{- $dbContext := deepCopy .Values.global.database.redis }}*/}}
 {{/*  {{- $_ := set $dbContext "protocol" "" }}*/}}
-  LOG_SERVICE_REDIS_MASTER_NAME: "harness-redis"
   LOG_SERVICE_REDIS_SENTINEL_ADDRS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   LOG_SERVICE_REDIS_USE_SENTINEL: {{ .Values.global.database.redis.installed  | quote }}
   LOG_SERVICE_REDIS_ENDPOINT: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
