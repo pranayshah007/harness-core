@@ -170,7 +170,7 @@ public class RoleAssignmentServiceImpl implements RoleAssignmentService {
         ScopeDTO scopeDTO = ScopeDTOMapper.toDTO(scope);
         RoleAssignmentDTO roleAssignmentDTO = RoleAssignmentDTOMapper.toDTO(roleAssignment);
         outboxService.save(new RoleAssignmentDeleteEvent(
-            scopeDTO.getAccountIdentifier(), roleAssignmentDTO, scopeDTO, false, roleAssignment.getId()));
+            scopeDTO.getAccountIdentifier(), roleAssignmentDTO, scopeDTO, true, roleAssignment.getId()));
       }
       return roleAssignmentsDeleted.size();
     }));
@@ -185,7 +185,7 @@ public class RoleAssignmentServiceImpl implements RoleAssignmentService {
         ScopeDTO scopeDTO = ScopeDTOMapper.toDTO(scope);
         RoleAssignmentDTO roleAssignmentDTO = RoleAssignmentDTOMapper.toDTO(roleAssignment);
         outboxService.save(new RoleAssignmentDeleteEvent(
-            scopeDTO.getAccountIdentifier(), roleAssignmentDTO, scopeDTO, true, roleAssignment.getId()));
+            scopeDTO.getAccountIdentifier(), roleAssignmentDTO, scopeDTO, false, roleAssignment.getId()));
       }
       return roleAssignmentsDeleted;
     }));

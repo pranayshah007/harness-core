@@ -362,9 +362,36 @@ public class RoleAssignmentServiceImplTest extends AccessControlCoreTestBase {
         ArgumentCaptor.forClass(RoleAssignmentDeleteEvent.class);
     verify(outboxService, times(roleAssingmentsDeleted.size())).save(deleteEventArgumentCaptor.capture());
     RoleAssignmentDeleteEvent roleAssignmentDeleteEvent = deleteEventArgumentCaptor.getValue();
-    assertFalse(roleAssignmentDeleteEvent.getSkipAudit());
+    assertTrue(roleAssignmentDeleteEvent.getSkipAudit());
     assertEquals(3L, deletedRoleAssignmentsCount);
     verify(roleAssignmentDao, times(1)).findAndRemove(roleAssignmentFilter);
+  }
+
+  @Test
+  @Owner(developers = KARAN)
+  @Category(UnitTests.class)
+  public void testDeleteMultiWithScopeIdentifierAndIdentifier() {
+    String accountId = randomAlphabetic(10);
+    ScopeDTO scopeDTO = ScopeDTO.builder().accountIdentifier(accountId).build();
+    Scope scope = fromDTO(scopeDTO);
+    List<String> identifiers = List.of("identifier1", "identifier2", "identifier3");
+    when(scopeService.buildScopeFromScopeIdentifier(any())).thenReturn(scope);
+    when(outboxService.save(any())).thenReturn(null);
+    when(outboxTransactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    List<RoleAssignment> roleAssingmentsDeleted =
+        List.of(RoleAssignment.builder().build(), RoleAssignment.builder().build(), RoleAssignment.builder().build());
+    when(roleAssignmentDao.findAndRemove(scope.toString(), identifiers)).thenReturn(roleAssingmentsDeleted);
+    List<RoleAssignment> roleAssignments = roleAssignmentService.deleteMulti(scope.toString(), identifiers);
+    ArgumentCaptor<RoleAssignmentDeleteEvent> deleteEventArgumentCaptor =
+        ArgumentCaptor.forClass(RoleAssignmentDeleteEvent.class);
+    verify(outboxService, times(roleAssingmentsDeleted.size())).save(deleteEventArgumentCaptor.capture());
+    RoleAssignmentDeleteEvent roleAssignmentDeleteEvent = deleteEventArgumentCaptor.getValue();
+    assertFalse(roleAssignmentDeleteEvent.getSkipAudit());
+    assertEquals(3L, roleAssignments.size());
+    verify(roleAssignmentDao, times(1)).findAndRemove(scope.toString(), identifiers);
   }
 
   @Test
