@@ -11,6 +11,7 @@ metadata:
   {{- end }}
 data:
   {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   {{- if .Values.additionalConfigs }}

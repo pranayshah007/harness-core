@@ -163,8 +163,4 @@ virtualService:
   annotations: {}
 ingress:
   annotations: {}
-configData:
-  DEPLOY_MODE: KUBERNETES_ONPREM
-  CD_CLIENT_BASEURL: http://pipeline-service:12001/api/
-  MANAGER_CLIENT_BASEURL: http://harness-manager:9090/api/
-  NG_MANAGER_CLIENT_BASEURL: http://ng-manager:7090/
+configData: {}
