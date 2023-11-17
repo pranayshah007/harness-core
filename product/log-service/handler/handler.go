@@ -79,6 +79,7 @@ func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store s
 	}
 
     r.Mount("/metrics", promhttp.Handler())
+    metric.RegisterMetrics()
 
 	// Log stream endpoints
 	// Format: /token?accountID=&key=

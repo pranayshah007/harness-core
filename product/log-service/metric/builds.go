@@ -9,6 +9,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+type Metrics struct{
+    CreatePrometheusCounter *prometheus.CounterVec
+    CreatePrometheusGauge   prometheus.Gauge
+}
+
 // function to return prometheus counter metric
 func CreatePrometheusCounter(name, help, operation string) *prometheus.CounterVec {
 	return prometheus.NewCounterVec(
@@ -50,7 +55,7 @@ var (
 		"Latency distribution of stream api requests",
 	)
 	BlobAPILatency = CreatePrometheusGauge(
-		"blob_api_latency",
+		"log_service_blob_api_latency",
 		"Latency for blob api for get, put, and delete requests",
 	)
 )
