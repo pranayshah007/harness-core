@@ -6,39 +6,38 @@
  */
 package io.harness.delegate;
 
-import com.google.inject.Inject;
+import static io.harness.eraro.ErrorCode.ACCOUNT_DOES_NOT_EXIST;
+
 import io.harness.exception.InvalidRequestException;
 import io.harness.security.AccountCheckAndCleanupService;
-import lombok.extern.slf4j.Slf4j;
+
 import software.wings.beans.account.AccountStatus;
 import software.wings.exception.AccountNotFoundException;
 import software.wings.helpers.ext.account.DeleteAccountHelper;
 import software.wings.service.intfc.AccountService;
 
-import static io.harness.eraro.ErrorCode.ACCOUNT_DOES_NOT_EXIST;
+import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class AccountCheckAndCleanupServiceImpl implements AccountCheckAndCleanupService {
+  @Inject AccountService accountService;
+  @Inject private DeleteAccountHelper deleteAccountHelper;
+  private static final String UNAUTHORIZED = "Unauthorized";
 
-    @Inject
-    AccountService accountService;
-    @Inject private DeleteAccountHelper deleteAccountHelper;
-    private static final String UNAUTHORIZED = "Unauthorized";
-
-    @Override
-    public void ensureAccountIsNotDeleted(String accountId) {
-
-        try {
-            String accountStatus = accountService.getAccountStatus(accountId);
-            if (AccountStatus.DELETED.equals(accountStatus)) {
-                log.debug("account {} does not exist", accountId);
-                deleteAccountHelper.deleteDataForDeletedAccount(accountId);
-                throw new InvalidRequestException(UNAUTHORIZED, ACCOUNT_DOES_NOT_EXIST, null);
-            }
-        } catch (AccountNotFoundException exception) {
-            log.debug("account {} does not exist", accountId, exception);
-            deleteAccountHelper.deleteDataForDeletedAccount(accountId);
-            throw new InvalidRequestException(UNAUTHORIZED, ACCOUNT_DOES_NOT_EXIST, null);
-        }
+  @Override
+  public void ensureAccountIsNotDeleted(String accountId) {
+    try {
+      String accountStatus = accountService.getAccountStatus(accountId);
+      if (AccountStatus.DELETED.equals(accountStatus)) {
+        log.debug("account {} does not exist", accountId);
+        deleteAccountHelper.deleteDataForDeletedAccount(accountId);
+        throw new InvalidRequestException(UNAUTHORIZED, ACCOUNT_DOES_NOT_EXIST, null);
+      }
+    } catch (AccountNotFoundException exception) {
+      log.debug("account {} does not exist", accountId, exception);
+      deleteAccountHelper.deleteDataForDeletedAccount(accountId);
+      throw new InvalidRequestException(UNAUTHORIZED, ACCOUNT_DOES_NOT_EXIST, null);
     }
+  }
 }

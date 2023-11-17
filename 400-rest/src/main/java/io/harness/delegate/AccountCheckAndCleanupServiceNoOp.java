@@ -9,9 +9,8 @@ package io.harness.delegate;
 import io.harness.security.AccountCheckAndCleanupService;
 
 public class AccountCheckAndCleanupServiceNoOp implements AccountCheckAndCleanupService {
-
-    @Override
-    public void ensureAccountIsNotDeleted(String accountId) {
-        return ;
-    }
+  @Override
+  public void ensureAccountIsNotDeleted(String accountId) {
+    return;
+  }
 }

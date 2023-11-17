@@ -6,12 +6,16 @@
  */
 package io.harness.app;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
+
+import static javax.ws.rs.Priorities.AUTHENTICATION;
+import static org.apache.commons.lang3.StringUtils.substringAfter;
+
 import io.harness.security.DelegateTokenAuthenticator;
 import io.harness.security.VerificationServiceAuthenticationFilter;
-import lombok.extern.slf4j.Slf4j;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import javax.annotation.Priority;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -19,10 +23,7 @@ import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
-
-import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
-import static javax.ws.rs.Priorities.AUTHENTICATION;
-import static org.apache.commons.lang3.StringUtils.substringAfter;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Priority(AUTHENTICATION)
@@ -48,7 +49,6 @@ public class VerificationAuthFilter extends VerificationServiceAuthenticationFil
       } else {
         throw new IllegalStateException("Invalid header:" + header);
       }
-
       return;
     }
 
@@ -59,6 +59,6 @@ public class VerificationAuthFilter extends VerificationServiceAuthenticationFil
   public void validateDelegateToken(
       String accountId, String tokenString, String delegateId, String delegateTokenName, String agentMtlsAuthority) {
     delegateTokenAuthenticator.validateDelegateToken(
-            accountId, tokenString, delegateId, delegateTokenName, agentMtlsAuthority, false);
+        accountId, tokenString, delegateId, delegateTokenName, agentMtlsAuthority, false);
   }
 }

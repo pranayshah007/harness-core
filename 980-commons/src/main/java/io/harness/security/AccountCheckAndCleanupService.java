@@ -7,5 +7,5 @@
 package io.harness.security;
 
 public interface AccountCheckAndCleanupService {
-    void ensureAccountIsNotDeleted(String accountId);
+  void ensureAccountIsNotDeleted(String accountId);
 }
