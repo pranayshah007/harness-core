@@ -105,6 +105,7 @@ import io.harness.cvng.notification.entities.SLONotificationRule;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.Annotation;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
+import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecordBucket;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.MetricLessServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator;
@@ -264,6 +265,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(AutoDiscoveryAgent.class);
     set.add(AsyncAutoDiscoveryReImport.class);
     set.add(MetricLessServiceLevelIndicator.class);
+    set.add(CompositeSLORecordBucket.class);
   }
 
   @Override

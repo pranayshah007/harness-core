@@ -7,6 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
+import static io.harness.cvng.core.services.CVNextGenConstants.SLI_RECORD_BUCKET_SIZE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeAuthorityCount;
 
@@ -87,7 +88,9 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
       }
       // new data has arrived for this composite SLO
       if (Objects.nonNull(latestCompositeSLORecord)
-          && latestCompositeSLORecord.getStartTimestamp().isAfter(startTime)) {
+          && latestCompositeSLORecord.getStartTimestamp()
+                 .plus(SLI_RECORD_BUCKET_SIZE, ChronoUnit.MINUTES)
+                 .isAfter(startTime)) { // TODO recheck this condition
         // Update flow: fetch CompositeSLO Records to be updated
         updateCompositeSLORecords(serviceLevelObjectivesDetailCompositeSLORecordMap,
             objectivesDetailSLIMissingDataTypeMap, compositeServiceLevelObjective, runningGoodCount, runningBadCount,
@@ -242,12 +245,16 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
     Map<Instant, Pair<List<Double>, List<Integer>>> timeStampToBadValue =
         new HashMap<>(); // the list contains for each of the simple SLOs
     Map<Instant, Pair<List<Double>, List<Integer>>> timeStampToGoodValue = new HashMap<>();
-    Map<Instant, Integer> timeStampToTotalValue = new HashMap<>();
+    Map<Instant, Integer> timeStampTotalWeightage = new HashMap<>();
     getTimeStampMapsForGoodBadTotal(serviceLevelObjectivesDetailCompositeSLORecordMap,
-        objectivesDetailSLIMissingDataTypeMap, timeStampToBadValue, timeStampToGoodValue, timeStampToTotalValue);
+        objectivesDetailSLIMissingDataTypeMap, timeStampToBadValue, timeStampToGoodValue, timeStampTotalWeightage);
     List<CompositeSLORecordBucket> sloRecordList = new ArrayList<>();
-    for (Instant instant : ImmutableSortedSet.copyOf(timeStampToTotalValue.keySet())) {
-      if (timeStampToTotalValue.get(instant).equals(serviceLevelObjectivesDetailCompositeSLORecordMap.size())) {
+    int idx = 0;
+    for (Instant instant : ImmutableSortedSet.copyOf(timeStampTotalWeightage.keySet())) {
+      // we are checking, if we have all the simple slo data
+      // TODO we need to check its always for BUCKET_SIZE all edge cases
+      if (timeStampTotalWeightage.get(instant).equals(
+              serviceLevelObjectivesDetailCompositeSLORecordMap.size())) { // Check if this is correct TODO
         Pair<Double, Double> currentCount =
             formulaTypeCompositeSLOEvaluatorMap.get(sloFormulaType)
                 .evaluate(timeStampToGoodValue.get(instant).getFirst(), timeStampToGoodValue.get(instant).getSecond(),
@@ -256,16 +263,20 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
         double currentBadCount = currentCount.getSecond();
         runningGoodCount += currentGoodCount;
         runningBadCount += currentBadCount;
-        CompositeSLORecordBucket sloRecord = CompositeSLORecordBucket.builder()
-                                                 .runningBadCount(runningBadCount)
-                                                 .runningGoodCount(runningGoodCount)
-                                                 .sloId(verificationTaskId)
-                                                 .sloVersion(sloVersion)
-                                                 .verificationTaskId(verificationTaskId)
-                                                 .startTimestamp(instant)
-                                                 .build();
-        sloRecordList.add(sloRecord);
+        if ((idx + 1) % SLI_RECORD_BUCKET_SIZE == 0) {
+          CompositeSLORecordBucket sloRecordBucket =
+              CompositeSLORecordBucket.builder()
+                  .runningBadCount(runningBadCount)
+                  .runningGoodCount(runningGoodCount)
+                  .sloId(verificationTaskId)
+                  .sloVersion(sloVersion)
+                  .verificationTaskId(verificationTaskId)
+                  .startTimestamp(instant.minus(4, ChronoUnit.MINUTES)) // TODO date check
+                  .build();
+          sloRecordList.add(sloRecordBucket);
+        }
       }
+      idx++;
     }
     return sloRecordList;
   }
@@ -274,6 +285,7 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
       Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecordBucket>>
           serviceLevelObjectivesDetailCompositeSLORecordMap,
       int sloVersion, double runningGoodCount, double runningBadCount, String verificationTaskId) {
+    // TODO need condition here too
     List<CompositeSLORecordBucket> sloRecordList = new ArrayList<>();
     Map<Instant, Map<String, SLIRecordBucket>> timeStampToSLIRecordBucketMap =
         getTimeStampToSLIRecordBucketMap(serviceLevelObjectivesDetailCompositeSLORecordMap);
@@ -288,7 +300,7 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
                 .sloVersion(sloVersion)
                 .verificationTaskId(verificationTaskId)
                 .startTimestamp(instant)
-                .scopedIdentifierSLIRecordMap(timeStampToSLIRecordBucketMap.get(instant))
+                .scopedIdentifierSLIRecordBucketMap(timeStampToSLIRecordBucketMap.get(instant))
                 .build();
         sloRecordList.add(sloRecord);
       }
@@ -301,18 +313,24 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
           serviceLevelObjectivesDetailCompositeSLORecordMap,
       Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>
           objectivesDetailSLIMissingDataTypeMap, // we are updating the three maps
-      Map<Instant, Pair<List<Double>, List<Integer>>> timeStampToBadValue,
-      Map<Instant, Pair<List<Double>, List<Integer>>> timeStampToGoodValue,
+      Map<Instant, Pair<List<Double>, List<Integer>>> timeStampToBadValue, // status of SLO in that min
+      Map<Instant, Pair<List<Double>, List<Integer>>> timeStampToGoodValue, // status of SLO in that min
       Map<Instant, Integer> timeStampToTotalValue) {
-    for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail objectivesDetail :
-        serviceLevelObjectivesDetailCompositeSLORecordMap.keySet()) {
-      for (SLIRecordBucket sliRecordBucket : serviceLevelObjectivesDetailCompositeSLORecordMap.get(objectivesDetail)) {
-        Pair<List<Double>, List<Integer>> badCountPair =
-            timeStampToBadValue.getOrDefault(sliRecordBucket.getBucketStartTime(),
-                new Pair<>(new ArrayList<>(), new ArrayList<>())); // list of weights + is it of good/bad for simple SLO
-        Pair<List<Double>, List<Integer>> goodCountPair = timeStampToGoodValue.getOrDefault(
-            sliRecordBucket.getBucketStartTime(), new Pair<>(new ArrayList<>(), new ArrayList<>()));
-        for (SLIState sliState : sliRecordBucket.getSliStates()) {
+    for (Map.Entry<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecordBucket>>
+             objectivesDetailListEntry : serviceLevelObjectivesDetailCompositeSLORecordMap.entrySet()) {
+      CompositeServiceLevelObjective.ServiceLevelObjectivesDetail objectivesDetail = objectivesDetailListEntry.getKey();
+      for (SLIRecordBucket sliRecordBucket :
+          objectivesDetailListEntry.getValue()) { // Iterate for the particular simple SLO
+        for (int i = 0; i < sliRecordBucket.getSliStates().size(); i++) {
+          SLIState sliState = sliRecordBucket.getSliStates().get(i);
+          Instant currentTime = sliRecordBucket.getBucketStartTime().plus(i, ChronoUnit.MINUTES);
+          Pair<List<Double>, List<Integer>> badCountPair = timeStampToBadValue.getOrDefault(currentTime,
+              new Pair<>(new ArrayList<>(), new ArrayList<>())); // list of weights + is it of good/bad for simple SLO
+          Pair<List<Double>, List<Integer>> goodCountPair =
+              timeStampToGoodValue.getOrDefault(currentTime, new Pair<>(new ArrayList<>(), new ArrayList<>()));
+          timeStampToBadValue.put(currentTime, badCountPair);
+          timeStampToGoodValue.put(currentTime, goodCountPair);
+          timeStampToTotalValue.put(currentTime, timeStampToTotalValue.getOrDefault(currentTime, 0) + 1);
           if (SLIState.GOOD.equals(sliState)
               || (SLIState.NO_DATA.equals(sliState)
                   && objectivesDetailSLIMissingDataTypeMap.get(objectivesDetail).equals(SLIMissingDataType.GOOD))) {
@@ -320,10 +338,6 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
             badCountPair.getSecond().add(0);
             goodCountPair.getFirst().add(objectivesDetail.getWeightagePercentage());
             goodCountPair.getSecond().add(1);
-            timeStampToBadValue.put(sliRecordBucket.getBucketStartTime(), badCountPair);
-            timeStampToGoodValue.put(sliRecordBucket.getBucketStartTime(), goodCountPair);
-            timeStampToTotalValue.put(sliRecordBucket.getBucketStartTime(),
-                timeStampToTotalValue.getOrDefault(sliRecordBucket.getBucketStartTime(), 0) + 1);
           } else if (SLIState.BAD.equals(sliState)
               || (SLIState.NO_DATA.equals(sliState)
                   && objectivesDetailSLIMissingDataTypeMap.get(objectivesDetail).equals(SLIMissingDataType.BAD))) {
@@ -331,19 +345,11 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
             badCountPair.getSecond().add(1);
             goodCountPair.getFirst().add(objectivesDetail.getWeightagePercentage());
             goodCountPair.getSecond().add(0);
-            timeStampToBadValue.put(sliRecordBucket.getBucketStartTime(), badCountPair);
-            timeStampToGoodValue.put(sliRecordBucket.getBucketStartTime(), goodCountPair);
-            timeStampToTotalValue.put(sliRecordBucket.getBucketStartTime(),
-                timeStampToTotalValue.getOrDefault(sliRecordBucket.getBucketStartTime(), 0) + 1);
           } else {
             badCountPair.getFirst().add(objectivesDetail.getWeightagePercentage());
             badCountPair.getSecond().add(-1);
             goodCountPair.getFirst().add(objectivesDetail.getWeightagePercentage());
             goodCountPair.getSecond().add(-1);
-            timeStampToBadValue.put(sliRecordBucket.getBucketStartTime(), badCountPair);
-            timeStampToGoodValue.put(sliRecordBucket.getBucketStartTime(), goodCountPair);
-            timeStampToTotalValue.put(sliRecordBucket.getBucketStartTime(),
-                timeStampToTotalValue.getOrDefault(sliRecordBucket.getBucketStartTime(), 0) + 1);
           }
         }
       }
@@ -358,17 +364,18 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
         serviceLevelObjectivesDetailCompositeSLORecordMap.keySet()) { // iterate for each of simple SLO
       for (SLIRecordBucket sliRecordBucket :
           serviceLevelObjectivesDetailCompositeSLORecordMap.get(objectivesDetail)) { // iterate for each of the buckets
-        Map<String, SLIRecordBucket> serviceLevelObjectivesDetailSLIRecordMap =
-            timeStampToSLIRecordsMap.getOrDefault(sliRecordBucket.getBucketStartTime(), new HashMap<>());
+        Map<String, SLIRecordBucket> serviceLevelObjectivesDetailSLIRecordMap = timeStampToSLIRecordsMap.getOrDefault(
+            sliRecordBucket.getBucketStartTime().plus(4, ChronoUnit.MINUTES), new HashMap<>());
         // fix with contains etc TODO
         // TODO this needs fixing
-        for (SLIState sliState : sliRecordBucket.getSliStates()) {
-          if (sliState != SLIState.SKIP_DATA) {
-            serviceLevelObjectivesDetailSLIRecordMap.put(
-                serviceLevelObjectiveV2Service.getScopedIdentifier(objectivesDetail), sliRecordBucket);
-          }
-          timeStampToSLIRecordsMap.put(sliRecordBucket.getBucketStartTime(), serviceLevelObjectivesDetailSLIRecordMap);
-        }
+        /*        for (SLIState sliState : sliRecordBucket.getSliStates()) {
+                  if (sliState != SLIState.SKIP_DATA) {*/
+        serviceLevelObjectivesDetailSLIRecordMap.put(
+            serviceLevelObjectiveV2Service.getScopedIdentifier(objectivesDetail), sliRecordBucket);
+        //          }
+        timeStampToSLIRecordsMap.put(
+            sliRecordBucket.getBucketStartTime().plus(4, ChronoUnit.MINUTES), serviceLevelObjectivesDetailSLIRecordMap);
+        //        }
       }
     }
     return timeStampToSLIRecordsMap;
@@ -387,10 +394,10 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
     Map<Instant, Integer> timeStampToTotalValue = new HashMap<>();
     getTimeStampMapsForGoodBadTotal(serviceLevelObjectivesDetailCompositeSLORecordMap,
         objectivesDetailSLIMissingDataTypeMap, timeStampToBadValue, timeStampToGoodValue, timeStampToTotalValue);
-    CompositeSLORecordBucket sloRecordBucket = null;
-    for (Instant instant : ImmutableSortedSet.copyOf(timeStampToTotalValue.keySet())) {
+    int minute = 0;
+    for (Instant instant :
+        ImmutableSortedSet.copyOf(timeStampToTotalValue.keySet())) { // maybe we need a better iteration
       if (timeStampToTotalValue.get(instant).equals(serviceLevelObjectivesDetailCompositeSLORecordMap.size())) {
-        sloRecordBucket = sloRecordBucketMap.get(instant);
         Pair<Double, Double> currentCount =
             formulaTypeCompositeSLOEvaluatorMap.get(sloFormulaType)
                 .evaluate(timeStampToGoodValue.get(instant).getFirst(), timeStampToGoodValue.get(instant).getSecond(),
@@ -400,21 +407,26 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
         previousRunningGoodCount += currentGoodCount;
         previousRunningBadCount += currentBadCount;
       }
-      if (Objects.nonNull(sloRecordBucket)) {
-        sloRecordBucket.setRunningGoodCount(previousRunningGoodCount);
-        sloRecordBucket.setRunningBadCount(previousRunningBadCount);
-        sloRecordBucket.setSloVersion(sloVersion);
-      } else {
-        sloRecordBucket = CompositeSLORecordBucket.builder()
-                              .runningBadCount(previousRunningBadCount)
-                              .runningGoodCount(previousRunningGoodCount)
-                              .sloId(verificationTaskId)
-                              .sloVersion(sloVersion)
-                              .verificationTaskId(verificationTaskId)
-                              .startTimestamp(instant)
-                              .build();
+      if ((minute + 1) % SLI_RECORD_BUCKET_SIZE == 0) {
+        CompositeSLORecordBucket sloRecordBucket =
+            sloRecordBucketMap.get(instant.minus(4, ChronoUnit.MINUTES)); // map is of bucket startTime
+        if (Objects.nonNull(sloRecordBucket)) {
+          sloRecordBucket.setRunningGoodCount(previousRunningGoodCount);
+          sloRecordBucket.setRunningBadCount(previousRunningBadCount);
+          sloRecordBucket.setSloVersion(sloVersion);
+        } else {
+          sloRecordBucket = CompositeSLORecordBucket.builder()
+                                .runningBadCount(previousRunningBadCount)
+                                .runningGoodCount(previousRunningGoodCount)
+                                .sloId(verificationTaskId)
+                                .sloVersion(sloVersion)
+                                .verificationTaskId(verificationTaskId)
+                                .startTimestamp(instant)
+                                .build();
+        }
+        updateOrCreateSLORecords.add(sloRecordBucket);
       }
-      updateOrCreateSLORecords.add(sloRecordBucket);
+      minute++;
     }
     return updateOrCreateSLORecords;
   }
@@ -439,7 +451,7 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
         compositeSLORecordBucket.setRunningGoodCount(runningGoodCount);
         compositeSLORecordBucket.setRunningBadCount(runningBadCount);
         compositeSLORecordBucket.setSloVersion(sloVersion);
-        compositeSLORecordBucket.setScopedIdentifierSLIRecordMap(timeStampToSLIRecordBucketsMap.get(instant));
+        compositeSLORecordBucket.setScopedIdentifierSLIRecordBucketMap(timeStampToSLIRecordBucketsMap.get(instant));
       } else {
         compositeSLORecordBucket = CompositeSLORecordBucket.builder()
                                        .runningBadCount(runningBadCount)
@@ -448,7 +460,7 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
                                        .sloVersion(sloVersion)
                                        .verificationTaskId(verificationTaskId)
                                        .startTimestamp(instant)
-                                       .scopedIdentifierSLIRecordMap(timeStampToSLIRecordBucketsMap.get(instant))
+                                       .scopedIdentifierSLIRecordBucketMap(timeStampToSLIRecordBucketsMap.get(instant))
                                        .build();
       }
       updateOrCreateSLORecords.add(compositeSLORecordBucket);

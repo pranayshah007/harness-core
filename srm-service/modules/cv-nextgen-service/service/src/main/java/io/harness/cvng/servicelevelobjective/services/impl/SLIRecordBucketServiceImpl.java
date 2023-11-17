@@ -54,8 +54,6 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 public class SLIRecordBucketServiceImpl implements SLIRecordBucketService {
   private static final int RETRY_COUNT = 3;
-
-  public static final int SLI_RECORD_BUCKET_SIZE = 5;
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject SRMPersistence hPersistence;

@@ -76,10 +76,7 @@ public class CompositeSLORecordBucket extends VerificationTaskBase implements Pe
   @Setter(AccessLevel.PRIVATE) private long epochMinute;
   private double runningBadCount;
   private double runningGoodCount;
-  private double runningNoDataCount;
-  private double runningSkipDataCount;
-  private Map<String, SLIRecordBucket> scopedIdentifierSLIRecordMap;
-
+  private Map<String, SLIRecordBucket> scopedIdentifierSLIRecordBucketMap;
   private int sloVersion;
-  @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusDays(180).toInstant());
+  @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusDays(92).toInstant());
 }
