@@ -4,7 +4,6 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
-
 package io.harness.monitoring;
 
 import io.harness.annotations.dev.CodePulse;
@@ -21,8 +20,8 @@ import org.springframework.data.annotation.Id;
 @Value
 @Builder
 @AllArgsConstructor
-@FieldNameConstants(innerTypeName = "ExecutionCountWithAccountResultKeys")
-public class ExecutionCountWithAccountResult {
-  @Id private String accountId;
+@FieldNameConstants(innerTypeName = "ExecutionCountWithModuleResultKeys")
+public class ExecutionCountWithModuleResult {
+  @Id private String module;
   private Integer count;
 }

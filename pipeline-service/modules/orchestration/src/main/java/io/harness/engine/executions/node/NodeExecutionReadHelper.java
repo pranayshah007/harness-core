@@ -7,6 +7,7 @@
 
 package io.harness.engine.executions.node;
 
+import static io.harness.NGCommonEntityConstants.MONGODB_ID;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -20,6 +21,10 @@ import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.monitoring.ExecutionCountWithAccountResult.ExecutionCountWithAccountResultKeys;
+import io.harness.monitoring.ExecutionCountWithModuleResult.ExecutionCountWithModuleResultKeys;
+import io.harness.monitoring.ExecutionCountWithStepTypeResult.ExecutionCountWithStepTypeResultKeys;
+import io.harness.monitoring.ExecutionStatistics;
+import io.harness.monitoring.ExecutionStatistics.ExecutionStatisticsKeys;
 import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.inject.Inject;
@@ -29,6 +34,10 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.FacetOperation;
+import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.util.CloseableIterator;
@@ -135,21 +144,35 @@ public class NodeExecutionReadHelper {
         .getMappedResults();
   }
 
-  public List<ExecutionCountWithAccountResult> aggregateRunningExecutionCountPerModule() {
-    Aggregation aggregation = Aggregation.newAggregation(
-        Aggregation.match(Criteria.where(NodeExecutionKeys.status).in(StatusUtils.activeStatuses())),
-        Aggregation.group(NodeExecutionKeys.module).count().as(ExecutionCountWithAccountResultKeys.count));
-
-    return analyticsMongoTemplate.aggregate(aggregation, NodeExecution.class, ExecutionCountWithAccountResult.class)
-        .getMappedResults();
-  }
-
-  public List<ExecutionCountWithAccountResult> aggregateRunningExecutionCountPerStepType() {
-    Aggregation aggregation = Aggregation.newAggregation(
-        Aggregation.match(Criteria.where(NodeExecutionKeys.status).in(StatusUtils.activeStatuses())),
-        Aggregation.group(NodeExecutionKeys.type).count().as(ExecutionCountWithAccountResultKeys.count));
-
-    return analyticsMongoTemplate.aggregate(aggregation, NodeExecution.class, ExecutionCountWithAccountResult.class)
+  public List<ExecutionStatistics> aggregateRunningExecutionCount() {
+    MatchOperation matchStage =
+        Aggregation.match(Criteria.where(NodeExecutionKeys.status).in(StatusUtils.activeStatuses()));
+    GroupOperation groupByAccount =
+        Aggregation.group(NodeExecutionKeys.accountId).count().as(ExecutionCountWithAccountResultKeys.count);
+    ProjectionOperation projectAccount = Aggregation.project()
+                                             .and(MONGODB_ID)
+                                             .as(ExecutionCountWithAccountResultKeys.accountId)
+                                             .andInclude(ExecutionCountWithAccountResultKeys.count);
+    GroupOperation groupByModule =
+        Aggregation.group(NodeExecutionKeys.module).count().as(ExecutionCountWithModuleResultKeys.count);
+    ProjectionOperation projectModule = Aggregation.project()
+                                            .and(MONGODB_ID)
+                                            .as(ExecutionCountWithModuleResultKeys.module)
+                                            .andInclude(ExecutionCountWithModuleResultKeys.count);
+    GroupOperation groupByStepType =
+        Aggregation.group(NodeExecutionKeys.type).count().as(ExecutionCountWithStepTypeResultKeys.count);
+    ProjectionOperation projectStepType = Aggregation.project()
+                                              .and(MONGODB_ID)
+                                              .as(ExecutionCountWithStepTypeResultKeys.stepType)
+                                              .andInclude(ExecutionCountWithStepTypeResultKeys.count);
+    FacetOperation facetOperation = Aggregation.facet(groupByAccount, projectAccount)
+                                        .as(ExecutionStatisticsKeys.accountStats)
+                                        .and(groupByModule, projectModule)
+                                        .as(ExecutionStatisticsKeys.moduleStats)
+                                        .and(groupByStepType, projectStepType)
+                                        .as(ExecutionStatisticsKeys.stepTypeStats);
+    Aggregation aggregation = Aggregation.newAggregation(matchStage, facetOperation);
+    return analyticsMongoTemplate.aggregate(aggregation, NodeExecution.class, ExecutionStatistics.class)
         .getMappedResults();
   }
 }

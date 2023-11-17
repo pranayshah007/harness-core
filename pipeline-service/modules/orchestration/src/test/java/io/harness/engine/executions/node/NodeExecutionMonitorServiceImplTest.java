@@ -22,6 +22,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.monitoring.ExecutionCountWithAccountResult;
+import io.harness.monitoring.ExecutionCountWithModuleResult;
+import io.harness.monitoring.ExecutionCountWithStepTypeResult;
+import io.harness.monitoring.ExecutionStatistics;
 import io.harness.rule.Owner;
 
 import java.util.LinkedList;
@@ -53,12 +56,27 @@ public class NodeExecutionMonitorServiceImplTest extends CategoryTest {
   public void testRegisterActiveExecutionMetrics() {
     doReturn(true).when(metricsCache).putIfAbsent(any(), any());
 
-    List<ExecutionCountWithAccountResult> result = new LinkedList<>();
-    result.add(ExecutionCountWithAccountResult.builder().metricKey("ABC").count(1).build());
-    result.add(ExecutionCountWithAccountResult.builder().metricKey("DEF").count(5).build());
+    List<ExecutionStatistics> result = new LinkedList<>();
+    List<ExecutionCountWithAccountResult> accountResults = new LinkedList<>();
+    accountResults.add(ExecutionCountWithAccountResult.builder().accountId("ABC").count(1).build());
+    accountResults.add(ExecutionCountWithAccountResult.builder().accountId("DEF").count(5).build());
 
-    doReturn(result).when(nodeExecutionService).aggregateRunningNodesCountPerAccount();
+    List<ExecutionCountWithModuleResult> moduleResults = new LinkedList<>();
+    moduleResults.add(ExecutionCountWithModuleResult.builder().module("pms").count(30).build());
+
+    List<ExecutionCountWithStepTypeResult> stepTypeResults = new LinkedList<>();
+    stepTypeResults.add(ExecutionCountWithStepTypeResult.builder().stepType("type1").count(1).build());
+    stepTypeResults.add(ExecutionCountWithStepTypeResult.builder().stepType("type2").count(5).build());
+    stepTypeResults.add(ExecutionCountWithStepTypeResult.builder().stepType("type3").count(5).build());
+
+    result.add(ExecutionStatistics.builder()
+                   .accountStats(accountResults)
+                   .moduleStats(moduleResults)
+                   .stepTypeStats(stepTypeResults)
+                   .build());
+
+    doReturn(result).when(nodeExecutionService).aggregateRunningNodesCount();
     nodeExecutionMonitorService.registerActiveExecutionMetrics();
-    verify(metricService, times(2)).recordMetric(anyString(), anyDouble());
+    verify(metricService, times(6)).recordMetric(anyString(), anyDouble());
   }
 }

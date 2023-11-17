@@ -16,6 +16,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.executions.retry.RetryStageInfo;
 import io.harness.execution.NodeExecution;
 import io.harness.monitoring.ExecutionCountWithAccountResult;
+import io.harness.monitoring.ExecutionStatistics;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.execution.Status;
 
@@ -394,7 +395,5 @@ public interface NodeExecutionService {
    */
   List<ExecutionCountWithAccountResult> aggregateRunningNodesCountPerAccount();
 
-  List<ExecutionCountWithAccountResult> aggregateRunningNodesCountPerModule();
-
-  List<ExecutionCountWithAccountResult> aggregateRunningNodesCountPerStepType();
+  List<ExecutionStatistics> aggregateRunningNodesCount();
 }

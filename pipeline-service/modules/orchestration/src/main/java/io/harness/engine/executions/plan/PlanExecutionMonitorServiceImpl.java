@@ -52,7 +52,7 @@ public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorServ
         planExecutionService.aggregateRunningExecutionCountPerAccount()) {
       Map<String, String> metricContextMap =
           ImmutableMap.<String, String>builder()
-              .put(PmsEventMonitoringConstants.ACCOUNT_ID, accountResult.getMetricKey())
+              .put(PmsEventMonitoringConstants.ACCOUNT_ID, accountResult.getAccountId())
               .build();
 
       try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {

@@ -14,6 +14,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.monitoring.ExecutionCountWithAccountResult;
+import io.harness.monitoring.ExecutionCountWithModuleResult;
+import io.harness.monitoring.ExecutionCountWithStepTypeResult;
+import io.harness.monitoring.ExecutionStatistics;
 import io.harness.pms.events.PmsEventMonitoringConstants;
 import io.harness.pms.events.base.PmsMetricContextGuard;
 
@@ -52,10 +55,12 @@ public class NodeExecutionMonitorServiceImpl implements NodeExecutionMonitorServ
       return;
     }
 
-    for (ExecutionCountWithAccountResult accountResult : nodeExecutionService.aggregateRunningNodesCountPerAccount()) {
+    ExecutionStatistics executionStatistics = nodeExecutionService.aggregateRunningNodesCount().get(0);
+
+    for (ExecutionCountWithAccountResult accountResult : executionStatistics.getAccountStats()) {
       Map<String, String> metricContextMap =
           ImmutableMap.<String, String>builder()
-              .put(PmsEventMonitoringConstants.ACCOUNT_ID, accountResult.getMetricKey())
+              .put(PmsEventMonitoringConstants.ACCOUNT_ID, accountResult.getAccountId())
               .build();
 
       try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {
@@ -63,26 +68,26 @@ public class NodeExecutionMonitorServiceImpl implements NodeExecutionMonitorServ
       }
     }
 
-    for (ExecutionCountWithAccountResult accountResult : nodeExecutionService.aggregateRunningNodesCountPerModule()) {
+    for (ExecutionCountWithModuleResult moduleResult : executionStatistics.getModuleStats()) {
       Map<String, String> metricContextMap = ImmutableMap.<String, String>builder()
-                                                 .put(PmsEventMonitoringConstants.MODULE, accountResult.getMetricKey())
+                                                 .put(PmsEventMonitoringConstants.MODULE, moduleResult.getModule())
                                                  .build();
 
       try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {
         metricService.recordMetric(
-            NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_PER_MODULE_METRIC_NAME, accountResult.getCount());
+            NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_PER_MODULE_METRIC_NAME, moduleResult.getCount());
       }
     }
 
-    for (ExecutionCountWithAccountResult accountResult : nodeExecutionService.aggregateRunningNodesCountPerStepType()) {
+    for (ExecutionCountWithStepTypeResult stepTypeResult : executionStatistics.getStepTypeStats()) {
       Map<String, String> metricContextMap =
           ImmutableMap.<String, String>builder()
-              .put(PmsEventMonitoringConstants.STEP_TYPE, accountResult.getMetricKey())
+              .put(PmsEventMonitoringConstants.STEP_TYPE, stepTypeResult.getStepType())
               .build();
 
       try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {
         metricService.recordMetric(
-            NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_PER_STEP_TYPE_METRIC_NAME, accountResult.getCount());
+            NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_PER_STEP_TYPE_METRIC_NAME, stepTypeResult.getCount());
       }
     }
   }

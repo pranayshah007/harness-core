@@ -21,8 +21,8 @@ import org.springframework.data.annotation.Id;
 @Value
 @Builder
 @AllArgsConstructor
-@FieldNameConstants(innerTypeName = "ExecutionCountWithAccountResultKeys")
-public class ExecutionCountWithAccountResult {
-  @Id private String accountId;
+@FieldNameConstants(innerTypeName = "ExecutionCountWithStepTypeResultKeys")
+public class ExecutionCountWithStepTypeResult {
+  @Id private String stepType;
   private Integer count;
 }

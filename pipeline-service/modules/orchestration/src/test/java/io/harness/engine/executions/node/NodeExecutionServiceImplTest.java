@@ -45,7 +45,7 @@ import io.harness.event.OrchestrationLogPublisher;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
-import io.harness.monitoring.ExecutionCountWithAccountResult;
+import io.harness.monitoring.ExecutionStatistics;
 import io.harness.observer.Subject;
 import io.harness.plan.Node;
 import io.harness.plan.PlanNode;
@@ -1278,7 +1278,14 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     nodeExecutionService.save(nodeExecution1);
     nodeExecutionService.save(nodeExecution2);
 
-    List<ExecutionCountWithAccountResult> accountResults = nodeExecutionService.aggregateRunningNodesCountPerAccount();
-    assertThat(accountResults.size()).isEqualTo(2);
+    List<ExecutionStatistics> executionStatisticsList = nodeExecutionService.aggregateRunningNodesCount();
+    assertThat(executionStatisticsList.size()).isEqualTo(1);
+    assertThat(executionStatisticsList.get(0).getAccountStats().size()).isEqualTo(2);
+    assertThat(executionStatisticsList.get(0).getModuleStats().size()).isEqualTo(1);
+    assertThat(executionStatisticsList.get(0).getStepTypeStats().size()).isEqualTo(1);
+    assertThat(executionStatisticsList.get(0).getAccountStats().get(0).getCount()).isEqualTo(1);
+    assertThat(executionStatisticsList.get(0).getAccountStats().get(1).getCount()).isEqualTo(1);
+    assertThat(executionStatisticsList.get(0).getModuleStats().get(0).getCount()).isEqualTo(2);
+    assertThat(executionStatisticsList.get(0).getStepTypeStats().get(0).getCount()).isEqualTo(2);
   }
 }
