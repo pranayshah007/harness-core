@@ -24,6 +24,7 @@ import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
 import io.harness.commandlibrary.client.CommandLibraryServiceHttpClient;
 import io.harness.configuration.DeployMode;
+import io.harness.delegate.AccountCheckAndCleanupServiceImpl;
 import io.harness.delegate.authenticator.DelegateTokenAuthenticatorImpl;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
@@ -48,6 +49,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.UserProvider;
 import io.harness.persistence.store.Store;
 import io.harness.redis.DelegateServiceCacheModule;
+import io.harness.security.AccountCheckAndCleanupService;
 import io.harness.security.DelegateTokenAuthenticator;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
@@ -245,6 +247,7 @@ public class DataGenApplication extends Application<MainConfiguration> {
       @Override
       protected void configure() {
         bind(DelegateTokenAuthenticator.class).to(DelegateTokenAuthenticatorImpl.class).in(Singleton.class);
+        bind(AccountCheckAndCleanupService.class).to(AccountCheckAndCleanupServiceImpl.class);
       }
     });
 

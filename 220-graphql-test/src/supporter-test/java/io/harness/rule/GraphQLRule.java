@@ -25,6 +25,7 @@ import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
 import io.harness.commandlibrary.client.CommandLibraryServiceHttpClient;
+import io.harness.delegate.AccountCheckAndCleanupServiceImpl;
 import io.harness.delegate.authenticator.DelegateTokenAuthenticatorImpl;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateGroup;
@@ -56,6 +57,7 @@ import io.harness.queueservice.config.DelegateQueueServiceConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.intfc.DelegateRedissonCacheManager;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.security.AccountCheckAndCleanupService;
 import io.harness.security.DelegateTokenAuthenticator;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
@@ -415,6 +417,7 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
       @Override
       protected void configure() {
         bind(DelegateTokenAuthenticator.class).to(DelegateTokenAuthenticatorImpl.class).in(Singleton.class);
+        bind(AccountCheckAndCleanupService.class).to(AccountCheckAndCleanupServiceImpl.class);
         bind(DelegateCache.class).to(DelegateCacheImpl.class).in(Singleton.class);
       }
     });

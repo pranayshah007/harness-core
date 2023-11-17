@@ -7,31 +7,11 @@
 
 package io.harness.delegate.authenticator;
 
-import static io.harness.annotations.dev.HarnessTeam.DEL;
-import static io.harness.rule.OwnerRule.ANUBHAW;
-import static io.harness.rule.OwnerRule.ANUPAM;
-import static io.harness.rule.OwnerRule.BRETT;
-import static io.harness.rule.OwnerRule.JENNY;
-import static io.harness.rule.OwnerRule.JOHANNES;
-import static io.harness.rule.OwnerRule.LUCAS;
-import static io.harness.rule.OwnerRule.MARKO;
-import static io.harness.rule.OwnerRule.UJJAWAL;
-import static io.harness.rule.OwnerRule.VLAD;
-
-import static software.wings.utils.WingsTestConstants.ACCOUNT1_ID;
-import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
-
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.google.inject.Inject;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
 import io.harness.agent.utils.AgentMtlsVerifier;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -46,22 +26,8 @@ import io.harness.exception.InvalidTokenException;
 import io.harness.exception.WingsException;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
+import io.harness.security.AccountCheckAndCleanupService;
 import io.harness.security.TokenGenerator;
-
-import software.wings.WingsBaseTest;
-import software.wings.beans.Service;
-import software.wings.beans.account.AccountStatus;
-import software.wings.helpers.ext.account.DeleteAccountHelper;
-import software.wings.service.intfc.AccountService;
-
-import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.google.inject.Inject;
-import dev.morphia.query.FieldEnd;
-import dev.morphia.query.MorphiaIterator;
-import dev.morphia.query.Query;
-import java.security.NoSuchAlgorithmException;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
@@ -69,6 +35,36 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import software.wings.WingsBaseTest;
+import software.wings.beans.Service;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import java.security.NoSuchAlgorithmException;
+
+import static io.harness.annotations.dev.HarnessTeam.DEL;
+import static io.harness.rule.OwnerRule.ANUBHAW;
+import static io.harness.rule.OwnerRule.ANUPAM;
+import static io.harness.rule.OwnerRule.BRETT;
+import static io.harness.rule.OwnerRule.JENNY;
+import static io.harness.rule.OwnerRule.JOHANNES;
+import static io.harness.rule.OwnerRule.LUCAS;
+import static io.harness.rule.OwnerRule.MARKO;
+import static io.harness.rule.OwnerRule.UJJAWAL;
+import static io.harness.rule.OwnerRule.VLAD;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.initMocks;
+import static software.wings.utils.WingsTestConstants.ACCOUNT1_ID;
+import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 
 @OwnedBy(DEL)
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
@@ -82,9 +78,8 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
   @Mock private HPersistence persistence;
   @Mock private AgentMtlsVerifier agentMtlsVerifier;
 
-  @Mock private AccountService accountService;
+  @Mock private AccountCheckAndCleanupService accountServiceInternal;
 
-  @Mock private DeleteAccountHelper deleteAccountHelper;
   @Inject @InjectMocks private DelegateTokenAuthenticatorImpl delegateTokenAuthenticator;
 
   private String accountKey = "2f6b0988b6fb3370073c3d0505baee59";
@@ -102,7 +97,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldValidateDelegateToken() {
     createPersistenceMocksForDelegateToken(null);
-    when(accountService.getAccountStatus(ACCOUNT_ID)).thenReturn(AccountStatus.ACTIVE);
+    doNothing().when(accountServiceInternal).ensureAccountIsNotDeleted(anyString());
     TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
     delegateTokenAuthenticator.validateDelegateToken(
         ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, null, null, false);
@@ -120,7 +115,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
                                       .build();
 
     createPersistenceMocksForDelegateToken(delegateToken);
-    when(accountService.getAccountStatus(ACCOUNT_ID)).thenReturn(AccountStatus.ACTIVE);
+    doNothing().when(accountServiceInternal).ensureAccountIsNotDeleted(anyString());
 
     TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
 
@@ -141,7 +136,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
 
     createPersistenceMocksForDelegateToken(delegateToken);
     TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
-    when(accountService.getAccountStatus(ACCOUNT_ID)).thenReturn(AccountStatus.ACTIVE);
+    doNothing().when(accountServiceInternal).ensureAccountIsNotDeleted(anyString());
 
     delegateTokenAuthenticator.validateDelegateToken(
         ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, null, FQDN, false);
@@ -234,8 +229,8 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
                                       .build();
 
     createPersistenceMocksForDelegateToken(delegateToken);
-    when(accountService.getAccountStatus(ACCOUNT_ID)).thenReturn(AccountStatus.DELETED);
-    doNothing().when(deleteAccountHelper).deleteDataForDeletedAccount(anyString());
+    doNothing().when(accountServiceInternal).ensureAccountIsNotDeleted(anyString());
+    doThrow(new InvalidRequestException("")).when(accountServiceInternal).ensureAccountIsNotDeleted(anyString());
 
     TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
 
@@ -270,7 +265,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     doReturn(mockQueryNg).when(fieldEndNg).equal(any());
 
     when(morphiaIteratorNg.hasNext()).thenReturn(true).thenReturn(false);
-    when(accountService.getAccountStatus(ACCOUNT_ID)).thenReturn(AccountStatus.ACTIVE);
+    doNothing().when(accountServiceInternal).ensureAccountIsNotDeleted(anyString());
 
     DelegateNgToken delegateTokenNg = DelegateNgToken.builder()
                                           .accountId(ACCOUNT_ID)
@@ -377,7 +372,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
 
     createPersistenceMocksForDelegateToken(delegateToken);
     TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
-    when(accountService.getAccountStatus(ACCOUNT_ID)).thenReturn(AccountStatus.ACTIVE);
+    doNothing().when(accountServiceInternal).ensureAccountIsNotDeleted(anyString());
 
     delegateTokenAuthenticator.validateDelegateToken(
         ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, null, FQDN, false);

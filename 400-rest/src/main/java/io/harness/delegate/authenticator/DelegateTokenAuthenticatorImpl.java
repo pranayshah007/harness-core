@@ -7,23 +7,23 @@
 
 package io.harness.delegate.authenticator;
 
-import static io.harness.annotations.dev.HarnessTeam.DEL;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.eraro.ErrorCode.ACCOUNT_DOES_NOT_EXIST;
-import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
-import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
-import static io.harness.eraro.ErrorCode.INVALID_AGENT_MTLS_AUTHORITY;
-import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
-import static io.harness.exception.WingsException.USER;
-import static io.harness.exception.WingsException.USER_ADMIN;
-import static io.harness.manage.GlobalContextManager.initGlobalContextGuard;
-import static io.harness.manage.GlobalContextManager.upsertGlobalContextRecord;
-import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_CACHE_HIT;
-import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_CACHE_MISS;
-import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_DECRYPTION_USING_ACCOUNT_KEY;
-
-import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
-
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.InvalidClaimException;
+import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.exceptions.SignatureVerificationException;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWEDecrypter;
+import com.nimbusds.jose.KeyLengthException;
+import com.nimbusds.jose.crypto.DirectDecrypter;
+import com.nimbusds.jwt.EncryptedJWT;
+import com.nimbusds.jwt.JWTClaimsSet;
+import dev.morphia.query.Query;
 import io.harness.agent.utils.AgentMtlsVerifier;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -44,40 +44,34 @@ import io.harness.manage.GlobalContextManager;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
+import io.harness.security.AccountCheckAndCleanupService;
 import io.harness.security.DelegateTokenAuthenticator;
-
-import software.wings.beans.Account;
-import software.wings.beans.account.AccountStatus;
-import software.wings.exception.AccountNotFoundException;
-import software.wings.helpers.ext.account.DeleteAccountHelper;
-import software.wings.service.intfc.AccountService;
-
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.InvalidClaimException;
-import com.auth0.jwt.exceptions.JWTDecodeException;
-import com.auth0.jwt.exceptions.SignatureVerificationException;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWEDecrypter;
-import com.nimbusds.jose.KeyLengthException;
-import com.nimbusds.jose.crypto.DirectDecrypter;
-import com.nimbusds.jwt.EncryptedJWT;
-import com.nimbusds.jwt.JWTClaimsSet;
-import dev.morphia.query.Query;
-import java.io.UnsupportedEncodingException;
-import java.text.ParseException;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import javax.crypto.spec.SecretKeySpec;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
+import software.wings.beans.Account;
+
+import javax.crypto.spec.SecretKeySpec;
+import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+import static io.harness.annotations.dev.HarnessTeam.DEL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
+import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
+import static io.harness.eraro.ErrorCode.INVALID_AGENT_MTLS_AUTHORITY;
+import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
+import static io.harness.exception.WingsException.USER;
+import static io.harness.exception.WingsException.USER_ADMIN;
+import static io.harness.manage.GlobalContextManager.initGlobalContextGuard;
+import static io.harness.manage.GlobalContextManager.upsertGlobalContextRecord;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_CACHE_HIT;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_CACHE_MISS;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_DECRYPTION_USING_ACCOUNT_KEY;
+import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 
 @Slf4j
 @Singleton
@@ -91,10 +85,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
   @Inject private AgentMtlsVerifier agentMtlsVerifier;
   @Inject private io.harness.delegate.authenticator.DelegateSecretManager delegateSecretManager;
 
-  @Inject private AccountService accountService;
-  @Inject private DeleteAccountHelper deleteAccountHelper;
-
-  private static final String UNAUTHORIZED = "Unauthorized";
+  @Inject private AccountCheckAndCleanupService accountService;
 
   private final LoadingCache<String, String> keyCache =
       Caffeine.newBuilder()
@@ -175,18 +166,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
 
     // If we are reaching here that means, we have successfully decrypted jwt.
     // If account is deleted or not present in database, fail auth and delete delegate data.
-    try {
-      String accountStatus = accountService.getAccountStatus(accountId);
-      if (AccountStatus.DELETED.equals(accountStatus)) {
-        log.debug("account {} does not exist", accountId);
-        deleteAccountHelper.deleteDataForDeletedAccount(accountId);
-        throw new InvalidRequestException(UNAUTHORIZED, ACCOUNT_DOES_NOT_EXIST, null);
-      }
-    } catch (AccountNotFoundException exception) {
-      log.debug("account {} does not exist", accountId, exception);
-      deleteAccountHelper.deleteDataForDeletedAccount(accountId);
-      throw new InvalidRequestException(UNAUTHORIZED, ACCOUNT_DOES_NOT_EXIST, null);
-    }
+    accountService.ensureAccountIsNotDeleted(accountId);
 
     try {
       JWTClaimsSet jwtClaimsSet = encryptedJWT.getJWTClaimsSet();
