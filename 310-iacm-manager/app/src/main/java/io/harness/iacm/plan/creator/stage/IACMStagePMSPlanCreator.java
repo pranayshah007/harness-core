@@ -90,6 +90,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -126,6 +127,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
       PlanCreationContext ctx, IACMStageNode stageNode) {
     log.info("Received plan creation request for iacm stage {}", stageNode.getIdentifier());
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
+    Map<String, ByteString> metadataMap = new HashMap<>();
 
     // Spec from the stages/IACM stage
     YamlField specField =
@@ -166,6 +168,10 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     // the steps from the plan to the level of steps->spec->stageElementConfig->execution->steps. Here, we can inject
     // any step and that step will be available in the InitialTask step in the path:
     // stageElementConfig -> Execution -> Steps -> InjectedSteps
+
+    // Add the strategyFieldDependecy
+    addStrategyFieldDependencyIfPresent(ctx, stageNode, planCreationResponseMap, metadataMap);
+
     putNewExecutionYAMLInResponseMap(
         executionField, planCreationResponseMap, modifiedExecutionPlanWithWorkspace, parentNode);
 
