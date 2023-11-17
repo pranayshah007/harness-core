@@ -10,8 +10,9 @@ package io.harness.version;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.version.VersionInfoException;
+import io.harness.exception.VersionInfoException;
 
+import java.util.Optional;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -28,14 +29,15 @@ import org.yaml.snakeyaml.error.YAMLException;
 public class VersionInfoManagerV2 {
   // this file path will be same for all services
   private String versionFilePath = "/opt/harness/version.yaml";
-  private VersionInfoV2 cachedVersionInfo;
+  private Optional<VersionInfoV2> cachedVersionInfo = Optional.empty();
 
   public VersionInfoV2 getVersionInfo() throws VersionInfoException {
     // Check if the version info is already cached
-    if (cachedVersionInfo != null) {
+    if (cachedVersionInfo.isPresent()) {
       log.info("Returning cached version info.");
-      return cachedVersionInfo;
+      return cachedVersionInfo.get();
     }
+
     try (InputStream inputStream = new FileInputStream(versionFilePath)) {
       // Parse YAML file
       Yaml yaml = new Yaml();
@@ -51,7 +53,7 @@ public class VersionInfoManagerV2 {
               .build(); // Build the VersionInfoV2 instance
 
       // Cache the version info
-      cachedVersionInfo = versionInfo;
+      cachedVersionInfo = Optional.of(versionInfo);
 
       return versionInfo;
     } catch (FileNotFoundException e) {
