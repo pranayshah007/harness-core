@@ -368,21 +368,9 @@ public class YamlNode implements Visitable {
 
   public String getUuid() {
     String uuidValue = getStringValue(UUID_FIELD_NAME);
-    // This means that current node is of array type
-    if (uuidValue == null && parentNode != null && parentNode.isObject()) {
-      List<YamlField> childFields = parentNode.fields();
-      for (YamlField childField : childFields) {
-        if (compareFirstChildOfArrayNode(childField.getNode(), this)) {
-          return parentNode.getUuid() + childField.getName();
-        }
-      }
-      return null;
+    if (uuidValue == null) {
+      uuidValue = getStringValue(UUID_FIELD_NAME_V1);
     }
-    return uuidValue;
-  }
-
-  public String getUUID() {
-    String uuidValue = getStringValue(UUID_FIELD_NAME_V1);
     // This means that current node is of array type
     if (uuidValue == null && parentNode != null && parentNode.isObject()) {
       List<YamlField> childFields = parentNode.fields();

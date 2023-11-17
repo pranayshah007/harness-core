@@ -143,7 +143,7 @@ public class DeploymentStagePlanCreator extends ChildrenPlanCreator<YamlField> {
   @Inject private StagePlanCreatorHelper stagePlanCreatorHelper;
   @Inject private NGServiceEntityHelper serviceEntityHelper;
   @Inject private DeploymentStagePlanCreationInfoService deploymentStagePlanCreationInfoService;
-  @Inject @Named("deployment-stage-plan-creation-info-v1-executor") private ExecutorService executorService;
+  @Inject @Named("deployment-stage-plan-creation-info-executor") private ExecutorService executorService;
 
   public SpecParameters getSpecParameters(
       String childNodeId, PlanCreationContext ctx, DeploymentStageNodeV1 stageNode) {
@@ -208,16 +208,16 @@ public class DeploymentStagePlanCreator extends ChildrenPlanCreator<YamlField> {
     addSpecNode(planCreationResponseMap, specField, serviceNodeId);
 
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
-    dependenciesNodeMap.put(specField.getNode().getUUID(), specField);
+    dependenciesNodeMap.put(specField.getNode().getUuid(), specField);
 
     Dependency strategyDependency = getDependencyForStrategy(dependenciesNodeMap, field, ctx);
 
-    planCreationResponseMap.put(specField.getNode().getUUID(),
+    planCreationResponseMap.put(specField.getNode().getUuid(),
         PlanCreationResponse.builder()
             .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                               .toBuilder()
                               .putDependencyMetadata(field.getUuid(), strategyDependency)
-                              .putDependencyMetadata(specField.getNode().getUUID(), getDependencyForSteps(field))
+                              .putDependencyMetadata(specField.getNode().getUuid(), getDependencyForSteps(field))
                               .build())
             .build());
 
@@ -233,7 +233,7 @@ public class DeploymentStagePlanCreator extends ChildrenPlanCreator<YamlField> {
   Dependency getDependencyForStrategy(
       Map<String, YamlField> dependenciesNodeMap, YamlField field, PlanCreationContext ctx) {
     Map<String, HarnessValue> dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(
-        kryoSerializer, ctx, field.getUUID(), dependenciesNodeMap, getBuild(ctx.getDependency()));
+        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, getBuild(ctx.getDependency()));
     return Dependency.newBuilder()
         .setNodeMetadata(HarnessStruct.newBuilder().putAllData(dependencyMetadata).build())
         .build();
@@ -275,7 +275,7 @@ public class DeploymentStagePlanCreator extends ChildrenPlanCreator<YamlField> {
 
     //    DeploymentStageStepParametersV1 stepParameters = DeploymentStageStepParametersV1.builder().build();
     DeploymentStageStepParametersV1 stepParameters =
-        (DeploymentStageStepParametersV1) getSpecParameters(specField.getNode().getUUID(), ctx, stageNode);
+        (DeploymentStageStepParametersV1) getSpecParameters(specField.getNode().getUuid(), ctx, stageNode);
 
     StageElementParametersV1Builder stageParameters = StepParametersUtils.getStageParameters(stageNode);
     stageParameters.type(YAMLFieldNameConstants.DEPLOYMENT_STAGE_V1);
@@ -347,16 +347,16 @@ public class DeploymentStagePlanCreator extends ChildrenPlanCreator<YamlField> {
     addSpecNode(planCreationResponseMap, specField, serviceNodeId);
 
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
-    dependenciesNodeMap.put(specField.getNode().getUUID(), specField);
+    dependenciesNodeMap.put(specField.getNode().getUuid(), specField);
 
     Dependency strategyDependency = getDependencyForStrategy(dependenciesNodeMap, field, ctx);
 
-    planCreationResponseMap.put(specField.getNode().getUUID(),
+    planCreationResponseMap.put(specField.getNode().getUuid(),
         PlanCreationResponse.builder()
             .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                               .toBuilder()
-                              .putDependencyMetadata(field.getUUID(), strategyDependency)
-                              .putDependencyMetadata(specField.getNode().getUUID(), getDependencyForSteps(field))
+                              .putDependencyMetadata(field.getUuid(), strategyDependency)
+                              .putDependencyMetadata(specField.getNode().getUuid(), getDependencyForSteps(field))
                               .build())
             .build());
 
@@ -378,17 +378,17 @@ public class DeploymentStagePlanCreator extends ChildrenPlanCreator<YamlField> {
       EdgeLayoutList edgeLayoutList;
       String planNodeId = MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(config);
       String pipelineRollbackStageId = StrategyUtils.getPipelineRollbackStageId(context.getCurrentField());
-      if (siblingField == null || Objects.equals(siblingField.getUUID(), pipelineRollbackStageId)) {
+      if (siblingField == null || Objects.equals(siblingField.getUuid(), pipelineRollbackStageId)) {
         edgeLayoutList = EdgeLayoutList.newBuilder().addCurrentNodeChildren(planNodeId).build();
       } else {
         edgeLayoutList = EdgeLayoutList.newBuilder()
-                             .addNextIds(siblingField.getNode().getUUID())
+                             .addNextIds(siblingField.getNode().getUuid())
                              .addCurrentNodeChildren(planNodeId)
                              .build();
       }
-      stageYamlFieldMap.put(yamlField.getNode().getUUID(),
+      stageYamlFieldMap.put(yamlField.getNode().getUuid(),
           GraphLayoutNode.newBuilder()
-              .setNodeUUID(yamlField.getNode().getUUID())
+              .setNodeUUID(yamlField.getNode().getUuid())
               .setNodeType(StrategyType.MATRIX.name())
               .setName(yamlField.getNode().getName())
               .setNodeGroup(StepOutcomeGroup.STRATEGY.name())
@@ -575,7 +575,7 @@ public class DeploymentStagePlanCreator extends ChildrenPlanCreator<YamlField> {
       DeploymentStageNodeV1 stageNode, PlanCreationContext ctx, MultiDeploymentStepParameters stepParameters) {
     MultiDeploymentMetadata metadata =
         MultiDeploymentMetadata.builder()
-            .multiDeploymentNodeId(ctx.getCurrentField().getNode().getUUID())
+            .multiDeploymentNodeId(ctx.getCurrentField().getNode().getUuid())
             .multiDeploymentStepParameters(stepParameters)
             .strategyNodeIdentifier(stageNode.getId())
             .strategyNodeName(stageNode.getName())
@@ -676,12 +676,12 @@ public class DeploymentStagePlanCreator extends ChildrenPlanCreator<YamlField> {
     YamlField provisionerStepsField = provisionerField.getNode().getField(YAMLFieldNameConstants.STEPS);
 
     Map<String, YamlField> stepsYamlFieldMap = new HashMap<>();
-    stepsYamlFieldMap.put(provisionerStepsField.getNode().getUUID(), provisionerStepsField);
-    planCreationResponseMap.put(provisionerStepsField.getNode().getUUID(),
+    stepsYamlFieldMap.put(provisionerStepsField.getNode().getUuid(), provisionerStepsField);
+    planCreationResponseMap.put(provisionerStepsField.getNode().getUuid(),
         PlanCreationResponse.builder().dependencies(DependenciesUtils.toDependenciesProto(stepsYamlFieldMap)).build());
 
     PlanNode node = InfrastructurePmsPlanCreator.getProvisionerPlanNode(
-        provisionerField, provisionerStepsField.getUUID(), infraNodeId, kryoSerializer);
+        provisionerField, provisionerStepsField.getUuid(), infraNodeId, kryoSerializer);
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().planNode(node).build());
     return Optional.of(node.getUuid());
   }
@@ -730,13 +730,13 @@ public class DeploymentStagePlanCreator extends ChildrenPlanCreator<YamlField> {
   private void addSpecNode(
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField, String nextNodeId) {
     // Adding Spec node
-    planCreationResponseMap.put(specField.getNode().getUUID(),
+    planCreationResponseMap.put(specField.getNode().getUuid(),
         PlanCreationResponse.builder().dependencies(getDependenciesForSpecNode(specField, nextNodeId)).build());
   }
 
   public Dependencies getDependenciesForSpecNode(YamlField specField, String childNodeUuid) {
     Map<String, YamlField> specYamlFieldMap = new HashMap<>();
-    String specNodeUuid = specField.getNode().getUUID();
+    String specNodeUuid = specField.getNode().getUuid();
     specYamlFieldMap.put(specNodeUuid, specField);
 
     Map<String, ByteString> specDependencyMap = new HashMap<>();

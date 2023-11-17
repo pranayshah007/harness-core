@@ -7,7 +7,6 @@
 
 package io.harness.cdng.creator.plan.stage.v1;
 
-import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -16,14 +15,11 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Data;
-import org.springframework.data.annotation.TypeAlias;
+import lombok.Value;
 
-@Data
+@Value
 @Builder
 @JsonTypeName(YAMLFieldNameConstants.DEPLOYMENT_STAGE_V1)
-@TypeAlias("DeploymentStageNodeV1")
-@RecasterAlias("io.harness.cdng.creator.plan.stage.v1.DeploymentStageNodeV1")
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class DeploymentStageNodeV1 extends DeploymentAbstractStageNodeV1 {
   String type = YAMLFieldNameConstants.DEPLOYMENT_STAGE_V1;

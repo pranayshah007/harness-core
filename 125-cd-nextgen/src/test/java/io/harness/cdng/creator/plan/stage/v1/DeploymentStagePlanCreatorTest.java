@@ -164,7 +164,6 @@ public class DeploymentStagePlanCreatorTest extends CDNGTestBase {
   @PrepareForTest(YamlUtils.class)
   public void testCreatePlanForChildrenNodes(DeploymentStageNodeV1 node) throws IOException {
     doReturn(false).when(stagePlanCreatorHelper).isProjectScopedResourceConstraintQueueByFFOrSetting(any());
-    node.setType(YAMLFieldNameConstants.DEPLOYMENT_STAGE_V1);
     node.setFailure(ParameterField.createValueField(List.of(FailureConfigV1.builder()
                                                                 .errors(List.of(NGFailureTypeV1.ALL_ERRORS))
                                                                 .action(AbortFailureActionConfigV1.builder().build())
@@ -454,10 +453,8 @@ public class DeploymentStagePlanCreatorTest extends CDNGTestBase {
   }
 
   private DeploymentStageNodeV1 buildNode(DeploymentStageConfigV1 config) {
-    final DeploymentStageNodeV1 node = DeploymentStageNodeV1.builder().build();
+    final DeploymentStageNodeV1 node = DeploymentStageNodeV1.builder().spec(config).build();
     node.setUuid("nodeuuid");
-    node.setType(YAMLFieldNameConstants.DEPLOYMENT_STAGE_V1);
-    node.setSpec(config);
     return node;
   }
 

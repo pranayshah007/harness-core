@@ -199,3 +199,44 @@ spec:
             spec:
               skipDryRun: false
             timeout: 120000
+    - id: parallelStage9
+      name: stage9
+      type: parallel
+      spec:
+        stages:
+          - id: substage1
+            name: substage1
+            type: deployment
+            spec:
+              services:
+                values:
+                  - serviceRef: service1
+              environments:
+                values:
+                  - environmentRef: my_env_dev
+                    infrastructureDefinitions: <+input>
+              steps:
+                - name: Rollout Deployment
+                  id: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    skipDryRun: false
+                  timeout: 120000
+          - id: substage2
+            name: substage2
+            type: deployment
+            spec:
+              services:
+                values:
+                  - serviceRef: service1
+              environments:
+                values:
+                  - environmentRef: my_env_dev
+                    infrastructureDefinitions: <+input>
+              steps:
+                - name: Rollout Deployment
+                  id: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    skipDryRun: false
+                  timeout: 120000

@@ -108,8 +108,4 @@ public class YamlField {
   public String getUuid() {
     return node.getUuid();
   }
-
-  public String getUUID() {
-    return node.getUUID();
-  }
 }

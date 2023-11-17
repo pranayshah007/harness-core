@@ -495,7 +495,7 @@ public class PlanCreatorUtilsV1 {
     yamlNodes.forEach(yamlNode -> {
       String stageFieldType = yamlNode.getStringValue("type");
       if (YAMLFieldNameConstants.PARALLEL.equalsIgnoreCase(stageFieldType)) {
-        stageFields.addAll(getStageYamlFields(yamlNode));
+        stageFields.addAll(getStageYamlFields(yamlNode.getField("spec").getNode().getField("stages").getNode()));
       } else {
         stageFields.add(new YamlField(yamlNode));
       }

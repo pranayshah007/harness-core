@@ -699,18 +699,6 @@ public class NextGenModule extends AbstractModule {
         new ThreadFactoryBuilder().setNameFormat("deployment-stage-plan-creation-info-pool-%d").build());
   }
 
-  private ThreadPoolExecutor deploymentStagePlanCreationInfoV1ThreadPoolConfiguration() {
-    ThreadPoolConfig threadPoolConfig = appConfig != null
-            && appConfig.getDeploymentStagePlanCreationInfoThreadPoolConfiguration() != null
-            && appConfig.getDeploymentStagePlanCreationInfoThreadPoolConfiguration().getThreadPoolConfig() != null
-        ? appConfig.getDeploymentStagePlanCreationInfoThreadPoolConfiguration().getThreadPoolConfig()
-        : ThreadPoolConfig.builder().corePoolSize(1).maxPoolSize(10).idleTime(30).timeUnit(TimeUnit.SECONDS).build();
-
-    return ThreadPool.create(threadPoolConfig.getCorePoolSize(), threadPoolConfig.getMaxPoolSize(),
-        threadPoolConfig.getIdleTime(), threadPoolConfig.getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("deployment-stage-plan-creation-info-v1-pool-%d").build());
-  }
-
   @Provides
   @Singleton
   @Named("webhookBranchHookEventHsqsDequeueConfig")
@@ -1111,10 +1099,6 @@ public class NextGenModule extends AbstractModule {
     bind(ExecutorService.class)
         .annotatedWith(Names.named("deployment-stage-plan-creation-info-executor"))
         .toInstance(new ManagedExecutorService(deploymentStagePlanCreationInfoThreadPoolConfiguration()));
-
-    bind(ExecutorService.class)
-        .annotatedWith(Names.named("deployment-stage-plan-creation-info-v1-executor"))
-        .toInstance(new ManagedExecutorService(deploymentStagePlanCreationInfoV1ThreadPoolConfiguration()));
 
     MapBinder<SCMType, SourceCodeManagerMapper> sourceCodeManagerMapBinder =
         MapBinder.newMapBinder(binder(), SCMType.class, SourceCodeManagerMapper.class);

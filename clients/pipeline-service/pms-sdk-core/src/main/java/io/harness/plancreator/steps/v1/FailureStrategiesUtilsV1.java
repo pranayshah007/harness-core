@@ -224,7 +224,7 @@ public class FailureStrategiesUtilsV1 {
     boolean containsOnlyAllErrors = false;
     for (FailureConfigV1 failureConfig : stageFailureStrategies.getValue()) {
       if (failureConfig.getErrors().size() == 1
-          && failureConfig.getErrors().get(0).getYamlName().contentEquals(NGFailureTypeConstantsV1.ALL_ERRORS)) {
+          && NGFailureTypeConstantsV1.ALL_ERRORS.contentEquals(failureConfig.getErrors().get(0).getYamlName())) {
         containsOnlyAllErrors = true;
       }
     }
