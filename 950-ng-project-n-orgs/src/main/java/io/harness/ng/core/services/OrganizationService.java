@@ -59,5 +59,5 @@ public interface OrganizationService {
   Long countOrgs(String accountIdentifier);
 
   Set<String> getPermittedOrganizations(@NotNull String accountIdentifier, String orgIdentifier);
-  Optional<ScopeInfo> getScopeInfo(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  Optional<ScopeInfo> getScopeInfo(String accountIdentifier, String orgIdentifier);
 }

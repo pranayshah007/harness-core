@@ -57,7 +57,7 @@ public class ScopeInfoServiceImpl implements ScopeInfoService {
     }
 
     if (isEmpty(projectIdentifier)) {
-      return organizationService.getScopeInfo(accountIdentifier, orgIdentifier, projectIdentifier);
+      return organizationService.getScopeInfo(accountIdentifier, orgIdentifier);
     }
 
     return projectService.getScopeInfo(accountIdentifier, orgIdentifier, projectIdentifier);

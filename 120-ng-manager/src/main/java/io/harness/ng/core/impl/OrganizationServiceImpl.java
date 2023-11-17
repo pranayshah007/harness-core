@@ -135,10 +135,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     try {
       validate(organization);
       Organization savedOrganization = saveOrganization(organization);
-      scopeInfoCache.put(
-          scopeInfoHelper.getScopeInfoCacheKey(accountIdentifier, savedOrganization.getIdentifier(), null),
-          scopeInfoHelper.populateScopeInfo(ScopeLevel.ORGANIZATION, savedOrganization.getUniqueId(), accountIdentifier,
-              savedOrganization.getIdentifier(), null));
+      addToScopeInfoCache(savedOrganization);
       setupOrganization(Scope.of(accountIdentifier, organizationDTO.getIdentifier(), null));
       log.info(
           String.format("Organization with identifier [%s] was successfully created", organization.getIdentifier()));
@@ -149,6 +146,14 @@ public class OrganizationServiceImpl implements OrganizationService {
           String.format("An organization with identifier [%s] is already present", organization.getIdentifier()),
           USER_SRE, ex);
     }
+  }
+
+  private void addToScopeInfoCache(Organization organization) {
+    String scopeInfoCacheKey =
+        scopeInfoHelper.getScopeInfoCacheKey(organization.getAccountIdentifier(), organization.getIdentifier(), null);
+    ScopeInfo scopeInfo = scopeInfoHelper.populateScopeInfo(ScopeLevel.ORGANIZATION, organization.getUniqueId(),
+        organization.getAccountIdentifier(), organization.getIdentifier(), null);
+    scopeInfoCache.put(scopeInfoCacheKey, scopeInfo);
   }
 
   @Override
@@ -300,6 +305,7 @@ public class OrganizationServiceImpl implements OrganizationService {
       validate(organization);
       return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Organization updatedOrganization = organizationRepository.save(organization);
+        addToScopeInfoCache(updatedOrganization);
         log.info(String.format("Organization with identifier [%s] was successfully updated", identifier));
         outboxService.save(new OrganizationUpdateEvent(organization.getAccountIdentifier(),
             OrganizationMapper.writeDto(updatedOrganization), OrganizationMapper.writeDto(existingOrganization)));
@@ -433,24 +439,21 @@ public class OrganizationServiceImpl implements OrganizationService {
     verifyValuesNotChanged(Lists.newArrayList(Pair.of(identifier, organization.getIdentifier())), false);
   }
 
-  public Optional<ScopeInfo> getScopeInfo(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    final String cacheKey = scopeInfoHelper.getScopeInfoCacheKey(accountIdentifier, orgIdentifier, projectIdentifier);
+  public Optional<ScopeInfo> getScopeInfo(String accountIdentifier, String orgIdentifier) {
+    final String cacheKey = scopeInfoHelper.getScopeInfoCacheKey(accountIdentifier, orgIdentifier, null);
     if (scopeInfoCache.containsKey(cacheKey)) {
       return Optional.of(scopeInfoCache.get(cacheKey));
     }
-    if (isEmpty(projectIdentifier)) {
-      Optional<Organization> org = get(accountIdentifier, orgIdentifier);
-      if (org.isPresent()) {
-        ScopeInfo orgScopeInfo = scopeInfoHelper.populateScopeInfo(
-            ScopeLevel.ORGANIZATION, org.get().getUniqueId(), accountIdentifier, orgIdentifier, null);
-        scopeInfoCache.put(cacheKey, orgScopeInfo);
-        return Optional.of(orgScopeInfo);
-      } else {
-        log.warn(String.format(
-            "Org with identifier [%s] in Account: [%s] does not exist", orgIdentifier, accountIdentifier));
-        return Optional.empty();
-      }
+    Optional<Organization> org = get(accountIdentifier, orgIdentifier);
+    if (org.isPresent()) {
+      ScopeInfo orgScopeInfo = scopeInfoHelper.populateScopeInfo(
+          ScopeLevel.ORGANIZATION, org.get().getUniqueId(), accountIdentifier, orgIdentifier, null);
+      scopeInfoCache.put(cacheKey, orgScopeInfo);
+      return Optional.of(orgScopeInfo);
+    } else {
+      log.warn(
+          String.format("Org with identifier [%s] in Account: [%s] does not exist", orgIdentifier, accountIdentifier));
+      return Optional.empty();
     }
-    return Optional.empty();
   }
 }

@@ -61,6 +61,7 @@ import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.beans.ProjectsPerOrganizationCount;
+import io.harness.ng.core.beans.ScopeInfo;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ProjectFilterDTO;
 import io.harness.ng.core.entities.Organization;
@@ -69,7 +70,6 @@ import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.core.remote.ProjectMapper;
 import io.harness.ng.core.remote.utils.ScopeAccessHelper;
 import io.harness.ng.core.services.OrganizationService;
-import io.harness.ng.core.services.ScopeInfoService;
 import io.harness.ng.core.user.entities.UserMembership;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.outbox.api.OutboxService;
@@ -94,6 +94,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.cache.Cache;
 import org.bson.Document;
 import org.junit.Before;
 import org.junit.Rule;
@@ -137,17 +138,18 @@ public class ProjectServiceImplTest extends CategoryTest {
   @Mock private DefaultUserGroupService defaultUserGroupService;
   @Mock private FavoritesService favoritesService;
   @Mock private UserHelperService userHelperService;
-  @Mock private ScopeInfoService scopeInfoService;
+  @Mock private Cache<String, ScopeInfo> scopeInfoCache;
+  @Mock private ScopeInfoHelper scopeInfoHelper;
 
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    projectService =
-        spy(new ProjectServiceImpl(projectRepository, organizationService, transactionTemplate, outboxService,
-            ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper, yamlGitConfigService,
-            featureFlagService, defaultUserGroupService, favoritesService, userHelperService, scopeInfoService));
+    projectService = spy(new ProjectServiceImpl(projectRepository, organizationService, transactionTemplate,
+        outboxService, ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper,
+        yamlGitConfigService, featureFlagService, defaultUserGroupService, favoritesService, userHelperService,
+        scopeInfoCache, scopeInfoHelper));
     when(scopeAccessHelper.getPermittedScopes(any())).then(returnsFirstArg());
   }
 

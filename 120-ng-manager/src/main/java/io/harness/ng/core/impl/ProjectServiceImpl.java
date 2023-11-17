@@ -200,10 +200,7 @@ public class ProjectServiceImpl implements ProjectService {
       validate(project);
       Project createdProject = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Project savedProject = projectRepository.save(project);
-        scopeInfoCache.put(scopeInfoHelper.getScopeInfoCacheKey(
-                               accountIdentifier, savedProject.getOrgIdentifier(), savedProject.getIdentifier()),
-            scopeInfoHelper.populateScopeInfo(ScopeLevel.PROJECT, savedProject.getUniqueId(), accountIdentifier,
-                savedProject.getOrgIdentifier(), savedProject.getIdentifier()));
+        addToScopeInfoCache(savedProject);
         outboxService.save(new ProjectCreateEvent(project.getAccountIdentifier(), ProjectMapper.writeDTO(project)));
         return savedProject;
       }));
@@ -468,6 +465,7 @@ public class ProjectServiceImpl implements ProjectService {
       validate(project);
       return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Project updatedProject = projectRepository.save(project);
+        addToScopeInfoCache(updatedProject);
         log.info(String.format(
             "Project with identifier [%s] and orgIdentifier [%s] was successfully updated", identifier, orgIdentifier));
         outboxService.save(new ProjectUpdateEvent(project.getAccountIdentifier(),
@@ -478,6 +476,14 @@ public class ProjectServiceImpl implements ProjectService {
     throw new InvalidRequestException(
         String.format("Project with identifier [%s] and orgIdentifier [%s] not found", identifier, orgIdentifier),
         USER);
+  }
+
+  private void addToScopeInfoCache(Project project) {
+    String scopeInfoCacheKey = scopeInfoHelper.getScopeInfoCacheKey(
+        project.getAccountIdentifier(), project.getOrgIdentifier(), project.getIdentifier());
+    ScopeInfo scopeInfo = scopeInfoHelper.populateScopeInfo(ScopeLevel.PROJECT, project.getUniqueId(),
+        project.getAccountIdentifier(), project.getOrgIdentifier(), project.getIdentifier());
+    scopeInfoCache.put(scopeInfoCacheKey, scopeInfo);
   }
 
   private List<ModuleType> verifyModulesNotRemoved(List<ModuleType> oldList, List<ModuleType> newList) {
@@ -763,19 +769,16 @@ public class ProjectServiceImpl implements ProjectService {
     if (scopeInfoCache.containsKey(cacheKey)) {
       return Optional.of(scopeInfoCache.get(cacheKey));
     }
-    if (isEmpty(projectIdentifier)) {
-      Optional<Project> project = get(accountIdentifier, orgIdentifier, projectIdentifier);
-      if (project.isPresent()) {
-        ScopeInfo projectScopeInfo = scopeInfoHelper.populateScopeInfo(
-            ScopeLevel.PROJECT, project.get().getUniqueId(), accountIdentifier, orgIdentifier, null);
-        scopeInfoCache.put(cacheKey, projectScopeInfo);
-        return Optional.of(projectScopeInfo);
-      } else {
-        log.warn(String.format("Project with identifier [%s] in Account: [%s] and Organization: [%s] does not exist",
-            projectIdentifier, accountIdentifier, orgIdentifier));
-        return Optional.empty();
-      }
+    Optional<Project> project = get(accountIdentifier, orgIdentifier, projectIdentifier);
+    if (project.isPresent()) {
+      ScopeInfo projectScopeInfo = scopeInfoHelper.populateScopeInfo(
+          ScopeLevel.PROJECT, project.get().getUniqueId(), accountIdentifier, orgIdentifier, null);
+      scopeInfoCache.put(cacheKey, projectScopeInfo);
+      return Optional.of(projectScopeInfo);
+    } else {
+      log.warn(String.format("Project with identifier [%s] in Account: [%s] and Organization: [%s] does not exist",
+          projectIdentifier, accountIdentifier, orgIdentifier));
+      return Optional.empty();
     }
-    return Optional.empty();
   }
 }
