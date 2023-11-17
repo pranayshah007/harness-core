@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
+import static io.harness.yaml.core.MatrixConstants.MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -63,7 +64,6 @@ public class AmbianceUtils {
   public static final String SPECIAL_CHARACTER_REGEX = "[^a-zA-Z0-9]";
   public static final String PIE_SIMPLIFY_LOG_BASE_KEY = "PIE_SIMPLIFY_LOG_BASE_KEY";
   public static final String PIE_SECRETS_OBSERVER = "PIE_SECRETS_OBSERVER";
-  public static final int MAX_CHARACTERS_FOR_IDENTIFIER_POSTFIX = 127;
 
   public static Ambiance cloneForFinish(@NonNull Ambiance ambiance) {
     return clone(ambiance, ambiance.getLevelsList().size() - 1);
@@ -296,9 +296,14 @@ public class AmbianceUtils {
     return ambiance.getLevels(ambiance.getLevelsCount() - 2).getRuntimeId();
   }
 
-  public static String modifyIdentifier(StrategyMetadata strategyMetadata, String identifier) {
-    return identifier.replaceAll(
-        StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, strategyMetadata.getIdentifierPostFix());
+  public static String modifyIdentifier(StrategyMetadata metadata, String identifier, Ambiance ambiance) {
+    return modifyIdentifier(metadata, identifier, shouldUseMatrixFieldName(ambiance));
+  }
+
+  public static String modifyIdentifier(
+      StrategyMetadata strategyMetadata, String identifier, boolean useMatrixFieldName) {
+    return identifier.replaceAll(StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED,
+        getStrategyPostFixUsingMetadata(strategyMetadata, useMatrixFieldName));
   }
 
   // Todo: Use metadata.getIdentifierPostfix going forward.
@@ -335,7 +340,9 @@ public class AmbianceUtils {
                             .getMatrixValuesMap()
                             .entrySet()
                             .stream()
-                            .filter(entry -> !matrixKeysToSkipInName.contains(entry.getKey()))
+                            .filter(entry
+                                -> !matrixKeysToSkipInName.contains(entry.getKey())
+                                    && !MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES.equals(entry.getKey()))
                             .sorted(Map.Entry.comparingByKey())
                             .map(t -> t.getValue().replace(".", ""))
                             .collect(Collectors.joining("_"));
@@ -347,11 +354,17 @@ public class AmbianceUtils {
                             .collect(Collectors.joining("_"));
     }
 
-    String modifiedString = "_" + levelIdentifier.replaceAll(SPECIAL_CHARACTER_REGEX, "_");
-    // If the identifier is too long, we should truncate it.
-    return modifiedString.length() <= MAX_CHARACTERS_FOR_IDENTIFIER_POSTFIX
-        ? modifiedString
-        : modifiedString.substring(0, MAX_CHARACTERS_FOR_IDENTIFIER_POSTFIX);
+    // Making sure that identifier postfix is added at the last while forming the identifier for the matrix stage
+    if (strategyMetadata.getMatrixMetadata().getMatrixValuesMap().containsKey(
+            MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES)) {
+      levelIdentifier = levelIdentifier + "_"
+          + strategyMetadata.getMatrixMetadata().getMatrixValuesMap().get(MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES);
+    }
+
+    String modifiedString =
+        "_" + (levelIdentifier.length() <= 126 ? levelIdentifier : levelIdentifier.substring(0, 126));
+
+    return modifiedString.replaceAll(SPECIAL_CHARACTER_REGEX, "_");
   }
 
   public boolean isCurrentStrategyLevelAtStage(Ambiance ambiance) {
