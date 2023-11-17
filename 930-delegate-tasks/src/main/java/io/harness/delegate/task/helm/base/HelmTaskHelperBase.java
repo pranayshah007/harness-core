@@ -35,6 +35,7 @@ import static io.harness.helm.HelmConstants.USERNAME;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_CACHE_HOME;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_CACHE_HOME_PATH;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_CACHE_INDEX_FILE;
+import static io.harness.helm.HelmConstants.V3Commands.HELM_CACHE_INDEX_FILE_FROM_CHART_DIRECTORY;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_REPO_ADD_FORCE_UPDATE;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_REPO_FLAGS;
 import static io.harness.helm.HelmConstants.V3Commands.REGISTRY_CONFIG;
@@ -401,7 +402,7 @@ public class HelmTaskHelperBase {
           exitCode, repoAddCommandForLogging, processOutput);
       throw new HelmClientException(exceptionMessage, USER, HelmCliCommandType.REPO_ADD);
     }
-    checkIndexFile(repoName, tempDir, executionLogCallback);
+    checkIndexFile(repoName, tempDir, executionLogCallback, chartDirectory);
   }
 
   public void addRepo(String repoName, String repoDisplayName, String chartRepoUrl, String username, char[] password,
@@ -411,15 +412,14 @@ public class HelmTaskHelperBase {
       addRepoInternal(repoName, repoDisplayName, chartRepoUrl, username, password, chartDirectory, helmVersion,
           timeoutInMillis, EMPTY, helmCommandFlag, executionLogCallback);
       if (HelmVersion.V380.equals(helmVersion)) {
-        updateRepo(
-            repoName, chartDirectory, helmVersion, timeoutInMillis, EMPTY, helmCommandFlag, executionLogCallback);
+        updateRepo(repoName, chartDirectory, helmVersion, timeoutInMillis, EMPTY, helmCommandFlag);
       }
       return;
     }
 
     addRepoInternal(repoName, repoDisplayName, chartRepoUrl, username, password, chartDirectory, helmVersion,
         timeoutInMillis, cacheDir, helmCommandFlag, executionLogCallback);
-    updateRepo(repoName, chartDirectory, helmVersion, timeoutInMillis, cacheDir, helmCommandFlag, executionLogCallback);
+    updateRepo(repoName, chartDirectory, helmVersion, timeoutInMillis, cacheDir, helmCommandFlag);
   }
 
   public void tryAddRepo(String repoName, String repoDisplayName, String chartRepoUrl, String username, char[] password,
@@ -985,7 +985,7 @@ public class HelmTaskHelperBase {
       HelmVersion helmVersion, long timeoutInMillis, String cacheDir, HelmCommandFlag helmCommandFlag,
       LogCallback executionLogCallback) {
     String repoAddCommand = getChartMuseumRepoAddCommand(repoName, port, chartDirectory, helmVersion, helmCommandFlag);
-
+    // done
     Map<String, String> environment = new HashMap<>();
     if (!isEmpty(cacheDir)) {
       environment.putIfAbsent(HELM_CACHE_HOME,
@@ -1007,13 +1007,13 @@ public class HelmTaskHelperBase {
           exitCode, repoAddCommand, processOutput);
       throw new HelmClientException(exceptionMessage, USER, HelmCliCommandType.REPO_ADD);
     }
-    checkIndexFile(repoName, cacheDir, executionLogCallback);
+    checkIndexFile(repoName, cacheDir, executionLogCallback, chartDirectory);
 
     if (isEmpty(cacheDir)) {
       return;
     }
 
-    updateRepo(repoName, chartDirectory, helmVersion, timeoutInMillis, cacheDir, null, executionLogCallback);
+    updateRepo(repoName, chartDirectory, helmVersion, timeoutInMillis, cacheDir, null);
   }
 
   private String getChartMuseumRepoAddCommand(
@@ -1470,7 +1470,7 @@ public class HelmTaskHelperBase {
       }
 
       updateRepo(storeDelegateConfig.getRepoName(), destinationDirectory, manifest.getHelmVersion(), timeoutInMillis,
-          cacheDir, manifest.getHelmCommandFlag(), null);
+          cacheDir, manifest.getHelmCommandFlag());
 
       ProcessResult processResult = executeCommand(environment, command, destinationDirectory,
           "Helm chart fetch versions command failed ", timeoutInMillis, HelmCliCommandType.FETCH_ALL_VERSIONS);
@@ -1489,7 +1489,7 @@ public class HelmTaskHelperBase {
   }
 
   public void updateRepo(String repoName, String workingDirectory, HelmVersion helmVersion, long timeoutInMillis,
-      String cacheDir, HelmCommandFlag helmCommandFlag, LogCallback executionLogCallback) {
+      String cacheDir, HelmCommandFlag helmCommandFlag) {
     try {
       String repoUpdateCommand = getRepoUpdateCommand(repoName, workingDirectory, helmVersion, helmCommandFlag);
       Map<String, String> environment = new HashMap<>();
@@ -1507,7 +1507,6 @@ public class HelmTaskHelperBase {
       if (processResult.getExitValue() != 0) {
         log.warn("Failed to update helm repo {}. {}", repoName, processResult.getOutput().getUTF8());
       }
-      checkIndexFile(repoName, cacheDir, executionLogCallback);
     } catch (Exception ex) {
       log.warn(ExceptionUtils.getMessage(ex));
     }
@@ -1818,20 +1817,28 @@ public class HelmTaskHelperBase {
     return "";
   }
 
-  private void checkIndexFile(String repoName, String cacheDir, LogCallback executionLogCallBack) {
-    File indexFile =
-        new File(HELM_CACHE_INDEX_FILE.replace(REPO_NAME, repoName).replace(HELM_CACHE_HOME_PLACEHOLDER, cacheDir));
+  private void checkIndexFile(
+      String repoName, String cacheDir, LogCallback executionLogCallBack, String chartDirectory) {
+    File indexFile;
+    if (repoName.isEmpty()) {
+      return;
+    }
+    if (!isEmpty(cacheDir)) {
+      indexFile =
+          new File(HELM_CACHE_INDEX_FILE.replace(REPO_NAME, repoName).replace(HELM_CACHE_HOME_PLACEHOLDER, cacheDir));
+    } else if (!isEmpty(chartDirectory)) {
+      indexFile = new File(HELM_CACHE_INDEX_FILE_FROM_CHART_DIRECTORY.replace(REPO_NAME, repoName)
+                               .replace(HELM_CACHE_HOME_PLACEHOLDER, chartDirectory));
+    } else {
+      return;
+    }
     if (indexFile.exists() && (indexFile.length() > SAFE_LIMIT_OF_INDEX_FILE)) {
       if (executionLogCallBack != null) {
-        executionLogCallBack.saveExecutionLog(color(
-            String.format(
-                "Size of index.yaml is greater than 20Mb for the given repo [%s]. This can lead to slowness of delegate",
-                repoName),
-            Yellow, Bold));
+        executionLogCallBack.saveExecutionLog(
+            color("Size of index.yaml is greater than 20Mb for the given repo. This can lead to slowness of delegate",
+                Yellow, Bold));
       } else {
-        log.warn(String.format(
-            "Size of index.yaml is greater than 20Mb for the given repo %s. This can lead to slowness of delegate",
-            repoName));
+        log.warn("Size of index.yaml is greater than 20Mb for the given repo. This can lead to slowness of delegate");
       }
     }
   }
