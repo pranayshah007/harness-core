@@ -1,0 +1,287 @@
+---
+# Source: ci-manager/templates/pdb.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ci-manager
+  namespace: default
+  labels:
+spec:
+  minAvailable: "50%"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ci-manager
+      app.kubernetes.io/instance: release-name
+---
+# Source: ci-manager/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ci-manager
+  namespace: default
+  labels:
+    helm.sh/chart: ci-manager-2.11.2
+    app.kubernetes.io/name: ci-manager
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "0.0.6602"
+    app.kubernetes.io/managed-by: Helm
+type: Opaque
+data:  
+  LOG_SERVICE_GLOBAL_TOKEN: WXpjMlpUVTJOMkV0WWpNME1TMDBNRFJrTFdFNFpHUXRaRGszTXpnM01UUmxZamd5Q2c9PQ==
+  TI_SERVICE_GLOBAL_TOKEN: NTlNUjVSbFZBUmNkSDd6YjdwTng2R3pxaWdsQm1YUjg=
+---
+# Source: ci-manager/templates/config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ci-manager
+  namespace: default
+  labels:
+data:
+  CACHE_BACKEND: "REDIS"
+  CACHE_CONFIG_REDIS_SENTINELS: redis://redis-sentinel-harness-announce-0:26379,redis://redis-sentinel-harness-announce-1:26379,redis://redis-sentinel-harness-announce-2:26379
+  CACHE_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
+  CACHE_CONFIG_USE_SENTINEL: "true"
+  CACHE_CONFIG_REDIS_URL: redis://redis-sentinel-harness-announce-0:26379,redis://redis-sentinel-harness-announce-1:26379,redis://redis-sentinel-harness-announce-2:26379
+  DEPLOY_MODE: KUBERNETES_ONPREM
+  ENABLE_AUTH: "true"
+  MANAGER_TARGET: harness-manager:9879
+  MANAGER_AUTHORITY: harness-manager:9879
+  GRPC_SERVER_PORT: "9979"
+  SCM_SERVICE_URI: "scm-service:8091"
+  ADDON_IMAGE: 'harness/ci-addon:1.16.29'
+  LE_IMAGE: 'harness/ci-lite-engine:1.16.29'
+  GIT_CLONE_IMAGE: 'harness/drone-git:1.3.4-rootless'
+  DOCKER_PUSH_IMAGE: 'plugins/kaniko:1.8.0'
+  ECR_PUSH_IMAGE: 'plugins/kaniko-ecr:1.8.0'
+  GCR_PUSH_IMAGE: 'plugins/kaniko-gcr:1.8.0'
+  ACR_PUSH_IMAGE: 'plugins/kaniko-acr:1.8.0'
+  GCS_UPLOAD_IMAGE: 'plugins/gcs:1.5.0'
+  S3_UPLOAD_IMAGE: 'plugins/s3:1.2.7'
+  ARTIFACTORY_UPLOAD_IMAGE: 'plugins/artifactory:1.4.7'
+  GCS_CACHE_IMAGE: 'plugins/cache:1.6.2'
+  S3_CACHE_IMAGE: 'plugins/cache:1.6.2'
+  SECURITY_IMAGE: 'harness/sto-plugin:1.19.0'
+  PMS_TARGET:  pipeline-service:12011
+  PMS_AUTHORITY:  pipeline-service:12011
+  LOGGING_LEVEL: INFO
+  EVENTS_FRAMEWORK_REDIS_URL: redis://redis-sentinel-harness-announce-0:26379,redis://redis-sentinel-harness-announce-1:26379,redis://redis-sentinel-harness-announce-2:26379
+  EVENTS_FRAMEWORK_USE_SENTINEL: "true"
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: redis://redis-sentinel-harness-announce-0:26379,redis://redis-sentinel-harness-announce-1:26379,redis://redis-sentinel-harness-announce-2:26379
+  LOCK_CONFIG_USE_SENTINEL: "true"
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: 'harness-redis'
+  LOCK_CONFIG_REDIS_SENTINELS: redis://redis-sentinel-harness-announce-0:26379,redis://redis-sentinel-harness-announce-1:26379,redis://redis-sentinel-harness-announce-2:26379
+  LOCK_CONFIG_REDIS_URL: redis://redis-sentinel-harness-announce-0:26379,redis://redis-sentinel-harness-announce-1:26379,redis://redis-sentinel-harness-announce-2:26379
+  SHOULD_CONFIGURE_WITH_PMS: "true"
+  ENABLE_DASHBOARD_TIMESCALE: "true"
+  MEMORY: "4096m"
+  USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
+  NG_MANAGER_URL: 'http://ng-manager.default.svc.cluster.local:7090/'
+  MANAGER_URL: 'http://harness-manager:9090/api/'
+  LOG_SERVICE_ENDPOINT: '/log-service/'
+  TI_SERVICE_ENDPOINT: '/ti-service/'
+  LOG_SERVICE_INTERNAL_URL: 'http://log-service:8079/'
+  TI_SERVICE_INTERNAL_URL: 'http://ti-service:8078/'
+  API_URL: '/ng/#/'
+  STO_SERVICE_ENDPOINT: '/sto/'
+  SSCA_MANAGER_ENABLED: "true"
+  SSCA_SERVICE_ENDPOINT: '/ssca-manager/'
+  SSCA_ORCHESTRATION_IMAGE: 'harness/ssca-plugin:0.12.2'
+  SSCA_ENFORCEMENT_IMAGE: 'harness/ssca-plugin:0.12.2'
+  VM_SSCA_ORCHESTRATION_IMAGE: 'harness/ssca-plugin:0.12.2'
+  VM_SSCA_ENFORCEMENT_IMAGE: 'harness/ssca-plugin:0.12.2'
+  SLSA_VERIFICATION_DOCKER_IMAGE: 'harness/slsa-plugin:0.12.0'
+  SLSA_VERIFICATION_GCR_IMAGE: 'harness/slsa-plugin:0.12.0'
+  DOCKER_PROVENANCE_IMAGE: 'harness/slsa-plugin:0.12.0'
+  GCR_PROVENANCE_IMAGE: 'harness/slsa-plugin:0.12.0'
+  GITNESS_INTERNAL_URL: 'http://code-api:80/'
+  STACK_DRIVER_LOGGING_ENABLED: "false"
+
+  # The following image variables are just for the reference and do not impact any functionality
+  AWS_ECR_IMAGE: harness/aws-ecr-job-runner:latest
+  AWS_SECURITY_HUB_IMAGE: harness/aws-security-hub-job-runner:latest
+  AQUA_TRIVY_IMAGE: harness/aqua-trivy-job-runner:latest
+  BANDIT_IMAGE: harness/bandit-job-runner:latest
+  BLACKDUCK_IMAGE: harness/blackduckhub-job-runner:latest
+  BRAKEMAN_IMAGE: harness/brakeman-job-runner:latest
+  STO_IMAGE: harness/sto-plugin:latest
+  FOSSA_IMAGE: harness/fossa-job-runner:latest
+  GRYPE_IMAGE: harness/grype-job-runner:latest
+  NMAP_IMAGE: harness/nmap-job-runner:latest
+  NIKTO_IMAGE: harness/nikto-job-runner:latest
+  OWASP_IMAGE: harness/owasp-dependency-check-job-runner:latest
+  SYNK_IMAGE: harness/snyk-job-runner:latest
+  SONARQUBE_IMAGE: harness/sonarqube-agent-job-runner:latest
+  PROWLER_IMAGE: harness/prowler-job-runner:latest
+  TWISTLOCK_IMAGE: harness/twistlock-job-runner:latest
+  CHECKMARX_IMAGE: harness/checkmarx-job-runner:latest
+  VERACODE_IMAGE: harness/veracode-agent-job-runner:latest
+  ZAP_IMAGE: harness/zap-job-runner:latest
+  WHITE_SOURCE_IMAGE: harness/whitesource-agent-job-runner:latest
+  HARNESS_CODE_GIT_URL: '/code/git'
+  
+  JAVA_17_FLAGS: --illegal-access=debug --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.time=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.lang.invoke=ALL-UNNAMED --add-opens java.base/java.math=ALL-UNNAMED --add-opens java.base/java.nio.file=ALL-UNNAMED --add-opens java.base/java.util.concurrent=ALL-UNNAMED --add-opens java.xml/com.sun.org.apache.xpath.internal=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-exports java.xml/com.sun.org.apache.xerces.internal.parsers=ALL-UNNAMED --add-exports java.base/sun.nio.ch=ALL-UNNAMED
+---
+# Source: ci-manager/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ci-manager
+  namespace: default
+  labels:
+    helm.sh/chart: ci-manager-2.11.2
+    app.kubernetes.io/name: ci-manager
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "0.0.6602"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+  - name: ci-manager
+    port: 7090
+    protocol: TCP
+    targetPort: 7090
+  - name: grpc-ci-manager
+    port: 9979
+    protocol: TCP
+    targetPort: 9979
+  selector:
+    app.kubernetes.io/name: ci-manager
+    app.kubernetes.io/instance: release-name
+---
+# Source: ci-manager/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ci-manager
+  namespace: default
+  labels:
+    helm.sh/chart: ci-manager-2.11.2
+    app.kubernetes.io/name: ci-manager
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "0.0.6602"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ci-manager
+      app.kubernetes.io/instance: release-name
+  template:
+    metadata:
+      annotations:
+        checksum/config: a8fb61e0cec8c23d75db6ab49eb889f8c128ef225b18cdc34e4ffa01701a789a
+      labels:
+        app.kubernetes.io/name: ci-manager
+        app.kubernetes.io/instance: release-name
+    spec:
+      
+      
+      serviceAccountName: harness-default
+      securityContext:
+        {}
+      terminationGracePeriodSeconds: 30
+      initContainers:
+      - name: wait-for-harness-manager
+        image: docker.io/harness/helm-init-container:latest
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=harness-manager"
+      containers:
+        - name: ci-manager
+          image: docker.io/harness/ci-manager-signed:6602
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+          ports:
+          - name: http-ci-manager
+            containerPort: 7090
+            protocol: "TCP"
+          - name: grpc-ci-manager
+            containerPort: 9979
+            protocol: "TCP"
+          resources:
+            limits:
+              memory: 8192Mi
+            requests:
+              cpu: 1
+              memory: 1400Mi
+          env:                                                
+            - name: MONGO_USER
+              valueFrom:
+                secretKeyRef:
+                  name: harness-secrets
+                  key: mongodbUsername
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-replicaset-chart
+                  key: mongodb-root-password            
+            - name: TIMESCALEDB_USERNAME
+              value: postgres
+            - name: TIMESCALE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: harness-secrets
+                  key: timescaledbPostgresPassword            
+            - name: LOG_SERVICE_GLOBAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ci-manager
+                  key: LOG_SERVICE_GLOBAL_TOKEN            
+            - name: TI_SERVICE_GLOBAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ci-manager
+                  key: TI_SERVICE_GLOBAL_TOKEN            
+            - name: STO_SERVICE_GLOBAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: harness-secrets
+                  key: stoAppHarnessToken
+            - name: MONGO_URI
+              value: 'mongodb://$(MONGO_USER):$(MONGO_PASSWORD)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.default.svc/harness?authSource=admin'
+            - name: CIMANAGER_MONGO_URI
+              value: 'mongodb://$(MONGO_USER):$(MONGO_PASSWORD)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.default.svc/harness-ci?authSource=admin'
+            - name: PMS_MONGO_URI
+              value: 'mongodb://$(MONGO_USER):$(MONGO_PASSWORD)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.default.svc/pms-harness?authSource=admin'
+            - name: TIMESCALE_URI
+              value: jdbc:postgresql://timescaledb-single-chart.default:5432/harness
+          envFrom:
+          - configMapRef:
+              name: ci-manager
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http-ci-manager
+            initialDelaySeconds: 60
+            timeoutSeconds: 5
+            periodSeconds: 5
+            failureThreshold: 8
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http-ci-manager
+            initialDelaySeconds: 40
+            timeoutSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 20
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - ci-manager
+            topologyKey: "kubernetes.io/hostname"
