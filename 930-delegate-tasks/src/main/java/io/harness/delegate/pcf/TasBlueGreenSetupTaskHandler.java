@@ -176,8 +176,10 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
       deleteOlderApplications(previousReleases, cfRequestConfig, blueGreenSetupRequestNG, cfAppAutoscalarRequestData,
           logCallback, activeApplicationInfo, inActiveApplicationInfo);
 
-      renames = renameInActiveApplication(previousReleases, blueGreenSetupRequestNG, cfRequestConfig, logCallback,
-          activeApplicationInfo, inActiveApplicationInfo);
+      if (blueGreenSetupRequestNG.getOlderActiveVersionCountToKeep() != 0) {
+        renames = renameInActiveApplication(previousReleases, blueGreenSetupRequestNG, cfRequestConfig, logCallback,
+            activeApplicationInfo, inActiveApplicationInfo);
+      }
 
       boolean varsYmlPresent = checkIfVarsFilePresent(blueGreenSetupRequestNG);
       CfCreateApplicationRequestData requestData =
