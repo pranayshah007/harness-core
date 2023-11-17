@@ -26,7 +26,6 @@ java_library(
         "//979-recaster:module",
         "//980-commons/src/main/java/io/harness/annotations:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
-        "//pipeline-service/modules/orchestration-steps:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:com_google_guava_guava",
         "@maven//:dev_morphia_morphia_core",

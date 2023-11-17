@@ -25,4 +25,5 @@ public class InstrumentationConstants {
   public static final String APPROVAL_CRITERIA_SPEC_TYPE = "approval_criteria_spec_type";
   public static final String AUTO_APPROVAL = "auto_approval";
   public static final String APPROVAL_STEP = "approval_step";
+  public static final String PIPELINE_ID = "pipeline_id";
 }
