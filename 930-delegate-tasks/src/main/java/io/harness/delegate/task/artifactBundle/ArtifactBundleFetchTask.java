@@ -16,48 +16,36 @@ import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.getFilesUnderPath;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
-
 import static io.harness.pcf.model.ManifestType.APPLICATION_MANIFEST;
 import static io.harness.pcf.model.ManifestType.AUTOSCALAR_MANIFEST;
 import static io.harness.pcf.model.ManifestType.VARIABLE_MANIFEST;
 import static io.harness.pcf.model.PcfConstants.APPLICATION_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.ARTIFACT_BUNDLE_MANIFESTS;
-import static io.harness.pcf.model.PcfConstants.CUSTOM_SOURCE_MANIFESTS;
 import static io.harness.pcf.model.PcfConstants.NAME_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.PCF_AUTOSCALAR_MANIFEST_INSTANCE_LIMITS_ELE;
 import static io.harness.pcf.model.PcfConstants.PCF_AUTOSCALAR_MANIFEST_RULES_ELE;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.toList;
+
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
-import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.counting;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.io.Files;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FileData;
-import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
-import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
-import io.harness.delegate.beans.FileBucket;
-import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.beans.storeconfig.FetchType;
-import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.cf.PcfCommandTaskBaseHelper;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
@@ -66,9 +54,6 @@ import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.cf.TasArtifactDownloadContext;
 import io.harness.delegate.task.cf.TasArtifactDownloadResponse;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
-import io.harness.delegate.task.git.GitFetchFilesConfig;
-import io.harness.delegate.task.git.GitFetchFilesTaskHelper;
-import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.delegate.task.git.TaskStatus;
@@ -76,29 +61,25 @@ import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasArtifactType;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.manifest.TasManifestDelegateConfig;
-import io.harness.delegate.task.pcf.request.CfBasicSetupRequestNG;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
-import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
-import io.harness.git.GitFetchMetadataContext;
-import io.harness.git.model.FetchFilesResult;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.pcf.model.ManifestType;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.shell.SshSessionConfig;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.io.Files;
 import com.google.inject.Inject;
-
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystemException;
@@ -115,12 +96,9 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.zip.ZipInputStream;
-
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
-import software.wings.sm.states.pcf.PcfStateHelper;
-
-import javax.annotation.Nullable;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @Slf4j
@@ -132,9 +110,7 @@ public class ArtifactBundleFetchTask extends AbstractDelegateRunnableTask {
   @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   @Inject protected CfCommandTaskHelperNG cfCommandTaskHelperNG;
-  @Inject
-  PcfCommandTaskBaseHelper pcfCommandTaskBaseHelper;
-
+  @Inject PcfCommandTaskBaseHelper pcfCommandTaskBaseHelper;
 
   private static final String NOT_DIR_ERROR_MSG = "Not a directory";
 
@@ -164,8 +140,8 @@ public class ArtifactBundleFetchTask extends AbstractDelegateRunnableTask {
           color(format("%nStarting Artifact Bundle Fetch Files"), LogColor.White, LogWeight.Bold));
 
       try {
-        filesFromArtifactBundle =
-            fetchManifestsFromFromArtifactBundle(tasArtifactConfig, tasManifestDelegateConfig, executionLogCallback,artifactBundleFetchRequest.getActivityId());
+        filesFromArtifactBundle = fetchManifestsFromFromArtifactBundle(tasArtifactConfig, tasManifestDelegateConfig,
+            executionLogCallback, artifactBundleFetchRequest.getActivityId());
       } catch (Exception ex) {
         if (isFileNotFound(ex)) {
           log.info("file not found. " + getMessage(ex), ex);
@@ -210,65 +186,69 @@ public class ArtifactBundleFetchTask extends AbstractDelegateRunnableTask {
   }
 
   private Map<String, List<FileData> > fetchManifestsFromFromArtifactBundle(TasArtifactConfig tasArtifactConfig,
-      TasManifestDelegateConfig tasManifestDelegateConfig, LogCallback executionLogCallback, String activityId) throws IOException {
+      TasManifestDelegateConfig tasManifestDelegateConfig, LogCallback executionLogCallback, String activityId)
+      throws IOException {
     Map<String, List<FileData> > filesFromArtifactBundle = new HashMap<>();
     File workingDirectory = pcfCommandTaskBaseHelper.generateWorkingDirectoryForDeployment();
 
     // Todo : 1. artifact bundle download
-    File artifactBundleFile = downloadArtifactFile(
-             tasArtifactConfig, workingDirectory,  executionLogCallback);
+    File artifactBundleFile = downloadArtifactFile(tasArtifactConfig, workingDirectory, executionLogCallback);
 
-    if(artifactBundleFile == null){
+    if (artifactBundleFile == null) {
       throw new IOException("Failed to download Artifact Bundle from the Artifact source");
     }
-    getManifestFilesFromArtifactBundle(artifactBundleFile,tasManifestDelegateConfig,activityId,executionLogCallback);
+    getManifestFilesFromArtifactBundle(artifactBundleFile, tasManifestDelegateConfig, activityId, executionLogCallback);
     // Todo : 2. extract the downloaded files based on it’s type
-
 
     // Todo : 3. Fetch the manifests from the path, fail the task if incorrect
 
-
     // Todo : 4. clean-up the directories in which it downloaded the artifact
-
 
     return filesFromArtifactBundle;
   }
 
   private File downloadArtifactFile(
-          TasArtifactConfig tasArtifactConfig, File workingDirectory, LogCallback logCallback) {
+      TasArtifactConfig tasArtifactConfig, File workingDirectory, LogCallback logCallback) {
     File artifactFile = null;
     if (isPackageArtifact(tasArtifactConfig)) {
       TasArtifactDownloadResponse tasArtifactDownloadResponse = cfCommandTaskHelperNG.downloadPackageArtifact(
-              TasArtifactDownloadContext.builder()
-                      .artifactConfig((TasPackageArtifactConfig) tasArtifactConfig)
-                      .workingDirectory(workingDirectory)
-                      .build(),
-              logCallback);
+          TasArtifactDownloadContext.builder()
+              .artifactConfig((TasPackageArtifactConfig) tasArtifactConfig)
+              .workingDirectory(workingDirectory)
+              .build(),
+          logCallback);
       artifactFile = tasArtifactDownloadResponse.getArtifactFile();
     }
     return artifactFile;
   }
 
-  public Map<String, List<FileData> > getManifestFilesFromArtifactBundle(
-          File artifactBundleFile,TasManifestDelegateConfig tasManifestDelegateConfig, String activityId, LogCallback logCallback) {
+  public Map<String, List<FileData> > getManifestFilesFromArtifactBundle(File artifactBundleFile,
+      TasManifestDelegateConfig tasManifestDelegateConfig, String activityId, LogCallback logCallback) {
     try {
       Map<String, List<FileData> > manifestsFromArtifactBundle = new HashMap<>();
       File file = upzipFile(artifactBundleFile, activityId);
 
-      if(tasManifestDelegateConfig.getManifestPath() != null){
-        List<FileData> manifestFiles = readManifestFilesFromDirectory(Paths.get(file.getAbsolutePath(),tasManifestDelegateConfig.getManifestPath()).normalize().toString() , logCallback);
-        manifestsFromArtifactBundle.put(tasManifestDelegateConfig.getIdentifier(),manifestFiles);
+      if (tasManifestDelegateConfig.getManifestPath() != null) {
+        List<FileData> manifestFiles = readManifestFilesFromDirectory(
+            Paths.get(file.getAbsolutePath(), tasManifestDelegateConfig.getManifestPath()).normalize().toString(),
+            logCallback);
+        manifestsFromArtifactBundle.put(tasManifestDelegateConfig.getIdentifier(), manifestFiles);
       }
-      if(tasManifestDelegateConfig.getVarsPaths() != null){
-        List<FileData> varFilePathList =new ArrayList<>();
-        for(String varPath: tasManifestDelegateConfig.getVarsPaths()){
-          varFilePathList.addAll(readManifestFilesFromDirectory(Paths.get(file.getAbsolutePath(),varPath).normalize().toString() , logCallback));
+      if (tasManifestDelegateConfig.getVarsPaths() != null) {
+        List<FileData> varFilePathList = new ArrayList<>();
+        for (String varPath : tasManifestDelegateConfig.getVarsPaths()) {
+          varFilePathList.addAll(readManifestFilesFromDirectory(
+              Paths.get(file.getAbsolutePath(), varPath).normalize().toString(), logCallback));
         }
-        manifestsFromArtifactBundle.put(tasManifestDelegateConfig.getIdentifier(),varFilePathList);
+        manifestsFromArtifactBundle.put(tasManifestDelegateConfig.getIdentifier(), varFilePathList);
       }
-      if(tasManifestDelegateConfig.getAutoScalerPath() != null){
-        List<FileData> manifestFiles = readManifestFilesFromDirectory(Paths.get(file.getAbsolutePath(),tasManifestDelegateConfig.getAutoScalerPath().get(0)).normalize().toString() , logCallback);
-        manifestsFromArtifactBundle.put(tasManifestDelegateConfig.getIdentifier(),manifestFiles);
+      if (tasManifestDelegateConfig.getAutoScalerPath() != null) {
+        List<FileData> manifestFiles = readManifestFilesFromDirectory(
+            Paths.get(file.getAbsolutePath(), tasManifestDelegateConfig.getAutoScalerPath().get(0))
+                .normalize()
+                .toString(),
+            logCallback);
+        manifestsFromArtifactBundle.put(tasManifestDelegateConfig.getIdentifier(), manifestFiles);
       }
 
       FileIo.deleteDirectoryAndItsContentIfExists(file.getAbsolutePath());
@@ -277,7 +257,7 @@ public class ArtifactBundleFetchTask extends AbstractDelegateRunnableTask {
       throw new UnexpectedException("Failed to get custom source manifest files", e);
     }
   }
-  private File upzipFile(File artifactBundleFile,String activityId) throws IOException {
+  private File upzipFile(File artifactBundleFile, String activityId) throws IOException {
     InputStream inputStream = new FileInputStream(artifactBundleFile.getAbsolutePath());
     ZipInputStream zipInputStream = new ZipInputStream(inputStream);
     File tempDir = Files.createTempDir();
@@ -307,7 +287,7 @@ public class ArtifactBundleFetchTask extends AbstractDelegateRunnableTask {
         }
       } catch (Exception ex) {
         throw new UnexpectedException(String.format("Failed to read content of file %s. Error: %s",
-                new File(filePath).getName(), ExceptionUtils.getMessage(ex)));
+            new File(filePath).getName(), ExceptionUtils.getMessage(ex)));
       }
     }
 
@@ -316,8 +296,8 @@ public class ArtifactBundleFetchTask extends AbstractDelegateRunnableTask {
     return manifestFiles;
   }
   private void checkDuplicateManifests(List<FileData> manifestFiles, LogCallback logCallback) {
-    Map<ManifestType, Long> fileTypeCount = manifestFiles.stream().collect(Collectors.groupingBy(
-            fd -> getManifestType(fd.getFileContent(), fd.getFileName(), logCallback), counting()));
+    Map<ManifestType, Long> fileTypeCount = manifestFiles.stream().collect(
+        Collectors.groupingBy(fd -> getManifestType(fd.getFileContent(), fd.getFileName(), logCallback), counting()));
     verifyMultipleCount(AUTOSCALAR_MANIFEST, fileTypeCount);
     verifyMultipleCount(APPLICATION_MANIFEST, fileTypeCount);
   }
@@ -368,10 +348,9 @@ public class ArtifactBundleFetchTask extends AbstractDelegateRunnableTask {
     return String.format("Failed to parse file [%s]. Error - [%s]", isEmpty(fileName) ? "" : fileName, errorMessage);
   }
 
-
   private boolean isAutoscalarManifest(Map<String, Object> map) {
     return map.containsKey(PCF_AUTOSCALAR_MANIFEST_INSTANCE_LIMITS_ELE)
-            && map.containsKey(PCF_AUTOSCALAR_MANIFEST_RULES_ELE);
+        && map.containsKey(PCF_AUTOSCALAR_MANIFEST_RULES_ELE);
   }
 
   private boolean isVariableManifest(Map<String, Object> map) {
@@ -383,7 +362,6 @@ public class ArtifactBundleFetchTask extends AbstractDelegateRunnableTask {
   private boolean isInvalidValue(Object value) {
     return value instanceof Map;
   }
-
 
   private boolean isApplicationManifest(Map<String, Object> map) {
     if (map.containsKey(APPLICATION_YML_ELEMENT)) {
@@ -400,9 +378,6 @@ public class ArtifactBundleFetchTask extends AbstractDelegateRunnableTask {
 
     return false;
   }
-
-
-
 
   protected boolean isPackageArtifact(TasArtifactConfig tasArtifactConfig) {
     return TasArtifactType.PACKAGE == tasArtifactConfig.getArtifactType();
