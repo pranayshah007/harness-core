@@ -100,6 +100,17 @@ public enum BackstageCatalogEntityTypes {
     }
   }
 
+  public static String getEntityDomain(BackstageCatalogEntity entity) {
+    switch (BackstageCatalogEntityTypes.fromString(entity.getKind())) {
+      case COMPONENT:
+        return ((BackstageCatalogComponentEntity) entity).getSpec().getDomain();
+      case SYSTEM:
+        return ((BackstageCatalogSystemEntity) entity).getSpec().getDomain();
+      default:
+        return null;
+    }
+  }
+
   public static String getEntitySystem(BackstageCatalogEntity entity) {
     switch (BackstageCatalogEntityTypes.fromString(entity.getKind())) {
       case API:

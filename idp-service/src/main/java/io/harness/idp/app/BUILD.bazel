@@ -53,6 +53,7 @@ java_binary(
         "//idp-service/src/main/java/io/harness/idp/gitintegration/processor:module",
         "//idp-service/src/main/java/io/harness/idp/gitintegration/resources:module",
         "//idp-service/src/main/java/io/harness/idp/gitintegration/service:module",
+        "//idp-service/src/main/java/io/harness/idp/governance:module",
         "//idp-service/src/main/java/io/harness/idp/health:module",
         "//idp-service/src/main/java/io/harness/idp/license:module",
         "//idp-service/src/main/java/io/harness/idp/metrics:module",

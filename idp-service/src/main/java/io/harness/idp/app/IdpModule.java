@@ -37,6 +37,7 @@ import io.harness.cache.NoOpCache;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
+import io.harness.cdstage.CDStageConfigResourceClientModule;
 import io.harness.ci.CIExecutionServiceModule;
 import io.harness.ci.beans.entities.EncryptedDataDetails;
 import io.harness.ci.beans.entities.LogServiceConfig;
@@ -445,6 +446,8 @@ public class IdpModule extends AbstractModule {
     install(EnforcementClientModule.getInstance(appConfig.getManagerClientConfig(), // Licencing
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId(),
         appConfig.getEnforcementClientConfiguration()));
+    install(new CDStageConfigResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
     // serve health checks. If it's being used for other tasks also, max pool size should be increased.
     bind(ExecutorService.class)
