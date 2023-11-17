@@ -146,9 +146,9 @@ spec:
               value: {{ include "access-control.mongohosts" (dict "ctx" $ "database" "accesscontrol") }}
             - name: MONGODB_CONNECTION_URL
               value: {{ include "access-control.mongoConnectionUrl" (dict "database" "accesscontrol" "ctx" $) }}
-            {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "accesscontrol") | indent 12 }}
-            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "accesscontrol" "connectionURIVariableName" "MONGO_URI") | indent 12 }}
-            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "accesscontrol" "connectionURIVariableName" "OFFSET_STORAGE_FILE_FILENAME") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoEnv" (dict "ctx" $ "database" "accesscontrol" "userVariableName" "MONGODB_USER" "passwordVariableName" "MONGODB_PASSWORD") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "accesscontrol" "connectionURIVariableName" "MONGO_URI" "userVariableName" "MONGODB_USER" "passwordVariableName" "MONGODB_PASSWORD") | indent 12 }}
+            {{- include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "accesscontrol" "connectionURIVariableName" "OFFSET_STORAGE_FILE_FILENAME" "userVariableName" "MONGODB_USER" "passwordVariableName" "MONGODB_PASSWORD") | indent 12 }}
             {{- if .Values.extraEnvVars }}
             {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
