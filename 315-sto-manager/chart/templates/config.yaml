@@ -12,6 +12,7 @@ metadata:
   {{- end }}
 data:
   {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   ADDON_IMAGE: '{{ .Values.addOnImage.image.repository }}:{{ .Values.addOnImage.image.tag }}'
   LE_IMAGE: '{{ .Values.leImage.image.repository }}:{{ .Values.leImage.image.tag }}'
   MEMORY: {{ .Values.java.memory | quote }}
