@@ -28,9 +28,9 @@ import lombok.experimental.SuperBuilder;
 })
 @FieldDefaults(level = AccessLevel.PROTECTED)
 @SuperBuilder
+@Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Data
 public abstract class TrafficRoutingProvider {
   @NotEmpty List<Route> routes;
   @NotEmpty List<TrafficRouteDestination> destinations;

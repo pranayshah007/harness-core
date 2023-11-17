@@ -36,9 +36,9 @@ import lombok.experimental.SuperBuilder;
 })
 @FieldDefaults(level = AccessLevel.PROTECTED)
 @SuperBuilder
+@Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Data
 public abstract class TrafficRoutingRuleSpec {
   @Getter @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> name;
 }

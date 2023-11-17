@@ -24,19 +24,19 @@ import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@NoArgsConstructor
 public class TrafficRoutingHeaderRuleSpec extends TrafficRoutingRuleSpec {
   List<HeaderSpec> values;
   @FieldDefaults(level = AccessLevel.PRIVATE)
   @JsonIgnoreProperties(ignoreUnknown = true)
+  @Value
   @Builder
   @AllArgsConstructor
-  @Value
   static class HeaderSpec {
     @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> key;
     @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> value;
