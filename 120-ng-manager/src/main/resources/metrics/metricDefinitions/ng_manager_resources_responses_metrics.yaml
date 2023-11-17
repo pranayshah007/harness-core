@@ -1,0 +1,8 @@
+name: NG Manager Metrics per Resources for StatusCodes
+identifier: NgManagerMetricsResourcesForStatusCodes
+metricGroup: NgManagerMetricsResourceStatusCodeGroup
+metrics:
+  - metricName: io_harness_ng_manager_resources_responses_count
+    metricDefinition: Total number of Requests Count per Resource method per status code
+    type: LastValue
+    unit: count

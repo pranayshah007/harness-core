@@ -946,4 +946,30 @@ public class AsgSdkManager {
         describeLaunchTemplateVersionsResult.getLaunchTemplateVersions().get(0);
     return launchTemplateVersion.getLaunchTemplateData();
   }
+
+  public void modifyDefaultListenerRule(String region, String listenerArn, AwsInternalConfig awsInternalConfig,
+      List<TargetGroupTuple> targetGroupTuples) {
+    ModifyListenerRequest modifyListenerRequest =
+        ModifyListenerRequest.builder()
+            .listenerArn(listenerArn)
+            .defaultActions(Action.builder()
+                                .type(ActionTypeEnum.FORWARD)
+                                .forwardConfig(ForwardActionConfig.builder().targetGroups(targetGroupTuples).build())
+                                .build())
+            .build();
+    elbV2Client.modifyListener(awsInternalConfig, modifyListenerRequest, region);
+  }
+
+  public void modifySpecificListenerRule(String region, String listenerRuleArn, AwsInternalConfig awsInternalConfig,
+      List<TargetGroupTuple> targetGroupTuples) {
+    ModifyRuleRequest modifyRuleRequest =
+        ModifyRuleRequest.builder()
+            .ruleArn(listenerRuleArn)
+            .actions(Action.builder()
+                         .type(ActionTypeEnum.FORWARD)
+                         .forwardConfig(ForwardActionConfig.builder().targetGroups(targetGroupTuples).build())
+                         .build())
+            .build();
+    elbV2Client.modifyRule(awsInternalConfig, modifyRuleRequest, region);
+  }
 }

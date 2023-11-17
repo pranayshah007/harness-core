@@ -9,7 +9,6 @@ package io.harness.ngtriggers.eventmapper.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.eventsframework.webhookpayloads.webhookdata.WebhookEventType.PR;
-import static io.harness.eventsframework.webhookpayloads.webhookdata.WebhookEventType.PUSH;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.dto.TriggerMappingRequestData;
@@ -110,9 +109,7 @@ public class GitWebhookEventToTriggerMapper implements WebhookEventToTriggerMapp
   @VisibleForTesting
   void publishPushAndPrEvent(WebhookPayloadData webhookPayloadData) {
     try {
-      if (webhookPayloadData.getParseWebhookResponse().hasPush()) {
-        webhookEventPublisher.publishGitWebhookEvent(webhookPayloadData, PUSH);
-      } else if (webhookPayloadData.getParseWebhookResponse().hasPr()) {
+      if (webhookPayloadData.getParseWebhookResponse().hasPr()) {
         webhookEventPublisher.publishGitWebhookEvent(webhookPayloadData, PR);
       }
     } catch (Exception e) {

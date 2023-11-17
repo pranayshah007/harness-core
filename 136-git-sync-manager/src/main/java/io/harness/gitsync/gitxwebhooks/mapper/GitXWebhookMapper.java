@@ -14,6 +14,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookResponseDTO;
@@ -45,13 +46,12 @@ import org.springframework.data.domain.Page;
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitXWebhookMapper {
-  public CreateGitXWebhookRequestDTO buildCreateGitXWebhookRequestDTO(
-      String harnessAccount, CreateGitXWebhookRequest body) {
+  public CreateGitXWebhookRequestDTO buildCreateGitXWebhookRequestDTO(Scope scope, CreateGitXWebhookRequest body) {
     if (body == null) {
-      return CreateGitXWebhookRequestDTO.builder().accountIdentifier(harnessAccount).build();
+      return CreateGitXWebhookRequestDTO.builder().scope(scope).build();
     }
     return CreateGitXWebhookRequestDTO.builder()
-        .accountIdentifier(harnessAccount)
+        .scope(scope)
         .webhookIdentifier(body.getWebhookIdentifier())
         .connectorRef(body.getConnectorRef())
         .folderPaths(body.getFolderPaths())
@@ -68,11 +68,8 @@ public class GitXWebhookMapper {
     return responseBody;
   }
 
-  public GetGitXWebhookRequestDTO buildGetGitXWebhookRequestDTO(String harnessAccount, String gitXWebhookIdentifier) {
-    return GetGitXWebhookRequestDTO.builder()
-        .webhookIdentifier(gitXWebhookIdentifier)
-        .accountIdentifier(harnessAccount)
-        .build();
+  public GetGitXWebhookRequestDTO buildGetGitXWebhookRequestDTO(Scope scope, String gitXWebhookIdentifier) {
+    return GetGitXWebhookRequestDTO.builder().webhookIdentifier(gitXWebhookIdentifier).scope(scope).build();
   }
 
   public GitXWebhookResponse buildGetGitXWebhookResponseDTO(GetGitXWebhookResponseDTO getGitXWebhookResponseDTO) {
@@ -106,19 +103,12 @@ public class GitXWebhookMapper {
     return responseBody;
   }
 
-  public DeleteGitXWebhookRequestDTO buildDeleteGitXWebhookRequestDTO(
-      String harnessAccount, String gitXWebhookIdentifier) {
-    return DeleteGitXWebhookRequestDTO.builder()
-        .accountIdentifier(harnessAccount)
-        .webhookIdentifier(gitXWebhookIdentifier)
-        .build();
+  public DeleteGitXWebhookRequestDTO buildDeleteGitXWebhookRequestDTO(Scope scope, String gitXWebhookIdentifier) {
+    return DeleteGitXWebhookRequestDTO.builder().webhookIdentifier(gitXWebhookIdentifier).scope(scope).build();
   }
 
-  public ListGitXWebhookRequestDTO buildListGitXWebhookRequestDTO(String harnessAccount, String webhookIdentifier) {
-    return ListGitXWebhookRequestDTO.builder()
-        .accountIdentifier(harnessAccount)
-        .webhookIdentifier(webhookIdentifier)
-        .build();
+  public ListGitXWebhookRequestDTO buildListGitXWebhookRequestDTO(Scope scope, String webhookIdentifier) {
+    return ListGitXWebhookRequestDTO.builder().scope(scope).webhookIdentifier(webhookIdentifier).build();
   }
 
   public Page<GitXWebhookResponse> buildListGitXWebhookResponse(
@@ -153,15 +143,15 @@ public class GitXWebhookMapper {
     return responseBody;
   }
 
-  public GitXEventsListRequestDTO buildEventsListGitXWebhookRequestDTO(String accountIdentifier,
-      String webhookIdentifier, Long eventStartTime, Long eventEndTime, String repoName, String filePath,
-      String eventIdentifier, List<String> eventStatus) {
+  public GitXEventsListRequestDTO buildEventsListGitXWebhookRequestDTO(Scope scope, String webhookIdentifier,
+      Long eventStartTime, Long eventEndTime, String repoName, String filePath, String eventIdentifier,
+      List<String> eventStatus) {
     if ((eventStartTime == null && eventEndTime != null) || (eventStartTime != null && eventEndTime == null)) {
       throw new InvalidRequestException(String.format(
           "Either the Event start time [%d] or the Event end time [%d] not provided.", eventStartTime, eventEndTime));
     }
     return GitXEventsListRequestDTO.builder()
-        .accountIdentifier(accountIdentifier)
+        .scope(scope)
         .webhookIdentifier(webhookIdentifier)
         .eventStartTime(eventStartTime)
         .eventEndTime(eventEndTime)

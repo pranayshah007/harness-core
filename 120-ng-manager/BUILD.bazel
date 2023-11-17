@@ -86,7 +86,7 @@ shared_dependencies = [
     "//958-ng-file-service-sdk:module",
     "//959-psql-database-models:module",
     "//960-watcher:module",
-    "//965-api-key-filter:module",
+    "//965-ng-filter:module",
     "//clients/access-control/admin-client:module",
     "//clients/chaos:module",
     "//clients/pipeline-service/pms-client:module",

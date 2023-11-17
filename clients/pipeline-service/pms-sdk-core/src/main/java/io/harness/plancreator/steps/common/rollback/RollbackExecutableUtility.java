@@ -30,8 +30,15 @@ import lombok.extern.slf4j.Slf4j;
 public class RollbackExecutableUtility {
   public void publishRollbackInfo(Ambiance ambiance, StepBaseParameters stepParameters, Map<String, String> metadata,
       ExecutionSweepingOutputService executionSweepingOutputService) {
-    String nextNodeId =
-        AmbianceUtils.getStageSetupIdAmbiance(ambiance) + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX;
+    /* Currently, stage node ID gets swapped with strategy node ID during plan creation.
+       This means that, in case a stage is wrapped by a strategy, the stage rollback's plan node ID will be prefixed
+       with the strategy's node ID, not the stage's node ID.
+       Hence, here we check whether the stage is wrapped by a strategy, and in this case, use strategy's setup ID
+       to generate the `nextNodeId`. */
+    String stageOrStrategySetupId = AmbianceUtils.isCurrentNodeUnderStageStrategy(ambiance)
+        ? AmbianceUtils.getStrategySetupIdAmbiance(ambiance)
+        : AmbianceUtils.getStageSetupIdAmbiance(ambiance);
+    String nextNodeId = stageOrStrategySetupId + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX;
     executionSweepingOutputService.consume(ambiance, YAMLFieldNameConstants.USE_ROLLBACK_STRATEGY,
         OnFailRollbackOutput.builder().nextNodeId(nextNodeId).build(), StepOutcomeGroup.STEP.name());
 

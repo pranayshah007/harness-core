@@ -8,7 +8,6 @@
 package io.harness.plancreator.strategy;
 
 import static io.harness.plancreator.strategy.StrategyConstants.CURRENT_GLOBAL_ITERATION;
-import static io.harness.plancreator.strategy.StrategyConstants.IDENTIFIER_POSTFIX;
 import static io.harness.plancreator.strategy.StrategyConstants.ITEM;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATION;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATIONS;
@@ -40,6 +39,7 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.LevelUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
@@ -356,7 +356,8 @@ public class StrategyUtils {
    */
   @Deprecated
   // pass flag
-  public Map<String, Object> fetchStrategyObjectMap(List<Level> levelsWithStrategyMetadata) {
+  public Map<String, Object> fetchStrategyObjectMap(
+      List<Level> levelsWithStrategyMetadata, boolean useMatrixFieldName) {
     Map<String, Object> strategyObjectMap = new HashMap<>();
     Map<String, Object> matrixValuesMap = new HashMap<>();
     Map<String, Object> repeatValuesMap = new HashMap<>();
@@ -385,7 +386,8 @@ public class StrategyUtils {
       strategyObjectMap.put(ITERATION, level.getStrategyMetadata().getCurrentIteration());
       strategyObjectMap.put(ITERATIONS, level.getStrategyMetadata().getTotalIterations());
       strategyObjectMap.put(TOTAL_ITERATIONS, level.getStrategyMetadata().getTotalIterations());
-      strategyObjectMap.put(IDENTIFIER_POSTFIX, level.getStrategyMetadata().getIdentifierPostFix());
+      strategyObjectMap.put("identifierPostFix",
+          AmbianceUtils.getStrategyPostFixUsingMetadata(level.getStrategyMetadata(), useMatrixFieldName));
     }
     strategyObjectMap.put(MATRIX, matrixValuesMap);
     strategyObjectMap.put(REPEAT, repeatValuesMap);

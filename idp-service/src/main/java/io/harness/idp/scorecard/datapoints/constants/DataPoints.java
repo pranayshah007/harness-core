@@ -29,6 +29,12 @@ public class DataPoints {
   public static final String OPEN_CODE_SCANNING_ALERTS = "openCodeScanningAlerts";
   public static final String OPEN_SECRET_SCANNING_ALERTS = "openSecretScanningAlerts";
   public static final String OPEN_PULL_REQUESTS_BY_ACCOUNT = "openPullRequestsByAccount";
+  public static final String GITHUB_ADMIN_PERMISSION_ERROR = "Github Connector does not have Admin permission";
+  public static final String NO_PULL_REQUESTS_FOUND = "No pull requests found for branch: %s";
+  public static final String SOURCE_LOCATION_ANNOTATION_ERROR =
+      "Invalid or missing source-location annotation in the catalog info YAML";
+  public static final String INVALID_BRANCH_NAME_ERROR = "Invalid branch name provided";
+  public static final String INVALID_PATTERN = "Invalid pattern provided";
 
   // Catalog
   public static final String CATALOG_TECH_DOCS = "techDocsAnnotationExists";
@@ -48,25 +54,21 @@ public class DataPoints {
   public static final String NO_OF_INCIDENTS_IN_LAST_THIRTY_DAYS = "noOfIncidentsInLastThirtyDays";
   public static final String AVG_RESOLVED_TIME_FOR_LAST_TEN_RESOLVED_INCIDENTS_IN_MINUTES =
       "avgResolvedTimeForLastTenResolvedIncidentsInMinutes";
-  public static final String INVALID_BRANCH_NAME_ERROR = "Invalid branch name provided";
-  public static final String INVALID_PATTERN = "Invalid pattern provided";
-  public static final String PATTERN_NOT_FOUND = "Pattern not found";
-  public static final String SOURCE_LOCATION_ANNOTATION_ERROR =
-      "Invalid or missing source-location annotation in the catalog info YAML";
-  public static final String PROJECT_KEY_ANNOTATION_ERROR =
-      "Invalid or missing jira/project-key annotation in the catalog info YAML";
-  public static final String NO_PULL_REQUESTS_FOUND = "No pull requests found for branch: %s";
-  public static final String INVALID_FILE_NAME_ERROR = "Invalid file name provided";
-  public static final String INVALID_CONDITIONAL_INPUT = "Invalid conditional input";
-  public static final String GITHUB_ADMIN_PERMISSION_ERROR = "Github Connector does not have Admin permission";
 
   // Kubernetes
   public static final String REPLICAS = "replicas";
   public static final String DAYS_SINCE_LAST_DEPLOYED = "daysSinceLastDeployed";
 
   // Jira
+  public static final String PROJECT_KEY_ANNOTATION_ERROR =
+      "Invalid or missing jira/project-key annotation in the catalog info YAML";
   public static final String MEAN_TIME_TO_RESOLVE = "meanTimeToResolve";
   public static final String ISSUES_COUNT = "issuesCount";
   public static final String ISSUES_OPEN_CLOSE_RATIO = "issuesOpenCloseRatio";
   public static final String NO_ISSUES_FOUND = "No issues found";
+
+  // Commons
+  public static final String AUTHORIZATION_HEADER_ERROR = "Invalid or missing token";
+  public static final String INVALID_CONDITIONAL_INPUT = "Invalid conditional input";
+  public static final String INVALID_FILE_NAME_ERROR = "Invalid file name provided";
 }

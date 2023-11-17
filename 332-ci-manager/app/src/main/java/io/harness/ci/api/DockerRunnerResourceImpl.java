@@ -32,10 +32,10 @@ public class DockerRunnerResourceImpl implements DockerRunnerResource {
     Call<RestResponse<Map<String, String>>> req =
         accountClient.getInstallationCommand(accountId, DelegateType.DOCKER, os, arch);
     Map<String, String> res = CGRestUtils.getResponse(req);
-    String command = res.get("command") + " \\\n ";
+    String command = res.get("command") + " \n ";
     command +=
-        "wget -q https://github.com/harness/harness-docker-runner/releases/latest/download/harness-docker-runner-linux-amd64 \\\n "
-        + "sudo chmod +x harness-docker-runner-linux-amd64 \\\n "
+        "wget -q https://github.com/harness/harness-docker-runner/releases/latest/download/harness-docker-runner-linux-amd64 \n "
+        + "sudo chmod +x harness-docker-runner-linux-amd64 \n "
         + "sudo ./harness-docker-runner-linux-amd64 server";
 
     return new RestResponse(command);

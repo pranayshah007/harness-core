@@ -130,10 +130,10 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
     CommandExecutionStatus commandExecutionStatus;
     saveExecutionLog(format("Initializing WinRM connection to %s ...", config.getHostname()), INFO);
     String psScriptFile = getPSScriptFile();
-    WinRmSession session = null;
-    try (ExecutionLogWriter outputWriter = getExecutionLogWriter(INFO);
+
+    try (WinRmSession session = new WinRmSession(config, this.logCallback);
+         ExecutionLogWriter outputWriter = getExecutionLogWriter(INFO);
          ExecutionLogWriter errorWriter = getExecutionLogWriter(ERROR)) {
-      session = new WinRmSession(config, this.logCallback);
       saveExecutionLog(format("Connected to %s", config.getHostname()), INFO);
       if (displayCommand) {
         saveExecutionLog(format("Executing command %s...", command), INFO);
@@ -158,16 +158,8 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       saveExecutionLog(
           format("Command execution failed. Error: %s", details.getMessage()), ERROR, commandExecutionStatus);
     } finally {
-      if (session != null) {
-        try {
-          WinRmExecutorHelper.cleanupFiles(session, psScriptFile, powershell, disableCommandEncoding,
-              config.getCommandParameters(), config, logCallback);
-        } catch (Exception e) {
-          log.error("Exception while trying to remove file", e);
-        } finally {
-          session.close();
-        }
-      }
+      WinRmExecutorHelper.cleanupFilesInNewSession(
+          psScriptFile, powershell, disableCommandEncoding, config.getCommandParameters(), config, logCallback);
       logCallback.dispatchLogs();
     }
     return commandExecutionStatus;
@@ -257,11 +249,10 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       envVariablesOutputFile = this.config.getWorkingDirectory() + "\\"
           + "harness-" + this.config.getExecutionId() + ".out";
     }
-    WinRmSession session = null;
     String psScriptFile = getPSScriptFile();
-    try (ExecutionLogWriter outputWriter = getExecutionLogWriter(INFO);
+    try (WinRmSession session = new WinRmSession(config, this.logCallback);
+         ExecutionLogWriter outputWriter = getExecutionLogWriter(INFO);
          ExecutionLogWriter errorWriter = getExecutionLogWriter(ERROR)) {
-      session = new WinRmSession(config, this.logCallback);
       saveExecutionLog(format("Connected to %s", config.getHostname()), INFO);
       saveExecutionLog(format("Executing command ...%n"), INFO);
       command = addEnvVariablesCollector(command, allVariablesToCollect, envVariablesOutputFile);
@@ -272,8 +263,8 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       if (commandExecutionStatus == SUCCESS && envVariablesOutputFile != null) {
         // If we are here, we will run another command to get the output variables. Make sure we delete the previous
         // script
-        WinRmExecutorHelper.cleanupFiles(session, psScriptFile, powershell, disableCommandEncoding,
-            config.getCommandParameters(), config, logCallback);
+        WinRmExecutorHelper.cleanupFiles(
+            session, psScriptFile, powershell, disableCommandEncoding, config.getCommandParameters());
         executionDataBuilder.sweepingOutputEnvVariables(
             collectOutputEnvironmentVariables(session, envVariablesOutputFile, secretEnvVariablesToCollect));
       }
@@ -291,16 +282,8 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       saveExecutionLog(
           format("Command execution failed. Error: %s", details.getMessage()), ERROR, commandExecutionStatus);
     } finally {
-      if (session != null) {
-        try {
-          WinRmExecutorHelper.cleanupFiles(session, psScriptFile, powershell, disableCommandEncoding,
-              config.getCommandParameters(), config, logCallback);
-        } catch (Exception e) {
-          log.error("Exception while trying to remove file", e);
-        } finally {
-          session.close();
-        }
-      }
+      WinRmExecutorHelper.cleanupFilesInNewSession(
+          psScriptFile, powershell, disableCommandEncoding, config.getCommandParameters(), config, logCallback);
       logCallback.dispatchLogs();
     }
     executeCommandResponseBuilder.status(commandExecutionStatus);
@@ -358,10 +341,10 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
     } catch (Exception e) {
       log.error("Exception while trying to collectOutputEnvironmentVariables", e);
     } finally {
-      WinRmExecutorHelper.cleanupFiles(session, envVariablesOutputFile, powershell, disableCommandEncoding,
-          config.getCommandParameters(), config, logCallback);
-      WinRmExecutorHelper.cleanupFiles(session, psScriptFile, powershell, disableCommandEncoding,
-          config.getCommandParameters(), config, logCallback);
+      WinRmExecutorHelper.cleanupFiles(
+          session, envVariablesOutputFile, powershell, disableCommandEncoding, config.getCommandParameters());
+      WinRmExecutorHelper.cleanupFiles(
+          session, psScriptFile, powershell, disableCommandEncoding, config.getCommandParameters());
     }
     return envVariablesMap;
   }
@@ -420,8 +403,8 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       exitCode = session.executeScript(executeScript, outputWriter, errorWriter);
       return exitCode;
     } finally {
-      WinRmExecutorHelper.cleanupFiles(session, executablePSFilePath, powershell, disableCommandEncoding,
-          config.getCommandParameters(), config, logCallback);
+      WinRmExecutorHelper.cleanupFiles(
+          session, executablePSFilePath, powershell, disableCommandEncoding, config.getCommandParameters());
     }
   }
 

@@ -3,3 +3,4 @@ identifier: IdpServiceApiMetricsGroup
 labels:
   - accountIdentifier
   - path
+  - method

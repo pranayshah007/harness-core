@@ -16,6 +16,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.SCMExceptionErrorMessages;
 import io.harness.exception.ScmBadRequestException;
+import io.harness.exception.ScmRequestTimeoutException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
@@ -30,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public class BitbucketGetFileScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String GET_FILE_REQUEST_FAILURE =
       "The requested file<FILEPATH> could not be fetched from Bitbucket. ";
+  private static final String BITBUCKET_CLOUD_REQUEST_TIMEOUT_ERROR_MESSAGE = "Failed to fetch file: ";
 
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
@@ -51,6 +53,12 @@ public class BitbucketGetFileScmApiErrorHandler implements ScmApiErrorHandler {
             ScmErrorExplanations.RATE_LIMIT,
             new ScmBadRequestException(
                 EmptyPredicate.isEmpty(errorMessage) ? ScmErrorDefaultMessage.RATE_LIMIT : errorMessage));
+      case 504:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(ScmErrorHints.HINT_REQUEST_TIMED_OUT, errorMetadata),
+            ErrorMessageFormatter.formatMessage(ScmErrorExplanations.EXPLANATION_REQUEST_TIMED_OUT, errorMetadata),
+            new ScmRequestTimeoutException(ErrorMessageFormatter.formatMessage(
+                BITBUCKET_CLOUD_REQUEST_TIMEOUT_ERROR_MESSAGE + errorMessage, errorMetadata)));
       default:
         log.error(String.format("Error while getting bitbucket file: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);

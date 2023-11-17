@@ -128,14 +128,26 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
           : orgIdentifier != null         ? Scope.ORG
                                           : Scope.ACCOUNT;
 
-      String nodeGroup = templateEntityType.getNodeGroup();
+      String nodeGroup;
+      if (HarnessYamlVersion.isV1(version)) {
+        nodeGroup = templateEntityType.getYamlTypeV1();
+      } else {
+        nodeGroup = templateEntityType.getRootYamlName();
+      }
       String nodeType = getNodeType(templateEntityType, childType);
       JsonNode schema = getIndividualStaticSchema(nodeGroup, nodeType, version);
       if (EmptyPredicate.isEmpty(schema)) {
-        // FallBack logic - If we didn't find 'nodeGroup/nodeType' key in the parser, we will use template.json
-        log.warn(String.format(
-            "Individual Schema not found for v0 Templates with %s nodeGroup and %s nodeType", nodeGroup, nodeType));
-        schema = templateSchemaFetcher.getStaticYamlSchema(version);
+        // TODO (Shalini): remove this once ui and schema changes are also done
+        if (!HarnessYamlVersion.isV1(version)) {
+          nodeGroup = templateEntityType.getYamlTypeV1();
+          schema = getIndividualStaticSchema(nodeGroup, nodeType, version);
+        }
+        if (EmptyPredicate.isEmpty(schema)) {
+          // FallBack logic - If we didn't find 'nodeGroup/nodeType' key in the parser, we will use template.json
+          log.warn(String.format(
+              "Individual Schema not found for v0 Templates with %s nodeGroup and %s nodeType", nodeGroup, nodeType));
+          schema = templateSchemaFetcher.getStaticYamlSchema(version);
+        }
       }
 
       String schemaString = JsonPipelineUtils.writeJsonString(schema);

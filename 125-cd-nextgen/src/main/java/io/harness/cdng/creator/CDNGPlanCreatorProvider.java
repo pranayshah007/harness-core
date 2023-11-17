@@ -1557,7 +1557,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.AWS_CDK_BOOTSTRAP)
             .setStepMetaData(
                 StepMetaData.newBuilder().addAllCategory(AWS_CDK_CATEGORY).setFolderPath(AWS_CDK_STEP_METADATA).build())
-            .setFeatureFlag(FeatureName.CDS_AWS_CDK.name())
             .build();
 
     StepInfo awsCdkSynth =
@@ -1566,7 +1565,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.AWS_CDK_SYNTH)
             .setStepMetaData(
                 StepMetaData.newBuilder().addAllCategory(AWS_CDK_CATEGORY).setFolderPath(AWS_CDK_STEP_METADATA).build())
-            .setFeatureFlag(FeatureName.CDS_AWS_CDK.name())
             .build();
 
     StepInfo awsCdkDiff =
@@ -1575,7 +1573,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.AWS_CDK_DIFF)
             .setStepMetaData(
                 StepMetaData.newBuilder().addAllCategory(AWS_CDK_CATEGORY).setFolderPath(AWS_CDK_STEP_METADATA).build())
-            .setFeatureFlag(FeatureName.CDS_AWS_CDK.name())
             .build();
 
     StepInfo awsCdkDeploy =
@@ -1584,7 +1581,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.AWS_CDK_DEPLOY)
             .setStepMetaData(
                 StepMetaData.newBuilder().addAllCategory(AWS_CDK_CATEGORY).setFolderPath(AWS_CDK_STEP_METADATA).build())
-            .setFeatureFlag(FeatureName.CDS_AWS_CDK.name())
             .build();
 
     StepInfo awsCdkDestroy =
@@ -1593,7 +1589,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.AWS_CDK_DESTROY)
             .setStepMetaData(
                 StepMetaData.newBuilder().addAllCategory(AWS_CDK_CATEGORY).setFolderPath(AWS_CDK_STEP_METADATA).build())
-            .setFeatureFlag(FeatureName.CDS_AWS_CDK.name())
             .build();
 
     StepInfo awsCdkRollback =
@@ -1602,7 +1597,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.AWS_CDK_ROLLBACK)
             .setStepMetaData(
                 StepMetaData.newBuilder().addAllCategory(AWS_CDK_CATEGORY).setFolderPath(AWS_CDK_STEP_METADATA).build())
-            .setFeatureFlag(FeatureName.CDS_AWS_CDK.name())
             .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();

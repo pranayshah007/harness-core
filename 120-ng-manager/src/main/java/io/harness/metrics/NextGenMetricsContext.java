@@ -23,4 +23,23 @@ public class NextGenMetricsContext extends AutoMetricContext {
     put("containerName", containerName);
     put("serviceName", serviceName);
   }
+
+  public NextGenMetricsContext(
+      String namespace, String containerName, String serviceName, String resource, String method) {
+    put("resource", resource);
+    put("method", method);
+    put("namespace", namespace);
+    put("containerName", containerName);
+    put("serviceName", serviceName);
+  }
+
+  public NextGenMetricsContext(
+      String namespace, String containerName, String serviceName, String resource, String method, String statusCode) {
+    put("resource", resource);
+    put("method", method);
+    put("statusCode", statusCode);
+    put("namespace", namespace);
+    put("containerName", containerName);
+    put("serviceName", serviceName);
+  }
 }
