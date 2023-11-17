@@ -269,7 +269,7 @@ image:
   registry: us.gcr.io/platform-205701
   repository: access-control
   pullPolicy: IfNotPresent
-  tag: "1.24.0"
+  tag: "1.24.1"
   digest: ""
   imagePullSecrets: []
 # -- Wait-For-App initContainers details
