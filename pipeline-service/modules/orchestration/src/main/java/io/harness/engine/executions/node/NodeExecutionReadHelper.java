@@ -19,7 +19,6 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
-import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.monitoring.ExecutionCountWithAccountResult.ExecutionCountWithAccountResultKeys;
 import io.harness.monitoring.ExecutionCountWithModuleResult.ExecutionCountWithModuleResultKeys;
 import io.harness.monitoring.ExecutionCountWithStepTypeResult.ExecutionCountWithStepTypeResultKeys;
@@ -129,19 +128,6 @@ public class NodeExecutionReadHelper {
   public NodeExecution fetchNodeExecutionsFromSecondaryTemplate(Query query) {
     validateNodeExecutionProjection(query);
     return secondaryMongoTemplate.findOne(query, NodeExecution.class);
-  }
-
-  /**
-   * Fetches aggregated running execution count per account from analytics node
-   * @return
-   */
-  public List<ExecutionCountWithAccountResult> aggregateRunningExecutionCountPerAccount() {
-    Aggregation aggregation = Aggregation.newAggregation(
-        Aggregation.match(Criteria.where(NodeExecutionKeys.status).in(StatusUtils.activeStatuses())),
-        Aggregation.group(NodeExecutionKeys.accountId).count().as(ExecutionCountWithAccountResultKeys.count));
-
-    return analyticsMongoTemplate.aggregate(aggregation, NodeExecution.class, ExecutionCountWithAccountResult.class)
-        .getMappedResults();
   }
 
   public List<ExecutionStatistics> aggregateRunningExecutionCount() {
