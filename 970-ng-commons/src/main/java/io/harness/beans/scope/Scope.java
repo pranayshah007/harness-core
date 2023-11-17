@@ -52,6 +52,10 @@ public class Scope {
     return Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier(null).projectIdentifier(null).build();
   }
 
+  public static Scope of(String accountIdentifier, String orgIdentifier) {
+    return Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
+  }
+
   public static Scope of(final String accountIdentifier, final String orgIdentifier, final String projectIdentifier,
       io.harness.encryption.Scope scope) {
     ScopeBuilder scopeBuilder = Scope.builder().accountIdentifier(accountIdentifier);

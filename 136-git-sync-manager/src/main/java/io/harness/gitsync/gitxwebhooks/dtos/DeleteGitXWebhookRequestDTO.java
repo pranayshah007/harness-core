@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.Scope;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -28,6 +29,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.PIPELINE)
 public class DeleteGitXWebhookRequestDTO {
-  String accountIdentifier;
+  Scope scope;
   String webhookIdentifier;
 }
