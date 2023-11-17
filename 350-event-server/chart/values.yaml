@@ -212,8 +212,4 @@ virtualService:
   annotations: {}
 ingress:
   annotations: {}
-configData:
-  LOGGING_LEVEL: INFO
-  MONGO_INDEX_MANAGER_MODE: AUTO
-  EVEMTS_MONGO_INDEX_MANAGER_MODE: AUTO
-  DEPLOY_MODE: KUBERNETES_ONPREM
+configData: {}
