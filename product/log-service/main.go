@@ -21,6 +21,7 @@ import (
 )
 
 func main() {
+
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Printf("Handling Panic before exit: %v", r)
