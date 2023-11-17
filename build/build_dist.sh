@@ -49,7 +49,6 @@ function copy_cg_manager_jars(){
   cp ../../400-rest/src/main/resources/jfr/profile.jfc .
 
 	cp ../../dockerization/manager/Dockerfile-manager-cie-jdk ./Dockerfile-cie-jdk
-	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/manager/scripts/ .
 
@@ -70,7 +69,6 @@ function copy_change_data_capture_jars(){
 	cp ${BAZEL_BIN}/110-change-data-capture/module_deploy.jar change-data-capture.jar
 	cp ../../110-change-data-capture/config.yml .
 	cp ../../dockerization/change-data-capture/Dockerfile-change-data-capture-cie-jdk Dockerfile-cie-jdk
-	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/change-data-capture/scripts/ .
 
@@ -85,7 +83,6 @@ function copy_ng_dashboard_jars(){
 	cp ../../290-dashboard-service/config.yml .
 	cp ../../290-dashboard-service/src/main/resources/jfr/default.jfc .
 	cp ../../290-dashboard-service/src/main/resources/jfr/profile.jfc .
-	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/ng-dashboard-service/scripts/ .
 
@@ -124,7 +121,6 @@ function copy_migrator_jars(){
 
   cp ../../dockerization/migrator/Dockerfile-manager-jenkins-k8-openjdk ./Dockerfile
   cp ../../dockerization/migrator/Dockerfile-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
-  cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
   cp -r ../../dockerization/migrator/scripts/ .
   mv scripts/start_process_bazel.sh scripts/start_process.sh
@@ -184,7 +180,6 @@ function copy_event_server_jars(){
 	cp ../../350-event-server/cert.pem .
 	cp ../../350-event-server/event-service-config.yml .
 	cp ../../dockerization/event-server/Dockerfile-event-server-cie-jdk Dockerfile-cie-jdk
-	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/event-server/scripts/ .
 
@@ -199,7 +194,6 @@ function copy_verification_service_jars(){
   cp ../../270-verification/keystore.jks .
   cp ../../270-verification/verification-config.yml .
   cp ../../dockerization/verification/Dockerfile-verification-cie-jdk ./Dockerfile-cie-jdk
-  cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
   cp -R ../../dockerization/verification/scripts/ .
   copy_common_files

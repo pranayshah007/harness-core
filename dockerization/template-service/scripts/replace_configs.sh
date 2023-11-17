@@ -254,4 +254,4 @@ replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFOR
 replace_key_value pmsGrpcClientConfig.target $PMS_GRPC_TARGET
 replace_key_value pmsGrpcClientConfig.authority $PMS_GRPC_AUTHORITY
 
-#replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"

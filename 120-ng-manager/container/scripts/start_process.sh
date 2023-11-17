@@ -36,14 +36,6 @@ if [[ "${ENABLE_REMOTE_DEBUG}" == "true" ]]; then
   echo "Enabled remote debug"
 fi
 
-#if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
-#    mkdir /opt/harness/AppServerAgent && unzip AppServerAgent.zip -d /opt/harness/AppServerAgent
-#    node_name="-Dappdynamics.agent.nodeName=$(hostname)"
-#    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/AppServerAgent/javaagent.jar -Dappdynamics.jvm.shutdown.mark.node.as.historical=true"
-#    JAVA_OPTS="$JAVA_OPTS $node_name"
-#    echo "Using Appdynamics java agent"
-#fi
-
 if [[ "${ENABLE_OVEROPS}" == "true" ]] ; then
     echo "OverOps is enabled"
     JAVA_OPTS=$JAVA_OPTS" -Xshare:off -XX:-UseTypeSpeculation -XX:ReservedCodeCacheSize=512m -agentpath:/opt/harness/harness/lib/libETAgent.so"

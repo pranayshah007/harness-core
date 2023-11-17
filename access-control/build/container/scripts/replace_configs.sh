@@ -81,7 +81,7 @@ if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
   export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
 fi
 
-#replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
 
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
 replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"

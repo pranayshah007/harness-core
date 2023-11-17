@@ -28,10 +28,11 @@ COPY --chown=65534:65534 --from=builder \
   /app/dist/verification-service/verification-config.yml \
   /app/dist/verification-service/protocol.info \
   /app/dist/verification-service/scripts /opt/harness \
-  /app/dockerization/base-images/apm/*.sh \
+  /app/dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh \
   /opt/harness/
 
 RUN chmod +x /opt/harness/*.sh
+RUN /opt/harness/inject-saas-apm-bins-into-dockerimage.sh && rm -rf /opt/harness/inject-saas-apm-bins-into-dockerimage.sh
 USER root
 RUN microdnf remove tar unzip gzip \
       && microdnf clean all \

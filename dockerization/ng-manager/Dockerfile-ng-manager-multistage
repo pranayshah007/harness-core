@@ -37,10 +37,11 @@ COPY --chown=65534:65534 --from=builder \
   /app/dist/ng-manager/default.jfc \ 
   /app/dist/ng-manager/profile.jfc \ 
   /app/dist/ng-manager/scripts \ 
-  /app/dockerization/base-images/apm/*.sh \
+  /app/dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh \
   /opt/harness/
 
 RUN chmod +x /opt/harness/*.sh
+RUN /opt/harness/inject-saas-apm-bins-into-dockerimage.sh && rm -rf /opt/harness/inject-saas-apm-bins-into-dockerimage.sh
 USER root
 RUN microdnf remove tar unzip gzip \
     && microdnf clean all \

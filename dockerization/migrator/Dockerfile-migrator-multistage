@@ -34,7 +34,7 @@ COPY --chown=65534:65534 --from=builder \
   /app/dist/migrator/default.jfc \
   /app/dist/migrator/profile.jfc \
   /app/dist/migrator/scripts \
-  /app/dockerization/base-images/apm/*.sh \
+  /app/dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh \
   /opt/harness/
 
 USER root
@@ -44,6 +44,7 @@ RUN microdnf install -y yum \
     && chmod +x /usr/bin/yq \
     && chmod +x /opt/harness/*.sh
 
+RUN /opt/harness/inject-saas-apm-bins-into-dockerimage.sh && rm -rf /opt/harness/inject-saas-apm-bins-into-dockerimage.sh
 USER root
 RUN microdnf remove tar unzip gzip \
     && microdnf clean all \
