@@ -27,26 +27,31 @@ public class ExecutionInfrastructureServiceImpl implements ExecutionInfrastructu
 
   @Override
   public String createExecutionInfra(
-      final String taskId, final Map<String, String> stepTaskIds, final String runnerType) {
+      final String accountId, final String taskId, final Map<String, String> stepTaskIds, final String runnerType) {
     try (AutoLogContext ignore = new ExecutionLogContext(taskId, OVERRIDE_ERROR)) {
-      final ExecutionInfraLocation entity =
-          ExecutionInfraLocation.builder().runnerType(runnerType).uuid(taskId).stepTaskIds(stepTaskIds).build();
+      final ExecutionInfraLocation entity = ExecutionInfraLocation.builder()
+                                                .accountId(accountId)
+                                                .runnerType(runnerType)
+                                                .uuid(taskId)
+                                                .stepTaskIds(stepTaskIds)
+                                                .build();
       return persistence.save(entity, false);
     }
   }
 
   @Override
-  public boolean updateDelegateInfo(final String infraRefId, final String delegateId, final String delegateName) {
+  public boolean updateDelegateInfo(
+      final String accountId, final String infraRefId, final String delegateId, final String delegateName) {
     final var updateOperation = persistence.createUpdateOperations(ExecutionInfraLocation.class)
                                     .set(ExecutionInfraLocationKeys.createdByDelegateId, delegateId)
                                     .set(ExecutionInfraLocationKeys.delegateGroupName, delegateName)
                                     .set(ExecutionInfraLocationKeys.delegateGroupName, delegateName);
-    return persistence.update(findInfra(infraRefId), updateOperation).getUpdatedExisting();
+    return persistence.update(findInfra(accountId, infraRefId), updateOperation).getUpdatedExisting();
   }
 
   @Override
-  public ExecutionInfraLocation getExecutionInfra(final String infraRefId) {
-    final var infra = findInfra(infraRefId).first();
+  public ExecutionInfraLocation getExecutionInfra(final String accountId, final String infraRefId) {
+    final var infra = findInfra(accountId, infraRefId).first();
     if (infra == null) {
       throw new IllegalArgumentException("ExecutionInfraLocation not found for infraRefId " + infraRefId);
     }
@@ -54,11 +59,13 @@ public class ExecutionInfrastructureServiceImpl implements ExecutionInfrastructu
   }
 
   @Override
-  public boolean deleteExecutionInfrastructure(final String infraRefId) {
-    return persistence.delete(findInfra(infraRefId));
+  public boolean deleteInfra(final String accountId, final String infraRefId) {
+    return persistence.delete(findInfra(accountId, infraRefId));
   }
 
-  private Query<ExecutionInfraLocation> findInfra(final String infraRefId) {
-    return persistence.createQuery(ExecutionInfraLocation.class).filter(ExecutionInfraLocation.UUID_KEY, infraRefId);
+  private Query<ExecutionInfraLocation> findInfra(final String accountId, final String infraRefId) {
+    return persistence.createQuery(ExecutionInfraLocation.class)
+        .filter(ExecutionInfraLocationKeys.accountId, accountId)
+        .filter(ExecutionInfraLocationKeys.uuid, infraRefId);
   }
 }

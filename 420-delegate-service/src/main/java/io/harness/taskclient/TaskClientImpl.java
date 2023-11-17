@@ -37,9 +37,10 @@ public class TaskClientImpl implements TaskClient {
     }
     try (AutoLogContext ignore1 = new ExecutionLogContext(task.getUuid(), task.getEventType(), OVERRIDE_ERROR)) {
       log.info("Going to broadcast task");
-      // Handles routing the reqest to the right delegate instance
+      // Handles routing the request to the right delegate instance
       delegateTaskServiceClassic.processScheduleTaskRequest(task, QUEUED);
       // Send out request via websocket
+      // FixMe: Don't use side effects. This broadcast relies on task being properly updated elsewhere.
       broadcastHelper.broadcastRequestEvent(task);
     }
   }

@@ -53,7 +53,7 @@ public interface AssignDelegateService {
    * @param task the incoming task
    * @return List of delegate ids
    */
-  List<String> getEligibleDelegatesToTask(DelegateTask task);
+  List<String> getEligibleDelegatesToScheduleTask(DelegateTask task);
 
   List<String> getConnectedDelegateList(List<String> delegates, DelegateTask delegateTask);
 

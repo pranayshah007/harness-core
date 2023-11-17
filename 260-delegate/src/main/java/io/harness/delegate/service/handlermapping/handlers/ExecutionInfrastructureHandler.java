@@ -30,7 +30,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ExecutionInfrastructureHandler implements Handler {
   private final RunnersFactory runnersFactory;
   private final DelegateAgentManagerClient managerClient;
-  private final DelegateConfiguration delegateConfiguration;
 
   @Override
   public void handle(
@@ -42,7 +41,7 @@ public class ExecutionInfrastructureHandler implements Handler {
       response = SetupInfraResponse.newBuilder()
                      .setResponseCode(ResponseCode.RESPONSE_OK)
                      .setLocation(ExecutionInfraInfo.newBuilder()
-                                      .setDelegateName(delegateConfiguration.getDelegateName())
+                                      .setDelegateName(context.get(Context.DELEGATE_NAME))
                                       .setRunnerType(runnerType)
                                       .build())
                      .build();
@@ -51,8 +50,8 @@ public class ExecutionInfrastructureHandler implements Handler {
       log.error("init infra by runner {} failed with exception ", runner, e);
       response = SetupInfraResponse.newBuilder().setResponseCode(ResponseCode.RESPONSE_FAILED).build();
     }
-    var call = managerClient.sendSetupInfraResponse(taskPayload.getId(), context.get(Context.DELEGATE_ID),
-        context.get(delegateConfiguration.getAccountId()), response);
+    var call = managerClient.sendSetupInfraResponse(
+        taskPayload.getId(), context.get(Context.DELEGATE_ID), context.get(Context.ACCOUNT_ID), response);
     String failureMessage = String.format("Failed to send init infra response by runner %s", runnerType);
     ManagerCallHelper.executeCallWithBackOffRetry(call, 5, failureMessage);
   }

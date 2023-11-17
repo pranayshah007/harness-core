@@ -19,6 +19,7 @@ import java.util.Map;
 @Singleton
 public class Context {
   public static final String DELEGATE_ID = "delegateId";
+  public static final String DELEGATE_NAME = "delegateName";
   public static final String TASK_ID = "taskId";
   public static final String ACCOUNT_ID = "accountId";
 

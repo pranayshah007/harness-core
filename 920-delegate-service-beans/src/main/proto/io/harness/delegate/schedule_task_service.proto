@@ -15,4 +15,5 @@ import "920-delegate-service-beans/src/main/proto/io/harness/delegate/schedule_t
 service ScheduleTaskService {
   rpc InitTask(SetupExecutionInfrastructureRequest) returns (SetupExecutionInfrastructureResponse);
   rpc ExecuteTask(ScheduleTaskRequest) returns (ScheduleTaskResponse);
+  rpc CleanupInfra(CleanupInfraRequest) returns (CleanupInfraResponse);
 }

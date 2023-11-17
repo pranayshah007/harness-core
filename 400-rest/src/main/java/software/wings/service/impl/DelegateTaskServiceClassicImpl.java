@@ -511,6 +511,15 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
   }
 
+  /**
+   * Variation of the method {@link DelegateTaskServiceClassicImpl#processDelegateTaskV2(DelegateTask, DelegateTask.Status)}
+   * to be used for scheduling tasks API flow {@link io.harness.grpc.scheduler.ScheduleTaskServiceGrpcImpl}.
+   * @param task the incoming task
+   * @param taskStatus the task status
+   * @throws WingsException if any exception occurs
+   */
+  // TODO: Revisit the task processing logic for scheduling tasks. Some aspects don't apply, like taskStatus or tags etc
+  // but also there might be new concepts specific to scheduling tasks flows
   @Override
   public void processScheduleTaskRequest(DelegateTask task, DelegateTask.Status taskStatus) {
     setAdditionalTaskFields(task, taskStatus);
@@ -524,7 +533,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                                                       .build();
           task.getExecutionCapabilities().add(selectorCapability);
         }
-        List<String> eligibleListOfDelegates = assignDelegateService.getEligibleDelegatesToTask(task);
+        List<String> eligibleListOfDelegates = assignDelegateService.getEligibleDelegatesToScheduleTask(task);
         delegateSelectionLogsService.logDelegateTaskInfo(task);
         if (eligibleListOfDelegates.isEmpty()) {
           addToTaskActivityLog(task, NO_ELIGIBLE_DELEGATES);

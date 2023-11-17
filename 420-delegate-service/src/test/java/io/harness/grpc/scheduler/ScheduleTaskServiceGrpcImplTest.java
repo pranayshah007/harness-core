@@ -99,7 +99,7 @@ public class ScheduleTaskServiceGrpcImplTest {
 
     final var actual = underTest.initTask(request);
 
-    verify(infraService).createExecutionInfra(eq(taskId), any(), eq(RUNNER_TYPE_K8S));
+    verify(infraService).createExecutionInfra(eq(ACCOUNT_ID), eq(taskId), any(), eq(RUNNER_TYPE_K8S));
     verify(taskClient).sendTask(any());
     assertThat(actual.getTaskId().getId()).isEqualTo(taskId);
     assertThat(actual.getInfraRefId()).isEqualTo(taskId);
@@ -135,10 +135,10 @@ public class ScheduleTaskServiceGrpcImplTest {
   @Owner(developers = MARKO)
   @Category(IntegrationTests.class)
   public void testInitTaskFailLoggingToken() throws IOException {
-    final var request =
-        SetupExecutionInfrastructureRequest.newBuilder()
-            .setConfig(SchedulingConfig.newBuilder().setRunnerType(RUNNER_TYPE_K8S).setAccountId(ACCOUNT_ID).build())
-            .build();
+    final var request = SetupExecutionInfrastructureRequest.newBuilder()
+                            .setAccountId(ACCOUNT_ID)
+                            .setConfig(SchedulingConfig.newBuilder().setRunnerType(RUNNER_TYPE_K8S).build())
+                            .build();
 
     when(logServiceClient.retrieveAccountToken(LOG_SERVICE_SECRET, ACCOUNT_ID).execute())
         .thenThrow(new IOException("fail"));
@@ -152,10 +152,10 @@ public class ScheduleTaskServiceGrpcImplTest {
   @Owner(developers = MARKO)
   @Category(IntegrationTests.class)
   public void testInitTaskFailNoEligibleDelegates() throws IOException {
-    final var request =
-        SetupExecutionInfrastructureRequest.newBuilder()
-            .setConfig(SchedulingConfig.newBuilder().setRunnerType(RUNNER_TYPE_K8S).setAccountId(ACCOUNT_ID).build())
-            .build();
+    final var request = SetupExecutionInfrastructureRequest.newBuilder()
+                            .setAccountId(ACCOUNT_ID)
+                            .setConfig(SchedulingConfig.newBuilder().setRunnerType(RUNNER_TYPE_K8S).build())
+                            .build();
 
     when(logServiceClient.retrieveAccountToken(LOG_SERVICE_SECRET, ACCOUNT_ID).execute())
         .thenReturn(Response.success("token"));
@@ -171,10 +171,10 @@ public class ScheduleTaskServiceGrpcImplTest {
   @Owner(developers = MARKO)
   @Category(IntegrationTests.class)
   public void testInitTaskFailGenericException() throws IOException {
-    final var request =
-        SetupExecutionInfrastructureRequest.newBuilder()
-            .setConfig(SchedulingConfig.newBuilder().setRunnerType(RUNNER_TYPE_K8S).setAccountId(ACCOUNT_ID).build())
-            .build();
+    final var request = SetupExecutionInfrastructureRequest.newBuilder()
+                            .setAccountId(ACCOUNT_ID)
+                            .setConfig(SchedulingConfig.newBuilder().setRunnerType(RUNNER_TYPE_K8S).build())
+                            .build();
 
     when(logServiceClient.retrieveAccountToken(LOG_SERVICE_SECRET, ACCOUNT_ID).execute())
         .thenReturn(Response.success("token"));
@@ -195,14 +195,15 @@ public class ScheduleTaskServiceGrpcImplTest {
     final var executionInput = ExecutionInput.newBuilder().setData(ByteString.EMPTY).build();
     final var request =
         ScheduleTaskRequest.newBuilder()
+            .setAccountId(ACCOUNT_ID)
             .setExecution(Execution.newBuilder().setInfraRefId(infraRefId).setInput(executionInput).build())
-            .setConfig(SchedulingConfig.newBuilder().setRunnerType(RUNNER_TYPE_K8S).setAccountId(ACCOUNT_ID).build())
+            .setConfig(SchedulingConfig.newBuilder().setRunnerType(RUNNER_TYPE_K8S).build())
             .build();
 
     when(logServiceClient.retrieveAccountToken(LOG_SERVICE_SECRET, ACCOUNT_ID).execute())
         .thenReturn(Response.success("token"));
     when(migrationHelper.generateDelegateTaskUUID()).thenReturn(taskId);
-    when(infraService.getExecutionInfra(infraRefId))
+    when(infraService.getExecutionInfra(ACCOUNT_ID, infraRefId))
         .thenReturn(ExecutionInfraLocation.builder().delegateGroupName("delegate").build());
 
     final var actual = underTest.executeTask(request);
@@ -215,10 +216,10 @@ public class ScheduleTaskServiceGrpcImplTest {
   @Owner(developers = MARKO)
   @Category(IntegrationTests.class)
   public void testExecuteTaskFailNoExecution() {
-    final var request =
-        ScheduleTaskRequest.newBuilder()
-            .setConfig(SchedulingConfig.newBuilder().setRunnerType(RUNNER_TYPE_K8S).setAccountId(ACCOUNT_ID).build())
-            .build();
+    final var request = ScheduleTaskRequest.newBuilder()
+                            .setAccountId(ACCOUNT_ID)
+                            .setConfig(SchedulingConfig.newBuilder().setRunnerType(RUNNER_TYPE_K8S).build())
+                            .build();
 
     assertThatThrownBy(() -> underTest.executeTask(request))
         .isInstanceOf(StatusRuntimeException.class)
@@ -231,16 +232,16 @@ public class ScheduleTaskServiceGrpcImplTest {
   @Category(IntegrationTests.class)
   public void testExecuteTaskFailNoEligibleDelegates() throws IOException {
     final var infraRefId = "infraRefId";
-    final var request =
-        ScheduleTaskRequest.newBuilder()
-            .setExecution(Execution.newBuilder().setInfraRefId(infraRefId).build())
-            .setConfig(SchedulingConfig.newBuilder().setRunnerType(RUNNER_TYPE_K8S).setAccountId(ACCOUNT_ID).build())
-            .build();
+    final var request = ScheduleTaskRequest.newBuilder()
+                            .setAccountId(ACCOUNT_ID)
+                            .setExecution(Execution.newBuilder().setInfraRefId(infraRefId).build())
+                            .setConfig(SchedulingConfig.newBuilder().setRunnerType(RUNNER_TYPE_K8S).build())
+                            .build();
 
     when(logServiceClient.retrieveAccountToken(LOG_SERVICE_SECRET, ACCOUNT_ID).execute())
         .thenReturn(Response.success("token"));
     when(migrationHelper.generateDelegateTaskUUID()).thenReturn("taskId");
-    when(infraService.getExecutionInfra(infraRefId))
+    when(infraService.getExecutionInfra(ACCOUNT_ID, infraRefId))
         .thenReturn(ExecutionInfraLocation.builder().delegateGroupName("delegate").build());
     doThrow(new NoEligibleDelegatesInAccountException("fail")).when(taskClient).sendTask(any());
 
@@ -254,16 +255,16 @@ public class ScheduleTaskServiceGrpcImplTest {
   @Category(IntegrationTests.class)
   public void testExecuteTaskFailGenericException() throws IOException {
     final var infraRefId = "infraRefId";
-    final var request =
-        ScheduleTaskRequest.newBuilder()
-            .setExecution(Execution.newBuilder().setInfraRefId(infraRefId).build())
-            .setConfig(SchedulingConfig.newBuilder().setRunnerType(RUNNER_TYPE_K8S).setAccountId(ACCOUNT_ID).build())
-            .build();
+    final var request = ScheduleTaskRequest.newBuilder()
+                            .setAccountId(ACCOUNT_ID)
+                            .setExecution(Execution.newBuilder().setInfraRefId(infraRefId).build())
+                            .setConfig(SchedulingConfig.newBuilder().setRunnerType(RUNNER_TYPE_K8S).build())
+                            .build();
 
     when(logServiceClient.retrieveAccountToken(LOG_SERVICE_SECRET, ACCOUNT_ID).execute())
         .thenReturn(Response.success("token"));
     when(migrationHelper.generateDelegateTaskUUID()).thenReturn("taskId");
-    when(infraService.getExecutionInfra(infraRefId))
+    when(infraService.getExecutionInfra(ACCOUNT_ID, infraRefId))
         .thenReturn(ExecutionInfraLocation.builder().delegateGroupName("delegate").build());
     doThrow(new NullPointerException("fail")).when(taskClient).sendTask(any());
 

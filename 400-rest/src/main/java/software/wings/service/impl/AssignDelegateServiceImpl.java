@@ -14,7 +14,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.NgSetupFields.NG;
-import static io.harness.delegate.task.TaskFailureReason.EXPIRED;
 import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME;
 import static io.harness.persistence.HPersistence.upsertReturnNewOptions;
 
@@ -1133,8 +1132,18 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     return delegates.stream().filter(connectedDelegates::contains).collect(Collectors.toList());
   }
 
+  /**
+   * Variation of the method {@link AssignDelegateService#getEligibleDelegatesToExecuteTask(DelegateTask)}
+   * to be used for scheduling tasks API flow {@link io.harness.grpc.scheduler.ScheduleTaskServiceGrpcImpl}.
+   * @param task the incoming task
+   * @return list of eligible delegate ids
+   * @throws WingsException if any exception occurs
+   */
+  // TODO: Revisit the assignment logic for scheduling tasks. Some aspects don't apply, like directly setting
+  // delegateIds, but also there are new concepts like does delegate have runnerType or is it able to reach specific
+  // infra
   @Override
-  public List<String> getEligibleDelegatesToTask(DelegateTask task) throws WingsException {
+  public List<String> getEligibleDelegatesToScheduleTask(DelegateTask task) throws WingsException {
     // If task comes with eligibleToExecuteDelegateIds then no need to do assignment logic.
     if (isNotEmpty(task.getEligibleToExecuteDelegateIds())) {
       log.info(
@@ -1146,7 +1155,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     try {
       List<Delegate> accountDelegates = fetchActiveDelegates(task);
       // NG only for new APIs
-      accountDelegates = accountDelegates.stream().filter(delegate -> delegate.isNg() == true).collect(toList());
+      accountDelegates = accountDelegates.stream().filter(Delegate::isNg).collect(toList());
       if (isEmpty(accountDelegates)) {
         task.getNonAssignableDelegates().putIfAbsent(NO_ACTIVE_DELEGATES, Collections.emptyList());
         delegateTaskServiceClassic.addToTaskActivityLog(task, NO_ACTIVE_DELEGATES);

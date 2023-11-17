@@ -20,7 +20,7 @@ public class K8SRunnerModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    /**
+    /*
      * We don't need to re-install this module in immutable delegate
      install(new DelegateDecryptionModule());
      */

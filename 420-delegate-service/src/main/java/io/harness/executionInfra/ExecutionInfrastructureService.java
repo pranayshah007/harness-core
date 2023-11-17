@@ -10,8 +10,8 @@ package io.harness.executionInfra;
 import java.util.Map;
 
 public interface ExecutionInfrastructureService {
-  String createExecutionInfra(String taskId, Map<String, String> stepTaskIds, String runnerType);
-  boolean updateDelegateInfo(String infraRefId, String delegateId, String delegateName);
-  ExecutionInfraLocation getExecutionInfra(String id);
-  boolean deleteExecutionInfrastructure(String executionInfraUuid);
+  String createExecutionInfra(String accountId, String taskId, Map<String, String> stepTaskIds, String runnerType);
+  boolean updateDelegateInfo(String accountId, String infraRefId, String delegateId, String delegateName);
+  ExecutionInfraLocation getExecutionInfra(String accountId, String infraRefId);
+  boolean deleteInfra(String accountId, String infraRefId);
 }

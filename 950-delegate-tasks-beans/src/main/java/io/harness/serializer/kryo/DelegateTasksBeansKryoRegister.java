@@ -379,6 +379,7 @@ import io.harness.delegate.beans.polling.ArtifactPollingDelegateResponse;
 import io.harness.delegate.beans.polling.GitPollingDelegateResponse;
 import io.harness.delegate.beans.polling.ManifestPollingDelegateResponse;
 import io.harness.delegate.beans.polling.PollingDelegateResponse;
+import io.harness.delegate.beans.scheduler.CleanupInfraResponse;
 import io.harness.delegate.beans.scheduler.InitializeExecutionInfraResponse;
 import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
 import io.harness.delegate.beans.secrets.WinRmConfigValidationTaskResponse;
@@ -1571,6 +1572,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(VmInfraInfo.class, 25003);
     kryo.register(DliteVmInfraInfo.class, 25004);
     kryo.register(InitializeExecutionInfraResponse.class, 25005);
+    kryo.register(CleanupInfraResponse.class, 25006);
 
     kryo.register(DeploymentSlotData.class, 19457);
     kryo.register(ShellScriptTaskParametersNG.class, 19463);

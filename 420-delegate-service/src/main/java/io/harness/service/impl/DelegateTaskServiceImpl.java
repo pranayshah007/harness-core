@@ -307,8 +307,13 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
   }
 
   private void handleInprocResponseV2(DelegateTask delegateTask, DelegateTaskResponse response) {
-    boolean async = delegateTask.getTaskDataV2() != null ? delegateTask.getTaskDataV2().isAsync()
-                                                         : delegateTask.getData().isAsync();
+    boolean async = delegateTask.isAsync();
+    if (delegateTask.getTaskDataV2() != null) {
+      async = delegateTask.getTaskDataV2().isAsync();
+    } else if (delegateTask.getData() != null) {
+      async = delegateTask.getData().isAsync();
+    }
+
     if (async) {
       String waitId = delegateTask.getWaitId();
       if (waitId != null) {

@@ -745,6 +745,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
       // TODO: we need to refactor configuration related codes. All static configs abtained from DelegateConfiguration
       context.set(Context.DELEGATE_ID, delegateId);
+      context.set(Context.DELEGATE_NAME, DELEGATE_GROUP_NAME);
     } catch (RuntimeException | IOException e) {
       log.error("Exception while starting/running delegate", e);
     }

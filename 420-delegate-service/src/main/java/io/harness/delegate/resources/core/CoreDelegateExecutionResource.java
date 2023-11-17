@@ -19,6 +19,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.scheduler.InitializeExecutionInfraResponse;
+import io.harness.delegate.core.beans.CleanupInfraResponse;
 import io.harness.delegate.core.beans.ResponseCode;
 import io.harness.delegate.core.beans.SetupInfraResponse;
 import io.harness.delegate.task.tasklogging.ExecutionLogContext;
@@ -94,11 +95,11 @@ public class CoreDelegateExecutionResource {
 
   @DelegateAuth
   @POST
-  @Path("response/{executionId}/execution-infra")
+  @Path("response/{executionId}/infra-setup")
   @Consumes(ProtocolBufferMediaType.APPLICATION_PROTOBUF)
   @Timed
   @ExceptionMetered
-  public Response handleSetupExecutionInfraResponse(@QueryParam("delegateId") final String delegateId,
+  public Response handleSetupInfraResponse(@QueryParam("delegateId") final String delegateId,
       @PathParam("executionId") final String executionId, @QueryParam("accountId") @NotEmpty final String accountId,
       final SetupInfraResponse response) {
     try (AutoLogContext ignore1 = new ExecutionLogContext(executionId, OVERRIDE_ERROR);
@@ -126,7 +127,7 @@ public class CoreDelegateExecutionResource {
       }
 
       final var updated =
-          infraService.updateDelegateInfo(task.getUuid(), delegateId, response.getLocation().getDelegateName());
+          infraService.updateDelegateInfo(accountId, task.getUuid(), delegateId, response.getLocation().getDelegateName());
       if (!updated) {
         log.error("Error updating delegate info for account {} and execution {}", accountId, executionId);
         return Response.serverError().build();
@@ -134,14 +135,65 @@ public class CoreDelegateExecutionResource {
 
       delegateTaskService.handleResponseV2(task, taskQuery,
           DelegateTaskResponse.builder()
-              .response(InitializeExecutionInfraResponse.builder().executionInfraReferenceId(task.getUuid()).build())
-              .accountId(task.getAccountId())
+              .response(new InitializeExecutionInfraResponse(executionId))
+              .accountId(accountId)
               .build());
       return Response.ok().build();
     } catch (final Exception e) {
       log.error("Exception updating execution infra for account {}, with delegate details {}, for execution {}",
           accountId, delegateId, executionId, e);
       return Response.serverError().build();
+    }
+  }
+
+  @DelegateAuth
+  @POST
+  @Path("response/{executionId}/infra-cleanup")
+  @Consumes(ProtocolBufferMediaType.APPLICATION_PROTOBUF)
+  @Timed
+  @ExceptionMetered
+  public Response handleCleanupInfraResponse(@QueryParam("delegateId") final String delegateId,
+      @PathParam("executionId") final String executionId, @QueryParam("accountId") @NotEmpty final String accountId,
+      final CleanupInfraResponse response) {
+    try (AutoLogContext ignore1 = new ExecutionLogContext(executionId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      if (response == null) {
+        log.warn("Null response from delegate {} for execution {}", delegateId, executionId);
+        return Response.status(BAD_REQUEST).build();
+      }
+
+      if (response.getResponseCode() != ResponseCode.RESPONSE_OK) {
+        log.error("Error response from delegate {} for execution {}. {}", delegateId, executionId,
+            response.getErrorMessage());
+        return Response.ok().build();
+      }
+
+      final Query<DelegateTask> taskQuery =
+          persistence
+              .createQuery(DelegateTask.class, delegateTaskMigrationHelper.isMigrationEnabledForTask(executionId))
+              .filter(DelegateTaskKeys.accountId, accountId)
+              .filter(DelegateTaskKeys.uuid, executionId);
+      final DelegateTask task = taskQuery.first();
+      if (Objects.isNull(task)) {
+        log.error("Task not found when processing infra setup response from delegate {}", delegateId);
+        return Response.serverError().build();
+      }
+
+      delegateTaskService.handleResponseV2(task, taskQuery,
+          DelegateTaskResponse.builder()
+              .response(new io.harness.delegate.beans.scheduler.CleanupInfraResponse(executionId, true))
+              .accountId(accountId)
+              .build());
+      return Response.ok().build();
+    } catch (final Exception e) {
+      log.error("Exception updating execution infra for account {}, with delegate details {}, for execution {}",
+          accountId, delegateId, executionId, e);
+      return Response.serverError().build();
+    } finally {
+      final var deleted = infraService.deleteInfra(accountId, executionId);
+      if (!deleted) {
+        log.warn("Problem deleting infra for account {} and task {}", accountId, executionId);
+      }
     }
   }
 }

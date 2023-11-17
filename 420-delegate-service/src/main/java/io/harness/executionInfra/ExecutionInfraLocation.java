@@ -36,6 +36,7 @@ import org.joda.time.DateTime;
 @FieldNameConstants(innerTypeName = "ExecutionInfraLocationKeys")
 public class ExecutionInfraLocation implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {
   @Setter @Id private String uuid;
+  private final String accountId;
   private final String delegateGroupName;
   private final String runnerType;
   private final Map<String, String> stepTaskIds; // mapping K8S stepId -> delegate taskId
