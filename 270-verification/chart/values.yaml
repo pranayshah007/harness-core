@@ -258,11 +258,4 @@ secrets:
           VERIFICATION_SERVICE_SECRET:
             name: ""
             property: ""
-configData:
-  DEPLOY_MODE: KUBERNETES_ONPREM
-  MANAGER_URL: http://harness-manager:9090/api/
-  VERSION: 1.0.77622
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
-  MONGO_SSL_CONFIG: "true"
-  MONGO_SSL_CA_TRUST_STORE_PATH: /opt/harness/keystore.jks
-  MONGO_SSL_CA_TRUST_STORE_PASSWORD: password
+configData: {}
