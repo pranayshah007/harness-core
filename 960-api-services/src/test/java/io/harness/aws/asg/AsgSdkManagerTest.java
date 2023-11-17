@@ -7,6 +7,9 @@
 
 package io.harness.aws.asg;
 
+import static io.harness.aws.asg.AsgSdkManager.ASG_RESOURCE_TYPE;
+import static io.harness.aws.asg.AsgSdkManager.AWS_TAG_PREFIX;
+import static io.harness.aws.asg.AsgSdkManager.NAME_TAG;
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.VITALIE;
 
@@ -51,6 +54,7 @@ import com.amazonaws.services.autoscaling.model.RefreshPreferences;
 import com.amazonaws.services.autoscaling.model.ScalingPolicy;
 import com.amazonaws.services.autoscaling.model.StartInstanceRefreshRequest;
 import com.amazonaws.services.autoscaling.model.StartInstanceRefreshResult;
+import com.amazonaws.services.autoscaling.model.Tag;
 import com.amazonaws.services.autoscaling.model.UpdateAutoScalingGroupResult;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateRequest;
@@ -665,4 +669,43 @@ public class AsgSdkManagerTest extends CategoryTest {
     doReturn(updateAutoScalingGroupResult).when(amazonAutoScalingClient).updateAutoScalingGroup(any());
     asgSdkManager.downSizeToZero("abc");
   }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void prepareTags() {
+    final String asgName = "testAsg";
+
+    List<Tag> result = asgSdkManager.prepareTags(null, asgName);
+    assertThat(result.size()).isEqualTo(1);
+    assertThat(result.get(0).getKey()).isEqualTo(NAME_TAG);
+    assertThat(result.get(0).getValue()).isEqualTo(asgName);
+    assertThat(result.get(0).getResourceId()).isEqualTo(asgName);
+    assertThat(result.get(0).getResourceType()).isEqualTo(ASG_RESOURCE_TYPE);
+    assertThat(result.get(0).getPropagateAtLaunch()).isTrue();
+
+    List<Tag> tags = List.of(new Tag().withKey("testKey1").withValue("testValue1").withResourceId("another"),
+        new Tag().withKey(AWS_TAG_PREFIX + "testKey2").withValue("testValue2").withResourceId("another"),
+        new Tag().withKey(NAME_TAG).withValue("another").withResourceId("another"),
+        new Tag().withKey("testKey3").withValue("testValue3").withPropagateAtLaunch(true),
+        new Tag().withKey("testKey4").withValue("testValue4").withPropagateAtLaunch(false));
+
+    result = asgSdkManager.prepareTags(tags, asgName);
+    assertThat(result.size()).isEqualTo(4);
+    assertThat(result.get(0).getKey()).isEqualTo("testKey1");
+    assertThat(result.get(0).getValue()).isEqualTo("testValue1");
+    assertThat(result.get(0).getResourceId()).isEqualTo(asgName);
+    assertThat(result.get(0).getResourceType()).isEqualTo(ASG_RESOURCE_TYPE);
+    assertThat(result.get(0).getPropagateAtLaunch()).isTrue();
+
+    assertThat(result.get(1).getPropagateAtLaunch()).isTrue();
+    assertThat(result.get(2).getPropagateAtLaunch()).isFalse();
+
+    assertThat(result.get(3).getKey()).isEqualTo(NAME_TAG);
+    assertThat(result.get(3).getValue()).isEqualTo(asgName);
+    assertThat(result.get(3).getResourceId()).isEqualTo(asgName);
+    assertThat(result.get(3).getResourceType()).isEqualTo(ASG_RESOURCE_TYPE);
+    assertThat(result.get(3).getPropagateAtLaunch()).isTrue();
+  }
+>>>>>>> e12aefd9fc6 (feat: [CDS-84681]: added Asg name to Name tag (#55583))
 }
