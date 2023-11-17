@@ -55,7 +55,10 @@ public class NodeExecutionMonitorServiceImpl implements NodeExecutionMonitorServ
       return;
     }
 
-    ExecutionStatistics executionStatistics = nodeExecutionService.aggregateRunningNodesCount().get(0);
+    ExecutionStatistics executionStatistics = nodeExecutionService.aggregateRunningNodeExecutionsCount();
+    if (executionStatistics == null) {
+      return;
+    }
 
     for (ExecutionCountWithAccountResult accountResult : executionStatistics.getAccountStats()) {
       Map<String, String> metricContextMap =

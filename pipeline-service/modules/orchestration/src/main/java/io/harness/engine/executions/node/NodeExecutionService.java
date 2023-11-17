@@ -388,5 +388,5 @@ public interface NodeExecutionService {
   CloseableIterator<NodeExecution> fetchAllLeavesUsingPlanExecutionId(
       String planExecutionId, Set<String> fieldsToBeIncluded);
 
-  List<ExecutionStatistics> aggregateRunningNodesCount();
+  ExecutionStatistics aggregateRunningNodeExecutionsCount();
 }

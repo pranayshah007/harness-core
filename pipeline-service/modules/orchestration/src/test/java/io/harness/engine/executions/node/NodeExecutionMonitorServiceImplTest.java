@@ -56,7 +56,6 @@ public class NodeExecutionMonitorServiceImplTest extends CategoryTest {
   public void testRegisterActiveExecutionMetrics() {
     doReturn(true).when(metricsCache).putIfAbsent(any(), any());
 
-    List<ExecutionStatistics> result = new LinkedList<>();
     List<ExecutionCountWithAccountResult> accountResults = new LinkedList<>();
     accountResults.add(ExecutionCountWithAccountResult.builder().accountId("ABC").count(1).build());
     accountResults.add(ExecutionCountWithAccountResult.builder().accountId("DEF").count(5).build());
@@ -69,13 +68,13 @@ public class NodeExecutionMonitorServiceImplTest extends CategoryTest {
     stepTypeResults.add(ExecutionCountWithStepTypeResult.builder().stepType("type2").count(5).build());
     stepTypeResults.add(ExecutionCountWithStepTypeResult.builder().stepType("type3").count(5).build());
 
-    result.add(ExecutionStatistics.builder()
-                   .accountStats(accountResults)
-                   .moduleStats(moduleResults)
-                   .stepTypeStats(stepTypeResults)
-                   .build());
+    ExecutionStatistics result = ExecutionStatistics.builder()
+                                     .accountStats(accountResults)
+                                     .moduleStats(moduleResults)
+                                     .stepTypeStats(stepTypeResults)
+                                     .build();
 
-    doReturn(result).when(nodeExecutionService).aggregateRunningNodesCount();
+    doReturn(result).when(nodeExecutionService).aggregateRunningNodeExecutionsCount();
     nodeExecutionMonitorService.registerActiveExecutionMetrics();
     verify(metricService, times(6)).recordMetric(anyString(), anyDouble());
   }

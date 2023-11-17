@@ -1278,14 +1278,13 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     nodeExecutionService.save(nodeExecution1);
     nodeExecutionService.save(nodeExecution2);
 
-    List<ExecutionStatistics> executionStatisticsList = nodeExecutionService.aggregateRunningNodesCount();
-    assertThat(executionStatisticsList.size()).isEqualTo(1);
-    assertThat(executionStatisticsList.get(0).getAccountStats().size()).isEqualTo(2);
-    assertThat(executionStatisticsList.get(0).getModuleStats().size()).isEqualTo(1);
-    assertThat(executionStatisticsList.get(0).getStepTypeStats().size()).isEqualTo(1);
-    assertThat(executionStatisticsList.get(0).getAccountStats().get(0).getCount()).isEqualTo(1);
-    assertThat(executionStatisticsList.get(0).getAccountStats().get(1).getCount()).isEqualTo(1);
-    assertThat(executionStatisticsList.get(0).getModuleStats().get(0).getCount()).isEqualTo(2);
-    assertThat(executionStatisticsList.get(0).getStepTypeStats().get(0).getCount()).isEqualTo(2);
+    ExecutionStatistics executionStatistics = nodeExecutionService.aggregateRunningNodeExecutionsCount();
+    assertThat(executionStatistics.getAccountStats().size()).isEqualTo(2);
+    assertThat(executionStatistics.getModuleStats().size()).isEqualTo(1);
+    assertThat(executionStatistics.getStepTypeStats().size()).isEqualTo(1);
+    assertThat(executionStatistics.getAccountStats().get(0).getCount()).isEqualTo(1);
+    assertThat(executionStatistics.getAccountStats().get(1).getCount()).isEqualTo(1);
+    assertThat(executionStatistics.getModuleStats().get(0).getCount()).isEqualTo(2);
+    assertThat(executionStatistics.getStepTypeStats().get(0).getCount()).isEqualTo(2);
   }
 }

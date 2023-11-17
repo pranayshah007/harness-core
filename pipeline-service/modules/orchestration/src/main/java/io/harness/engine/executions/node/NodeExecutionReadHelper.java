@@ -130,7 +130,7 @@ public class NodeExecutionReadHelper {
     return secondaryMongoTemplate.findOne(query, NodeExecution.class);
   }
 
-  public List<ExecutionStatistics> aggregateRunningExecutionCount() {
+  public ExecutionStatistics aggregateRunningExecutionCount() {
     MatchOperation matchStage =
         Aggregation.match(Criteria.where(NodeExecutionKeys.status).in(StatusUtils.activeStatuses()));
     GroupOperation groupByAccount =
@@ -158,7 +158,9 @@ public class NodeExecutionReadHelper {
                                         .and(groupByStepType, projectStepType)
                                         .as(ExecutionStatisticsKeys.stepTypeStats);
     Aggregation aggregation = Aggregation.newAggregation(matchStage, facetOperation);
-    return analyticsMongoTemplate.aggregate(aggregation, NodeExecution.class, ExecutionStatistics.class)
-        .getMappedResults();
+    List<ExecutionStatistics> executionStatisticsList =
+        analyticsMongoTemplate.aggregate(aggregation, NodeExecution.class, ExecutionStatistics.class)
+            .getMappedResults();
+    return executionStatisticsList.size() > 0 ? executionStatisticsList.get(0) : null;
   }
 }

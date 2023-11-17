@@ -1135,7 +1135,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public List<ExecutionStatistics> aggregateRunningNodesCount() {
+  public ExecutionStatistics aggregateRunningNodeExecutionsCount() {
     return nodeExecutionReadHelper.aggregateRunningExecutionCount();
   }
 }
