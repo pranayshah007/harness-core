@@ -55,6 +55,7 @@ public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProce
   @Inject private ScmOrchestratorService scmOrchestratorService;
   @Inject private GitSyncConnectorService gitSyncConnectorService;
   @Inject private GitRepoHelper gitRepoHelper;
+  @Inject private GitXWebhookUtils gitXWebhookUtils;
 
   @Override
   public void processEvent(WebhookDTO webhookDTO) {
@@ -150,7 +151,7 @@ public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProce
           gitXWebhook.getIdentifier()));
       return modifiedFilePaths;
     }
-    return GitXWebhookUtils.compareFolderPaths(gitXWebhook.getFolderPaths(), modifiedFilePaths);
+    return gitXWebhookUtils.compareFolderPaths(gitXWebhook.getFolderPaths(), modifiedFilePaths);
   }
 
   private GitXWebhook getGitXWebhook(GitXWebhookEvent gitXWebhookEvent) {

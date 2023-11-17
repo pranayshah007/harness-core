@@ -56,6 +56,7 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
   @Inject GitXWebhookEventsRepository gitXWebhookEventsRepository;
   @Inject GitXWebhookService gitXWebhookService;
   @Inject HsqsClientService hsqsClientService;
+  @Inject GitXWebhookUtils gitXWebhookUtils;
 
   private static final String QUEUE_TOPIC_PREFIX = "ng";
   private static final String WEBHOOK_FAILURE_ERROR_MESSAGE =
@@ -67,6 +68,11 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
   public void processEvent(WebhookDTO webhookDTO) {
     try (GitXWebhookEventLogContext context = new GitXWebhookEventLogContext(webhookDTO)) {
       try {
+        if (!gitXWebhookUtils.isBiDirectionalSyncEnabledInSettings(webhookDTO.getAccountId())) {
+          log.info(String.format(
+              "Bi-Directional Sync account setting is disabled in account %s", webhookDTO.getAccountId()));
+          return;
+        }
         GitXWebhook gitXWebhook =
             fetchGitXWebhook(webhookDTO.getAccountId(), webhookDTO.getParsedResponse().getPush().getRepo().getName());
         if (gitXWebhook == null) {
@@ -164,7 +170,7 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
 
   private boolean isFilePathMatching(String entityFilePath, List<String> modifiedFilePaths) {
     return isNotEmpty(
-        GitXWebhookUtils.compareFolderPaths(Collections.singletonList(entityFilePath), modifiedFilePaths));
+        gitXWebhookUtils.compareFolderPaths(Collections.singletonList(entityFilePath), modifiedFilePaths));
   }
 
   private Criteria buildEventsListCriteria(GitXEventsListRequestDTO gitXEventsListRequestDTO) {

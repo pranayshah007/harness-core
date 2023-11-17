@@ -85,7 +85,7 @@ import io.harness.gitsync.common.helper.GitRepoHelper;
 import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
 import io.harness.gitsync.core.runnable.GitBackgroundCacheRefreshHelper;
-import io.harness.gitsync.gitxwebhooks.service.GitXWebhookService;
+import io.harness.gitsync.gitxwebhooks.utils.GitXWebhookUtils;
 import io.harness.gitx.GitXSettingsHelper;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.ng.beans.PageRequest;
@@ -128,6 +128,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Mock GitClientEnabledHelper gitClientEnabledHelper;
   @Mock ConnectorService connectorService;
   @Mock UserSourceCodeManagerRepository userSourceCodeManagerRepository;
+  @Mock GitXWebhookUtils gitXWebhookUtils;
   ScmFacilitatorServiceImpl scmFacilitatorService;
   String accountIdentifier = "accountIdentifier";
   String projectIdentifier = "projectIdentifier";
@@ -156,7 +157,6 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Mock GitDefaultBranchCacheHelper gitDefaultBranchCacheHelper;
   @Mock GitXSettingsHelper gitXSettingsHelper;
   @Mock GitRepoHelper gitRepoHelper;
-  @Mock GitXWebhookService gitXWebhookService;
   @Spy @InjectMocks GitRepoAllowlistHelper gitRepoAllowlistHelper;
 
   String fileUrl = "https://github.com/harness/repoName/blob/branch/filePath";
@@ -169,7 +169,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     scmFacilitatorService = new ScmFacilitatorServiceImpl(gitSyncConnectorService, connectorService,
         scmOrchestratorService, ngFeatureFlagHelperService, gitClientEnabledHelper, gitFileCacheService,
         gitFilePathHelper, delegateServiceGrpcClient, gitBackgroundCacheRefreshHelper, gitDefaultBranchCacheHelper,
-        gitRepoHelper, gitRepoAllowlistHelper, gitXWebhookService);
+        gitRepoHelper, gitRepoAllowlistHelper, gitXWebhookUtils);
     pageRequest = PageRequest.builder().build();
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
                                              .connectionType(GitConnectionType.ACCOUNT)
@@ -604,6 +604,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
     FileContent fileContent = FileContent.newBuilder().setStatus(400).build();
     GetLatestCommitOnFileResponse getLatestCommitOnFileResponse = GetLatestCommitOnFileResponse.newBuilder().build();
+    when(gitXWebhookUtils.isBiDirectionalSyncApplicable(any())).thenReturn(false);
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any()))
         .thenReturn(fileContent)
         .thenReturn(getLatestCommitOnFileResponse);
