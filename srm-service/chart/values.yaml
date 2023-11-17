@@ -355,14 +355,4 @@ secrets:
           VERIFICATION_SERVICE_SECRET:
             name: ""
             property: ""
-configData:
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: harness-redis
-  SHOULD_CONFIGURE_WITH_PMS: "true"
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
-  PMS_TARGET: pipeline-service:12011
-  PMS_AUTHORITY: pipeline-service:12011
-  GRPC_SERVER_PORT: "9979"
-  CACHE_BACKEND: REDIS
-  CACHE_CONFIG_SENTINEL_MASTER_NAME: harness-redis
-  MOCK_ACCESS_CONTROL_SERVICE: "false"
-  ENABLE_DASHBOARD_TIMESCALE: "true"
+configData: {}
