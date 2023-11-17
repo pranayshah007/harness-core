@@ -109,8 +109,4 @@ virtualService:
   annotations: {}
 ingress:
   annotations: {}
-configData:
-  proxy:
-    conf: |-
-      server { root /www/data;proxy_http_version 1.1;
-      }
+configData: {}
