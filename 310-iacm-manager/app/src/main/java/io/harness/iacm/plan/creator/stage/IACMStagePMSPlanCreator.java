@@ -192,16 +192,18 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     int stepIndex = 0;
     List<String> processedRepos = new ArrayList<>();
     List<ExecutionWrapperConfig> innerSteps = new ArrayList<>();
+
     for (VariablesRepo variablesRepo : workspace.getTerraform_variable_files()) {
-      // If the connector is the same as where the main repo is, then it means that we do not need to clone the repo
-      // again
-      if (Objects.equals(variablesRepo.getRepository_connector(), workspace.getRepository_connector())) {
+      // if the connector, repo, branch and commit are the same as the workspace repo we can skip
+      if (Objects.equals(variablesRepo.getRepository_connector(), workspace.getRepository_connector())
+          && Objects.equals(variablesRepo.getRepository(), workspace.getRepository())
+          && Objects.equals(
+              variablesRepo.getRepository_branch(), Objects.toString(workspace.getRepository_branch(), ""))
+          && Objects.equals(
+              variablesRepo.getRepository_commit(), Objects.toString(workspace.getRepository_commit(), ""))) {
         continue;
       }
-      // if the connector has been already processed, skip it
-      if (processedRepos.contains(variablesRepo.getRepository_connector())) {
-        continue;
-      }
+
       BuildBuilder buildObject = builder();
       if (!Objects.equals(variablesRepo.getRepository_branch(), "")) {
         buildObject.type(BuildType.BRANCH);
@@ -215,12 +217,18 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
                              .tag(ParameterField.<String>builder().value(variablesRepo.getRepository_commit()).build())
                              .build());
       }
+      String hashedGitRepoInfo = iacmStepsUtils.generateHashedGitRepoInfo(variablesRepo.getRepository(),
+          variablesRepo.getRepository_connector(), variablesRepo.getRepository_branch(),
+          variablesRepo.getRepository_commit(), variablesRepo.getRepository_path());
       GitCloneStepInfo gitCloneStepInfo =
           GitCloneStepInfo.builder()
               .connectorRef(ParameterField.<String>builder().value(variablesRepo.getRepository_connector()).build())
               .depth(ParameterField.<Integer>builder().value(50).build())
               .build(ParameterField.<Build>builder().value(buildObject.build()).build())
               .repoName(ParameterField.<String>builder().value(variablesRepo.getRepository()).build())
+              .cloneDirectory(ParameterField.<String>builder()
+                                  .value(iacmStepsUtils.generateVariableFileBasePath(hashedGitRepoInfo))
+                                  .build())
               .build();
       String uuid = generateUuid();
       try {
