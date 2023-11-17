@@ -107,7 +107,8 @@ public enum QLTaskGroup implements QLEnum {
   CONTAINER_PMS,
   TERRAFORM_CLOUD,
   GOOGLE_FUNCTION,
-  AWS_LAMBDA_NG;
+  AWS_LAMBDA_NG,
+  ARTIFACT_BUNDLE;
 
   @Override
   public String getStringValue() {

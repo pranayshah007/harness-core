@@ -1,4 +1,4 @@
-{{- if .Values.global.ggIngress.enabled -}}
+{{- if .Values.global.globalIngress.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -127,7 +127,7 @@ rules:
 - apiGroups:
   - ""
   resourceNames:
-  - ingress-controller-leader-{{ .Values.global.ggIngress.className }}
+  - ingress-controller-leader-{{ .Values.global.globalIngress.className }}
   resources:
   - configmaps
   verbs:
@@ -263,7 +263,7 @@ spec:
               fieldPath: metadata.namespace
         args:
         - /nginx-ingress-controller
-        - --ingress-class={{ .Values.global.ggIngress.className }}
+        - --ingress-class={{ .Values.global.globalIngress.className }}
         - --default-backend-service=$(POD_NAMESPACE)/default-backend
         - --election-id=global-ingress-controller-leader
         - --watch-namespace=$(POD_NAMESPACE)
@@ -271,6 +271,6 @@ spec:
         - --configmap=$(POD_NAMESPACE)/harness-global-ingress-controller
         - --http-port=8080
         - --https-port=8443
-        - --default-ssl-certificate=$(POD_NAMESPACE)/{{ .Values.global.ingress.tls.secretName }}
+        - --default-ssl-certificate=$(POD_NAMESPACE)/{{ .Values.global.globalIngress.tls.secretName }}
         - --publish-service=$(POD_NAMESPACE)/harness-global-ingress-controller
 {{- end }}

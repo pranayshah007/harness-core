@@ -70,6 +70,7 @@ import org.modelmapper.ModelMapper;
 @Slf4j
 public class NGTemplateDtoMapper {
   public static final String BOOLEAN_TRUE_VALUE = "true";
+  public static final String SCOPE_IDENTIFIER_NOT_MATCHING = "%s for template is not matching as in template yaml.";
 
   public TemplateResponseDTO writeTemplateResponseDto(TemplateEntity templateEntity) {
     return TemplateResponseDTO.builder()
@@ -438,14 +439,11 @@ public class NGTemplateDtoMapper {
 
   private void validateTemplateYaml(NGTemplateConfig templateConfig, String orgIdentifier, String projectIdentifier) {
     validate(templateConfig.getTemplateInfoConfig());
-    if (EmptyPredicate.isNotEmpty(templateConfig.getTemplateInfoConfig().getProjectIdentifier())
-        && !templateConfig.getTemplateInfoConfig().getProjectIdentifier().equals(projectIdentifier)) {
-      throw new InvalidRequestException("ProjectIdentifier for template is not matching as in template yaml.");
-    }
-    if (EmptyPredicate.isNotEmpty(templateConfig.getTemplateInfoConfig().getOrgIdentifier())
-        && !templateConfig.getTemplateInfoConfig().getOrgIdentifier().equals(orgIdentifier)) {
-      throw new InvalidRequestException("OrgIdentifier for template is not matching as in template yaml.");
-    }
+
+    compareScopeIdentifiersFromYamlAndRequestBody(
+        templateConfig.getTemplateInfoConfig().getProjectIdentifier(), projectIdentifier, "ProjectIdentifier");
+    compareScopeIdentifiersFromYamlAndRequestBody(
+        templateConfig.getTemplateInfoConfig().getOrgIdentifier(), orgIdentifier, "OrgIdentifier");
 
     if (isEmpty(templateConfig.getTemplateInfoConfig().getVersionLabel())) {
       throw new InvalidRequestException("Template version label cannot be empty.");
@@ -454,6 +452,21 @@ public class NGTemplateDtoMapper {
       throw new InvalidRequestException("Template identifier cannot be runtime input");
     }
     validateIconForTemplate(templateConfig.getTemplateInfoConfig().getIcon());
+  }
+
+  private static void compareScopeIdentifiersFromYamlAndRequestBody(
+      String identifierFromYaml, String identifierFromRequestBody, String scope) {
+    if (EmptyPredicate.isNotEmpty(identifierFromYaml) && EmptyPredicate.isNotEmpty(identifierFromRequestBody)
+        && !identifierFromYaml.equals(identifierFromRequestBody)) {
+      throw new InvalidRequestException(String.format(SCOPE_IDENTIFIER_NOT_MATCHING, scope));
+    }
+    if (EmptyPredicate.isEmpty(identifierFromYaml) && EmptyPredicate.isNotEmpty(identifierFromRequestBody)) {
+      throw new InvalidRequestException(String.format(SCOPE_IDENTIFIER_NOT_MATCHING, scope));
+    }
+
+    if (EmptyPredicate.isNotEmpty(identifierFromYaml) && EmptyPredicate.isEmpty(identifierFromRequestBody)) {
+      throw new InvalidRequestException(String.format(SCOPE_IDENTIFIER_NOT_MATCHING, scope));
+    }
   }
 
   private void validateSimplifiedTemplateYaml(

@@ -320,13 +320,14 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
           repoName = getGitRepo(codebaseSweepingOutput.getRepoUrl());
         }
 
+        // This author will be consumed by license. It should only be fulfilled if ID and User both exist.
+        // Both fields should be populated by SCM if it's a valid git repo
         if (author == null && isNotEmpty(codebaseSweepingOutput.getGitUserId())
-            && isNotEmpty(codebaseSweepingOutput.getGitUser())
-            && isNotEmpty(codebaseSweepingOutput.getGitUserAvatar())) {
+            && isNotEmpty(codebaseSweepingOutput.getGitUser())) {
           author = CIBuildAuthor.builder()
                        .id(codebaseSweepingOutput.getGitUserId())
                        .name(codebaseSweepingOutput.getGitUser())
-                       .avatar(codebaseSweepingOutput.getGitUserAvatar())
+                       .avatar(Optional.ofNullable(codebaseSweepingOutput.getGitUserAvatar()).orElse(""))
                        .email(Optional.ofNullable(codebaseSweepingOutput.getGitUserEmail()).orElse(""))
                        .build();
         }

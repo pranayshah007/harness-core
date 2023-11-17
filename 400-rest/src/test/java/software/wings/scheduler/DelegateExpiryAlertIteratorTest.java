@@ -64,7 +64,7 @@ public class DelegateExpiryAlertIteratorTest extends WingsBaseTest {
     NotificationTriggerRequest notificationTriggerRequest = argumentCaptor.getValue();
     assertThat(notificationTriggerRequest).isNotNull();
     assertThat(notificationTriggerRequest.getAccountId()).isEqualTo(ACCOUNT_ID);
-    assertThat(notificationTriggerRequest.getEvent()).isEqualTo(NotificationEvent.DELEGATE_DOWN.name());
+    assertThat(notificationTriggerRequest.getEvent()).isEqualTo(NotificationEvent.DELEGATE_EXPIRED.name());
     assertThat(notificationTriggerRequest.getEventEntity()).isEqualTo(NotificationEntity.DELEGATE.name());
     assertThat(notificationTriggerRequest.getAccountId()).isEqualTo(ACCOUNT_ID);
     verify(notificationClient, times(1)).sendNotificationTrigger(any(NotificationTriggerRequest.class));

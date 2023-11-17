@@ -34,7 +34,9 @@ public enum StoreConfigType {
   @JsonProperty(ManifestStoreType.InheritFromManifest) InheritFromManifest(ManifestStoreType.InheritFromManifest),
   @JsonProperty(HARNESS_STORE_TYPE) HARNESS(HARNESS_STORE_TYPE),
   @JsonProperty(ManifestStoreType.OCI) OCI(ManifestStoreType.OCI),
-  @JsonProperty(ManifestStoreType.AZURE_REPO) AZURE_REPO(ManifestStoreType.AZURE_REPO);
+  @JsonProperty(ManifestStoreType.AZURE_REPO) AZURE_REPO(ManifestStoreType.AZURE_REPO),
+  @JsonProperty(ManifestStoreType.ARTIFACT_BUNDLE) ARTIFACT_BUNDLE(ManifestStoreType.ARTIFACT_BUNDLE);
+
   private final String displayName;
 
   StoreConfigType(String displayName) {
