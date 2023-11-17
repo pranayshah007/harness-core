@@ -12,6 +12,7 @@ metadata:
   {{- end }}
 data:
   {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   ALLOWED_ORIGINS: '{{ .Values.config.ALLOWED_ORIGINS | default .Values.global.loadbalancerURL }}'
   API_URL: '{{ .Values.config.API_URL | default .Values.global.loadbalancerURL }}'
   DELEGATE_METADATA_URL: {{ .Values.config.DELEGATE_METADATA_URL | default "loadbalancerURL/storage/wingsdelegates/delegateprod.txt" | replace "loadbalancerURL" .Values.global.loadbalancerURL }}
@@ -69,6 +70,7 @@ kind: ConfigMap
 metadata:
   name: migrator-iterator-config
 data:
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData2 "context" $) | nindent 2}}
   {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData2 "context" $) | nindent 2}}
   iterator_config.json: |
     [

@@ -755,7 +755,5 @@ secrets:
           VERIFICATION_SERVICE_SECRET:
             name: ""
             property: ""
-configData:
-  REDIS_MASTER_NAME: harness-redis
-  ENABLE_AUDIT: "true"
+configData: {}
 configData2: {}
