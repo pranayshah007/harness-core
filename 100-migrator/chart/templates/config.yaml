@@ -11,6 +11,7 @@ metadata:
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   ALLOWED_ORIGINS: '{{ .Values.config.ALLOWED_ORIGINS | default .Values.global.loadbalancerURL }}'
   API_URL: '{{ .Values.config.API_URL | default .Values.global.loadbalancerURL }}'
   DELEGATE_METADATA_URL: {{ .Values.config.DELEGATE_METADATA_URL | default "loadbalancerURL/storage/wingsdelegates/delegateprod.txt" | replace "loadbalancerURL" .Values.global.loadbalancerURL }}
@@ -38,7 +39,6 @@ data:
   MEMORY: '{{ .Values.config.MEMORY }}'
   REDIS_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  REDIS_MASTER_NAME: 'harness-redis'
   REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   SERVER_PORT: '{{ .Values.config.SERVER_PORT }}'
   SERVICE_ACC: '{{ .Values.config.SERVICE_ACC }}'
@@ -57,7 +57,6 @@ data:
   MONGO_SSL_CA_TRUST_STORE_PASSWORD: '{{ .Values.secrets.default.MONGO_SSL_CA_TRUST_STORE_PASSWORD }}'
   ENABLE_ITERATORS: '{{ .Values.config.ENABLE_ITERATORS }}'
   ITERATOR_CONFIG_PATH: '{{ .Values.config.ITERATOR_CONFIG_PATH }}'
-  ENABLE_AUDIT: 'true'
   AUDIT_CLIENT_BASEURL: {{ .Values.config.AUDIT_CLIENT_BASEURL | default "http://platform-service:9005/api/" }}
   TEMPLATE_SERVICE_ENDPOINT: {{ .Values.config.TEMPLATE_SERVICE_ENDPOINT | default "http://template-service:15002/api/" }}
   PIPELINE_SERVICE_CLIENT_BASEURL: {{ .Values.config.PIPELINE_SERVICE_CLIENT_BASEURL | default "http://pipeline-service:12001/api/" }}
@@ -70,10 +69,10 @@ kind: ConfigMap
 metadata:
   name: migrator-iterator-config
 data:
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData2 "context" $) | nindent 2}}
   iterator_config.json: |
     [
       {
-        "name": "AlertReconciliation",
         "enabled": {{ .Values.iteratorConfig.alertReconciliation.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.alertReconciliation.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.alertReconciliation.threadPoolIntervalInSeconds }},
@@ -82,7 +81,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.alertReconciliation.throttleIntervalInSeconds }}
       },
       {
-        "name": "ArtifactCollection",
         "enabled": {{ .Values.iteratorConfig.artifactCollection.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.artifactCollection.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.artifactCollection.threadPoolIntervalInSeconds }},
@@ -91,7 +89,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.artifactCollection.throttleIntervalInSeconds }}
       },
       {
-        "name": "ArtifactCleanup",
         "enabled": {{ .Values.iteratorConfig.artifactCleanup.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.artifactCleanup.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.artifactCleanup.threadPoolIntervalInSeconds }},
@@ -100,7 +97,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.artifactCleanup.throttleIntervalInSeconds }}
       },
       {
-        "name": "EventDelivery",
         "enabled": {{ .Values.iteratorConfig.eventDelivery.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.eventDelivery.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.eventDelivery.threadPoolIntervalInSeconds }},
@@ -109,7 +105,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.eventDelivery.throttleIntervalInSeconds }}
       },
       {
-        "name": "InstanceSync",
         "enabled": {{ .Values.iteratorConfig.instanceSync.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.instanceSync.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.instanceSync.threadPoolIntervalInSeconds }},
@@ -118,7 +113,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.instanceSync.throttleIntervalInSeconds }}
       },
       {
-        "name": "LicenseExpiryCheck",
         "enabled": {{ .Values.iteratorConfig.licenseExpiryCheck.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.licenseExpiryCheck.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.licenseExpiryCheck.threadPoolIntervalInSeconds }},
@@ -127,7 +121,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.licenseExpiryCheck.throttleIntervalInSeconds }}
       },
       {
-        "name": "ApprovalPolling",
         "enabled": {{ .Values.iteratorConfig.approvalPolling.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.approvalPolling.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.approvalPolling.threadPoolIntervalInSeconds }},
@@ -136,7 +129,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.approvalPolling.throttleIntervalInSeconds }}
       },
       {
-        "name": "GCPBilling",
         "enabled": {{ .Values.iteratorConfig.gcpBilling.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.gcpBilling.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.gcpBilling.threadPoolIntervalInSeconds }},
@@ -145,7 +137,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.gcpBilling.throttleIntervalInSeconds }}
       },
       {
-        "name": "SegmentGroupEventJob",
         "enabled": {{ .Values.iteratorConfig.segmentGroupEventJob.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.segmentGroupEventJob.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.segmentGroupEventJob.threadPoolIntervalInSeconds }},
@@ -154,7 +145,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.segmentGroupEventJob.throttleIntervalInSeconds }}
       },
       {
-        "name": "BarrierInstanceMonitor",
         "enabled": {{ .Values.iteratorConfig.barrierInstanceMonitor.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.barrierInstanceMonitor.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.barrierInstanceMonitor.threadPoolIntervalInSeconds }},
@@ -163,7 +153,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.barrierInstanceMonitor.throttleIntervalInSeconds }}
       },
       {
-        "name": "EntityAuditRecordProcessor",
         "enabled": {{ .Values.iteratorConfig.entityAuditRecordProcessor.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.entityAuditRecordProcessor.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.entityAuditRecordProcessor.threadPoolIntervalInSeconds }},
@@ -172,7 +161,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.entityAuditRecordProcessor.throttleIntervalInSeconds }}
       },
       {
-        "name": "UsageMetricsHandler",
         "enabled": {{ .Values.iteratorConfig.usageMetricsHandler.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.usageMetricsHandler.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.usageMetricsHandler.threadPoolIntervalInSeconds }},
@@ -181,7 +169,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.usageMetricsHandler.throttleIntervalInSeconds }}
       },
       {
-        "name": "ResourceConstraint-Backup",
         "enabled": {{ .Values.iteratorConfig.resourceConstraintBackup.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.resourceConstraintBackup.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.resourceConstraintBackup.threadPoolIntervalInSeconds }},
@@ -190,7 +177,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.resourceConstraintBackup.throttleIntervalInSeconds }}
       },
       {
-        "name": "WorkflowExecutionMonitor",
         "enabled": {{ .Values.iteratorConfig.workflowExecutionMonitor.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.workflowExecutionMonitor.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.workflowExecutionMonitor.threadPoolIntervalInSeconds }},
@@ -199,7 +185,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.workflowExecutionMonitor.throttleIntervalInSeconds }}
       },
       {
-        "name": "SettingAttributeValidateConnectivity",
         "enabled": {{ .Values.iteratorConfig.settingAttributeValidateConnectivity.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.settingAttributeValidateConnectivity.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.settingAttributeValidateConnectivity.threadPoolIntervalInSeconds }},
@@ -208,7 +193,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.settingAttributeValidateConnectivity.throttleIntervalInSeconds }}
       },
       {
-        "name": "VaultSecretManagerRenewalHandler",
         "enabled": {{ .Values.iteratorConfig.vaultSecretManagerRenewalHandler.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.vaultSecretManagerRenewalHandler.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.vaultSecretManagerRenewalHandler.threadPoolIntervalInSeconds }},
@@ -217,7 +201,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.vaultSecretManagerRenewalHandler.throttleIntervalInSeconds }}
       },
       {
-        "name": "SettingAttributesSecretsMigrationHandler",
         "enabled": {{ .Values.iteratorConfig.settingAttributesSecretsMigrationHandler.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.settingAttributesSecretsMigrationHandler.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.settingAttributesSecretsMigrationHandler.threadPoolIntervalInSeconds }},
@@ -226,7 +209,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.settingAttributesSecretsMigrationHandler.throttleIntervalInSeconds }}
       },
       {
-        "name": "GitSyncEntityExpiryCheck",
         "enabled": {{ .Values.iteratorConfig.gitSyncEntityExpiryCheck.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.gitSyncEntityExpiryCheck.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.gitSyncEntityExpiryCheck.threadPoolIntervalInSeconds }},
@@ -235,7 +217,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.gitSyncEntityExpiryCheck.throttleIntervalInSeconds }}
       },
       {
-        "name": "ExportExecutionsRequestHandler",
         "enabled": {{ .Values.iteratorConfig.exportExecutionsRequestHandler.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.exportExecutionsRequestHandler.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.exportExecutionsRequestHandler.threadPoolIntervalInSeconds }},
@@ -244,7 +225,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.exportExecutionsRequestHandler.throttleIntervalInSeconds }}
       },
       {
-        "name": "ExportExecutionsRequestCleanupHandler",
         "enabled": {{ .Values.iteratorConfig.exportExecutionsRequestCleanupHandler.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.exportExecutionsRequestCleanupHandler.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.exportExecutionsRequestCleanupHandler.threadPoolIntervalInSeconds }},
@@ -253,7 +233,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.exportExecutionsRequestCleanupHandler.throttleIntervalInSeconds }}
       },
       {
-        "name": "DeploymentFreezeActivities",
         "enabled": {{ .Values.iteratorConfig.deploymentFreezeActivities.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.deploymentFreezeActivities.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.deploymentFreezeActivities.threadPoolIntervalInSeconds }},
@@ -262,7 +241,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.deploymentFreezeActivities.throttleIntervalInSeconds }}
       },
       {
-        "name": "DeploymentFreezeDeactivation",
         "enabled": {{ .Values.iteratorConfig.deploymentFreezeDeactivation.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.deploymentFreezeDeactivation.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.deploymentFreezeDeactivation.threadPoolIntervalInSeconds }},
@@ -271,7 +249,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.deploymentFreezeDeactivation.throttleIntervalInSeconds }}
       },
       {
-        "name": "CeLicenceExpiryProcessor",
         "enabled": {{ .Values.iteratorConfig.ceLicenceExpiryProcessor.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.ceLicenceExpiryProcessor.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.ceLicenceExpiryProcessor.threadPoolIntervalInSeconds }},
@@ -280,7 +257,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.ceLicenceExpiryProcessor.throttleIntervalInSeconds }}
       },
       {
-        "name": "DeleteAccountIterator",
         "enabled": {{ .Values.iteratorConfig.deleteAccountIterator.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.deleteAccountIterator.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.deleteAccountIterator.threadPoolIntervalInSeconds }},
@@ -289,7 +265,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.deleteAccountIterator.throttleIntervalInSeconds }}
       },
       {
-        "name": "DeletedEntityIterator",
         "enabled": {{ .Values.iteratorConfig.deletedEntityIterator.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.deletedEntityIterator.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.deletedEntityIterator.threadPoolIntervalInSeconds }},
@@ -298,7 +273,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.deletedEntityIterator.throttleIntervalInSeconds }}
       },
       {
-        "name": "ResourceLookupTagLinkSync",
         "enabled": {{ .Values.iteratorConfig.resourceLookupTagLinkSync.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.resourceLookupTagLinkSync.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.resourceLookupTagLinkSync.threadPoolIntervalInSeconds }},
@@ -307,7 +281,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.resourceLookupTagLinkSync.throttleIntervalInSeconds }}
       },
       {
-        "name": "AccessRequestHandler",
         "enabled": {{ .Values.iteratorConfig.accessRequestHandler.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.accessRequestHandler.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.accessRequestHandler.threadPoolIntervalInSeconds }},
@@ -316,7 +289,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.accessRequestHandler.throttleIntervalInSeconds }}
       },
       {
-        "name": "ScheduledTrigger",
         "enabled": {{ .Values.iteratorConfig.scheduledTrigger.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.scheduledTrigger.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.scheduledTrigger.threadPoolIntervalInSeconds }},
@@ -325,7 +297,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.scheduledTrigger.throttleIntervalInSeconds }}
       },
       {
-        "name": "LdapGroupScheduled",
         "enabled": {{ .Values.iteratorConfig.ldapGroupScheduled.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.ldapGroupScheduled.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.ldapGroupScheduled.threadPoolIntervalInSeconds }},
@@ -334,7 +305,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.ldapGroupScheduled.throttleIntervalInSeconds }}
       },
       {
-        "name": "EncryptedDataLocalToGcpKmsMigrationHandler",
         "enabled": {{ .Values.iteratorConfig.encryptedDataLocalToGcpKmsMigrationHandler.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.encryptedDataLocalToGcpKmsMigrationHandler.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.encryptedDataLocalToGcpKmsMigrationHandler.threadPoolIntervalInSeconds }},
@@ -343,7 +313,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.encryptedDataLocalToGcpKmsMigrationHandler.throttleIntervalInSeconds }}
       },
       {
-        "name": "TimeoutEngine",
         "enabled": {{ .Values.iteratorConfig.timeoutEngine.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.timeoutEngine.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.timeoutEngine.threadPoolIntervalInSeconds }},
@@ -352,7 +321,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.timeoutEngine.throttleIntervalInSeconds }}
       },
       {
-        "name": "GitSyncPollingIterator",
         "enabled": {{ .Values.iteratorConfig.gitSyncPollingIterator.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.gitSyncPollingIterator.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.gitSyncPollingIterator.threadPoolIntervalInSeconds }},
@@ -361,7 +329,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.gitSyncPollingIterator.throttleIntervalInSeconds }}
       },
       {
-        "name": "PerpetualTaskAssignment",
         "enabled": {{ .Values.iteratorConfig.perpetualTaskAssignment.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.perpetualTaskAssignment.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.perpetualTaskAssignment.threadPoolIntervalInSeconds }},
@@ -370,7 +337,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.perpetualTaskAssignment.throttleIntervalInSeconds }}
       },
       {
-        "name": "DelegateDisconnectDetector",
         "enabled": {{ .Values.iteratorConfig.delegateDisconnectDetector.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.delegateDisconnectDetector.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.delegateDisconnectDetector.threadPoolIntervalInSeconds }},
@@ -379,7 +345,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.delegateDisconnectDetector.throttleIntervalInSeconds }}
       },
       {
-        "name": "DelegateTaskFail",
         "enabled": {{ .Values.iteratorConfig.delegateTaskFail.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.delegateTaskFail.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.delegateTaskFail.threadPoolIntervalInSeconds }},
@@ -388,7 +353,6 @@ data:
         "throttleIntervalInSeconds": {{ .Values.iteratorConfig.delegateTaskFail.throttleIntervalInSeconds }}
       },
       {
-        "name": "DelegateTelemetryPublisherIteration",
         "enabled": {{ .Values.iteratorConfig.delegateTelemetryPublisherIteration.enabled }},
         "threadPoolSize": {{ .Values.iteratorConfig.delegateTelemetryPublisherIteration.threadPoolSize }},
         "threadPoolIntervalInSeconds": {{ .Values.iteratorConfig.delegateTelemetryPublisherIteration.threadPoolIntervalInSeconds }},

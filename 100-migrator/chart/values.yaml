@@ -38,7 +38,7 @@ global:
             keys:
               MONGO_USER: ""
               MONGO_PASSWORD: ""
-        secretManagement: 
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -70,7 +70,7 @@ global:
               TIMESCALEDB_USERNAME: ""
               TIMESCALEDB_PASSWORD: ""
               TIMESCALEDB_SSL_ROOT_CERT: ""
-        secretManagement: 
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -101,7 +101,7 @@ global:
             keys:
               REDIS_USERNAME: ""
               REDIS_PASSWORD: ""
-        secretManagement: 
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -147,7 +147,7 @@ global:
         - secretName: ""
           keys:
             CG_LICENSE: ""
-      secretManagement: 
+      secretManagement:
         externalSecretsOperator:
           - secretStore:
               name: ""
@@ -201,7 +201,7 @@ global:
             SMTP_HOST: ""
             SMTP_PORT": ""
             SMTP_USE_SSL: ""
-      secretManagement: 
+      secretManagement:
         externalSecretsOperator:
           - secretStore:
               name: ""
@@ -223,7 +223,6 @@ global:
                 name: ""
                 property: ""
   ha: false
-
 redis:
   protocol: ""
   hosts: []
@@ -237,7 +236,7 @@ redis:
         keys:
           REDIS_USERNAME: ""
           REDIS_PASSWORD: ""
-    secretManagement: 
+    secretManagement:
       externalSecretsOperator:
         - secretStore:
             name: ""
@@ -249,7 +248,6 @@ redis:
             REDIS_PASSWORD:
               name: ""
               property: ""
-
 timescaledb:
   # -- TimescaleDB host names
   hosts: []
@@ -263,7 +261,7 @@ timescaledb:
           TIMESCALEDB_USERNAME: ""
           TIMESCALEDB_PASSWORD: ""
           TIMESCALEDB_SSL_ROOT_CERT: ""
-    secretManagement: 
+    secretManagement:
       externalSecretsOperator:
         - secretStore:
             name: ""
@@ -288,7 +286,7 @@ mongo:
         keys:
           MONGO_USER: ""
           MONGO_PASSWORD: ""
-    secretManagement: 
+    secretManagement:
       externalSecretsOperator:
         - secretStore:
             name: ""
@@ -300,11 +298,9 @@ mongo:
             MONGO_PASSWORD:
               name: ""
               property: ""
-
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
-
 image:
   registry: docker.io
   repository: harness/migrator-signed
@@ -313,8 +309,7 @@ image:
   tag: "100578-000"
   digest: ""
   imagePullSecrets:
-  - gcr-io-secret
-
+    - gcr-io-secret
 waitForInitContainer:
   image:
     registry: docker.io
@@ -323,7 +318,6 @@ waitForInitContainer:
     tag: "latest"
     digest: ""
     imagePullSecrets: []
-
 initContainer:
   image:
     registry: docker.io
@@ -331,7 +325,6 @@ initContainer:
     pullPolicy: IfNotPresent
     tag: latest
     digest: ""
-
 config:
   ALLOWED_ORIGINS: ""
   DELEGATE_METADATA_URL: ""
@@ -380,7 +373,6 @@ config:
   ENABLE_ITERATORS: 'true'
   ITERATOR_CONFIG_PATH: '/opt/harness/config'
   LICENSE_INFO:
-
 iteratorConfig:
   alertReconciliation:
     enabled: true
@@ -634,7 +626,6 @@ iteratorConfig:
     nextIterationMode: "TARGET"
     targetIntervalInSeconds: 86400
     throttleIntervalInSeconds: 0
-
 mongoSecrets:
   userName:
     name: harness-secrets
@@ -642,40 +633,32 @@ mongoSecrets:
   password:
     name: mongodb-replicaset-chart
     key: mongodb-root-password
-
 timescaleSecret:
   password:
     name: harness-secrets
     key: timescaledbPostgresPassword
-
 delegate_docker_image:
   image:
     registry: docker.io
     repository: harness/delegate
     tag: latest
     digest: ""
-
 immutable_delegate_docker_image:
   image:
     registry: docker.io
     repository: harness/delegate
     tag: 22.12.77617
     digest: ""
-
 upgrader_docker_image:
   image:
     registry: docker.io
     repository: harness/upgrader
     tag: latest
     digest: ""
-
 appLogLevel: INFO
-
 external_graphql_rate_limit: "500"
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   # Specifies whether a service account should be created
   create: false
@@ -684,42 +667,33 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: "harness-default"
-
 podAnnotations: {}
-
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
 
 securityContext:
   runAsUser: 65534
   runAsNonRoot: true
-
 service:
   annotations: {}
   type: ClusterIP
   port: 9080
   grpcport: 9879
-
 resources:
   limits:
     memory: 8192Mi
   requests:
     cpu: 2
     memory: 3000Mi
-
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPU: ""
   targetMemory: ""
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 migrator:
   mongodb:
     override: false
@@ -729,19 +703,16 @@ migrator:
     userKey: ""
     passwordKey: ""
     extraArgs: ""
-
 # extraVolumes:
 # - name: volume-test
 #   configMap:
 #     name: test-config
 #     readOnly: true
 extraVolumes: []
-
 # extraVolumeMounts:
 #   - name: test-volume-mount
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
-
 # lifecycleHooks:
 #   postStart:
 #     exec:
@@ -756,14 +727,11 @@ extraVolumeMounts: []
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
-
 virtualService:
   annotations: {}
 ingress:
   annotations: {}
-
 java17flags: ""
-
 secrets:
   default:
     LOG_STREAMING_SERVICE_TOKEN: "c76e567a-b341-404d-a8dd-d9738714eb82"
@@ -771,19 +739,23 @@ secrets:
     MONGO_SSL_CA_TRUST_STORE_PATH: "/opt/harness/keystore.jks"
     MONGO_SSL_CA_TRUST_STORE_PASSWORD: "password"
   kubernetesSecrets:
-  - secretName: ""
-    keys:
-      LOG_STREAMING_SERVICE_TOKEN: ""
-      VERIFICATION_SERVICE_SECRET: ""
-  secretManagement: 
+    - secretName: ""
+      keys:
+        LOG_STREAMING_SERVICE_TOKEN: ""
+        VERIFICATION_SERVICE_SECRET: ""
+  secretManagement:
     externalSecretsOperator:
-    - secretStore:
-        name: ""
-        kind: ""
-      remoteKeys:
-        LOG_STREAMING_SERVICE_TOKEN:
+      - secretStore:
           name: ""
-          property: ""
-        VERIFICATION_SERVICE_SECRET:
-          name: ""
-          property: ""
+          kind: ""
+        remoteKeys:
+          LOG_STREAMING_SERVICE_TOKEN:
+            name: ""
+            property: ""
+          VERIFICATION_SERVICE_SECRET:
+            name: ""
+            property: ""
+configData:
+  REDIS_MASTER_NAME: harness-redis
+  ENABLE_AUDIT: "true"
+configData2: {}
