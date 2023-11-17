@@ -26,8 +26,8 @@ import io.harness.artifacts.gar.GarDockerRestClient;
 import io.harness.artifacts.gar.GarRestClient;
 import io.harness.artifacts.gar.beans.GarInternalConfig;
 import io.harness.artifacts.gar.beans.GarPackageVersionResponse;
-import io.harness.artifacts.gar.beans.GarVersions;
 import io.harness.artifacts.gar.beans.GarRepositoryResponse;
+import io.harness.artifacts.gar.beans.GarVersions;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactServerException;
@@ -121,7 +121,8 @@ public class GARApiServiceImpl implements GarApiService {
       GarRestClient garRestClient = getGarRestClient(garinternalConfig);
       return getRepositories(garinternalConfig, garRestClient, region);
     } catch (IOException e) {
-      throw NestedExceptionUtils.hintWithExplanationException("Could not fetch repository for the region",
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Could not fetch repository for the given region:" + region,
           "Please check if the repository exists and if the permissions are scoped for the authenticated user",
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
     }
@@ -208,19 +209,19 @@ public class GARApiServiceImpl implements GarApiService {
 
       if (response == null) {
         throw NestedExceptionUtils.hintWithExplanationException("Response Is Null",
-            "Please Check Whether repository exists or not",
+            "Please Check Whether repository exists for the given region:" + region,
             new InvalidArtifactServerException(response.errorBody().toString(), USER));
       }
       if (!response.isSuccessful()) {
         log.error("Request not successful. Reason: {}", response);
         if (!isSuccessful(response.code(), response.errorBody().toString())) {
-          throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch Repository for the region",
+          throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch Repository for the region:" + region,
               "Please check region field", new InvalidArtifactServerException(response.message(), USER));
         }
       }
 
       GarRepositoryResponse page = response.body();
-      List<BuildDetailsInternal> pageDetails = processPage(page, null, garinternalConfig);
+      List<BuildDetailsInternal> pageDetails = processPage(page, garinternalConfig);
       details.addAll(pageDetails);
 
       if (page == null || StringUtils.isBlank(page.getNextPageToken())) {
@@ -230,7 +231,7 @@ public class GARApiServiceImpl implements GarApiService {
       nextPage = StringUtils.isBlank(page.getNextPageToken()) ? null : page.getNextPageToken();
     } while (StringUtils.isNotBlank(nextPage));
 
-    return details.stream().sorted(new BuildDetailsInternalComparatorDescending()).collect(Collectors.toList());
+    return details.stream().collect(Collectors.toList());
   }
 
   private List<BuildDetailsInternal> paginate(GarInternalConfig garinternalConfig, GarRestClient garRestClient,
@@ -352,14 +353,14 @@ public class GARApiServiceImpl implements GarApiService {
   }
 
   public List<BuildDetailsInternal> processPage(
-      GarRepositoryResponse RepositoryPage, String versionRegex, GarInternalConfig garinternalConfig) {
+      GarRepositoryResponse RepositoryPage, GarInternalConfig garinternalConfig) {
+    String region = garinternalConfig.getRegion();
     if (RepositoryPage != null && EmptyPredicate.isNotEmpty(RepositoryPage.getRepositories())) {
-      int index = RepositoryPage.getRepositories().get(0).getName().lastIndexOf("/");
       List<BuildDetailsInternal> buildDetails =
           RepositoryPage.getRepositories()
               .stream()
               .map(repo -> {
-                String repoName = repo.getName().substring(index + 1);
+                String repoName = repo.getName();
                 String repoFormat = repo.getFormat();
                 String createTime = repo.getCreateTime();
                 String updateTime = repo.getUpdateTime();
@@ -369,11 +370,9 @@ public class GARApiServiceImpl implements GarApiService {
                 metadata.put("updateTime", updateTime);
                 return BuildDetailsInternal.builder().uiDisplayName(repoName).metadata(metadata).build();
               })
-              .filter(build
-                  -> StringUtils.isBlank(versionRegex) || new RegexFunctor().match(versionRegex, build.getNumber()))
               .collect(toList());
 
-      return buildDetails.stream().sorted(new BuildDetailsInternalComparatorDescending()).collect(toList());
+      return buildDetails.stream().collect(toList());
 
     } else {
       if (RepositoryPage == null) {

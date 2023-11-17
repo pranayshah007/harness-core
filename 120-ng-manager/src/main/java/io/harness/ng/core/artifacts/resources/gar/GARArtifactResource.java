@@ -156,9 +156,10 @@ public class GARArtifactResource {
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(GCPConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    GARRepositoryDTOList buildDetails =
-        gARResourceService.getRepositories(connectorRef, region, project, orgIdentifier, projectIdentifier);
-    return ResponseDTO.newResponse(buildDetails);
+    GARRepositoryDTOList modifiedBuildDetails =
+        artifactResourceUtils.getRepositoriesGAR(connectorRef, region, project, orgIdentifier, projectIdentifier);
+
+    return ResponseDTO.newResponse(modifiedBuildDetails);
   }
 
   @POST
