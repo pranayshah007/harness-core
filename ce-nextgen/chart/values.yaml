@@ -411,6 +411,7 @@ secrets:
     AWS_TEMPLATE_LINK: ""
     AZURE_APP_CLIENT_SECRET: ""
     CE_AWS_TEMPLATE_URL: ""
+    AWS_ACCOUNT_ID: ""
   kubernetesSecrets:
     - secretName: ""
       keys:
@@ -425,6 +426,7 @@ secrets:
         AWS_TEMPLATE_LINK: ""
         AZURE_APP_CLIENT_SECRET: ""
         CE_AWS_TEMPLATE_URL: ""
+        AWS_ACCOUNT_ID: ""
   secretManagement:
     externalSecretsOperator:
       - secretStore:

@@ -77,7 +77,7 @@ Create the name of the service account to use
     {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
     {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "S3_SYNC_CONFIG_ACCESSKEY")) "true" }}
     {{- $hasAtleastOneSecret = true }}
-S3_SYNC_CONFIG_ACCESSKEY: '{{ .ctx.Values.awsSecret.S3_SYNC_CONFIG_ACCESSKEY | b64enc }}'
+S3_SYNC_CONFIG_ACCESSKEY: '{{ .ctx.Values.secrets.default.S3_SYNC_CONFIG_ACCESSKEY | b64enc }}'
     {{- end }}
     {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "S3_SYNC_CONFIG_SECRETKEY")) "true" }}
     {{- $hasAtleastOneSecret = true }}
