@@ -588,6 +588,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       existingEncryptedData.setEncryptionKey(null);
       existingEncryptedData.setEncryptedValue(null);
       existingEncryptedData.setPath(encryptedData.getPath());
+      existingEncryptedData.setAdditionalMetadata(encryptedData.getAdditionalMetadata());
     }
     existingEncryptedData.setName(encryptedData.getName());
     return encryptedDataDao.save(existingEncryptedData);

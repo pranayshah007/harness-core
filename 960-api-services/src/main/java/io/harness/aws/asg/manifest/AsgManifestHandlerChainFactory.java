@@ -13,6 +13,7 @@ import static io.harness.aws.asg.manifest.AsgManifestType.AsgInstanceRefresh;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgShiftTraffic;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgSwapService;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -49,6 +50,8 @@ public class AsgManifestHandlerChainFactory extends ManifestHandlerChainFactory<
         return new AsgSwapServiceHandler(this.asgSdkManager, manifestRequest);
       case AsgScheduledUpdateGroupAction:
         return new AsgScheduledActionManifestHandler(this.asgSdkManager, manifestRequest);
+      case AsgShiftTraffic:
+        return new AsgShiftTrafficHandler(this.asgSdkManager, manifestRequest);
       default:
         throw new InvalidArgumentsException("Invalid asgManifestType provided");
     }

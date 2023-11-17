@@ -1399,7 +1399,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
   }
 
-  private TemplateEntity getAndValidateOldTemplateEntity(
+  @VisibleForTesting
+  protected TemplateEntity getAndValidateOldTemplateEntity(
       TemplateEntity templateEntity, String oldOrgIdentifier, String oldProjectIdentifier) {
     TemplateUtils.setupGitParentEntityDetails(
         templateEntity.getAccountIdentifier(), oldOrgIdentifier, oldProjectIdentifier, null, null);
@@ -1429,9 +1430,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     if (!((oldTemplateEntity.getChildType() == null && templateEntity.getChildType() == null)
             || oldTemplateEntity.getChildType().equals(templateEntity.getChildType()))) {
       throw new InvalidRequestException(format(
-          "Template with identifier [%s] and versionLabel [%s] under Project[%s], Organization [%s] cannot update the internal template type, type is [%s].",
+          "Template with identifier [%s] and versionLabel [%s] under Project[%s], Organization [%s] cannot update the internal template type, current type is [%s] and the requested type is [%s].",
           templateEntity.getIdentifier(), templateEntity.getVersionLabel(), templateEntity.getProjectIdentifier(),
-          templateEntity.getOrgIdentifier(), oldTemplateEntity.getChildType()));
+          templateEntity.getOrgIdentifier(), oldTemplateEntity.getChildType(), templateEntity.getChildType()));
     }
     return oldTemplateEntity;
   }

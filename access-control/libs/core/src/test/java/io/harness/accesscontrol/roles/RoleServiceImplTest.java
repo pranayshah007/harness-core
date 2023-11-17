@@ -36,6 +36,8 @@ import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.roleassignments.RoleAssignment;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
+import io.harness.accesscontrol.roles.events.RoleCreateEventV2;
+import io.harness.accesscontrol.roles.events.RoleUpdateEventV2;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
 import io.harness.accesscontrol.roles.persistence.RoleDao;
 import io.harness.accesscontrol.scopes.TestScopeLevels;
@@ -65,6 +67,9 @@ import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -128,7 +133,7 @@ public class RoleServiceImplTest extends AccessControlCoreTestBase {
     when(scopeService.buildScopeFromScopeIdentifier(role.getScopeIdentifier()))
         .thenReturn(Scope.builder().level(TestScopeLevels.TEST_SCOPE).build());
     testCreateRole(role);
-    verify(scopeService, times(2)).buildScopeFromScopeIdentifier(any());
+    verify(scopeService, times(1)).buildScopeFromScopeIdentifier(any());
   }
 
   @Test
@@ -208,9 +213,19 @@ public class RoleServiceImplTest extends AccessControlCoreTestBase {
     Role roleClone = (Role) HObjectMapper.clone(role);
     roleClone.getPermissions().add(compulsoryPermissionAllRoleScopes);
     when(roleDao.create(roleClone)).thenReturn(roleClone);
-    when(outboxTransactionTemplate.execute(any())).thenReturn(role);
+    when(outboxTransactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(outboxService.save(any())).thenReturn(null);
+    ArgumentCaptor<RoleCreateEventV2> argumentCaptor = ArgumentCaptor.forClass(RoleCreateEventV2.class);
     Role savedRole = roleService.create(role);
     assertEquals(roleClone, savedRole);
+
+    verify(outboxService, times(1)).save(argumentCaptor.capture());
+    RoleCreateEventV2 roleCreateEventV2 = argumentCaptor.getValue();
+    assertEquals(role.getScopeIdentifier(), roleCreateEventV2.getScope());
+    assertEquals(savedRole, roleCreateEventV2.getRole());
     verify(permissionService, times(1)).list(validatePermissionFilter);
     verify(permissionService, times(1)).list(compulsoryPermissionFilter);
   }
@@ -267,15 +282,25 @@ public class RoleServiceImplTest extends AccessControlCoreTestBase {
 
     PermissionFilter compulsoryPermissionFilter = getCompulsoryPermissionFilter(roleUpdate);
     when(permissionService.list(compulsoryPermissionFilter)).thenReturn(new ArrayList<>());
-    when(outboxTransactionTemplate.execute(any())).thenReturn(updatedRole);
+    when(roleDao.update(roleUpdate)).thenReturn(roleUpdate);
+    when(outboxTransactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(outboxService.save(any())).thenReturn(null);
+    ArgumentCaptor<RoleUpdateEventV2> argumentCaptor = ArgumentCaptor.forClass(RoleUpdateEventV2.class);
 
-    Role roleUpdateResult = roleService.update(roleUpdate);
-
+    Role roleUpdateResult = roleService.update(updatedRole);
+    verify(outboxTransactionTemplate, times(1)).execute(any());
+    verify(outboxService, times(1)).save(argumentCaptor.capture());
+    RoleUpdateEventV2 roleUpdateEventV2 = argumentCaptor.getValue();
+    assertEquals(updatedRole.getScopeIdentifier(), roleUpdateEventV2.getScope());
+    assertEquals(currentRole, roleUpdateEventV2.getOldRole());
+    assertEquals(updatedRole, roleUpdateEventV2.getNewRole());
     assertEquals(updatedRole, roleUpdateResult);
     assertEquals(currentRole, currentRole);
     verify(roleDao, times(1)).get(any(), any(), any());
     verify(permissionService, times(2)).list(any());
-    verify(outboxTransactionTemplate, times(1)).execute(any());
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -330,11 +355,17 @@ public class RoleServiceImplTest extends AccessControlCoreTestBase {
     String scopeIdentifier = randomAlphabetic(10);
     Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
     when(roleDao.get(identifier, scopeIdentifier, ManagedFilter.ONLY_CUSTOM)).thenReturn(Optional.of(role));
-    when(outboxTransactionTemplate.execute(any())).thenReturn(role);
+    when(outboxService.save(any())).thenReturn(null);
+    when(outboxTransactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(roleDao.delete(identifier, scopeIdentifier, false)).thenReturn(Optional.of(role));
     Role deletedRole = roleService.delete(identifier, scopeIdentifier);
     assertEquals(role, deletedRole);
     verify(roleDao, times(1)).get(any(), any(), any());
     verify(outboxTransactionTemplate, times(1)).execute(any());
+    verify(roleService, times(1)).delete(identifier, scopeIdentifier);
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -354,7 +385,12 @@ public class RoleServiceImplTest extends AccessControlCoreTestBase {
     String identifier = randomAlphabetic(10);
     Role role = Role.builder().identifier(identifier).build();
     when(roleDao.get(identifier, null, ManagedFilter.ONLY_MANAGED)).thenReturn(Optional.of(role));
-    when(transactionTemplate.execute(any())).thenReturn(role);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(roleDao.delete(identifier, null, true)).thenReturn(Optional.of(role));
+    when(roleAssignmentService.deleteMulti(any())).thenReturn(0L);
     Role deletedRole = roleService.deleteManaged(identifier);
     assertEquals(role, deletedRole);
     verify(roleDao, times(1)).get(any(), any(), any());

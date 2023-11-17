@@ -435,6 +435,10 @@ import io.harness.delegate.exception.HelmNGException;
 import io.harness.delegate.exception.ServerlessNGException;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.ListNotifyResponseData;
+import io.harness.delegate.task.artifactBundle.ArtifactBundleDelegateConfig;
+import io.harness.delegate.task.artifactBundle.ArtifactBundleFetchRequest;
+import io.harness.delegate.task.artifactBundle.PackageArtifactConfig;
+import io.harness.delegate.task.artifactBundle.response.ArtifactBundleFetchResponse;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse;
@@ -516,6 +520,9 @@ import io.harness.delegate.task.aws.asg.AsgRollingDeployResult;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackRequest;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackResponse;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackResult;
+import io.harness.delegate.task.aws.asg.AsgShiftTrafficRequest;
+import io.harness.delegate.task.aws.asg.AsgShiftTrafficResponse;
+import io.harness.delegate.task.aws.asg.AsgShiftTrafficResult;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupInstance;
 import io.harness.delegate.task.aws.lambda.AwsLambda;
@@ -2322,6 +2329,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AsgBlueGreenDeployResult.class, 5731609);
     kryo.register(NativeHelmServerInstanceInfo.class, 5731610);
     kryo.register(AsgCapacityConfig.class, 5731611);
+    kryo.register(AsgShiftTrafficRequest.class, 5731612);
+    kryo.register(AsgShiftTrafficResponse.class, 5731613);
+    kryo.register(AsgShiftTrafficResult.class, 5731614);
 
     kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);
@@ -2581,5 +2591,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(HelmChartManifest.class, 20000619);
     kryo.register(ReleaseMetadata.class, 20001002);
     kryo.register(AtomicBoolean.class, 20001003);
+    kryo.register(ArtifactBundleFetchRequest.class, 20001004);
+    kryo.register(ArtifactBundleFetchResponse.class, 20001005);
+    kryo.register(ArtifactBundleDelegateConfig.class, 20001006);
+    kryo.register(PackageArtifactConfig.class, 20001007);
   }
 }

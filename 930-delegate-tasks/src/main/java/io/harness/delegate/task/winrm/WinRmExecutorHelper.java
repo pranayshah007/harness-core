@@ -215,6 +215,7 @@ public class WinRmExecutorHelper {
       return;
     }
 
+    log.info("Removing temporary file: {}", file);
     String command = "Remove-Item -Path '" + file + "'";
     try (StringWriter outputAccumulator = new StringWriter(1024)) {
       if (disableCommandEncoding) {
@@ -229,27 +230,16 @@ public class WinRmExecutorHelper {
     } catch (RuntimeException re) {
       throw re;
     } catch (Exception e) {
-      log.error("Exception while trying to remove file {} {}", file, e);
+      log.warn(String.format("Exception while trying to remove file %s", file), e);
     }
   }
 
-  public static void cleanupFiles(WinRmSession session, String file, String powershell, boolean disableCommandEncoding,
+  public static void cleanupFilesInNewSession(String file, String powershell, boolean disableCommandEncoding,
       List<WinRmCommandParameter> parameters, WinRmSessionConfig config, LogCallback logCallback) {
-    boolean sessionConnected = false;
-    try {
-      // This is to check the session connectivity
-      // If the session is disconnected create a new session to do the cleanup
-      session.checkConnectivity();
-      sessionConnected = true;
-      cleanupFiles(session, file, powershell, disableCommandEncoding, parameters);
-    } catch (Exception ex) {
-      if (!sessionConnected) {
-        try (WinRmSession winRmSession = new WinRmSession(config, logCallback)) {
-          cleanupFiles(winRmSession, file, powershell, disableCommandEncoding, parameters);
-        } catch (Exception e) {
-          log.warn("Failed to create new session while cleaning up files.", e);
-        }
-      }
+    try (WinRmSession winRmSession = new WinRmSession(config, logCallback)) {
+      cleanupFiles(winRmSession, file, powershell, disableCommandEncoding, parameters);
+    } catch (Exception e) {
+      log.warn("Failed to clean PS temporary script files.", e);
     }
   }
 

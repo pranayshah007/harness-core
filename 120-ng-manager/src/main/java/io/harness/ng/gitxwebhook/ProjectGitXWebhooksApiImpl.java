@@ -33,18 +33,24 @@ public class ProjectGitXWebhooksApiImpl implements ProjectGitxWebhooksApi {
   }
 
   @Override
+  public Response getProjectGitxWebhook(String org, String project, String gitxWebhook, String harnessAccount) {
+    return null;
+  }
+
+  @Override
+  public Response updateProjectGitxWebhook(
+      String org, String project, String gitxWebhook, @Valid UpdateGitXWebhookRequest body, String harnessAccount) {
+    return null;
+  }
+
+  @Override
   public Response deleteProjectGitxWebhook(String org, String project, String gitxWebhook, String harnessAccount) {
     return null;
   }
 
   @Override
-  public Response getProjectGitxWebhook(String org, String project, String harnessAccount, Integer page,
+  public Response listProjectGitxWebhook(String org, String project, String harnessAccount, Integer page,
       @Max(1000L) Integer limit, String webhookIdentifier) {
-    return null;
-  }
-
-  @Override
-  public Response getProjectGitxWebhook_1(String org, String project, String gitxWebhook, String harnessAccount) {
     return null;
   }
 
@@ -52,12 +58,6 @@ public class ProjectGitXWebhooksApiImpl implements ProjectGitxWebhooksApi {
   public Response listProjectGitxWebhookEvents(String org, String project, String harnessAccount, Integer page,
       @Max(1000L) Integer limit, String webhookIdentifier, Long eventStartTime, Long eventEndTime, String repoName,
       String filePath, String eventIdentifier, List<String> eventStatus) {
-    return null;
-  }
-
-  @Override
-  public Response updateProjectGitxWebhook(
-      String org, String project, String gitxWebhook, @Valid UpdateGitXWebhookRequest body, String harnessAccount) {
     return null;
   }
 }

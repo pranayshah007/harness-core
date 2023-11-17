@@ -229,6 +229,16 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
         cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
             CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, dataCollectionTask.totalTime(clock.instant())));
       }
+      String perpetualTaskId = "";
+      try {
+        perpetualTaskId =
+            monitoringSourcePerpetualTaskService.getPerpetualTask(dataCollectionTask.getDataCollectionWorkerId())
+                .getPerpetualTaskId();
+      } catch (Exception exception) {
+        log.warn("Perpetual Task Id is not present for data collection task {}", dataCollectionTask);
+      }
+      cvngLogTags.add(
+          CVNGTaskMetadataUtils.getCvngLogDebugTag(CVNGTaskMetadataConstants.PERPETUAL_TASK_ID, perpetualTaskId));
     }
     cvngLogTags.addAll(CVNGTaskMetadataUtils.getDataCollectionMetadataTags(result));
     String message = "Data collection task status: " + dataCollectionTask.getStatus();

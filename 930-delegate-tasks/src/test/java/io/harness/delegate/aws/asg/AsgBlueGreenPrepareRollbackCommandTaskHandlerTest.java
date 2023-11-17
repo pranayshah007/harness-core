@@ -55,6 +55,10 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.Action;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.ActionTypeEnum;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.ForwardActionConfig;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetGroupTuple;
 
 public class AsgBlueGreenPrepareRollbackCommandTaskHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -163,6 +167,37 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandlerTest extends CategoryT
 
     assertThat(lbConfig.getProdTargetGroupArnsList()).isNotEmpty();
     assertThat(lbConfig.getStageTargetGroupArnsList()).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void validateTargetGroupsForShiftTraffic() {
+    AsgLoadBalancerConfig lb = AsgLoadBalancerConfig.builder()
+                                   .loadBalancer("lb")
+                                   .prodListenerArn(PROD_LISTENER_ARN)
+                                   .prodListenerRuleArn(LISTENER_RULE_ARN)
+                                   .build();
+
+    Action action =
+        Action.builder()
+            .type(ActionTypeEnum.FORWARD)
+            .forwardConfig(
+                ForwardActionConfig.builder()
+                    .targetGroups(Arrays.asList(TargetGroupTuple.builder().targetGroupArn("prod").weight(100).build(),
+                        TargetGroupTuple.builder().targetGroupArn("stage").weight(0).build()))
+                    .build())
+            .build();
+
+    software.amazon.awssdk.services.elasticloadbalancingv2.model.Rule rule =
+        software.amazon.awssdk.services.elasticloadbalancingv2.model.Rule.builder()
+            .actions(Arrays.asList(action))
+            .build();
+
+    taskHandler.validateTargetGroupsForShiftTraffic(lb, asgSdkManager, rule);
+
+    assertThat(lb.getProdTargetGroupArnsList().get(0)).isEqualTo("prod");
+    assertThat(lb.getStageTargetGroupArnsList().get(0)).isEqualTo("stage");
   }
 
   private AsgLoadBalancerConfig getAsgLoadBalancerConfig() {

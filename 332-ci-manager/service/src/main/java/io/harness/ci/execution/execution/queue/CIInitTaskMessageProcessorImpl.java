@@ -7,9 +7,12 @@
 
 package io.harness.ci.execution.queue;
 
+import static java.lang.String.format;
+
 import io.harness.beans.execution.CIInitTaskArgs;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.ci.enforcement.CIBuildEnforcer;
+import io.harness.ci.execution.execution.CIExecutionMetadata;
 import io.harness.ci.execution.queue.ProcessMessageResponse.ProcessMessageResponseBuilder;
 import io.harness.ci.states.V1.InitStepV2DelegateTaskInfo;
 import io.harness.ci.states.V1.InitializeTaskStepV2;
@@ -55,31 +58,38 @@ public class CIInitTaskMessageProcessorImpl implements CIInitTaskMessageProcesso
             AmbianceUtils.getAccountId(ambiance)));
         return builder.success(false).build();
       }
-      ciExecutionRepository.updateExecutionStatus(
+      CIExecutionMetadata ciExecutionMetadata = ciExecutionRepository.updateExecutionStatus(
           AmbianceUtils.getAccountId(ambiance), ambiance.getStageExecutionId(), Status.RUNNING.toString());
-      initTaskExecutor.submit(() -> {
-        try {
-          asyncWaitEngine.taskAcquired(ciInitTaskArgs.getCallbackId());
-          String taskId = initializeTaskStepV2.executeBuild(ambiance, ciInitTaskArgs.getStepElementParameters());
-          InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
-              InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
-          sdkGraphVisualizationDataService.publishStepDetailInformation(
-              ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
-          CIInitDelegateTaskStatusNotifier ciInitDelegateTaskStatusNotifier =
-              CIInitDelegateTaskStatusNotifier.builder().waitId(ciInitTaskArgs.getCallbackId()).build();
-          asyncWaitEngine.waitForAllOn(ciInitDelegateTaskStatusNotifier, null, Arrays.asList(taskId), 0);
-        } catch (CIStageExecutionException e) {
-          log.info("failed to process execution: {}", ciInitTaskArgs.getAmbiance().getStageExecutionId(), e);
-          FailureResponseData error = FailureResponseData.builder().errorMessage(e.getMessage()).build();
-          waitNotifyEngine.doneWith(ciInitTaskArgs.getCallbackId(), error);
-        } catch (Exception ex) {
-          log.info("failed to process execution: {}", ciInitTaskArgs.getAmbiance().getStageExecutionId(), ex);
-          FailureResponseData error = FailureResponseData.builder()
-                                          .errorMessage(ex.getMessage() != null ? ex.getMessage() : ex.toString())
-                                          .build();
-          waitNotifyEngine.doneWith(ciInitTaskArgs.getCallbackId(), error);
-        }
-      });
+      if (ciExecutionMetadata != null) {
+        initTaskExecutor.submit(() -> {
+          try {
+            asyncWaitEngine.taskAcquired(ciInitTaskArgs.getCallbackId());
+            String taskId = initializeTaskStepV2.executeBuild(ambiance, ciInitTaskArgs.getStepElementParameters());
+            InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
+                InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
+            sdkGraphVisualizationDataService.publishStepDetailInformation(
+                ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
+            CIInitDelegateTaskStatusNotifier ciInitDelegateTaskStatusNotifier =
+                CIInitDelegateTaskStatusNotifier.builder().waitId(ciInitTaskArgs.getCallbackId()).build();
+            asyncWaitEngine.waitForAllOn(ciInitDelegateTaskStatusNotifier, null, Arrays.asList(taskId), 0);
+          } catch (CIStageExecutionException e) {
+            log.info("failed to process execution: {}", ciInitTaskArgs.getAmbiance().getStageExecutionId(), e);
+            FailureResponseData error = FailureResponseData.builder().errorMessage(e.getMessage()).build();
+            waitNotifyEngine.doneWith(ciInitTaskArgs.getCallbackId(), error);
+          } catch (Exception ex) {
+            log.info("failed to process execution: {}", ciInitTaskArgs.getAmbiance().getStageExecutionId(), ex);
+            FailureResponseData error = FailureResponseData.builder()
+                                            .errorMessage(ex.getMessage() != null ? ex.getMessage() : ex.toString())
+                                            .build();
+            waitNotifyEngine.doneWith(ciInitTaskArgs.getCallbackId(), error);
+          }
+        });
+      } else {
+        log.error(format(
+            "Failed to process execution as ciExecutionMetadata is null for stageExecutionId Id: %s , It generally happens for aborted executions",
+            ambiance.getStageExecutionId()));
+        return builder.success(true).build();
+      }
       return builder.success(true).build();
     } catch (Exception ex) {
       log.info("ci init task processing failed", ex);

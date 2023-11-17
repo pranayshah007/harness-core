@@ -23,8 +23,8 @@ public class IdpServiceApiMetricsPublisher {
   public static final String IDP_SERVICE_API_ALL = "idp_service_api_all";
   public static final String IDP_SERVICE_API_DURATION = "idp_service_api_duration";
   @Inject MetricService metricService;
-  public void recordMetric(String accountIdentifier, String path, int status, long duration) {
-    try (IDPMetricContext ignore = new IDPMetricContext(accountIdentifier, path)) {
+  public void recordMetric(String accountIdentifier, String path, int status, String method, long duration) {
+    try (IDPMetricContext ignore = new IDPMetricContext(accountIdentifier, path, method)) {
       metricService.incCounter(IDP_SERVICE_API_ALL);
       metricService.recordDuration(IDP_SERVICE_API_DURATION, Duration.ofMillis(duration));
       if (status >= 400 && status < 500) {

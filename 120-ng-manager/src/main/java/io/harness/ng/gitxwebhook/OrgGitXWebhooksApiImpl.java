@@ -32,19 +32,18 @@ public class OrgGitXWebhooksApiImpl implements OrgGitxWebhooksApi {
   }
 
   @Override
-  public Response deleteOrgGitxWebhook(String org, String harnessAccount) {
+  public Response getOrgGitxWebhook(String org, String gitxWebhook, String harnessAccount) {
     return null;
   }
 
   @Override
-  public Response getOrgGitxWebhook(String org, String harnessAccount) {
+  public Response updateOrgGitxWebhook(
+      String org, String gitxWebhook, @Valid UpdateGitXWebhookRequest body, String harnessAccount) {
     return null;
   }
 
   @Override
-  public Response listOrgGitxWebhookEvents(String org, String harnessAccount, Integer page, @Max(1000L) Integer limit,
-      String webhookIdentifier, Long eventStartTime, Long eventEndTime, String repoName, String filePath,
-      String eventIdentifier, List<String> eventStatus) {
+  public Response deleteOrgGitxWebhook(String org, String gitxWebhook, String harnessAccount) {
     return null;
   }
 
@@ -55,7 +54,9 @@ public class OrgGitXWebhooksApiImpl implements OrgGitxWebhooksApi {
   }
 
   @Override
-  public Response updateOrgGitxWebhook(String org, @Valid UpdateGitXWebhookRequest body, String harnessAccount) {
+  public Response listOrgGitxWebhookEvents(String org, String harnessAccount, Integer page, @Max(1000L) Integer limit,
+      String webhookIdentifier, Long eventStartTime, Long eventEndTime, String repoName, String filePath,
+      String eventIdentifier, List<String> eventStatus) {
     return null;
   }
 }

@@ -1,6 +1,6 @@
-{{- if .Values.global.ggIngress.enabled -}}
-{{- $fullName := "gg-ingress" -}}
-{{- if and .Values.global.ggIngress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
+{{- if .Values.global.globalIngress.enabled -}}
+{{- $fullName := "global-ingress" -}}
+{{- if and .Values.global.globalIngress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
   {{- $_ := set .Values.ingress.annotations "kubernetes.io/ingress.class" .Values.ingress.className}}
   {{- end }}
@@ -19,19 +19,19 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/use-regex: 'true'
 spec:
-  {{- if and .Values.global.ggIngress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
-  ingressClassName: {{ .Values.global.ggIngress.className }}
+  {{- if and .Values.global.globalIngress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: {{ .Values.global.globalIngress.className }}
   {{- end }}
-  {{- if .Values.global.ggIngress.tls.enabled }}
+  {{- if .Values.global.globalIngress.tls.enabled }}
   tls:
     - hosts:
-        {{- range .Values.global.ggIngress.hosts }}
+        {{- range .Values.global.globalIngress.hosts }}
         - {{ . | quote }}
         {{- end }}
-      secretName: {{ .Values.global.ggIngress.tls.secretName }}
+      secretName: {{ .Values.global.globalIngress.tls.secretName }}
   {{- end }}
   rules:
-    {{- range .Values.global.ggIngress.hosts }}
+    {{- range .Values.global.globalIngress.hosts }}
     - host: {{ . | quote }}
       http:
         paths:

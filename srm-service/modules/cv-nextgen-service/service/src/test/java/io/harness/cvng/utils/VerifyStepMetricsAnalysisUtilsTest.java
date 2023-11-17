@@ -25,7 +25,7 @@ public class VerifyStepMetricsAnalysisUtilsTest {
   @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
-  void testGetReasonForFailure_forNoControlData() {
+  public void testGetReasonForFailure_forNoControlData() {
     AnalysisReason analysisReason = VerifyStepMetricsAnalysisUtils.getReasonForFailure(
         DeploymentTimeSeriesAnalysisDTO.HostData.builder().testData(Arrays.asList(1D)).build(), new HashMap<>());
     assertThat(analysisReason).isEqualTo(AnalysisReason.NO_CONTROL_DATA);
@@ -34,7 +34,7 @@ public class VerifyStepMetricsAnalysisUtilsTest {
   @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
-  void testGetReasonForFailure_forNoTestData() {
+  public void testGetReasonForFailure_forNoTestData() {
     AnalysisReason analysisReason = VerifyStepMetricsAnalysisUtils.getReasonForFailure(
         DeploymentTimeSeriesAnalysisDTO.HostData.builder().build(), new HashMap<>());
     assertThat(analysisReason).isEqualTo(AnalysisReason.NO_TEST_DATA);
@@ -43,7 +43,7 @@ public class VerifyStepMetricsAnalysisUtilsTest {
   @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
-  void testGetReasonForFailure_MLFailure() {
+  public void testGetReasonForFailure_MLFailure() {
     AnalysisReason analysisReason =
         VerifyStepMetricsAnalysisUtils.getReasonForFailure(DeploymentTimeSeriesAnalysisDTO.HostData.builder()
                                                                .testData(Arrays.asList(1D))

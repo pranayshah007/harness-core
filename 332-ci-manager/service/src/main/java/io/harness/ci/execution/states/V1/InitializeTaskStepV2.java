@@ -61,6 +61,7 @@ import io.harness.ci.executable.CiAsyncExecutable;
 import io.harness.ci.execution.buildstate.BuildSetupUtils;
 import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.ci.execution.execution.BackgroundTaskUtility;
+import io.harness.ci.execution.execution.CIExecutionMetadata;
 import io.harness.ci.execution.execution.QueueExecutionUtils;
 import io.harness.ci.execution.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
@@ -264,8 +265,13 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
             AmbianceUtils.getStageRuntimeIdAmbiance(ambiance)));
       }
     } else {
-      ciExecutionRepository.updateExecutionStatus(
+      CIExecutionMetadata ciExecutionMetadata = ciExecutionRepository.updateExecutionStatus(
           AmbianceUtils.getAccountId(ambiance), ambiance.getStageExecutionId(), Status.RUNNING.toString());
+      if (ciExecutionMetadata == null) {
+        throw new CIStageExecutionException(format(
+            "Failed to process execution as ciExecutionMetadata is null for stageExecutionId Id: %s , It generally happens for aborted executions",
+            ambiance.getStageExecutionId()));
+      }
       taskId = executeBuild(ambiance, stepParameters);
     }
 
