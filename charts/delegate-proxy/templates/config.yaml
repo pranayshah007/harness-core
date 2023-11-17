@@ -13,6 +13,7 @@ metadata:
 data:
   {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
 {{- if .Values.additionalConfigs }}
 {{- toYaml .Values.additionalConfigs | nindent 2 }}
 {{- end }}
