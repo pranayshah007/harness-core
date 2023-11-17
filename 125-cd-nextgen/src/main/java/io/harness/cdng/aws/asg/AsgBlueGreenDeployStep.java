@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG;
 import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V2;
+import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V3;
 import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG;
 import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V2;
 import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V3;
@@ -171,12 +172,7 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
             .amiImageId(amiImageId)
             .build();
 
-    TaskType taskType = asgStepCommonHelper.isV2Feature(asgStepExecutorParams.getAsgStoreManifestsContent(),
-                            asgBlueGreenDeployStepParameters.getInstances(),
-                            getParameterFieldValue(asgBlueGreenDeployStepParameters.getLoadBalancers()), asgInfraConfig,
-                            asgBlueGreenDeployStepParameters)
-        ? AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V2
-        : AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG;
+    TaskType taskType = getDeployTaskType(asgBlueGreenDeployStepParameters, asgInfraConfig);
 
     return asgStepCommonHelper.queueAsgTask(
         stepElementParameters, asgBlueGreenDeployRequest, ambiance, executionPassThroughData, true, taskType);
@@ -469,5 +465,24 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
     }
 
     return AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V2;
+  }
+
+  @VisibleForTesting
+  TaskType getDeployTaskType(
+      AsgBlueGreenDeployStepParameters asgBlueGreenDeployStepParameters, AsgInfraConfig asgInfraConfig) {
+    boolean isV2Feature = asgStepCommonHelper.isV2Feature(null, null,
+        getParameterFieldValue(asgBlueGreenDeployStepParameters.getLoadBalancers()), asgInfraConfig,
+        asgBlueGreenDeployStepParameters);
+
+    if (!isV2Feature) {
+      return AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG;
+    }
+
+    if (asgStepCommonHelper.isShiftTrafficFeature(
+            getParameterFieldValue(asgBlueGreenDeployStepParameters.getLoadBalancers()))) {
+      return AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V3;
+    }
+
+    return AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V2;
   }
 }

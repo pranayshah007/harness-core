@@ -234,8 +234,8 @@ public class NGTemplateDtoMapper {
                                                 .identifier(requestInfoDTO.getIdentifier())
                                                 .versionLabel(requestInfoDTO.getLabel())
                                                 .build();
-    TemplateEntityType templateEntityType =
-        TemplateEntityType.getTemplateType(templateNode.get(YAMLFieldNameConstants.TYPE).asText());
+    TemplateEntityType templateEntityType = TemplateEntityType.getTemplateType(
+        templateNode.get(YAMLFieldNameConstants.TYPE).asText(), HarnessYamlVersion.V1);
     return TemplateEntity.builder()
         .yaml(requestInfoDTO.getYaml())
         .identifier(requestInfoDTO.getIdentifier())

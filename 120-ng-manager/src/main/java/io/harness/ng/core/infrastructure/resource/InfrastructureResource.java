@@ -51,6 +51,7 @@ import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.beans.DocumentationConstants;
+import io.harness.ng.core.beans.InfrastructureYamlMetadataApiInputV2;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.customDeployment.helper.CustomDeploymentYamlHelper;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -574,8 +575,9 @@ public class InfrastructureResource {
       nickname = "getInfrastructureYamlAndRuntimeInputsV2")
   @Hidden
   public ResponseDTO<InfrastructureYamlMetadataDTO>
-  getInfrastructureYamlAndRuntimeInputsV2(@Parameter(description = INFRASTRUCTURE_YAML_METADATA_INPUT_PARAM_MESSAGE)
-                                          @Valid @NotNull InfrastructureYamlMetadataApiInput infrastructureYamlMetadata,
+  getInfrastructureYamlAndRuntimeInputsV2(
+      @Parameter(description = INFRASTRUCTURE_YAML_METADATA_INPUT_PARAM_MESSAGE) @Valid
+      @NotNull InfrastructureYamlMetadataApiInputV2 infrastructureYamlMetadata,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -588,9 +590,10 @@ public class InfrastructureResource {
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @Parameter(description = "Specifies whether to load the entity from cache") @HeaderParam(
           "Load-From-Cache") @DefaultValue("false") String loadFromCache) {
+    String environmentBranch = infrastructureYamlMetadata.getEnvironmentBranch();
     List<InfrastructureYamlMetadata> infrastructureYamlMetadataList =
         infrastructureEntityService.createInfrastructureYamlMetadata(accountId, orgIdentifier, projectIdentifier,
-            environmentIdentifier, infrastructureYamlMetadata.getInfrastructureIdentifiers(),
+            environmentIdentifier, environmentBranch, infrastructureYamlMetadata.getInfrastructureIdentifiers(),
             GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache));
     return ResponseDTO.newResponse(
         InfrastructureYamlMetadataDTO.builder().infrastructureYamlMetadataList(infrastructureYamlMetadataList).build());

@@ -9,11 +9,14 @@ package io.harness.gitsync.gitxwebhooks.loggers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.NgTriggerAutoLogContext.ACCOUNT_KEY;
+import static io.harness.logging.NgTriggerAutoLogContext.ORG_KEY;
+import static io.harness.logging.NgTriggerAutoLogContext.PROJECT_KEY;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.Scope;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.DeleteGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GetGitXWebhookRequestDTO;
@@ -35,48 +38,48 @@ public class GitXWebhookLogContext extends AutoLogContext {
   public static final String CONTEXT_KEY = "contextKey";
 
   public GitXWebhookLogContext(CreateGitXWebhookRequestDTO createGitXWebhookRequestDTO) {
-    super(setContextMap(createGitXWebhookRequestDTO.getAccountIdentifier(),
-              createGitXWebhookRequestDTO.getWebhookIdentifier(), createGitXWebhookRequestDTO.getConnectorRef(),
-              createGitXWebhookRequestDTO.getRepoName()),
+    super(setContextMap(createGitXWebhookRequestDTO.getScope(), createGitXWebhookRequestDTO.getWebhookIdentifier(),
+              createGitXWebhookRequestDTO.getConnectorRef(), createGitXWebhookRequestDTO.getRepoName()),
         OverrideBehavior.OVERRIDE_NESTS);
   }
 
   public GitXWebhookLogContext(GetGitXWebhookRequestDTO getGitXWebhookRequestDTO) {
-    super(setContextMap(getGitXWebhookRequestDTO.getAccountIdentifier(),
-              getGitXWebhookRequestDTO.getWebhookIdentifier(), null, null),
+    super(
+        setContextMap(getGitXWebhookRequestDTO.getScope(), getGitXWebhookRequestDTO.getWebhookIdentifier(), null, null),
         OverrideBehavior.OVERRIDE_NESTS);
   }
 
   public GitXWebhookLogContext(DeleteGitXWebhookRequestDTO deleteGitXWebhookRequestDTO) {
-    super(setContextMap(deleteGitXWebhookRequestDTO.getAccountIdentifier(),
-              deleteGitXWebhookRequestDTO.getWebhookIdentifier(), null, null),
+    super(setContextMap(
+              deleteGitXWebhookRequestDTO.getScope(), deleteGitXWebhookRequestDTO.getWebhookIdentifier(), null, null),
         OverrideBehavior.OVERRIDE_NESTS);
   }
 
   public GitXWebhookLogContext(ListGitXWebhookRequestDTO listGitXWebhookRequestDTO) {
-    super(setContextMap(listGitXWebhookRequestDTO.getAccountIdentifier(),
-              listGitXWebhookRequestDTO.getWebhookIdentifier(), null, null),
+    super(setContextMap(
+              listGitXWebhookRequestDTO.getScope(), listGitXWebhookRequestDTO.getWebhookIdentifier(), null, null),
         OverrideBehavior.OVERRIDE_NESTS);
   }
 
   public GitXWebhookLogContext(GitXEventsListRequestDTO gitXEventsListRequestDTO) {
-    super(setContextMap(gitXEventsListRequestDTO.getAccountIdentifier(),
-              gitXEventsListRequestDTO.getWebhookIdentifier(), null, null),
+    super(
+        setContextMap(gitXEventsListRequestDTO.getScope(), gitXEventsListRequestDTO.getWebhookIdentifier(), null, null),
         OverrideBehavior.OVERRIDE_NESTS);
   }
 
   public GitXWebhookLogContext(UpdateGitXWebhookCriteriaDTO updateGitXWebhookCriteriaDTO,
       UpdateGitXWebhookRequestDTO updateGitXWebhookRequestDTO) {
-    super(setContextMap(updateGitXWebhookCriteriaDTO.getAccountIdentifier(),
-              updateGitXWebhookCriteriaDTO.getWebhookIdentifier(), updateGitXWebhookRequestDTO.getConnectorRef(),
-              updateGitXWebhookRequestDTO.getRepoName()),
+    super(setContextMap(updateGitXWebhookCriteriaDTO.getScope(), updateGitXWebhookCriteriaDTO.getWebhookIdentifier(),
+              updateGitXWebhookRequestDTO.getConnectorRef(), updateGitXWebhookRequestDTO.getRepoName()),
         OverrideBehavior.OVERRIDE_NESTS);
   }
 
   private static Map<String, String> setContextMap(
-      String accountIdentifier, String webhookIdentifier, String connectorRef, String repoName) {
+      Scope scope, String webhookIdentifier, String connectorRef, String repoName) {
     Map<String, String> logContextMap = new HashMap<>();
-    setContextIfNotNull(logContextMap, ACCOUNT_KEY, accountIdentifier);
+    setContextIfNotNull(logContextMap, ACCOUNT_KEY, scope.getAccountIdentifier());
+    setContextIfNotNull(logContextMap, ORG_KEY, scope.getOrgIdentifier());
+    setContextIfNotNull(logContextMap, PROJECT_KEY, scope.getProjectIdentifier());
     setContextIfNotNull(logContextMap, WEBHOOK_IDENTIFIER_KEY, webhookIdentifier);
     setContextIfNotNull(logContextMap, REPO_NAME_KEY, repoName);
     setContextIfNotNull(logContextMap, CONNECTOR_REF_KEY, connectorRef);

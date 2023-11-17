@@ -31,4 +31,9 @@ public class ScmErrorExplanations {
   public static final String RATE_LIMIT = "Rate limit reached on BitBucket provider.";
   public static final String OAUTH_ACCESS_DENIED =
       "If you are using OAUTH, access to Bitbucket may have been revoked or token is invalid or expired.";
+  public static final String EXPLANATION_REQUEST_TIMED_OUT =
+      "Request to the Bitbucket Cloud to fetch file<FILEPATH> from repo<REPO> and branch<BRANCH> timed out.\n"
+      + "This might have occurred due to the following reasons:\n"
+      + "1. Network connectivity issues from delegate to the Bitbucket Cloud\n"
+      + "2. Bitbucket Cloud experiencing higher traffic than usual, or a downtime at the moment.";
 }

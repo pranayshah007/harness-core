@@ -58,6 +58,7 @@ import io.harness.ff.FeatureFlagConfig;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ff.FeatureFlagServiceImpl;
 import io.harness.filestore.service.FileStoreService;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.persistance.NoOpGitSyncSdkServiceImpl;
 import io.harness.gitsync.persistance.testing.GitSyncablePersistenceTestModule;
@@ -342,6 +343,7 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
             .toInstance(mock(ExecutorService.class));
         bind(TelemetryReporter.class).toInstance(mock(TelemetryReporter.class));
         bind(GitSyncSdkService.class).to(NoOpGitSyncSdkServiceImpl.class);
+        bind(GitAwareEntityHelper.class).toProvider(() -> mock(GitAwareEntityHelper.class));
       }
     });
 

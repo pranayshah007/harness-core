@@ -107,11 +107,15 @@ public class InfrastructureFilterHelper {
     Criteria orgCriteria = Criteria.where(InfrastructureEntityKeys.orgIdentifier)
                                .is(orgIdentifier)
                                .and(InfrastructureEntityKeys.projectIdentifier)
-                               .is(null);
+                               .is(null)
+                               .and(InfrastructureEntityKeys.accountId)
+                               .is(accountId);
     Criteria projectCriteria = Criteria.where(InfrastructureEntityKeys.orgIdentifier)
                                    .is(orgIdentifier)
                                    .and(InfrastructureEntityKeys.projectIdentifier)
-                                   .is(projectIdentifier);
+                                   .is(projectIdentifier)
+                                   .and(InfrastructureEntityKeys.accountId)
+                                   .is(accountId);
 
     if (isNotBlank(projectIdentifier)) {
       criteria.orOperator(projectCriteria, orgCriteria, accountCriteria);

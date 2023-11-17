@@ -32,4 +32,8 @@ public class ScmErrorHints {
       + "2. Please check your rate limits with your BitBucket GIT provider";
   public static final String OAUTH_ACCESS_FAILURE =
       "In-case you are using OAUTH, please check your OAUTH configurations and access permissions from Bitbucket, or try reconfiguring OAUTH setup.";
+  public static final String HINT_REQUEST_TIMED_OUT = "Please try these out: \n"
+      + "1. Check if Bitbucket Cloud is working as expected from Bitbucket's status page (https://bitbucket.status.atlassian.com/)\n"
+      + "2. Check if your delegates are able to connect to the Bitbucket cloud\n"
+      + "3. If the problem persists, please contact Harness Support Team.";
 }
