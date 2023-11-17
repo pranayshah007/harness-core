@@ -19,7 +19,7 @@ shared_dependencies = [
     "//958-debezium-utils:module",
     "//958-migration-sdk:module",
     "//960-persistence:module",
-    "//965-api-key-filter:module",
+    "//965-ng-filter:module",
     "//980-commons:module",
     "//999-annotations:module",
     "//clients/pipeline-service/pms-client:module",

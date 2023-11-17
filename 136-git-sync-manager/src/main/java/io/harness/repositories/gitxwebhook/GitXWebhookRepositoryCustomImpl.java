@@ -45,4 +45,9 @@ public class GitXWebhookRepositoryCustomImpl implements GitXWebhookRepositoryCus
     return mongoTemplate.findAndModify(
         query, update, new FindAndModifyOptions().returnNew(true).upsert(true), GitXWebhook.class);
   }
+
+  @Override
+  public GitXWebhook find(Query query) {
+    return mongoTemplate.findOne(query, GitXWebhook.class);
+  }
 }

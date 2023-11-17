@@ -120,19 +120,19 @@ public class TemplateSchemaParserV1 extends BaseTemplateSchemaParser {
 
   private String getSpecPath(String nodeGroup) {
     // using if-else over switch-case as we need to pass constant value in case.
-    if (TemplateEntityType.STEP_TEMPLATE.getNodeGroup().equals(nodeGroup)) {
+    if (TemplateEntityType.STEP_TEMPLATE.getYamlTypeV1().equals(nodeGroup)) {
       return String.format(SPEC_PATH, STEP_TEMPLATE_V1_TITLE);
-    } else if (TemplateEntityType.STAGE_TEMPLATE.getNodeGroup().equals(nodeGroup)) {
+    } else if (TemplateEntityType.STAGE_TEMPLATE.getYamlTypeV1().equals(nodeGroup)) {
       return String.format(SPEC_PATH, STAGE_TEMPLATE_V1_TITLE);
-    } else if (TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE.getNodeGroup().equals(nodeGroup)) {
+    } else if (TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE.getYamlTypeV1().equals(nodeGroup)) {
       return String.format(SPEC_PATH, ARTIFACT_SOURCE_TEMPLATE_V1_TITLE);
-    } else if (TemplateEntityType.STEPGROUP_TEMPLATE.getNodeGroup().equals(nodeGroup)) {
+    } else if (TemplateEntityType.STEPGROUP_TEMPLATE.getYamlTypeV1().equals(nodeGroup)) {
       return String.format(SPEC_PATH, STEPGROUP_TEMPLATE_V1_TITLE);
-    } else if (TemplateEntityType.PIPELINE_TEMPLATE.getNodeGroup().equals(nodeGroup)) {
+    } else if (TemplateEntityType.PIPELINE_TEMPLATE.getYamlTypeV1().equals(nodeGroup)) {
       return String.format(SPEC_PATH, PIPELINE_TEMPLATE_V1_TITLE);
-    } else if (TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE.getNodeGroup().equals(nodeGroup)) {
+    } else if (TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE.getYamlTypeV1().equals(nodeGroup)) {
       return String.format(SPEC_PATH, CUSTOM_DEPLOYMENT_TEMPLATE_V1_TITLE);
-    } else if (TemplateEntityType.SECRET_MANAGER_TEMPLATE.getNodeGroup().equals(nodeGroup)) {
+    } else if (TemplateEntityType.SECRET_MANAGER_TEMPLATE.getYamlTypeV1().equals(nodeGroup)) {
       return String.format(SPEC_PATH, SECRET_MANAGER_TEMPLATE_V1_TITLE);
     } else {
       return String.format(SPEC_PATH, DEFAULT_TEMPLATE_V1_TITLE);

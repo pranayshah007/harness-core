@@ -405,11 +405,8 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
     STSAssumeRoleSessionCredentialsProvider stsAssumeRoleSessionCredentialsProvider =
         mock(STSAssumeRoleSessionCredentialsProvider.class);
 
-    doReturn(stsAssumeRoleSessionCredentialsProvider)
-        .when(awsHelperService)
-        .getCredentialsForCrossAccountRoleOnDelegate(any());
-    when(awsHelperService.getCredentialsForCrossAccountRoleOnDelegate(any()))
-        .thenReturn(stsAssumeRoleSessionCredentialsProvider);
+    doReturn(stsAssumeRoleSessionCredentialsProvider).when(awsHelperService).getAWSCredentialsProvider(any());
+    when(awsHelperService.getAWSCredentialsProvider(any())).thenReturn(stsAssumeRoleSessionCredentialsProvider);
     doReturn(awsSessionCredentials).when(stsAssumeRoleSessionCredentialsProvider).getCredentials();
     AwsConnectorDTO connectorDTO = getS3ConnectorInfoDTO_IRSA_BASED();
     AwsS3ArtifactDelegateConfig s3DelegateConfig = AwsS3ArtifactDelegateConfig.builder()

@@ -116,8 +116,8 @@ public class AsgBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
     assertThat(asgNameCaptor.getValue()).isEqualTo(STAGE_ASG_NAME);
 
     verify(asgSdkManager, times(0)).updateASG(anyString(), anyString(), anyString(), any());
-    verify(asgSdkManager, times(0)).modifySpecificListenerRule(anyString(), anyString(), any(List.class), any());
-    verify(asgSdkManager, times(0)).updateBGTags(anyString(), anyString());
+    verify(asgSdkManager, times(2)).modifySpecificListenerRule(anyString(), anyString(), any(List.class), any());
+    verify(asgSdkManager, times(1)).updateBGTags(anyString(), anyString());
   }
 
   @Test
@@ -138,8 +138,8 @@ public class AsgBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
     assertThat(asgNameCaptor.getValue()).isEqualTo(STAGE_ASG_NAME);
 
     verify(asgSdkManager, times(1)).updateASG(anyString(), anyString(), anyString(), any());
-    verify(asgSdkManager, times(0)).modifySpecificListenerRule(anyString(), anyString(), any(List.class), any());
-    verify(asgSdkManager, times(0)).updateBGTags(anyString(), anyString());
+    verify(asgSdkManager, times(2)).modifySpecificListenerRule(anyString(), anyString(), any(List.class), any());
+    verify(asgSdkManager, times(2)).updateBGTags(anyString(), anyString());
   }
 
   @Test
@@ -164,19 +164,43 @@ public class AsgBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
-  public void executeTaskInternalTestServicesNotSwapped() {
-    AsgLoadBalancerConfig lbConfig = getAsgLoadBalancerConfig();
-    AsgBlueGreenRollbackRequest request = createRequest(lbConfig, PROD_ASG_NAME,
-        Collections.singletonMap("key", new ArrayList<>()), Collections.singletonMap("key2", new ArrayList<>()), false);
+  public void executeTaskInternalTestIsFirstDeploymentForTrafficShift() {
+    AsgLoadBalancerConfig lbConfig = getAsgLoadBalancerConfigForShiftTraffic();
+    AsgBlueGreenRollbackRequest request = createRequest(lbConfig, null, null, null, false);
 
     AsgBlueGreenRollbackResponse response = (AsgBlueGreenRollbackResponse) taskHandler.executeTaskInternal(
         request, iLogStreamingTaskClient, commandUnitsProgress);
 
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
 
-    verify(asgSdkManager, times(0)).deleteAsg(anyString());
-    verify(asgSdkManager, times(2)).updateASG(anyString(), anyString(), anyString(), any());
-    verify(asgSdkManager, times(0)).modifySpecificListenerRule(anyString(), anyString(), any(List.class), any());
+    ArgumentCaptor<String> asgNameCaptor = ArgumentCaptor.forClass(String.class);
+    verify(asgSdkManager, times(1)).deleteAsg(asgNameCaptor.capture());
+    assertThat(asgNameCaptor.getValue()).isEqualTo(STAGE_ASG_NAME);
+
+    verify(asgSdkManager, times(0)).updateASG(anyString(), anyString(), anyString(), any());
+    verify(asgSdkManager, times(1)).modifySpecificListenerRule(anyString(), anyString(), any(), any(List.class));
+    verify(asgSdkManager, times(0)).updateBGTags(anyString(), anyString());
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void executeTaskInternalTestIsSecondDeploymentForTrafficShift() {
+    AsgLoadBalancerConfig lbConfig = getAsgLoadBalancerConfigForShiftTraffic();
+    AsgBlueGreenRollbackRequest request =
+        createRequest(lbConfig, PROD_ASG_NAME, null, Collections.singletonMap("key", new ArrayList<>()), false);
+
+    AsgBlueGreenRollbackResponse response = (AsgBlueGreenRollbackResponse) taskHandler.executeTaskInternal(
+        request, iLogStreamingTaskClient, commandUnitsProgress);
+
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+
+    ArgumentCaptor<String> asgNameCaptor = ArgumentCaptor.forClass(String.class);
+    verify(asgSdkManager, times(1)).deleteAsg(asgNameCaptor.capture());
+    assertThat(asgNameCaptor.getValue()).isEqualTo(STAGE_ASG_NAME);
+
+    verify(asgSdkManager, times(1)).updateASG(anyString(), anyString(), anyString(), any());
+    verify(asgSdkManager, times(1)).modifySpecificListenerRule(anyString(), anyString(), any(), any(List.class));
     verify(asgSdkManager, times(0)).updateBGTags(anyString(), anyString());
   }
 
@@ -185,6 +209,16 @@ public class AsgBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
         .loadBalancer("lb")
         .stageListenerArn(STAGE_LISTENER_ARN)
         .stageListenerRuleArn(LISTENER_RULE_ARN)
+        .prodListenerArn(PROD_LISTENER_ARN)
+        .prodListenerRuleArn(LISTENER_RULE_ARN)
+        .stageTargetGroupArnsList(Arrays.asList("tg1"))
+        .prodTargetGroupArnsList(Arrays.asList("tg2"))
+        .build();
+  }
+
+  private AsgLoadBalancerConfig getAsgLoadBalancerConfigForShiftTraffic() {
+    return AsgLoadBalancerConfig.builder()
+        .loadBalancer("lb")
         .prodListenerArn(PROD_LISTENER_ARN)
         .prodListenerRuleArn(LISTENER_RULE_ARN)
         .stageTargetGroupArnsList(Arrays.asList("tg1"))

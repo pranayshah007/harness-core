@@ -33,4 +33,8 @@ public class ScmErrorHints {
 
   public static final String RATE_LIMIT =
       "Please check the number of requests, you have reached your account's rate limit for too many requests.";
+  public static final String HINT_REQUEST_TIMED_OUT = "Please try these out: \n"
+      + "1. Check if Github server is working as expected from Bitbucket's status page (https://bitbucket.status.atlassian.com/)\n"
+      + "2. Check if your selected delegates are able to connect to the Bitbucket server\n"
+      + "3. If the problem persists, please contact Harness Support Team.";
 }

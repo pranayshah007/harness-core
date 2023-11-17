@@ -7,11 +7,11 @@
 
 package io.harness.ng.serializer.kryo;
 
+import io.harness.beans.ScopeInfo;
 import io.harness.beans.ScopeLevel;
 import io.harness.ng.core.api.cache.JwtTokenPublicKeysJsonData;
 import io.harness.ng.core.api.cache.JwtTokenScimAccountSettingsData;
 import io.harness.ng.core.api.cache.JwtTokenServiceAccountData;
-import io.harness.ng.core.beans.ScopeInfo;
 import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.SettingSource;
 import io.harness.ngsettings.SettingValueType;

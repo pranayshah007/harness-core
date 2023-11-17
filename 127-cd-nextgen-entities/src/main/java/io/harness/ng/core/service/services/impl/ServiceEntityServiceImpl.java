@@ -59,6 +59,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.EntityDetail;
@@ -180,7 +181,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Inject private TemplateResourceClient templateResourceClient;
   @Inject private ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
   @Inject @Named("service-gitx-executor") private ExecutorService executorService;
-  private final NGFeatureFlagHelperService featureFlagService;
+
+  @Inject private final NGFeatureFlagHelperService featureFlagService;
   @Named(DEFAULT_CONNECTOR_SERVICE) private final ConnectorService connectorService;
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
@@ -189,13 +191,15 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ACCOUNT = "Service [%s] in Account [%s] already exists";
   private static final int REMOTE_SERVICE_BATCH_SIZE = 20;
   private final CDGitXService cdGitXService;
+  private final GitXSettingsHelper gitXSettingsHelper;
 
   @Inject
   public ServiceEntityServiceImpl(ServiceRepository serviceRepository, EntitySetupUsageService entitySetupUsageService,
       @Named(ENTITY_CRUD) Producer eventProducer, OutboxService outboxService, TransactionTemplate transactionTemplate,
       ServiceOverrideService serviceOverrideService, ServiceOverridesServiceV2 serviceOverridesServiceV2,
       ServiceEntitySetupUsageHelper entitySetupUsageHelper, NGFeatureFlagHelperService featureFlagService,
-      @Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService, CDGitXService cdGitXService) {
+      @Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService, CDGitXService cdGitXService,
+      GitXSettingsHelper gitXSettingsHelper) {
     this.serviceRepository = serviceRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
@@ -207,6 +211,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     this.featureFlagService = featureFlagService;
     this.connectorService = connectorService;
     this.cdGitXService = cdGitXService;
+    this.gitXSettingsHelper = gitXSettingsHelper;
   }
 
   void validatePresenceOfRequiredFields(Object... fields) {
@@ -228,6 +233,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       ServiceEntityValidator serviceEntityValidator =
           serviceEntityValidatorFactory.getServiceEntityValidator(serviceEntity);
       serviceEntityValidator.validate(serviceEntity);
+      applyGitXSettingsIfApplicable(
+          serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier());
       ServiceEntity createdService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             ServiceEntity service = serviceRepository.saveGitAware(serviceEntity);
@@ -1569,5 +1576,13 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   private void throwInvalidRequestForEmptyField(String fieldName) {
     throw new InvalidRequestException(String.format("Error: %s cannot be empty", fieldName));
+  }
+
+  private void applyGitXSettingsIfApplicable(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    gitXSettingsHelper.enforceGitExperienceIfApplicable(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setDefaultStoreTypeForEntities(
+        accountIdentifier, orgIdentifier, projIdentifier, EntityType.SERVICE);
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setDefaultRepoForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
   }
 }

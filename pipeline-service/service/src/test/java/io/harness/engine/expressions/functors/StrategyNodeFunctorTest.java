@@ -215,7 +215,6 @@ public class StrategyNodeFunctorTest extends PipelineServiceTestBase {
                                                             .build())
                                      .setTotalIterations(2)
                                      .setCurrentIteration(1)
-                                     .setIdentifierPostFix("_1")
                                      .build())
             .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(StepCategory.STAGE).build())
             .build();
@@ -243,7 +242,6 @@ public class StrategyNodeFunctorTest extends PipelineServiceTestBase {
                                                             .build())
                                      .setTotalIterations(3)
                                      .setCurrentIteration(0)
-                                     .setIdentifierPostFix("_0")
                                      .build())
             .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(StepCategory.STEP_GROUP).build())
             .build();
@@ -271,7 +269,6 @@ public class StrategyNodeFunctorTest extends PipelineServiceTestBase {
                                                             .build())
                                      .setTotalIterations(4)
                                      .setCurrentIteration(1)
-                                     .setIdentifierPostFix("_1")
                                      .build())
             .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(StepCategory.STEP_GROUP).build())
             .build();
@@ -299,7 +296,6 @@ public class StrategyNodeFunctorTest extends PipelineServiceTestBase {
                                                             .build())
                                      .setTotalIterations(2)
                                      .setCurrentIteration(0)
-                                     .setIdentifierPostFix("_0")
                                      .build())
             .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(StepCategory.STEP_GROUP).build())
             .build();

@@ -11,7 +11,6 @@ import static java.util.stream.Collectors.groupingBy;
 
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.clients.AccessControlClient;
-import io.harness.beans.FeatureName;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary;
 import io.harness.cvng.analysis.beans.CanaryBlueGreenAdditionalInfo;
@@ -164,11 +163,8 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
     // Send telemetry event
     AppliedDeploymentAnalysisType appliedDeploymentAnalysisType =
         getFinalAppliedDeploymentAnalysisType(deploymentVerificationJobInstanceSummary, verificationJobInstance);
-    if (featureFlagService.isFeatureFlagEnabled(
-            verifyStepPathParams.getAccountIdentifier(), FeatureName.SRM_TELEMETRY.toString())) {
-      sendTelemetryEvent(deploymentVerificationJobInstanceSummary.getStatus().toString(),
-          verifyStepPathParams.getProjectIdentifier(), verifyStepPathParams.getOrgIdentifier());
-    }
+    sendTelemetryEvent(deploymentVerificationJobInstanceSummary.getStatus().toString(),
+        verifyStepPathParams.getProjectIdentifier(), verifyStepPathParams.getOrgIdentifier());
     VerificationSpec verificationSpec =
         getVerificationSpec(verificationJobInstance, deploymentVerificationJobInstanceSummary);
 

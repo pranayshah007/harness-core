@@ -8,6 +8,7 @@
 package io.harness.aws.asg.manifest;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
@@ -40,10 +41,17 @@ public class AsgSwapServiceHandler extends AsgManifestHandler<PutScalingPolicyRe
 
     // logic to update tags of asg
     asgSdkManager.info("Updating tags of the autoscaling groups");
-    asgSdkManager.updateBGTags(chainState.getNewAsgName(), asgSdkManager.BG_BLUE);
-    AutoScalingGroup stageAsg = asgSdkManager.getASG(chainState.getAsgName());
-    if (stageAsg != null) {
-      asgSdkManager.updateBGTags(chainState.getAsgName(), asgSdkManager.BG_GREEN);
+    if (isNotEmpty(chainState.getNewAsgName())) {
+      AutoScalingGroup newAsg = asgSdkManager.getASG(chainState.getNewAsgName());
+      if (newAsg != null) {
+        asgSdkManager.updateBGTags(chainState.getNewAsgName(), asgSdkManager.BG_BLUE);
+      }
+    }
+    if (isNotEmpty(chainState.getAsgName())) {
+      AutoScalingGroup oldAsg = asgSdkManager.getASG(chainState.getAsgName());
+      if (oldAsg != null) {
+        asgSdkManager.updateBGTags(chainState.getAsgName(), AsgSdkManager.BG_GREEN);
+      }
     }
     asgSdkManager.info("Successfully updated tags");
     asgSdkManager.infoBold("Swapped target groups & updated tags successfully");
