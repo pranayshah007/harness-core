@@ -200,7 +200,4 @@ secrets:
           LOG_SERVICE_SECRET:
             name: ""
             property: ""
-configData:
-  LOG_SERVICE_S3_PATH_STYLE: "true"
-  LOG_SERVICE_DISABLE_AUTH: "true"
-  LOG_SERVICE_REDIS_MASTER_NAME: harness-redis
+configData: {}

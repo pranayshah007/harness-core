@@ -12,6 +12,7 @@ metadata:
   {{- end }}
 data:
   {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   LOG_SERVICE_S3_BUCKET: {{ .Values.s3.bucketName }}
   LOG_SERVICE_S3_REGION: {{ .Values.s3.region }}
   {{- if .Values.s3.endpoint }}
