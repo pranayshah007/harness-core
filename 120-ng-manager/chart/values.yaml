@@ -24,7 +24,6 @@ global:
         kind:
           externalSecrets: false
           csiSecretDriver: false
-
   useExternalSecrets: false
   loadbalancerURL: ""
   database:
@@ -144,7 +143,7 @@ global:
         - secretName: ""
           keys:
             NG_LICENSE: ""
-      secretManagement: 
+      secretManagement:
         externalSecretsOperator:
           - secretStore:
               name: ""
@@ -176,7 +175,7 @@ global:
             SMTP_HOST: ""
             SMTP_PORT: ""
             SMTP_USE_SSL: ""
-      secretManagement: 
+      secretManagement:
         externalSecretsOperator:
           - secretStore:
               name: ""
@@ -211,7 +210,7 @@ global:
       secretName: ''
     # -- add annotations to ingress objects
     objects:
-      annotations: { }
+      annotations: {}
   istio:
     # -- create virtualServices objects
     enabled: false
@@ -260,7 +259,6 @@ redis:
             REDIS_PASSWORD:
               name: ""
               property: ""
-
 timescaledb:
   # -- TimescaleDB host names
   hosts: []
@@ -289,7 +287,6 @@ timescaledb:
             TIMESCALEDB_SSL_ROOT_CERT:
               name: ""
               property: ""
-
 mongo:
   protocol: ""
   hosts: []
@@ -312,15 +309,11 @@ mongo:
             MONGO_PASSWORD:
               name: ""
               property: ""
-
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
-
 allowedOrigins: ""
-
 appLogLevel: "INFO"
-
 image:
   registry: docker.io
   repository: harness/ng-manager-signed
@@ -329,7 +322,6 @@ image:
   tag: "80209"
   digest: ""
   imagePullSecrets: []
-
 initContainer:
   image:
     registry: docker.io
@@ -337,7 +329,6 @@ initContainer:
     tag: "1.35.0"
     digest: ""
     imagePullSecrets: []
-
 waitForInitContainer:
   image:
     registry: docker.io
@@ -346,7 +337,6 @@ waitForInitContainer:
     tag: "latest"
     digest: ""
     imagePullSecrets: []
-
 mongoSecrets:
   userName:
     name: harness-secrets
@@ -354,7 +344,6 @@ mongoSecrets:
   password:
     name: mongodb-replicaset-chart
     key: mongodb-root-password
-
 ceSecret:
   access_key:
     name: nextgen-ce
@@ -368,20 +357,15 @@ ceSecret:
   template_url:
     name: nextgen-ce
     key: AWS_TEMPLATE_LINK
-
 ceGcpSetupConfigGcpProjectId: "placeHolderGcpProjectId"
-
 timescaleSecret:
   password:
     name: harness-secrets
     key: timescaledbPostgresPassword
-
 java:
   memory: "4096m"
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   # Specifies whether a service account should be created
   create: false
@@ -390,13 +374,10 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: "harness-default"
-
 podAnnotations: {}
-
 imagePullSecrets: {}
-
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
 
 securityContext:
   runAsUser: 65534
@@ -407,7 +388,6 @@ securityContext:
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
-
 probes:
   readinessProbe:
     httpGet:
@@ -430,7 +410,6 @@ probes:
     timeoutSeconds: 2
     periodSeconds: 10
     failureThreshold: 25
-
 service:
   annotations: {}
   type: ClusterIP
@@ -438,14 +417,12 @@ service:
   port: 7090
   grpcport: 9979
   gitsyncgrpcport: 13002
-
 resources:
   limits:
     memory: 8192Mi
   requests:
     cpu: 2
     memory: 200Mi
-
 autoscaling:
   enabled: false
   minReplicas: 1
@@ -453,27 +430,20 @@ autoscaling:
   targetCPU: ""
   targetMemory: ""
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 additionalConfigs: {}
-
 java17flags: ""
-
 # extraVolumes:
 # - name: volume-test
 #   configMap:
 #     name: test-config
 #     readOnly: true
 extraVolumes: []
-
 # extraVolumeMounts:
 #   - name: test-volume-mount
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
-
 # lifecycleHooks:
 #   postStart:
 #     exec:
@@ -488,12 +458,10 @@ extraVolumeMounts: []
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
-
 virtualService:
   annotations: {}
 ingress:
   annotations: {}
-
 secrets:
   default:
     LOG_STREAMING_SERVICE_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
@@ -536,7 +504,43 @@ secrets:
             property: ""
           CE_AWS_DESTINATION_BUCKET:
             name: ""
-            property: ""  
+            property: ""
           CE_AWS_TEMPLATE_URL:
             name: ""
-            property: ""             
+            property: ""
+configData:
+  GITOPS_SERVICE_CLIENT_BASEURL: http://gitops:7908/api/v1/
+  CACHE_BACKEND: REDIS
+  DEPLOY_MODE: KUBERNETES_ONPREM
+  MANAGER_TARGET: harness-manager:9879
+  MANAGER_AUTHORITY: harness-manager:9879
+  NG_MANAGER_TARGET: ng-manager:13002
+  NG_MANAGER_AUTHORITY: ng-manager:13002
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: harness-redis
+  GRPC_SERVER_PORT: "9979"
+  SHOULD_CONFIGURE_WITH_PMS: "true"
+  PMS_GITSYNC_TARGET: pipeline-service:14002
+  PMS_GITSYNC_AUTHORITY: pipeline-service:14002
+  TEMPLATE_GITSYNC_TARGET: template-service:16002
+  TEMPLATE_GITSYNC_AUTHORITY: template-service:16002
+  PMS_TARGET: pipeline-service:12011
+  PMS_AUTHORITY: pipeline-service:12011
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
+  USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
+  MOCK_ACCESS_CONTROL_SERVICE: "false"
+  ACCESS_CONTROL_ENABLED: "true"
+  ENABLE_DEFAULT_RESOURCE_GROUP_CREATION: "true"
+  ENABLE_DASHBOARD_TIMESCALE: "true"
+  AUDIT_ENABLED: "true"
+  SCM_SERVICE_URI: scm-service:8091
+  NG_MANAGER_CLIENT_BASEURL: http://ng-manager:7090/
+  NG_MANAGER_API_URL: http://ng-manager:7090/
+  HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: "true"
+  MONGO_TRANSACTIONS_ALLOWED: "false"
+  OPA_CONNECTIVITY_ENABLED: "true"
+  NOTIFICATION_BASE_URL: http://platform-service:9005/api/
+  TEMPLATE_SERVICE_ENDPOINT: http://template-service:15002/api/
+  PIPELINE_SERVICE_CLIENT_BASEURL: http://pipeline-service:12001/api/
+  CI_MANAGER_SERVICE_CLIENT_BASEURL: http://ci-manager:7090/
+  CVNG_SERVICE_CLIENT_BASEURL: http://cv-nextgen:6060/cv/api/
+  STO_CORE_SERVICE_CLIENT_BASEURL: http://sto-core:4000/api/
