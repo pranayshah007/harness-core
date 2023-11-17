@@ -232,9 +232,6 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
   public void testGetStepInfo() {
     List<StepInfo> steps = pipelineServiceInternalInfoProvider.getStepInfo();
     assertThat(steps).isNotEmpty();
-    assertThat(steps)
-        .hasSize(3)
-        .extracting(StepInfo::getName)
-        .containsExactly("Flag Configuration", SscaConstants.SSCA_ORCHESTRATION_STEP, SscaConstants.SSCA_ENFORCEMENT);
+    assertThat(steps).hasSize(1).extracting(StepInfo::getName).containsExactly("Flag Configuration");
   }
 }
