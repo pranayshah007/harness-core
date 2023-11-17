@@ -17,6 +17,7 @@ import static io.harness.ngmigration.utils.CaseFormat.LOWER_CASE;
 import static io.harness.ngmigration.utils.CaseFormat.SNAKE_CASE;
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 import static io.harness.security.NextGenAuthenticationFilter.X_API_KEY;
+import static io.harness.utils.UuidAndIdentifierUtils.generateHarnessUIFormatIdentifier;
 import static io.harness.when.beans.WhenConditionStatus.SUCCESS;
 
 import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
@@ -215,17 +216,6 @@ public class MigratorUtility {
       return generateHarnessUIFormatIdentifier(name);
     }
     return identifier;
-  }
-
-  public static String generateHarnessUIFormatIdentifier(String name) {
-    if (StringUtils.isBlank(name)) {
-      return "";
-    }
-    name = StringUtils.stripAccents(name);
-    return name.trim()
-        .replaceAll("^[0-9-$]*", "") // remove starting digits, dashes and $
-        .replaceAll("[^0-9a-zA-Z_$ ]", "") // remove special chars except _ and $
-        .replaceAll("\\s", "_"); // replace spaces with _
   }
 
   public static String generateCamelCaseIdentifier(String name) {

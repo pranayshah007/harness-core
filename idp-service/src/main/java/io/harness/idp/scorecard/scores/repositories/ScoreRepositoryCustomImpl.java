@@ -85,7 +85,7 @@ public class ScoreRepositoryCustomImpl implements ScoreRepositoryCustom {
             .and(
                 ConditionalOperators.when(Criteria.where(Constants.COUNT_KEY).ne(0))
                     .then(
-                        ArithmeticOperators.valueOf(Constants.SCORES_GREATER_THAN_75_KEY).divideBy(Constants.COUNT_KEY))
+                        ArithmeticOperators.valueOf(Constants.SCORES_GREATER_THAN_74_KEY).divideBy(Constants.COUNT_KEY))
                     .otherwise(0))
             .as(Constants.PERCENTAGE_KEY);
 
@@ -97,8 +97,8 @@ public class ScoreRepositoryCustomImpl implements ScoreRepositoryCustom {
         Aggregation.group(Constants.ID_KEY + DOT_SEPARATOR + Constants.SCORECARD_IDENTIFIER_KEY)
             .count()
             .as(Constants.COUNT_KEY)
-            .sum(ConditionalOperators.when(Criteria.where(Constants.SCORE_KEY).gt(75)).then(1).otherwise(0))
-            .as(Constants.SCORES_GREATER_THAN_75_KEY),
+            .sum(ConditionalOperators.when(Criteria.where(Constants.SCORE_KEY).gt(74)).then(1).otherwise(0))
+            .as(Constants.SCORES_GREATER_THAN_74_KEY),
         projectionOperation);
 
     return mongoTemplate.aggregate(aggregation, Constants.SCORE_COLLECTION_NAME, ScorecardIdentifierAndScore.class);
