@@ -18,7 +18,7 @@ COPY --from=core /windows/system32/netapi32.dll /windows/system32/netapi32.dll
 COPY --from=git /git /git
 COPY --from=git C:\Windows\System32\OpenSSH\ /openssh
 
-USER ContainerAdministrator
+USER ContainerUser
 RUN setx /M PATH "%PATH%;C:\Program Files\PowerShell;C:\git\cmd;C:\git\mingw64\bin;C:\git\usr\bin;C:\openssh"
 ENV GODEBUG=netdns=go
 ADD engine_/engine.exe C:/lite-engine.exe

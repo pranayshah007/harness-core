@@ -11,7 +11,7 @@ FROM mcr.microsoft.com/windows/servercore:ltsc2019 as core
 
 
 FROM mcr.microsoft.com/powershell:nanoserver-1809
-USER ContainerAdministrator
+USER ContainerUser
 
 COPY --from=core /windows/system32/netapi32.dll /windows/system32/netapi32.dll
 ADD ci-addon_/ci-addon.exe C:/addon.exe
