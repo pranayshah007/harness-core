@@ -62,15 +62,17 @@ public class ScorecardExpansionHandler implements JsonExpansionHandler {
     String projectId = metadata.getProjectId();
     String stageIdentifier = fieldValue.get("identifier").asText();
     String pipeline = metadata.getYaml().toStringUtf8();
+    log.info(format("Process started for IDP Scorecard expansion for pipeline: [%s], account: [%s], project:[%s]",
+        pipeline, accountId, projectId));
     CDStageMetaDataDTO cdStageMetaDataDTO = getCDStageResponse(stageIdentifier, pipeline);
-
     if (cdStageMetaDataDTO == null || isInvalidResponse(cdStageMetaDataDTO)) {
       String errorMessage =
-          format("Invalid Response for Service Ref and Environment Ref for pipeline: [%s], accountId: [%s]", pipeline,
-              accountId);
+          format("Invalid Response for Service Ref and Environment Ref for pipeline: [%s], account: [%s], project:[%s]",
+              pipeline, accountId, projectId);
       log.error(errorMessage);
       return ExpansionResponse.builder().success(false).errorMessage(errorMessage).build();
     }
+    log.info("ServiceRef from CDStageMetaDataDTO response: " + cdStageMetaDataDTO.getServiceRef());
 
     if (isEmpty(cdStageMetaDataDTO.getServiceEnvRefList())) {
       cdStageMetaDataDTO = setServiceEnvRef(cdStageMetaDataDTO);
@@ -81,13 +83,16 @@ public class ScorecardExpansionHandler implements JsonExpansionHandler {
       String serviceRef = serviceEnvRef.getServiceRef();
       String serviceId = constructServiceId(truncateName(serviceRef));
       String serviceIdExtended = constructServiceId(truncateName(orgId + "-" + projectId + "-" + serviceRef));
+      log.info("Before calling backstage API, Constructed names: " + serviceId + " & " + serviceIdExtended);
       Object entitiesResponse = getGeneralResponse(backstageResourceClient.getCatalogEntitiesByRefs(accountId,
           BackstageCatalogEntitiesByRefsRequest.builder().entityRefs(List.of(serviceId, serviceIdExtended)).build()));
       List<BackstageCatalogEntity> entities = convert(mapper, entitiesResponse, BackstageCatalogEntity.class);
+      log.info("Response from backstage. Size: " + entities.size());
       String uuid = getUUId(entities, orgId, projectId);
       if (uuid == null) {
         continue;
       }
+      log.info("UUID after filter: " + uuid);
       List<ScorecardSummaryInfo> scorecardSummaryInfos = scoreService.getScoresSummaryForAnEntity(accountId, uuid);
       for (ScorecardSummaryInfo scorecardSummaryInfo : scorecardSummaryInfos) {
         serviceScores.put(serviceRef, ServiceScorecardsMapper.toDTO(scorecardSummaryInfo));
@@ -95,6 +100,7 @@ public class ScorecardExpansionHandler implements JsonExpansionHandler {
     }
 
     ExpandedValue value = ScorecardExpandedValue.builder().serviceScores(serviceScores).build();
+    log.info("Construct json value: " + value.toJson());
     return ExpansionResponse.builder()
         .success(true)
         .key(value.getKey())
