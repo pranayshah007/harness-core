@@ -85,6 +85,8 @@ public class SLIRecordBucket extends VerificationTaskBase implements PersistentE
   private long runningBadCount; // will store badCount till the bucket end time
   private long runningGoodCount; // will store goodCount till the bucket end time
 
+  private long runningSkipDataCount;
+
   private int sliVersion;
 
   @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusDays(90).toInstant());

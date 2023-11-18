@@ -7,17 +7,13 @@
 
 package io.harness.cvng.servicelevelobjective.entities;
 
-import java.time.Instant;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 
-@Data
+@Getter
 @Builder
-public class SLIRecordParam {
-  private SLIState sliState;
-  private Instant timeStamp;
-  private Long goodEventCount;
-  private Long badEventCount;
-
-  private Long skipEventCount;
+public class SLIRecordCount {
+  public long goodCount;
+  public long badCount;
+  public long skipDataCount;
 }

@@ -25,6 +25,7 @@ import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObject
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordCount;
 import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
@@ -245,7 +246,6 @@ public class GraphDataServiceImpl implements GraphDataService {
         monitoredService.getUuid(), monitoredService.getAccountId()); // Not Need... for Request
     int currentDisabledRange = 0;
     long disabledMinutesFromStart = 0;
-    int skipRecordCount = 0;
     int currentSLIRecord = 0;
 
     List<SLODashboardWidget.Point> sliTrend = new ArrayList<>();
@@ -264,16 +264,15 @@ public class GraphDataServiceImpl implements GraphDataService {
       SLIValue sliValue = null;
       long beginningMinute = sliRecords.get(0).getEpochMinute();
       SLIRecord firstRecord = sliRecords.get(0);
-      Pair<Long, Long> previousRunningCount = getPreviousRunningCount(firstRecord, serviceLevelIndicator);
-      long lastRecordBeforeStartGoodCount = previousRunningCount.getLeft();
-      long lastRecordBeforeStartBadCount = previousRunningCount.getRight();
+      SLIRecordCount previousRunningCount = getPreviousRunningCount(firstRecord, serviceLevelIndicator);
+      long lastRecordBeforeStartGoodCount = previousRunningCount.getGoodCount();
+      long lastRecordBeforeStartBadCount = previousRunningCount.getBadCount();
+      long lastRecordBeforeStartSkipDataCount = previousRunningCount.getSkipDataCount();
 
       for (SLIRecord sliRecord : sliRecords) {
         long goodCountFromStart = sliRecord.getRunningGoodCount() - lastRecordBeforeStartGoodCount;
         long badCountFromStart = sliRecord.getRunningBadCount() - lastRecordBeforeStartBadCount;
-        if (sliRecord.getSliState().equals(SLIState.SKIP_DATA)) {
-          skipRecordCount += 1;
-        }
+        long skipDataCountFromStart = sliRecord.getRunningSkipDataCount() - lastRecordBeforeStartSkipDataCount;
         long minutesFromStart = sliRecord.getEpochMinute() - beginningMinute + 1;
 
         if (!disableTimes.isEmpty() && currentDisabledRange <= disableTimes.size() && currentSLIRecord != 0) {
@@ -301,8 +300,8 @@ public class GraphDataServiceImpl implements GraphDataService {
         }
 
         if (serviceLevelIndicator.getSLIEvaluationType() == SLIEvaluationType.WINDOW) {
-          sliValue = sliMissingDataType.calculateSLIValue(
-              goodCountFromStart + skipRecordCount, badCountFromStart, minutesFromStart, disabledMinutesFromStart);
+          sliValue = sliMissingDataType.calculateSLIValue(goodCountFromStart + skipDataCountFromStart,
+              badCountFromStart, minutesFromStart, disabledMinutesFromStart);
         } else {
           sliValue = SLIValue.builder()
                          .goodCount(goodCountFromStart)
@@ -320,8 +319,8 @@ public class GraphDataServiceImpl implements GraphDataService {
               badCountTillRangeStartTime--;
             }
           } else {
-            badCountTillRangeStartTime -=
-                sliRecord.getRunningBadCount() - getPreviousRunningCount(sliRecord, serviceLevelIndicator).getRight();
+            badCountTillRangeStartTime -= sliRecord.getRunningBadCount()
+                - getPreviousRunningCount(sliRecord, serviceLevelIndicator).getBadCount();
           }
           getBadCountTillRangeStartTime = false;
         }
@@ -384,17 +383,24 @@ public class GraphDataServiceImpl implements GraphDataService {
     }
   }
 
-  private Pair<Long, Long> getPreviousRunningCount(SLIRecord sliRecord, ServiceLevelIndicator serviceLevelIndicator) {
+  private SLIRecordCount getPreviousRunningCount(SLIRecord sliRecord, ServiceLevelIndicator serviceLevelIndicator) {
     if (serviceLevelIndicator.getSLIEvaluationType() == SLIEvaluationType.WINDOW) {
-      return Pair.of(sliRecord.getRunningGoodCount() - (sliRecord.getSliState() == SLIState.GOOD ? 1 : 0),
-          sliRecord.getRunningBadCount() - (sliRecord.getSliState() == SLIState.BAD ? 1 : 0));
+      return SLIRecordCount.builder()
+          .goodCount(sliRecord.getRunningGoodCount() - (sliRecord.getSliState() == SLIState.GOOD ? 1 : 0))
+          .badCount(sliRecord.getRunningBadCount() - (sliRecord.getSliState() == SLIState.BAD ? 1 : 0))
+          .skipDataCount(sliRecord.getRunningSkipDataCount() - (sliRecord.getSliState() == SLIState.SKIP_DATA ? 1 : 0))
+          .build();
     } else {
       SLIRecord previousRecord =
           sliRecordService.getLastSLIRecord(serviceLevelIndicator.getUuid(), sliRecord.getTimestamp());
       if (Objects.isNull(previousRecord)) {
-        return Pair.of(0l, 0l);
+        return SLIRecordCount.builder().goodCount(0).badCount(0).skipDataCount(0).build();
       }
-      return Pair.of(previousRecord.getRunningGoodCount(), previousRecord.getRunningBadCount());
+      return SLIRecordCount.builder()
+          .goodCount(previousRecord.getRunningGoodCount())
+          .badCount(previousRecord.getRunningBadCount())
+          .skipDataCount(previousRecord.getRunningSkipDataCount())
+          .build();
     }
   }
 

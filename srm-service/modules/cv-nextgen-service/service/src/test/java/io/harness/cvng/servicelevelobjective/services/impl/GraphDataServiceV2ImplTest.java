@@ -223,16 +223,20 @@ public class GraphDataServiceV2ImplTest extends CvNextGenTestBase {
       SLIState sliState = sliStates.get(i);
       long goodCount = 0;
       long badCount = 0;
+      long skipDataCount = 0;
       if (sliState == GOOD) {
         goodCount++;
       } else if (sliState == BAD) {
         badCount++;
+      } else if (sliState == SKIP_DATA) {
+        skipDataCount++;
       }
       sliRecordParams.add(SLIRecordParam.builder()
                               .sliState(sliState)
                               .timeStamp(startTime.plus(Duration.ofMinutes(i)))
                               .goodEventCount(goodCount)
                               .badEventCount(badCount)
+                              .skipEventCount(skipDataCount)
                               .build());
     }
     return sliRecordParams;
@@ -250,6 +254,7 @@ public class GraphDataServiceV2ImplTest extends CvNextGenTestBase {
                               .timeStamp(startTime.plus(Duration.ofMinutes(i)))
                               .goodEventCount(goodCount)
                               .badEventCount(badCount)
+                              .skipEventCount(0l)
                               .build());
     }
     return sliRecordParams;
@@ -265,7 +270,7 @@ public class GraphDataServiceV2ImplTest extends CvNextGenTestBase {
     Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
     SLODashboardWidget.SLOGraphData sloGraphData = graphDataServiceV2.getGraphData(simpleServiceLevelObjective1,
         timePeriod.getStartTime(simpleServiceLevelObjective1.getZoneOffset()), currentTimeMinute, 14400, null);
-    assertThat(sloGraphData.isCalculatingSLI()).isEqualTo(false);
+    assertThat(sloGraphData.isCalculatingSLI()).isFalse();
   }
 
   @Test
@@ -284,8 +289,8 @@ public class GraphDataServiceV2ImplTest extends CvNextGenTestBase {
     Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
     SLODashboardWidget.SLOGraphData sloGraphData = graphDataServiceV2.getGraphData(simpleServiceLevelObjective1,
         timePeriod.getStartTime(simpleServiceLevelObjective1.getZoneOffset()), currentTimeMinute, 14400, null);
-    assertThat(sloGraphData.isCalculatingSLI()).isEqualTo(true);
-    assertThat(sloGraphData.isRecalculatingSLI()).isEqualTo(false);
+    assertThat(sloGraphData.isCalculatingSLI()).isTrue();
+    assertThat(sloGraphData.isRecalculatingSLI()).isFalse();
   }
 
   @Test

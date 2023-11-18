@@ -142,17 +142,20 @@ public class SLIConsecutiveMinutesProcessorServiceImpl implements SLIConsecutive
     }
     long baseGoodCount = sliRecords.get(0).getRunningGoodCount();
     long baseBadCount = sliRecords.get(0).getRunningBadCount();
+    long baseSkipDataCount = sliRecords.get(0).getRunningSkipDataCount();
     int sliRecordSize = sliRecords.size();
     for (int idx = 1; idx < sliRecordSize; idx++) {
       SLIRecord currentSLIRecord = sliRecords.get(idx);
       long currentGoodCount = currentSLIRecord.getRunningGoodCount() - baseGoodCount;
       long currentBadCount = currentSLIRecord.getRunningBadCount() - baseBadCount;
+      long currentSkipDataCount = currentSLIRecord.getRunningSkipDataCount() - baseSkipDataCount;
       instantSLIRecordMap.put(currentSLIRecord.getTimestamp(),
           SLIRecordParam.builder()
               .timeStamp(currentSLIRecord.getTimestamp())
               .sliState(currentSLIRecord.getSliState())
               .badEventCount(currentBadCount)
               .goodEventCount(currentGoodCount)
+              .skipEventCount(currentSkipDataCount)
               .build());
       baseGoodCount = currentSLIRecord.getRunningGoodCount();
       baseBadCount = currentSLIRecord.getRunningBadCount();

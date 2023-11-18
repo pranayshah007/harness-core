@@ -634,16 +634,20 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
       SLIState sliState = sliStates.get(i);
       long goodCount = 0;
       long badCount = 0;
+      long skipDataCount = 0;
       if (sliState == GOOD) {
         goodCount++;
       } else if (sliState == BAD) {
         badCount++;
+      } else if (sliState == SKIP_DATA) {
+        skipDataCount++;
       }
       sliRecordParams.add(SLIRecordParam.builder()
                               .sliState(sliState)
                               .timeStamp(startTime.plus(Duration.ofMinutes(i)))
                               .goodEventCount(goodCount)
                               .badEventCount(badCount)
+                              .skipEventCount(skipDataCount)
                               .build());
     }
     return sliRecordParams;
@@ -661,6 +665,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
                               .timeStamp(startTime.plus(Duration.ofMinutes(i)))
                               .goodEventCount(goodCount)
                               .badEventCount(badCount)
+                              .skipEventCount(0l)
                               .build());
     }
     return sliRecordParams;

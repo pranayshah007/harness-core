@@ -71,21 +71,23 @@ public class SLIRecordServiceImpl implements SLIRecordService {
     SLIRecordParam lastSLIRecordParam = sliRecordParamList.get(sliRecordParamList.size() - 1);
     long runningGoodCount = 0L;
     long runningBadCount = 0L;
+    long runningSkipDataCount = 0L;
     List<SLIRecord> sliRecordList = new ArrayList<>();
     SLIRecord lastSLIRecord = getLastSLIRecord(sliId, firstSLIRecordParam.getTimeStamp());
     SLIRecord latestSLIRecord = getLatestSLIRecord(sliId);
     if (Objects.nonNull(lastSLIRecord)) {
       runningGoodCount = lastSLIRecord.getRunningGoodCount();
       runningBadCount = lastSLIRecord.getRunningBadCount();
+      runningSkipDataCount = lastSLIRecord.getRunningSkipDataCount();
     }
     if (Objects.nonNull(latestSLIRecord)
         && latestSLIRecord.getTimestamp().isAfter(firstSLIRecordParam.getTimeStamp())) {
       // Update flow: fetch SLI Records to be updated
       updateSLIRecords(sliRecordParamList, sliId, sliVersion, firstSLIRecordParam, lastSLIRecordParam, runningGoodCount,
-          runningBadCount, verificationTaskId);
+          runningBadCount, runningSkipDataCount, verificationTaskId);
     } else {
-      createSLIRecords(
-          sliRecordParamList, sliId, verificationTaskId, sliVersion, runningGoodCount, runningBadCount, sliRecordList);
+      createSLIRecords(sliRecordParamList, sliId, verificationTaskId, sliVersion, runningGoodCount, runningBadCount,
+          runningSkipDataCount, sliRecordList);
     }
 
     try {
@@ -96,13 +98,16 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   }
 
   private void createSLIRecords(List<SLIRecordParam> sliRecordParamList, String sliId, String verificationTaskId,
-      int sliVersion, long runningGoodCount, long runningBadCount, List<SLIRecord> sliRecordList) {
+      int sliVersion, long runningGoodCount, long runningBadCount, long runningSkipDataCount,
+      List<SLIRecord> sliRecordList) {
     for (SLIRecordParam sliRecordParam : sliRecordParamList) {
       runningBadCount += sliRecordParam.getBadEventCount();
       runningGoodCount += sliRecordParam.getGoodEventCount();
+      runningSkipDataCount += sliRecordParam.getSkipEventCount();
       SLIRecord sliRecord = SLIRecord.builder()
                                 .runningBadCount(runningBadCount)
                                 .runningGoodCount(runningGoodCount)
+                                .runningSkipDataCount(runningSkipDataCount)
                                 .sliId(sliId)
                                 .sliVersion(sliVersion)
                                 .verificationTaskId(verificationTaskId)
@@ -117,7 +122,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   @RetryOnException(retryCount = RETRY_COUNT, retryOn = ConcurrentModificationException.class)
   public void updateSLIRecords(List<SLIRecordParam> sliRecordParamList, String sliId, int sliVersion,
       SLIRecordParam firstSLIRecordParam, SLIRecordParam lastSLIRecordParam, long runningGoodCount,
-      long runningBadCount, String verificationTaskId) {
+      long runningBadCount, long runningSkipDataCount, String verificationTaskId) {
     List<SLIRecord> toBeUpdatedSLIRecords = getSLIRecords(
         sliId, firstSLIRecordParam.getTimeStamp(), lastSLIRecordParam.getTimeStamp().plus(1, ChronoUnit.MINUTES));
     Map<Instant, SLIRecord> sliRecordMap = toBeUpdatedSLIRecords.stream().collect(
@@ -131,9 +136,11 @@ public class SLIRecordServiceImpl implements SLIRecordService {
       SLIRecord sliRecord = sliRecordMap.get(sliRecordParam.getTimeStamp());
       runningBadCount += sliRecordParam.getBadEventCount();
       runningGoodCount += sliRecordParam.getGoodEventCount();
+      runningSkipDataCount += sliRecordParam.getSkipEventCount();
       if (Objects.nonNull(sliRecord)) {
         sliRecord.setRunningGoodCount(runningGoodCount);
         sliRecord.setRunningBadCount(runningBadCount);
+        sliRecord.setRunningSkipDataCount(runningSkipDataCount);
         sliRecord.setSliState(sliRecordParam.getSliState());
         sliRecord.setSliVersion(sliVersion);
         updateOrCreateSLIRecords.add(sliRecord);
@@ -141,6 +148,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         SLIRecord newSLIRecord = SLIRecord.builder()
                                      .runningBadCount(runningBadCount)
                                      .runningGoodCount(runningGoodCount)
+                                     .runningSkipDataCount(runningSkipDataCount)
                                      .sliId(sliId)
                                      .sliVersion(sliVersion)
                                      .verificationTaskId(verificationTaskId)

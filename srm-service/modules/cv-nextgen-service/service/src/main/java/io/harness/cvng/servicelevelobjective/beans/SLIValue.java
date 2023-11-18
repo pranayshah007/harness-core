@@ -29,6 +29,11 @@ public class SLIValue {
   public static SLIValue getRunningCountDifference(SLIRecord currentSLIRecord, SLIRecord prevSLIRecord) {
     long goodCount = currentSLIRecord.getRunningGoodCount() - prevSLIRecord.getRunningGoodCount();
     long badCount = currentSLIRecord.getRunningBadCount() - prevSLIRecord.getRunningBadCount();
-    return SLIValue.builder().goodCount(goodCount).badCount(badCount).total(goodCount + badCount).build();
+    long skipDataCount = currentSLIRecord.getRunningSkipDataCount() - prevSLIRecord.getRunningSkipDataCount();
+    return SLIValue.builder()
+        .goodCount(goodCount + skipDataCount)
+        .badCount(badCount)
+        .total(goodCount + badCount)
+        .build();
   }
 }

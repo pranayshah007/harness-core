@@ -78,6 +78,7 @@ public class SLIRecord extends VerificationTaskBase implements PersistentEntity,
     bsonDocument.append(SLIRecordKeys.epochMinute, new BsonInt64(epochMinute));
     bsonDocument.append(SLIRecordKeys.runningBadCount, new BsonInt64(runningBadCount));
     bsonDocument.append(SLIRecordKeys.runningGoodCount, new BsonInt64(runningGoodCount));
+    bsonDocument.append(SLIRecordKeys.runningSkipDataCount, new BsonInt64(runningSkipDataCount));
     bsonDocument.append(SLIRecordKeys.sliVersion, new BsonInt32(sliVersion));
     bsonDocument.append(SLIRecordKeys.sliState, new BsonString(sliState.toString()));
     return bsonDocument;
@@ -99,6 +100,8 @@ public class SLIRecord extends VerificationTaskBase implements PersistentEntity,
   private SLIState sliState;
   private long runningBadCount; // prevMinuteRecord.runningBadCount + sliState == BAD ? 1 : 0
   private long runningGoodCount; // // prevMinuteRecord.runningGoodCount + sliState == GOOD ? 1 : 0
+
+  private long runningSkipDataCount;
 
   private int sliVersion;
 
