@@ -39,7 +39,7 @@ ENV CONTEXT_PATH $BAZEL_BIN
 RUN echo "First Debug Done"
 
 FROM alpine:3.12 as builder2
-RUN GRPC_HEALTH_PROBE_VERSION=v0.4.19 && \
+RUN GRPC_HEALTH_PROBE_VERSION=v0.4.22 && \
     wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
     chmod +x /bin/grpc_health_probe
 
