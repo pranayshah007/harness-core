@@ -8,6 +8,7 @@
 package io.harness.idp.events.eventlisteners.factory;
 
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ASYNC_CATALOG_IMPORT_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ASYNC_SCORE_COMPUTATION_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_GROUP;
@@ -15,6 +16,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_G
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.events.eventlisteners.messagehandler.AsyncCatalogImportMessageHandler;
+import io.harness.idp.events.eventlisteners.messagehandler.AsyncScoreComputationMessageHandler;
 import io.harness.idp.events.eventlisteners.messagehandler.ConnectorMessageHandler;
 import io.harness.idp.events.eventlisteners.messagehandler.EventMessageHandler;
 import io.harness.idp.events.eventlisteners.messagehandler.SecretMessageHandler;
@@ -31,6 +33,7 @@ public class EventMessageHandlerFactory {
   ConnectorMessageHandler gitIntegrationConnectorMessageHandler;
   UserGroupMessageHandler userGroupMessageHandler;
   AsyncCatalogImportMessageHandler asyncCatalogImportMessageHandler;
+  AsyncScoreComputationMessageHandler asyncScoreComputationMessageHandler;
 
   public EventMessageHandler getEventMessageHandler(String entity) {
     switch (entity) {
@@ -42,6 +45,8 @@ public class EventMessageHandlerFactory {
         return userGroupMessageHandler;
       case ASYNC_CATALOG_IMPORT_ENTITY:
         return asyncCatalogImportMessageHandler;
+      case ASYNC_SCORE_COMPUTATION_ENTITY:
+        return asyncScoreComputationMessageHandler;
       default:
         return null;
     }

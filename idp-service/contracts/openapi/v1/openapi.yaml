@@ -1320,6 +1320,24 @@ paths:
         - LicenseUsageResource
       requestBody:
         $ref: '#/components/requestBodies/LicenseUsageSaveRequest'
+  /v2/scores/recalibrate:
+    post:
+      summary: Trigger recalibration of scores for a scorecard
+      operationId: scorecard-recalibrate-v2
+      responses:
+        '202':
+          $ref: '#/components/responses/ScorecardRecalibrateResponseV2'
+      x-stoplight:
+        id: 7bibsplzghpox
+      description: API for triggering score recalibration for a scorecard
+      tags:
+        - Scores
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ScorecardRecalibrateRequest'
 components:
   schemas:
     BackstageEnvVariable:
@@ -3181,6 +3199,17 @@ components:
           $ref: '#/components/schemas/ScorecardSummaryInfo'
       required:
         - recalibrated_scores
+    ScorecardRecalibrateResponseV2:
+      title: ScorecardRecalibrateResponseV2
+      x-stoplight:
+        id: 6ooyo1l1t3jkn
+      type: object
+      properties:
+        startTime:
+          type: integer
+          x-stoplight:
+            id: gdhozz697n836
+          format: int64
     DataSourceDataPointInfo:
       title: DataSourceDataPointInfo
       x-stoplight:
@@ -4345,6 +4374,12 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/CheckGraph'
+    ScorecardRecalibrateResponseV2:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ScorecardRecalibrateResponseV2'
   securitySchemes:
     x-api-key:
       name: x-api-key

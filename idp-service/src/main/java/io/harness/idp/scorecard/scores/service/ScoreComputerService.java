@@ -20,6 +20,8 @@ public interface ScoreComputerService {
   Set<BackstageCatalogEntity> getAllEntities(
       String accountIdentifier, List<String> entityIdentifiers, List<ScorecardFilter> filters);
 
+  long computeScoresAsync(String accountIdentifier, String scorecardIdentifier, String entityIdentifier);
+
   Set<? extends BackstageCatalogEntity> getBackstageEntitiesForScorecardsAndEntityIdentifiers(
       String accountIdentifier, List<ScorecardAndChecks> scorecardsAndChecks, List<String> entityIdentifiers);
 

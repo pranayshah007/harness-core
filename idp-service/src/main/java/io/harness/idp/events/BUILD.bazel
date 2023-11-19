@@ -17,6 +17,7 @@ java_library(
         "//idp-service/src/main/java/io/harness/idp/envvariable:module",
         "//idp-service/src/main/java/io/harness/idp/gitintegration/service:module",
         "//idp-service/src/main/java/io/harness/idp/license:module",
+        "//idp-service/src/main/java/io/harness/idp/scorecard:module",
         "//idp-service/src/main/java/io/harness/idp/user:module",
         "@maven//:com_google_inject_guice",
         "@maven//:org_apache_logging_log4j_log4j_api",

@@ -171,6 +171,8 @@ import io.harness.idp.scorecard.scorecards.resources.ScorecardsApiImpl;
 import io.harness.idp.scorecard.scorecards.service.ScorecardService;
 import io.harness.idp.scorecard.scorecards.service.ScorecardServiceImpl;
 import io.harness.idp.scorecard.scores.resources.ScoreApiImpl;
+import io.harness.idp.scorecard.scores.service.AsyncScoreComputationService;
+import io.harness.idp.scorecard.scores.service.AsyncScoreComputationServiceImpl;
 import io.harness.idp.scorecard.scores.service.ScoreComputerService;
 import io.harness.idp.scorecard.scores.service.ScoreComputerServiceImpl;
 import io.harness.idp.scorecard.scores.service.ScoreService;
@@ -505,6 +507,7 @@ public class IdpModule extends AbstractModule {
     bind(DataSourceLocationService.class).to(DataSourceLocationServiceImpl.class);
     bind(ScoreService.class).to(ScoreServiceImpl.class);
     bind(ScoreComputerService.class).to(ScoreComputerServiceImpl.class);
+    bind(AsyncScoreComputationService.class).to(AsyncScoreComputationServiceImpl.class);
     bind(DataPointService.class).to(DataPointServiceImpl.class);
     bind(HarnessDataPointsApi.class).to(HarnessDataPointsApiImpl.class);
     bind(KubernetesDataPointsApi.class).to(KubernetesDataPointsApiImpl.class);
