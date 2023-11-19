@@ -26,6 +26,7 @@ import (
 
 	"github.com/harness/harness-core/product/log-service/cache"
 	memoryCache "github.com/harness/harness-core/product/log-service/cache/memory"
+	 "github.com/harness/harness-core/product/log-service/metric"
 	redisCache "github.com/harness/harness-core/product/log-service/cache/redis"
 	"github.com/harness/harness-core/product/log-service/config"
 	redisDb "github.com/harness/harness-core/product/log-service/db/redis"
@@ -189,7 +190,7 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 	server := server.Server{
 		Acme:    config.Server.Acme,
 		Addr:    config.Server.Bind,
-		Handler: handler.Handler(queue, cache, stream, store, stackdriver, config, ngClient, ngPlatformClient, gcsClient),
+		Handler: handler.Handler(queue, cache, stream, store, stackdriver, config, ngClient, ngPlatformClient, gcsClient, &metric.Metrics{}),
 	}
 
 	// trap the os signal to gracefully shutdown the

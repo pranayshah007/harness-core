@@ -21,7 +21,7 @@ import (
 	"github.com/harness/harness-core/product/log-service/cache"
 	"github.com/harness/harness-core/product/log-service/config"
 	"github.com/harness/harness-core/product/log-service/logger"
-	"github.com/harness/harness-core/product/log-service/metric"
+    "github.com/harness/harness-core/product/log-service/metric"
 	"github.com/harness/harness-core/product/log-service/queue"
 	"github.com/harness/harness-core/product/log-service/store"
 	"github.com/harness/harness-core/product/log-service/stream"
@@ -30,7 +30,7 @@ import (
 
 // Handler returns an http.Handler that exposes the
 // service resources.
-func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store store.Store, stackdriver *stackdriver.Stackdriver, config config.Config, ngClient, ngPlatformClient *client.HTTPClient, gcsClient gcputils.GCS) http.Handler {
+func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store store.Store, stackdriver *stackdriver.Stackdriver, config config.Config, ngClient, ngPlatformClient *client.HTTPClient, gcsClient gcputils.GCS, metrics *metric.Metrics) http.Handler {
 	r := chi.NewRouter()
 	r.Use(logger.Middleware)
 
@@ -92,8 +92,8 @@ func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store s
 
 		sr.Post("/", HandleOpen(stream))
 		sr.Delete("/", HandleClose(stream, store, config.Redis.ScanBatch))
-		sr.Put("/", HandleWrite(stream))
-		sr.Get("/", HandleTail(stream))
+		sr.Put("/", HandleWrite(stream,metrics))
+		sr.Get("/", HandleTail(stream,metrics))
 		sr.Get("/info", HandleInfo(stream))
 
 		return sr

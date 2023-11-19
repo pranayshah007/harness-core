@@ -9,61 +9,68 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type Metrics struct{
-    CreatePrometheusCounter *prometheus.CounterVec
-    CreatePrometheusGauge   prometheus.Gauge
-}
-
-// function to return prometheus counter metric
-func CreatePrometheusCounter(name, help, operation string) *prometheus.CounterVec {
-	return prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: name,
-			Help: help,
-		},
-		[]string{"operation"},
-	)
-}
-
-func CreatePrometheusGauge(name, help string) prometheus.Gauge {
-	return prometheus.NewGauge(
-		prometheus.GaugeOpts{
-			Name: name,
-			Help: help,
-		},
-	)
+type Metrics struct {
+	PutCount            *prometheus.CounterVec
+	GetCount            *prometheus.CounterVec
+	StreamAPIGetLatency prometheus.Gauge
+	StreamAPIPutLatency prometheus.Gauge
+	BlobAPILatency      prometheus.Gauge
 }
 
 var (
-	// defining prometheus metric parameters
-	PutCount = CreatePrometheusCounter(
-		"log_service_stream_api_put_count",
-		"Total number of put requests to stream api",
-		"put",
+	// defining prometheus metric parameters directly in the package
+	PutCount = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "log_service_stream_api_put_count",
+			Help: "Total number of put requests to stream api",
+		},
+		[]string{"operation"},
 	)
-	GetCount = CreatePrometheusCounter(
-		"log_service_stream_api_get_count",
-		"Total number of get requests to stream api",
-		"get",
+
+	GetCount = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "log_service_stream_api_get_count",
+			Help: "Total number of get requests to stream api",
+		},
+		[]string{"operation"},
 	)
-	StreamAPIGetLatency = CreatePrometheusGauge(
-		"log_service_stream_api_get_latency",
-		"Latency distribution of stream api requests",
+
+	StreamAPIGetLatency = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "log_service_stream_api_get_latency",
+			Help: "Latency distribution of stream api requests",
+		},
 	)
-	StreamAPIPutLatency = CreatePrometheusGauge(
-		"log_service_stream_api_put_latency",
-		"Latency distribution of stream api requests",
+
+	StreamAPIPutLatency = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "log_service_stream_api_put_latency",
+			Help: "Latency distribution of stream api requests",
+		},
 	)
-	BlobAPILatency = CreatePrometheusGauge(
-		"log_service_blob_api_latency",
-		"Latency for blob api for get, put, and delete requests",
+
+	BlobAPILatency = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "log_service_blob_api_latency",
+			Help: "Latency for blob api for get, put, and delete requests",
+		},
 	)
 )
 
-func RegisterMetrics() {
-	prometheus.MustRegister(PutCount)
-	prometheus.MustRegister(GetCount)
-	prometheus.MustRegister(StreamAPIGetLatency)
-	prometheus.MustRegister(StreamAPIPutLatency)
-	prometheus.MustRegister(BlobAPILatency)
+func RegisterMetrics() *Metrics {
+	putCount := PutCount
+	getCount := GetCount
+	streamAPIGetLatency := StreamAPIGetLatency
+	streamAPIPutLatency := StreamAPIPutLatency
+	blobAPILatency := BlobAPILatency
+
+	prometheus.MustRegister(putCount, getCount, streamAPIGetLatency, streamAPIPutLatency, blobAPILatency)
+
+	return &Metrics{
+		PutCount:            putCount,
+		GetCount:            getCount,
+		StreamAPIGetLatency: streamAPIGetLatency,
+		StreamAPIPutLatency: streamAPIPutLatency,
+		BlobAPILatency:      blobAPILatency,
+	}
 }
