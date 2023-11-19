@@ -692,6 +692,7 @@ public class TasBGSetupTaskHandlerTest extends CategoryTest {
             .tasArtifactConfig(TasContainerArtifactConfig.builder().build())
             .timeoutIntervalInMin(10)
             .useAppAutoScalar(false)
+            .olderActiveVersionCountToKeep(1)
             .build();
 
     doReturn(false).when(cfDeploymentManager).checkIfAppHasAutoscalarEnabled(any(), any());
@@ -732,6 +733,7 @@ public class TasBGSetupTaskHandlerTest extends CategoryTest {
             .timeoutIntervalInMin(10)
             .tasArtifactConfig(TasContainerArtifactConfig.builder().build())
             .useAppAutoScalar(false)
+            .olderActiveVersionCountToKeep(1)
             .build();
 
     doReturn(false).when(cfDeploymentManager).checkIfAppHasAutoscalarEnabled(any(), any());
