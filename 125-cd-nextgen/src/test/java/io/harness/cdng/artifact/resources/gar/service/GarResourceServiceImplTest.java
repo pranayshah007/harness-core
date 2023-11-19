@@ -24,6 +24,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARPackageDTOList;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceServiceImpl;
@@ -59,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
+import org.assertj.core.util.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -623,5 +625,40 @@ public class GarResourceServiceImplTest extends CategoryTest {
                 GarRequestDTO.builder().versionRegex(INPUT).build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(VERSION_VERSION_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetPckages() {
+    IdentifierRef connectorRef = IdentifierRef.builder()
+                                     .accountIdentifier(ACCOUNT_ID)
+                                     .identifier(IDENTIFIER)
+                                     .projectIdentifier(PROJECT_IDENTIFIER)
+                                     .orgIdentifier(ORG_IDENTIFIER)
+                                     .build();
+    ConnectorResponseDTO connectorResponse = getConnector();
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
+        .thenReturn(Optional.of(connectorResponse));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
+    when(secretManagerClientService.getEncryptionDetails(any(), any()))
+        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(
+            ArtifactTaskResponse.builder()
+                .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                .artifactTaskExecutionResponse(
+                    ArtifactTaskExecutionResponse.builder().artifactDelegateResponses(new ArrayList<>()).build())
+                .build());
+
+    GARPackageDTOList garPackageDTOList = garResourceService.getPackages(
+        connectorRef, REGION, repositoryName, project, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(garPackageDTOList).isNotNull();
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
+    DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
+    ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
+    assertThat(artifactTaskParameters.getArtifactTaskType()).isEqualTo(ArtifactTaskType.GET_GAR_PACKAGES);
   }
 }

@@ -38,6 +38,7 @@ public enum ArtifactTaskType {
   GET_AMI_TAGS("Get AMI Tags"),
   GET_NEXUS_GROUP_IDS("Get Nexus GroupIds"),
   GET_NEXUS_ARTIFACTIDS("Get Nexus ArtifactIds"),
+  GET_GAR_PACKAGES("Get GAR Artifact Packages"),
   BAMBOO_BUILD("Trigger Bamboo Build");
 
   @Getter private final String displayName;

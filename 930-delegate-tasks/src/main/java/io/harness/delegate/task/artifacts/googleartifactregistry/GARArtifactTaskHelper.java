@@ -53,6 +53,13 @@ public class GARArtifactTaskHelper {
               "Fetched " + artifactTaskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().size()
                   + " artifacts");
           break;
+        case GET_GAR_PACKAGES:
+          saveLogs(executionLogCallback, "Fetching artifact details");
+          artifactTaskResponse = getSuccessTaskResponse(garArtifactTaskHandler.getPackages(attributes));
+          saveLogs(executionLogCallback,
+              "Fetched " + artifactTaskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().size()
+                  + " artifacts");
+          break;
         case GET_LAST_SUCCESSFUL_BUILD:
           saveLogs(executionLogCallback, "Fetching Artifact details");
           artifactTaskResponse = getSuccessTaskResponse(garArtifactTaskHandler.getLastSuccessfulBuild(attributes));

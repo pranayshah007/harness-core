@@ -97,6 +97,24 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
             .collect(Collectors.toList());
     return getSuccessTaskExecutionResponse(garArtifactDelegateResponseList);
   }
+
+  public ArtifactTaskExecutionResponse getPackages(GarDelegateRequest attributesRequest) {
+    List<BuildDetailsInternal> builds;
+    GarInternalConfig garInternalConfig;
+    try {
+      garInternalConfig = getGarInternalConfig(attributesRequest);
+    } catch (IOException e) {
+      log.error("Could not get Bearer Token", e);
+      throw NestedExceptionUtils.hintWithExplanationException("Google Artifact Registry: Could not get Bearer Token",
+          "", new InvalidArtifactServerException(e.getMessage(), USER));
+    }
+    builds = garApiService.getPackages(
+        garInternalConfig, attributesRequest.getRegion(), attributesRequest.getRepositoryName());
+    List<GarDelegateResponse> garArtifactDelegateResponseList =
+        builds.stream().map(build -> toGarResponse(build, attributesRequest)).collect(Collectors.toList());
+    return getSuccessTaskExecutionResponse(garArtifactDelegateResponseList);
+  }
+
   private GarInternalConfig getGarInternalConfig(GarDelegateRequest attributesRequest) throws IOException {
     char[] serviceAccountKeyFileContent = new char[0];
     boolean isUseDelegate = false;
