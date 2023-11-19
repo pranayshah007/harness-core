@@ -793,6 +793,13 @@ public class PipelineServiceModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("maxMultiArtifactTriggerSources")
+  public Integer getMaxMultiArtifactTriggerSources() {
+    return configuration.getMaxMultiArtifactTriggerSources();
+  }
+
+  @Provides
+  @Singleton
   @Named("YamlSchemaExecutorService")
   public ExecutorService yamlSchemaExecutorService() {
     return ThreadPool.create(configuration.getYamlSchemaExecutorServiceConfig().getCorePoolSize(),

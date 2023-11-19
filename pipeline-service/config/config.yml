@@ -526,6 +526,8 @@ orchestrationLogConfiguration:
 
 planCreatorMergeServiceDependencyBatch: ${PLAN_CREATOR_DEPENDENCY_BATCH:-50}
 
+maxMultiArtifactTriggerSources: ${MAX_MULTI_ARTIFACT_TRIGGER_SOURCES:-10}
+
 enableOpentelemetry: false
 
 ############ Json Expansion Config variables #################

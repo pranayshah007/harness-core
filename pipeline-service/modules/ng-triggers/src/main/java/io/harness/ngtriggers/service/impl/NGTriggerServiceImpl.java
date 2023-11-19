@@ -28,6 +28,7 @@ import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import com.google.inject.name.Named;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -95,6 +96,7 @@ import io.harness.ngtriggers.mapper.TriggerFilterHelper;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.ngtriggers.service.NGTriggerWebhookRegistrationService;
 import io.harness.ngtriggers.service.NGTriggerYamlSchemaService;
+import io.harness.ngtriggers.utils.MaxMultiArtifactTriggerSourcesProvider;
 import io.harness.ngtriggers.utils.PollingSubscriptionHelper;
 import io.harness.ngtriggers.utils.TriggerReferenceHelper;
 import io.harness.ngtriggers.validations.TriggerValidationHandler;
@@ -194,6 +196,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   private final NGTriggerYamlSchemaService ngTriggerYamlSchemaService;
   private final TriggerReferenceHelper triggerReferenceHelper;
   private final TriggerSetupUsageHelper triggerSetupUsageHelper;
+  private final MaxMultiArtifactTriggerSourcesProvider maxMultiArtifactTriggerSourcesProvider;
   private static final String TRIGGER = "trigger";
   private static final String INPUT_YAML = "inputYaml";
 
@@ -1175,9 +1178,9 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           break;
         }
       }
-      if (triggerConfig.getSources().size() > MAX_MULTI_ARTIFACT_TRIGGER_SOURCES) {
+      if (triggerConfig.getSources().size() > maxMultiArtifactTriggerSourcesProvider.get()) {
         msg.append("The maximum number of sources for Multi-Artifact trigger is ")
-            .append(MAX_MULTI_ARTIFACT_TRIGGER_SOURCES)
+            .append(maxMultiArtifactTriggerSourcesProvider.get())
             .append(".\n");
         validationFailed = true;
       }

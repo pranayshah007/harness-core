@@ -183,6 +183,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("staticSchemaFileURL") private String staticSchemaFileURL;
   @JsonProperty("timeoutIteratorMode") private String timeoutIteratorMode;
   @JsonProperty("webhookEventHsqsDequeueConfig") private HsqsDequeueConfig webhookEventHsqsDequeueConfig;
+  @JsonProperty("maxMultiArtifactTriggerSources") private Integer maxMultiArtifactTriggerSources;
   @JsonProperty("graphConsumerSleepIntervalMs") private Integer graphConsumerSleepIntervalMs;
   @JsonProperty("asyncFilterCreationConsumerSleepIntervalMs")
   private Integer asyncFilterCreationConsumerSleepIntervalMs;
