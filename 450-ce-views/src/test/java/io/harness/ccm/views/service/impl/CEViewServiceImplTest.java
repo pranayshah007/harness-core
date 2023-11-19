@@ -8,12 +8,15 @@
 package io.harness.ccm.views.service.impl;
 
 import static io.harness.ccm.views.entities.ViewState.COMPLETED;
+import static io.harness.rule.OwnerRule.BHAVI;
 import static io.harness.rule.OwnerRule.HITESH;
 import static io.harness.rule.OwnerRule.ROHIT;
 import static io.harness.rule.OwnerRule.SHUBHANSHU;
 
+import static junit.framework.Assert.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.doReturn;
@@ -31,6 +34,7 @@ import io.harness.ccm.views.entities.AWSViewPreferenceCost;
 import io.harness.ccm.views.entities.AWSViewPreferences;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.CEViewFolder;
+import io.harness.ccm.views.entities.CloudFilter;
 import io.harness.ccm.views.entities.GCPViewPreferences;
 import io.harness.ccm.views.entities.ViewChartType;
 import io.harness.ccm.views.entities.ViewField;
@@ -44,10 +48,13 @@ import io.harness.ccm.views.entities.ViewTimeRange;
 import io.harness.ccm.views.entities.ViewTimeRangeType;
 import io.harness.ccm.views.entities.ViewType;
 import io.harness.ccm.views.entities.ViewVisualization;
+import io.harness.ccm.views.graphql.QLCESortOrder;
 import io.harness.ccm.views.graphql.QLCEView;
 import io.harness.ccm.views.graphql.QLCEViewField;
 import io.harness.ccm.views.graphql.QLCEViewFieldInput;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
+import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
+import io.harness.ccm.views.graphql.QLCEViewSortType;
 import io.harness.ccm.views.graphql.QLCEViewTimeFilter;
 import io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator;
 import io.harness.ccm.views.graphql.QLCEViewTrendData;
@@ -69,6 +76,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
@@ -102,6 +110,7 @@ public class CEViewServiceImplTest extends CategoryTest {
   private static final Double TOTAL_COST = 1000.0;
   private static final Double IDLE_COST = 200.0;
   private static final Double UNALLOCATED_COST = 400.0;
+  private final String SEARCH_KEY = "SEARCH_KEY";
 
   @Before
   public void setUp() throws Exception {
@@ -300,6 +309,41 @@ public class CEViewServiceImplTest extends CategoryTest {
     String sampleFolderId = ceViewService.getDefaultFolderId(ACCOUNT_ID);
     CEViewFolder sampleFolder = ceViewFolder();
     assertThat(sampleFolder.getUuid()).isEqualTo(sampleFolderId);
+  }
+
+  @Test
+  @Owner(developers = BHAVI)
+  @Category(UnitTests.class)
+  public void testCountByAccountIdAndFolderId() {
+    List<CloudFilter> cloudFilters = Arrays.asList(CloudFilter.DEFAULT, CloudFilter.AWS);
+    doReturn(10L).when(ceViewDao).countByAccountIdAndFolderIds(
+        ACCOUNT_ID, Collections.singleton(FOLDER_ID), SEARCH_KEY, cloudFilters);
+    Long count = ceViewService.countByAccountIdAndFolderId(
+        ACCOUNT_ID, Collections.singleton(FOLDER_ID), SEARCH_KEY, cloudFilters);
+    assertTrue(Objects.equals(10L, count));
+  }
+
+  @Test
+  @Owner(developers = BHAVI)
+  @Category(UnitTests.class)
+  public void testGetAllViews() {
+    boolean includeDefault = true;
+    QLCEViewSortType sortType = QLCEViewSortType.NAME;
+    QLCESortOrder sortOrder = QLCESortOrder.DESCENDING;
+    QLCEViewSortCriteria sortCriteria = QLCEViewSortCriteria.builder().sortType(sortType).sortOrder(sortOrder).build();
+    Integer pageNo = 1;
+    Integer pageSize = 10;
+    String searchKey = "sampleSearchKey";
+    List<CloudFilter> cloudFilters = Collections.singletonList(CloudFilter.DEFAULT);
+    List<CEView> viewList = getAllViewsForAccount();
+    when(ceViewDao.findByAccountIdAndFolderId(
+             ACCOUNT_ID, Collections.singleton(FOLDER_ID), sortCriteria, pageNo, pageSize, searchKey, cloudFilters))
+        .thenReturn(viewList);
+    List<CEViewFolder> folderList = Collections.singletonList(ceViewFolder());
+    when(ceViewFolderDao.getFolders(ACCOUNT_ID, Collections.singletonList(FOLDER_ID))).thenReturn(folderList);
+    List<QLCEView> result = ceViewService.getAllViews(
+        ACCOUNT_ID, FOLDER_ID, includeDefault, sortCriteria, pageNo, pageSize, searchKey, cloudFilters);
+    assertNotNull(result);
   }
 
   private List<CEView> getAllViewsForAccount() {

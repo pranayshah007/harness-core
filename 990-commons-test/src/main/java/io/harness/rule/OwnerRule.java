@@ -347,6 +347,7 @@ public class OwnerRule implements TestRule {
   public static final String EOIN_MCAFEE = "eoin.mcafee";
 
   public static final String DMACK = "daniel.mack";
+  public static final String BHAVI = "bahvi.khator";
 
   @Deprecated public static final String UNKNOWN = "unknown";
 
@@ -479,6 +480,7 @@ public class OwnerRule implements TestRule {
           .put(SHIVAKUMAR, defaultUserInfo(SHIVAKUMAR).slack("U01124VC43C").team(CI).build())
           .put(SHREYAS, defaultUserInfo(SHREYAS).slack("U03DL5XS3TM").team(PL).build())
           .put(SHUBHANSHU, defaultUserInfo(SHUBHANSHU).slack("UKLTRSAN9").team(CE).build())
+          .put(BHAVI, defaultUserInfo(BHAVI).slack("U05RLG9SU76").team(CE).build())
           .put(SOWMYA, defaultUserInfo(SOWMYA).slack("UHM19HBKM").team(CV).build())
           .put(SRINIVAS, defaultUserInfo(SRINIVAS).slack("U4QC23961").team(CDC).build())
           .put(SRIRAM, defaultUserInfo(SRIRAM).slack("U5L475PK5").team(CV).build())
