@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 64
+version: 65
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -670,6 +670,32 @@ roles:
         - ccm_cloudAssetGovernanceEnforcement_view
         - ccm_cloudAssetGovernanceEnforcement_delete
         - idp_idpsettings_manage
+        - idp_idponboardingsetup_allow
+        - idp_idpplugins_enable
+        - idp_idpplugins_disable
+        - idp_idpplugins_request
+        - idp_idpplugins_view
+        - idp_idpconfigurations_edit
+        - idp_idpconfigurations_view
+        - idp_idpoauthconfigurations_edit
+        - idp_idpoauthconfigurations_view
+        - idp_idpscorecards_edit
+        - idp_idpscorecards_delete
+        - idp_idpscorecards_view
+        - idp_idpscorecardchecks_edit
+        - idp_idpscorecardchecks_delete
+        - idp_idpscorecardchecks_view
+        - idp_idpscorecarddatasources_edit
+        - idp_idpscorecarddatasources_delete
+        - idp_idpscorecarddatasources_view
+        - idp_idplayout_edit
+        - idp_idplayout_view
+        - idp_idpaccesscontrol_edit
+        - idp_idpaccesscontrol_view
+        - idp_idpconnectors_edit
+        - idp_idpconnectors_view
+        - idp_idpurlallowlist_edit
+        - idp_idpurlallowlist_view
         - code_repo_view
         - code_repo_edit
         - code_repo_delete
@@ -780,6 +806,16 @@ roles:
         - ccm_recommendations_view
         - ccm_commitmentOrchestrator_view
         - iac_workspace_view
+        - idp_idpplugins_view
+        - idp_idpconfigurations_view
+        - idp_idpoauthconfigurations_view
+        - idp_idpscorecards_view
+        - idp_idpscorecardchecks_view
+        - idp_idpscorecarddatasources_view
+        - idp_idplayout_view
+        - idp_idpaccesscontrol_view
+        - idp_idpconnectors_view
+        - idp_idpurlallowlist_view
       allowedScopeLevels:
         - account
       managed: true
@@ -1172,3 +1208,54 @@ roles:
         - account
         - organization
         - project
+    - identifier: _idp_admin
+      name: IDP Admin
+      description: Can create, edit, and view IDP Resources
+      permissions:
+        - idp_idpsettings_manage
+        - idp_idponboardingsetup_allow
+        - idp_idpplugins_enable
+        - idp_idpplugins_disable
+        - idp_idpplugins_request
+        - idp_idpplugins_view
+        - idp_idpconfigurations_edit
+        - idp_idpconfigurations_view
+        - idp_idpoauthconfigurations_edit
+        - idp_idpoauthconfigurations_view
+        - idp_idpscorecards_edit
+        - idp_idpscorecards_delete
+        - idp_idpscorecards_view
+        - idp_idpscorecardchecks_edit
+        - idp_idpscorecardchecks_delete
+        - idp_idpscorecardchecks_view
+        - idp_idpscorecarddatasources_edit
+        - idp_idpscorecarddatasources_delete
+        - idp_idpscorecarddatasources_view
+        - idp_idplayout_edit
+        - idp_idplayout_view
+        - idp_idpaccesscontrol_edit
+        - idp_idpaccesscontrol_view
+        - idp_idpconnectors_edit
+        - idp_idpconnectors_view
+        - idp_idpurlallowlist_edit
+        - idp_idpurlallowlist_view
+      managed: true
+      allowedScopeLevels:
+        - account
+    - identifier: _idp_viewer
+      name: IDP Viewer
+      description: View IDP Resources
+      permissions:
+        - idp_idpplugins_view
+        - idp_idpconfigurations_view
+        - idp_idpoauthconfigurations_view
+        - idp_idpscorecards_view
+        - idp_idpscorecardchecks_view
+        - idp_idpscorecarddatasources_view
+        - idp_idplayout_view
+        - idp_idpaccesscontrol_view
+        - idp_idpconnectors_view
+        - idp_idpurlallowlist_view
+      managed: true
+      allowedScopeLevels:
+        - account

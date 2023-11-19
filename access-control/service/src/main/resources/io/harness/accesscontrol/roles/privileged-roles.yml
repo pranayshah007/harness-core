@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: supportRolesConfiguration
-version: 26
+version: 27
 roles:
   - identifier: _super_account_viewer
     name: Super Account Viewer
@@ -75,3 +75,13 @@ roles:
       - ccm_recommendations_view
       - ccm_commitmentOrchestrator_view
       - iac_workspace_view
+      - idp_idpplugins_view
+      - idp_idpconfigurations_view
+      - idp_idpoauthconfigurations_view
+      - idp_idpscorecards_view
+      - idp_idpscorecardchecks_view
+      - idp_idpscorecarddatasources_view
+      - idp_idplayout_view
+      - idp_idpaccesscontrol_view
+      - idp_idpconnectors_view
+      - idp_idpurlallowlist_view

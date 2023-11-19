@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 38
+version: 39
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -127,6 +127,28 @@ resourceTypes:
     permissionKey: downtime
   - identifier: IDP_SETTINGS
     permissionKey: idpsettings
+  - identifier: IDP_ONBOARDING_SETUP
+    permissionKey: idponboardingsetup
+  - identifier: IDP_PLUGINS
+    permissionKey: idpplugins
+  - identifier: IDP_CONFIGURATIONS
+    permissionKey: idpconfigurations
+  - identifier: IDP_OAUTH_CONFIGURATIONS
+    permissionKey: idpoauthconfigurations
+  - identifier: IDP_SCORECARDS
+    permissionKey: idpscorecards
+  - identifier: IDP_SCORECARD_CHECKS
+    permissionKey: idpscorecardchecks
+  - identifier: IDP_SCORECARD_DATA_SOURCES
+    permissionKey: idpscorecarddatasources
+  - identifier: IDP_LAYOUT
+    permissionKey: idplayout
+  - identifier: IDP_ACCESS_CONTROL
+    permissionKey: idpaccesscontrol
+  - identifier: IDP_CONNECTORS
+    permissionKey: idpconnectors
+  - identifier: IDP_URL_ALLOW_LIST
+    permissionKey: idpurlallowlist
   - identifier: CODE_REPOSITORY
     permissionKey: repo
   - identifier: NETWORK_MAP

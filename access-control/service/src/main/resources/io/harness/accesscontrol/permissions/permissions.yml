@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 64
+version: 65
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1420,6 +1420,162 @@ permissions:
       - account
   - identifier: idp_idpsettings_manage
     name: Manage Policies in settings UI
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idponboardingsetup_allow
+    name: Allow user to perform developer portal setup
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpplugins_enable
+    name: Enable an IDP Plugin
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpplugins_disable
+    name: Disable an IDP Plugin
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpplugins_request
+    name: Request a new IDP Plugin
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpplugins_view
+    name: View IDP Plugins
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpconfigurations_edit
+    name: Create or Edit IDP Configurations
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpconfigurations_view
+    name: View IDP Configurations
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpoauthconfigurations_edit
+    name: Create or Edit IDP OAuth Configurations
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpoauthconfigurations_view
+    name: View IDP OAuth Configurations
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpscorecards_edit
+    name: Create or Edit IDP Scorecards
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpscorecards_delete
+    name: Delete IDP Scorecards
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpscorecards_view
+    name: View IDP Scorecards
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpscorecardchecks_edit
+    name: Create or Edit IDP Scorecard Checks
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpscorecardchecks_delete
+    name: Delete IDP Scorecard Checks
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpscorecardchecks_view
+    name: View IDP Scorecard Checks
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpscorecarddatasources_edit
+    name: Create or Edit IDP Scorecard DataSources
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpscorecarddatasources_delete
+    name: Delete IDP Scorecard DataSources
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpscorecarddatasources_view
+    name: View IDP Scorecard DataSources
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idplayout_edit
+    name: Create or Edit IDP Layout Configurations
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idplayout_view
+    name: View IDP Layout Configurations
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpaccesscontrol_edit
+    name: Create or Edit IDP Access Control Settings
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpaccesscontrol_view
+    name: View IDP Access Control Settings
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpconnectors_edit
+    name: Create or Edit IDP Connectors
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpconnectors_view
+    name: View IDP Connectors
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpurlallowlist_edit
+    name: Create or Edit IDP URL Allowlist
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpurlallowlist_view
+    name: View IDP URL Allowlist
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
