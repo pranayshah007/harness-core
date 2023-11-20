@@ -28,7 +28,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PL)
 public interface ProjectService {
-  public static final String PROJECT_SCOPE_INFO_DATA_CACHE_KEY = "projectScopeInfoDataCache";
+  String PROJECT_SCOPE_INFO_DATA_CACHE_KEY = "projectScopeInfoDataCache";
 
   Project create(String accountIdentifier, String orgIdentifier, ProjectDTO project);
 
