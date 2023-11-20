@@ -392,9 +392,9 @@ ciExecutionServiceConfig:
       gcsUploadConfig:
         name: github.com/drone-plugins/drone-gcs@refs/tags/v1.5.0
       cacheS3Config:
-        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.6.3
+        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.6.5
       cacheGCSConfig:
-        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.6.1
+        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.6.5
       gitCloneConfig:
         name: github.com/wings-software/drone-git@refs/tags/v1.4.2
       dockerBuildxConfig:
