@@ -982,6 +982,8 @@ components:
           type: string
         tag:
           type: string
+        url:
+          type: string
         components_count:
           type: integer
         allow_list_violation_count:
@@ -1021,6 +1023,8 @@ components:
         id:
           type: string
         name:
+          type: string
+        url:
           type: string
         tag:
           type: string
@@ -1102,34 +1106,61 @@ components:
       properties:
         env_id:
           type: string
+          description: Harness environment id
         env_name:
           type: string
+          description: Environment name
         env_type:
           type: string
           enum:
             - PROD
             - NONPROD
+          description: Environment type
         pipeline_id:
           type: string
+          description: Pipeline identifier of deployment pipeline
+        pipeline_name:
+          type: string
+          description: Pipeline name of deployment pipeline
         pipeline_execution_id:
           type: string
+          description: Pipeline execution identifier of deployment pipeline
+        pipeline_sequence_id:
+          type: string
+          description: Pipeline Sequence id of deployment pipeline
         allow_list_violation_count:
           type: string
+          description: Allow list type policy violation count
         deny_list_violation_count:
           type: string
+          description: Deny list type policy violation count
         attested_status:
           type: string
           enum:
             - PASS
             - FAIL
+          description: Attestation status of the artifact
         triggered_by:
           type: string
+          description: Name of who trigger the deployment pipeline
         triggered_by_id:
           type: string
+          description: Id of who trigger the deployment pipeline
         triggered_at:
           type: string
+          description: Time of trigger of the deployment pipeline
+        triggered_type:
+          type: string
+          description: Trigger type of the deployment pipeline
         enforcement_id:
           type: string
+          description: Enforcement step identifier
+        provenance_artifact:
+          type: object
+          description: Provenance Data of the artifact
+        slsa_policy_outcome_status:
+          type: string
+          description: SLSA verification status of the artifact
     Operator:
       title: Operator
       x-stoplight:
@@ -1151,6 +1182,10 @@ components:
           type: string
         operator:
           $ref: '#/components/schemas/Operator'
+      required:
+        - field_name
+        - value
+        - operator
     LicenseFilter:
       title: LicenseFilter
       type: object
@@ -1159,6 +1194,9 @@ components:
           type: string
         operator:
           $ref: '#/components/schemas/Operator'
+      required:
+        - value
+        - operator
   parameters:
     OrgParam:
       name: org

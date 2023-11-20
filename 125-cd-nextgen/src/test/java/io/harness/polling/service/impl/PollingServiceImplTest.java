@@ -40,6 +40,7 @@ import io.harness.repositories.polling.PollingRepository;
 import io.harness.rule.Owner;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -250,6 +251,7 @@ public class PollingServiceImplTest extends CategoryTest {
                                                              .success(true)
                                                              .errorMessage("")
                                                              .lastCollectedVersions(Collections.singletonList("1.0"))
+                                                             .errorStatusValidUntil(null)
                                                              .build();
     ArgumentCaptor<PollingTriggerStatusUpdateDTO> updateDTOCaptor =
         ArgumentCaptor.forClass(PollingTriggerStatusUpdateDTO.class);
@@ -257,7 +259,7 @@ public class PollingServiceImplTest extends CategoryTest {
     when(triggersClient.updateTriggerPollingStatus(any(), updateDTOCaptor.capture())).thenReturn(call);
     when(call.execute()).thenReturn(Response.success(ResponseDTO.newResponse(true)));
     boolean result = pollingService.updateTriggerPollingStatus(
-        accountId, Collections.singletonList("sig"), true, "", Collections.singletonList("1.0"));
+        accountId, Collections.singletonList("sig"), true, "", Collections.singletonList("1.0"), null);
     assertThat(result).isTrue();
     expectedStatusUpdate.setLastCollectedTime(updateDTOCaptor.getValue().getLastCollectedTime());
     verify(triggersClient, times(1)).updateTriggerPollingStatus(eq(accountId), any());
@@ -279,10 +281,12 @@ public class PollingServiceImplTest extends CategoryTest {
     Call<ResponseDTO<Boolean>> call = mock(Call.class);
     when(triggersClient.updateTriggerPollingStatus(any(), updateDTOCaptor.capture())).thenReturn(call);
     when(call.execute()).thenReturn(Response.success(ResponseDTO.newResponse(false)));
-    boolean result = pollingService.updateTriggerPollingStatus(
-        accountId, Collections.singletonList("sig"), true, "", Collections.singletonList("1.0"));
+    boolean result = pollingService.updateTriggerPollingStatus(accountId, Collections.singletonList("sig"), true, "",
+        Collections.singletonList("1.0"), Duration.ofMinutes(2).toMillis());
     assertThat(result).isFalse();
     expectedStatusUpdate.setLastCollectedTime(updateDTOCaptor.getValue().getLastCollectedTime());
+    expectedStatusUpdate.setErrorStatusValidUntil(
+        updateDTOCaptor.getValue().getLastCollectedTime() + Duration.ofMinutes(2).toMillis());
     verify(triggersClient, times(1)).updateTriggerPollingStatus(eq(accountId), any());
     assertThat(expectedStatusUpdate).isEqualToComparingFieldByField(updateDTOCaptor.getValue());
   }

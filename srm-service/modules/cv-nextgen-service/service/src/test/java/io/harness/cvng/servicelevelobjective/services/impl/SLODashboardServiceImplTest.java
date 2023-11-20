@@ -12,6 +12,7 @@ import static io.harness.cvng.downtime.utils.DateTimeUtils.dtf;
 import static io.harness.cvng.servicelevelobjective.entities.SLIState.BAD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIState.GOOD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIState.NO_DATA;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.KAMAL;
@@ -23,6 +24,9 @@ import static io.harness.rule.TestUserProvider.testUserProvider;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.offset;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.beans.EmbeddedUser;
@@ -37,7 +41,10 @@ import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
+import io.harness.cvng.core.entities.TimeSeriesRecord;
+import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.MetricPackService;
+import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.downtime.beans.AllEntitiesRule;
 import io.harness.cvng.downtime.beans.DowntimeDTO;
@@ -98,6 +105,7 @@ import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
 import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
@@ -107,10 +115,12 @@ import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetSer
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+import io.harness.cvng.utils.SLOGraphUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
+import io.harness.spec.server.cvng.v1.model.MetricGraph;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -119,19 +129,24 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 
 public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Inject private SLODashboardService sloDashboardService;
@@ -150,6 +165,8 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Inject private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
   @Inject private AnnotationService annotationService;
   @Inject private SRMAnalysisStepService srmAnalysisStepService;
+
+  @Mock private TimeSeriesRecordService timeSeriesRecordService;
   private Instant startTime;
   private Instant endTime;
   private String verificationTaskId;
@@ -177,7 +194,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
 
   private final String monitoredServiceIdentifier = "monitoredServiceIdentifier";
   @Before
-  public void setup() {
+  public void setup() throws IllegalAccessException {
     builderFactory = BuilderFactory.getDefault();
     builderFactory.getContext().setProjectIdentifier("project");
     builderFactory.getContext().setOrgIdentifier("orgIdentifier");
@@ -1274,7 +1291,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLO);
 
     PageResponse<MonitoredServiceListItemDTO> msPageResponse =
-        monitoredServiceService.list(builderFactory.getProjectParams(), null, 0, 10, null, null, false);
+        monitoredServiceService.list(builderFactory.getProjectParams(), null, null, 0, 10, null, null, false);
     assertThat(msPageResponse.getPageItemCount()).isEqualTo(2);
     assertThat(msPageResponse.getTotalItems()).isEqualTo(2);
 
@@ -1346,7 +1363,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLO);
 
     PageResponse<MonitoredServiceListItemDTO> msPageResponse =
-        monitoredServiceService.list(builderFactory.getProjectParams(), null, 0, 10, null, null, false);
+        monitoredServiceService.list(builderFactory.getProjectParams(), null, null, 0, 10, null, null, false);
     assertThat(msPageResponse.getPageItemCount()).isEqualTo(2);
     assertThat(msPageResponse.getTotalItems()).isEqualTo(2);
 
@@ -1558,7 +1575,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLO);
 
     PageResponse<MonitoredServiceListItemDTO> msPageResponse =
-        monitoredServiceService.list(builderFactory.getProjectParams(), null, 0, 10, null, null, false);
+        monitoredServiceService.list(builderFactory.getProjectParams(), null, null, 0, 10, null, null, false);
     assertThat(msPageResponse.getPageItemCount()).isEqualTo(2);
     assertThat(msPageResponse.getTotalItems()).isEqualTo(2);
 
@@ -1679,7 +1696,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLO);
 
     PageResponse<MonitoredServiceListItemDTO> msPageResponse =
-        monitoredServiceService.list(builderFactory.getProjectParams(), null, 0, 10, null, null, false);
+        monitoredServiceService.list(builderFactory.getProjectParams(), null, null, 0, 10, null, null, false);
     assertThat(msPageResponse.getPageItemCount()).isEqualTo(2);
     assertThat(msPageResponse.getTotalItems()).isEqualTo(2);
 
@@ -2580,6 +2597,23 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("All the messages should be of the same thread");
   }
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetMetricGraph() throws IllegalAccessException {
+    when(timeSeriesRecordService.getTimeSeriesRecords(any(), any())).thenReturn(generateTimeSeriesRecord());
+    FieldUtils.writeField(sloDashboardService, "timeSeriesRecordService", timeSeriesRecordService, true);
+    ServiceLevelIndicator serviceLevelIndicator =
+        serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(),
+            simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).getIdentifier());
+    Map<String, MetricGraph> metricGraphMap = sloDashboardService.getMetricGraphs(
+        builderFactory.getProjectParams(), serviceLevelObjective.getIdentifier(), null, null);
+    assertThat(metricGraphMap.size()).isEqualTo(2);
+    assertThat(metricGraphMap.get("metric1").getDataPoints().size()).isEqualTo(1729);
+    assertThat(metricGraphMap.get("metric2").getDataPoints().size()).isEqualTo(1729);
+    verify(timeSeriesRecordService)
+        .getTimeSeriesRecords(serviceLevelIndicator.getUuid(), getStartTimesForBucketTimeSeriesRecordForGraph());
+  }
 
   private void createData(Instant startTime, List<SLIState> sliStates, String sliId) {
     createData(startTime, sliStates, sliId, 0);
@@ -2749,5 +2783,56 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
                   / totalErrorBudgetMinutes,
               offset(0.01));
     }
+  }
+  private List<TimeSeriesRecord> generateTimeSeriesRecord() {
+    List<TimeSeriesRecord> timeSeriesDataCollectionRecordList = new ArrayList<>();
+    String host = generateUuid();
+    String metric1 = "metric1";
+    String metric2 = "metric2";
+    String metricName1 = "metricName1";
+    String metricName2 = "metricName2";
+    Double value1 = 20.0;
+    Double value2 = 110.0;
+    List<Instant> startTimes = getStartTimesForBucketTimeSeriesRecordForGraph();
+    for (Instant instant : startTimes) {
+      Set<TimeSeriesRecord.TimeSeriesGroupValue> timeSeriesGroupValues1 = new HashSet<>();
+      Set<TimeSeriesRecord.TimeSeriesGroupValue> timeSeriesGroupValues2 = new HashSet<>();
+
+      for (Instant bucketTime = instant; bucketTime.isBefore(instant.plus(5, ChronoUnit.MINUTES));
+           bucketTime = bucketTime.plus(1, ChronoUnit.MINUTES)) {
+        timeSeriesGroupValues1.add(
+            TimeSeriesRecord.TimeSeriesGroupValue.builder().metricValue(value1).timeStamp(instant).build());
+        timeSeriesGroupValues2.add(
+            TimeSeriesRecord.TimeSeriesGroupValue.builder().metricValue(value2).timeStamp(instant).build());
+      }
+      TimeSeriesRecord timeSeriesDataCollectionRecord1 = TimeSeriesRecord.builder()
+                                                             .verificationTaskId(verificationTaskId)
+                                                             .host(host)
+                                                             .metricIdentifier(metric1)
+                                                             .metricName(metricName1)
+                                                             .timeSeriesGroupValues(timeSeriesGroupValues1)
+                                                             .bucketStartTime(instant)
+                                                             .build();
+      timeSeriesDataCollectionRecordList.add(timeSeriesDataCollectionRecord1);
+      TimeSeriesRecord timeSeriesDataCollectionRecord2 = TimeSeriesRecord.builder()
+                                                             .verificationTaskId(verificationTaskId)
+                                                             .host(host)
+                                                             .metricIdentifier(metric2)
+                                                             .metricName(metricName2)
+                                                             .timeSeriesGroupValues(timeSeriesGroupValues2)
+                                                             .bucketStartTime(instant)
+                                                             .build();
+      timeSeriesDataCollectionRecordList.add(timeSeriesDataCollectionRecord2);
+    }
+    return timeSeriesDataCollectionRecordList;
+  }
+
+  List<Instant> getStartTimesForBucketTimeSeriesRecordForGraph() {
+    LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
+    TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
+    startTime = timePeriod.getStartTime(ZoneOffset.UTC);
+    endTime = timePeriod.getEndTime(ZoneOffset.UTC);
+    return SLOGraphUtils.getBucketMinutesInclusiveOfStartAndEndTime(
+        startTime, endTime, CVNextGenConstants.MAX_NUMBER_OF_POINTS, CVNextGenConstants.SLI_RECORD_BUCKET_SIZE);
   }
 }

@@ -26,9 +26,11 @@ import io.harness.aws.asg.manifest.AsgLaunchTemplateManifestHandler;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgInstanceCapacity;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
 import io.harness.aws.beans.AsgCapacityConfig;
+import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -71,10 +73,15 @@ public class AsgTaskHelper {
   @Inject private TimeLimiter timeLimiter;
   @Inject private AsgInfraConfigHelper asgInfraConfigHelper;
   private static final String CANARY_SUFFIX = "Canary";
+  public static final int DEFAULT_MIN_CAPACITY = 0;
+  public static final int DEFAULT_DESIRED_CAPACITY = 6;
+  public static final int DEFAULT_MAX_CAPACITY = 10;
+  public static final int DEFAULT_CAPACITY_WHEN_ZERO = 1;
   private static final String EXEC_STRATEGY_CANARY = "canary";
   private static final String EXEC_STRATEGY_BLUEGREEN = "blue-green";
   private static final String BG_GREEN = "GREEN";
   private static final String BG_BLUE = "BLUE";
+
   public LogCallback getLogCallback(ILogStreamingTaskClient logStreamingTaskClient, String commandUnitName,
       boolean shouldOpenStream, CommandUnitsProgress commandUnitsProgress) {
     return new NGDelegateLogCallback(logStreamingTaskClient, commandUnitName, shouldOpenStream, commandUnitsProgress);
@@ -363,5 +370,54 @@ public class AsgTaskHelper {
       ResponseLaunchTemplateData responseLaunchTemplateData) {
     String responseLaunchTemplateDataJson = AsgContentParser.toString(responseLaunchTemplateData, false);
     return AsgContentParser.parseJson(responseLaunchTemplateDataJson, RequestLaunchTemplateData.class, false);
+  }
+
+  public AsgInstanceCapacity getRunningInstanceCapacity(
+      AsgSdkManager asgSdkManager, boolean useAlreadyRunningInstances, String prodAsgName) {
+    if (useAlreadyRunningInstances) {
+      AsgInstanceCapacity defaultAsgInstanceCapacity = AsgInstanceCapacity.builder()
+                                                           .minCapacity(DEFAULT_MIN_CAPACITY)
+                                                           .desiredCapacity(DEFAULT_DESIRED_CAPACITY)
+                                                           .maxCapacity(DEFAULT_MAX_CAPACITY)
+                                                           .build();
+
+      if (isEmpty(prodAsgName)) {
+        return defaultAsgInstanceCapacity;
+      }
+
+      AutoScalingGroup prodAutoScalingGroup = asgSdkManager.getASG(prodAsgName);
+      if (prodAutoScalingGroup == null) {
+        return defaultAsgInstanceCapacity;
+      }
+
+      return AsgInstanceCapacity.builder()
+          .minCapacity(getMinCapacityValue(prodAutoScalingGroup.getMinSize()))
+          .desiredCapacity(getDesiredCapacityValue(prodAutoScalingGroup.getDesiredCapacity()))
+          .maxCapacity(getMaxCapacityValue(prodAutoScalingGroup.getMaxSize()))
+          .build();
+    }
+    return null;
+  }
+
+  private int getMinCapacityValue(Integer value) {
+    if (value == null || value == 0) {
+      return DEFAULT_MIN_CAPACITY;
+    }
+    return value;
+  }
+
+  private int getDesiredCapacityValue(Integer value) {
+    if (value == null || value == 0) {
+      return DEFAULT_CAPACITY_WHEN_ZERO;
+    }
+    return value;
+  }
+
+  private int getMaxCapacityValue(Integer value) {
+    return getDesiredCapacityValue(value);
+  }
+
+  public boolean isShiftTrafficFeature(AsgLoadBalancerConfig lbCfg) {
+    return isEmpty(lbCfg.getStageListenerRuleArn());
   }
 }

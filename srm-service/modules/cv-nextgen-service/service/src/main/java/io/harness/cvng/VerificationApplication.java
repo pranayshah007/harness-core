@@ -174,6 +174,7 @@ import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.notification.Team;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.notification.notificationclient.NotificationClient;
@@ -548,6 +549,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     }
     initializeMetrics(injector);
     registerOasResource(configuration, environment, injector);
+    registerApiResponseFilter(environment, injector);
     initializeSrmMonitoring(configuration, injector);
     registerAPIAuthTelemetryFilters(configuration, environment, injector);
     registerMigrations(injector);
@@ -705,6 +707,10 @@ public class VerificationApplication extends Application<VerificationConfigurati
     OpenApiResource openApiResource = injector.getInstance(OpenApiResource.class);
     openApiResource.setOpenApiConfiguration(verificationConfiguration.getOasConfig());
     environment.jersey().register(openApiResource);
+  }
+
+  private void registerApiResponseFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(ApiResponseFilter.class));
   }
 
   private void registerActivityIterator(Injector injector) {

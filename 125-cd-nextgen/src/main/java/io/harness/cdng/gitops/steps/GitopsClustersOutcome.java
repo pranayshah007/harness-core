@@ -33,7 +33,7 @@ public class GitopsClustersOutcome implements Outcome, ExecutionSweepingOutput {
   @NotNull List<ClusterData> clustersData;
 
   public GitopsClustersOutcome appendCluster(
-      @NotNull Metadata env, @NotNull Metadata cluster, @NotNull String envType) {
+      @NotNull Metadata env, @NotNull Metadata cluster, @NotNull String envType, String agentId) {
     ScopeAndRef scopedAndRefForCluster = ClusterEntityMapper.getScopeFromClusterRef(cluster.getIdentifier());
     clustersData.add(ClusterData.builder()
                          .envId(env.getIdentifier())
@@ -43,6 +43,7 @@ public class GitopsClustersOutcome implements Outcome, ExecutionSweepingOutput {
                          .clusterId(scopedAndRefForCluster.getRef())
                          .variables(Collections.emptyMap())
                          .scope(scopedAndRefForCluster.getScope().toString())
+                         .agentId(agentId)
                          .build());
     return this;
   }

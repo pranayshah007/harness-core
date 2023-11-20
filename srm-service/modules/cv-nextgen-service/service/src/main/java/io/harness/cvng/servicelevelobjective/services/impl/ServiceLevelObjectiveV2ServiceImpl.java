@@ -1370,8 +1370,9 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                 -> serviceLevelObjectiveDetailsTransformer.getServiceLevelObjectiveDetails(
                     serviceLevelObjectiveDetailsDTO))
             .collect(Collectors.toSet()));
-    serviceLevelObjectiveList.stream().forEach(serviceLevelObjective -> {
-      if (serviceLevelObjective.getSliEvaluationType() != compositeServiceLevelObjectiveSpec.getEvaluationType()) {
+    serviceLevelObjectiveList.forEach(serviceLevelObjective -> {
+      if (!serviceLevelObjective.getSliEvaluationType().getCompositeSLOEvaluationType().equals(
+              compositeServiceLevelObjectiveSpec.getEvaluationType().getCompositeSLOEvaluationType())) {
         throw new InvalidRequestException(String.format(
             "The evaluation type of all the SLOs constituting the Composite SLO with identifier %s should be %s.",
             serviceLevelObjectiveDTO.getIdentifier(), compositeServiceLevelObjectiveSpec.getEvaluationType()));

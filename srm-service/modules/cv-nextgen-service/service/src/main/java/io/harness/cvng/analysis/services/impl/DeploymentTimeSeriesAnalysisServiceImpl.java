@@ -68,6 +68,8 @@ import io.harness.cvng.core.services.DeeplinkURLService;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.CVNGObjectUtils;
+import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils;
 import io.harness.cvng.verificationjob.entities.SimpleVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
@@ -101,8 +103,10 @@ import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import lombok.Value;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -118,6 +122,59 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
   @Override
   public void save(DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis) {
     hPersistence.save(deploymentTimeSeriesAnalysis);
+  }
+
+  @Override
+  public void updateNoAnalysisMetricsAsFailureIfRequired(AnalysisInput analysisInput) {
+    String verificationTaskId = analysisInput.getVerificationTaskId();
+    VerificationTask verificationTask = verificationTaskService.get(verificationTaskId);
+    if (verificationTask == null || verificationTask.getTaskInfo() == null
+        || !verificationTask.getTaskInfo().getTaskType().equals(TaskType.DEPLOYMENT)
+        || !(verificationTask.getTaskInfo() instanceof DeploymentInfo)) {
+      return;
+    }
+    VerificationJobInstance verificationJobInstance = verificationJobInstanceService.getVerificationJobInstance(
+        ((DeploymentInfo) verificationTask.getTaskInfo()).getVerificationJobInstanceId());
+    if (verificationJobInstance.getResolvedJob().getFailIfAnyCustomMetricInNoAnalysis() == null
+        || !Boolean.TRUE.toString().equals(
+            verificationJobInstance.getResolvedJob().getFailIfAnyCustomMetricInNoAnalysis().getValue())) {
+      return;
+    }
+    CVConfig cvConfig =
+        verificationJobInstance.getCvConfigMap().get(((DeploymentInfo) verificationTask.getTaskInfo()).getCvConfigId());
+    Preconditions.checkNotNull(cvConfig, "CVConfig not found for verificationId:{}, cvConfigId:{}", verificationTaskId,
+        ((DeploymentInfo) verificationTask.getTaskInfo()).getCvConfigId());
+    DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis = getLatestAnalysis(verificationTaskId);
+
+    if (deploymentTimeSeriesAnalysis == null || deploymentTimeSeriesAnalysis.getRisk().equals(Risk.UNHEALTHY)) {
+      return;
+    }
+
+    Set<TransactionMetricIdentifier> transactionMetricIdentifiers =
+        getTransactionMetricIdentifiersForCustomMetrics(cvConfig);
+    Map<TransactionMetricIdentifier, TransactionMetricHostData> metricIdentifierMetricHostDataMap =
+        getTransactionMetricToHostDataMap(deploymentTimeSeriesAnalysis);
+    transactionMetricIdentifiers.stream().forEach(transactionMetricIdentifier
+        -> metricIdentifierMetricHostDataMap.putIfAbsent(
+            transactionMetricIdentifier, getNoAnalysisFailedTransactionMetricHostData(transactionMetricIdentifier)));
+
+    deploymentTimeSeriesAnalysis.setTransactionMetricSummaries(
+        metricIdentifierMetricHostDataMap.values()
+            .stream()
+            .peek(tms -> updateTransactionMetricHostDataForFailOnNoAnalysis(tms, analysisInput.getTestHosts()))
+            .collect(Collectors.toList()));
+    deploymentTimeSeriesAnalysis.setHostSummaries(getUpdatedHostInfo(
+        deploymentTimeSeriesAnalysis.getHostSummaries(), deploymentTimeSeriesAnalysis.getTransactionMetricSummaries()));
+
+    boolean failThisAnalysis = deploymentTimeSeriesAnalysis.getTransactionMetricSummaries()
+                                   .stream()
+                                   .map(tms -> tms.getRisk())
+                                   .anyMatch(risk -> risk.equals(Risk.UNHEALTHY));
+
+    if (failThisAnalysis) {
+      deploymentTimeSeriesAnalysis.setRisk(Risk.UNHEALTHY);
+      hPersistence.save(deploymentTimeSeriesAnalysis);
+    }
   }
 
   @Override
@@ -948,6 +1005,13 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
     return deploymentTimeSeriesAnalysis != null && deploymentTimeSeriesAnalysis.isFailFast();
   }
 
+  private DeploymentTimeSeriesAnalysis getLatestAnalysis(String verificationTaskId) {
+    return hPersistence.createQuery(DeploymentTimeSeriesAnalysis.class, excludeAuthority)
+        .filter(DeploymentTimeSeriesAnalysisKeys.verificationTaskId, verificationTaskId)
+        .order(Sort.descending(DeploymentTimeSeriesAnalysisKeys.createdAt))
+        .get();
+  }
+
   @Override
   public Optional<Risk> getRecentHighestRiskScore(String accountId, String verificationJobInstanceId) {
     DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis =
@@ -1013,5 +1077,115 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
     Optional<ConnectorInfoDTO> connectorInfoDTO = nextGenService.get(cvConfig.getAccountId(),
         cvConfig.getConnectorIdentifier(), cvConfig.getOrgIdentifier(), cvConfig.getProjectIdentifier());
     return connectorInfoDTO.isPresent() ? connectorInfoDTO.get().getName() : null;
+  }
+
+  private Set<TransactionMetricIdentifier> getTransactionMetricIdentifiersForCustomMetrics(CVConfig cvConfig) {
+    if (!(cvConfig instanceof MetricCVConfig)) {
+      return Collections.emptySet();
+    }
+    MetricCVConfig<?> metricCVConfig = (MetricCVConfig<?>) cvConfig;
+    if (!metricCVConfig.maybeGetGroupName().isPresent()) {
+      // For CV Configs with just metric packs, group name may be empty, then there is no custom metrics.
+      return Collections.emptySet();
+    }
+    String transactionName = metricCVConfig.maybeGetGroupName().get();
+    return AnalysisInfoUtility.filterApplicableForDataCollection(metricCVConfig.getMetricInfos(), TaskType.DEPLOYMENT)
+        .stream()
+        .map(analysisInfo -> new TransactionMetricIdentifier(transactionName, analysisInfo.getIdentifier()))
+        .collect(Collectors.toSet());
+  }
+
+  private void updateTransactionMetricHostDataForFailOnNoAnalysis(
+      TransactionMetricHostData transactionMetricHostData, Set<String> testHosts) {
+    Risk existingRisk = transactionMetricHostData.getRisk();
+    if (existingRisk.equals(Risk.UNHEALTHY)) {
+      return;
+    }
+    if (existingRisk.equals(Risk.NO_ANALYSIS) || existingRisk.equals(Risk.NO_DATA)) {
+      CollectionUtils.emptyIfNull(transactionMetricHostData.getHostData())
+          .stream()
+          .forEach(hd -> hd.setRisk(Risk.UNHEALTHY.riskValueForTimeSeriesDeploymentAnalysis()));
+      transactionMetricHostData.setRisk(Risk.UNHEALTHY.riskValueForTimeSeriesDeploymentAnalysis());
+    }
+    // Will reach here only if metricHostData is Healthy
+    if (CollectionUtils.isEmpty(testHosts)) {
+      // If no test hosts to worry about, then proceed
+      return;
+    }
+    Map<String, HostData> hostToHostDataMap =
+        CollectionUtils.emptyIfNull(transactionMetricHostData.getHostData())
+            .stream()
+            .filter(hostData -> hostData.getHostName().isPresent())
+            .peek(hostData -> failNoAnalysisHostData(hostData))
+            .collect(Collectors.toMap(hostData -> hostData.getHostName().get(), Function.identity()));
+
+    testHosts.stream().forEach(host -> hostToHostDataMap.putIfAbsent(host, getNoAnalysisFailedHostData(host)));
+    transactionMetricHostData.setHostData(new ArrayList<>(hostToHostDataMap.values()));
+    boolean shouldFailThisMetricHostData =
+        hostToHostDataMap.values().stream().anyMatch(hostData -> hostData.getRisk().equals(Risk.UNHEALTHY));
+    if (shouldFailThisMetricHostData) {
+      transactionMetricHostData.setRisk(Risk.UNHEALTHY.riskValueForTimeSeriesDeploymentAnalysis());
+    }
+  }
+
+  private List<HostInfo> getUpdatedHostInfo(
+      List<HostInfo> hostInfos, List<TransactionMetricHostData> transactionMetricHostData) {
+    Set<String> unhealthyHosts =
+        CollectionUtils.emptyIfNull(transactionMetricHostData)
+            .stream()
+            .flatMap(metricHostData -> CollectionUtils.emptyIfNull(metricHostData.getHostData()).stream())
+            .filter(hostData -> hostData.getRisk().equals(Risk.UNHEALTHY))
+            .filter(hostData -> hostData.getHostName().isPresent())
+            .map(hostData -> hostData.getHostName().get())
+            .collect(Collectors.toSet());
+
+    return CollectionUtils.emptyIfNull(hostInfos)
+        .stream()
+        .peek(hostInfo -> {
+          if (unhealthyHosts.contains(hostInfo.getHostName())) {
+            hostInfo.setRisk(Risk.UNHEALTHY.riskValueForTimeSeriesDeploymentAnalysis());
+          }
+        })
+        .collect(Collectors.toList());
+  }
+
+  private void failNoAnalysisHostData(HostData hostData) {
+    Risk risk = hostData.getRisk();
+    if (risk != Risk.NO_ANALYSIS && risk != Risk.NO_DATA) {
+      return;
+    }
+    hostData.setRisk(Risk.UNHEALTHY.riskValueForTimeSeriesDeploymentAnalysis());
+  }
+
+  private Map<TransactionMetricIdentifier, TransactionMetricHostData> getTransactionMetricToHostDataMap(
+      DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis) {
+    return deploymentTimeSeriesAnalysis.getTransactionMetricSummaries().stream().collect(Collectors.toMap(
+        tms -> new TransactionMetricIdentifier(tms.getTransactionName(), tms.getMetricName()), Function.identity()));
+  }
+
+  private TransactionMetricHostData getNoAnalysisFailedTransactionMetricHostData(
+      TransactionMetricIdentifier transactionMetricIdentifier) {
+    return TransactionMetricHostData.builder()
+        .failFast(false)
+        .transactionName(transactionMetricIdentifier.getTransactionName())
+        .metricName(transactionMetricIdentifier.getMetricIdentifier())
+        .score(0D)
+        .risk(Risk.UNHEALTHY.riskValueForTimeSeriesDeploymentAnalysis())
+        .build();
+  }
+
+  private HostData getNoAnalysisFailedHostData(String host) {
+    return HostData.builder()
+        .hostName(host)
+        .nearestControlHost("None")
+        .score(0D)
+        .risk(Risk.UNHEALTHY.riskValueForTimeSeriesDeploymentAnalysis())
+        .build();
+  }
+
+  @Value
+  private static class TransactionMetricIdentifier {
+    private String transactionName;
+    private String metricIdentifier;
   }
 }

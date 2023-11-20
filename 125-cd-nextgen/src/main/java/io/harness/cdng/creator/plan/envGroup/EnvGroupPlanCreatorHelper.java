@@ -25,6 +25,7 @@ import io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigMapper;
 import io.harness.cdng.environment.helper.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.gitops.steps.ClusterAgentRef;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
@@ -152,7 +153,7 @@ public class EnvGroupPlanCreatorHelper {
 
   @VisibleForTesting
   protected void createEnvConfigsForFiltersFlow(
-      List<EnvironmentPlanCreatorConfig> envConfigs, Environment environment, List<String> clusterRefs) {
+      List<EnvironmentPlanCreatorConfig> envConfigs, Environment environment, List<ClusterAgentRef> clusterRefs) {
     String originalEnvYaml = environment.getYaml();
 
     // TODO: need to remove this once we have the migration for old env
@@ -165,7 +166,7 @@ public class EnvGroupPlanCreatorHelper {
     }
 
     String mergedEnvYaml = originalEnvYaml;
-    EnvironmentPlanCreatorConfig config = EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitopsFromEnv(
+    EnvironmentPlanCreatorConfig config = EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitOpsFromEnv(
         mergedEnvYaml, environment.getIdentifier(), null, clusterRefs);
     envConfigs.add(config);
   }

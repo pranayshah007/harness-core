@@ -66,6 +66,7 @@ import io.harness.cvng.core.beans.params.filterParams.LiveMonitoringLogAnalysisF
 import io.harness.cvng.core.beans.params.filterParams.TimeSeriesAnalysisFilter;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
 import io.harness.cvng.core.beans.template.TemplateDTO;
+import io.harness.cvng.core.beans.template.TemplateMetadata;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.EntityDisableTime;
 import io.harness.cvng.core.entities.MonitoredService;
@@ -730,7 +731,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   public PageResponse<MonitoredServiceResponse> getList(ProjectParams projectParams,
       List<String> environmentIdentifiers, Integer offset, Integer pageSize, String filter) {
     List<MonitoredService> monitoredServiceEntities =
-        getFilteredMonitoredServices(projectParams, environmentIdentifiers, null, false);
+        getFilteredMonitoredServices(projectParams, environmentIdentifiers, null, false, null);
     if (isEmpty(monitoredServiceEntities)) {
       throw new InvalidRequestException(
           String.format("There are no Monitored Services for the environments: %s", environmentIdentifiers));
@@ -800,7 +801,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       List<String> environmentIdentifiers, Integer offset, Integer pageSize, String filter,
       MonitoredServiceType monitoredServiceType, boolean hideNotConfiguredServices) {
     List<MonitoredService> monitoredServices = getFilteredMonitoredServices(
-        projectParams, environmentIdentifiers, monitoredServiceType, hideNotConfiguredServices);
+        projectParams, environmentIdentifiers, monitoredServiceType, hideNotConfiguredServices, null);
     Map<String, String> serviceIdNameMap = getServiceIdNameMap(projectParams, monitoredServices);
     if (Objects.nonNull(filter)) {
       monitoredServices = filterMonitoredService(monitoredServices, serviceIdNameMap, filter);
@@ -929,8 +930,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   private List<MonitoredService> getFilteredMonitoredServices(ProjectParams projectParams,
-      List<String> environmentIdentifiers, MonitoredServiceType monitoredServiceType,
-      boolean hideNotConfiguredServices) {
+      List<String> environmentIdentifiers, MonitoredServiceType monitoredServiceType, boolean hideNotConfiguredServices,
+      String serviceIdentifier) {
     Query<MonitoredService> query =
         hPersistence.createQuery(MonitoredService.class)
             .filter(MonitoredServiceKeys.accountId, projectParams.getAccountIdentifier())
@@ -942,6 +943,9 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     }
     if (monitoredServiceType != null) {
       query = query.filter(MonitoredServiceKeys.type, monitoredServiceType);
+    }
+    if (isNotEmpty(serviceIdentifier)) {
+      query = query.filter(MonitoredServiceKeys.serviceIdentifier, serviceIdentifier);
     }
     if (hideNotConfiguredServices) {
       query.or(query.and(query.criteria(MonitoredServiceKeys.changeSourceIdentifiers).exists(),
@@ -1069,6 +1073,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     if (monitoredServiceDTO.getTemplate() != null) {
       monitoredServiceEntity.setTemplateIdentifier(monitoredServiceDTO.getTemplate().getTemplateRef());
       monitoredServiceEntity.setTemplateVersionLabel(monitoredServiceDTO.getTemplate().getVersionLabel());
+      monitoredServiceEntity.setTemplateMetadata(TemplateMetadata.fromTemplateDTO(monitoredServiceDTO.getTemplate()));
     }
     if (monitoredServiceDTO.getSources() != null) {
       monitoredServiceEntity.setHealthSourceIdentifiers(monitoredServiceDTO.getSources()
@@ -1085,7 +1090,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     hPersistence.save(monitoredServiceEntity);
   }
 
-  private HistoricalTrend getMonitoredServiceHistorialTrend(
+  private HistoricalTrend getMonitoredServiceHistoricalTrend(
       MonitoredService monitoredService, ProjectParams projectParams, DurationDTO duration, Instant endTime) {
     Preconditions.checkNotNull(monitoredService,
         "Monitored service for provided serviceIdentifier and envIdentifier or monitoredServiceIdentifier does not exist.");
@@ -1175,10 +1180,10 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   @Override
   public PageResponse<MonitoredServiceListItemDTO> list(ProjectParams projectParams,
-      List<String> environmentIdentifiers, Integer offset, Integer pageSize, String filter,
+      List<String> environmentIdentifiers, String serviceIdentifier, Integer offset, Integer pageSize, String filter,
       MonitoredServiceType monitoredServiceType, boolean servicesAtRiskFilter) {
-    List<MonitoredService> monitoredServices =
-        getFilteredMonitoredServices(projectParams, environmentIdentifiers, monitoredServiceType, false);
+    List<MonitoredService> monitoredServices = getFilteredMonitoredServices(
+        projectParams, environmentIdentifiers, monitoredServiceType, false, serviceIdentifier);
     Map<String, String> serviceIdNameMap = getServiceIdNameMap(projectParams, monitoredServices);
     if (Objects.nonNull(filter)) {
       monitoredServices = filterMonitoredService(monitoredServices, serviceIdNameMap, filter);
@@ -1589,7 +1594,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     Duration duration = Duration.ofSeconds(endTime.getEpochSecond() - startTime.getEpochSecond());
     DurationDTO bestFitDuration = DurationDTO.findClosestGreaterDurationDTO(duration);
     HistoricalTrend historicalTrend =
-        getMonitoredServiceHistorialTrend(monitoredService, projectParams, bestFitDuration, endTime);
+        getMonitoredServiceHistoricalTrend(monitoredService, projectParams, bestFitDuration, endTime);
     historicalTrend.setHealthScores(historicalTrend.getHealthScores()
                                         .stream()
                                         .filter(healthScore -> healthScore.getEndTime() >= startTime.toEpochMilli())

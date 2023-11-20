@@ -21,7 +21,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @OwnedBy(CDC)
 public enum DeploymentStageType {
   @JsonProperty(DeploymentStageTypeConstants.SINGLE_SERVICE_ENVIRONMENT)
-  SINGLE_SERVICE_ENVIRONMENT(DeploymentStageTypeConstants.SINGLE_SERVICE_ENVIRONMENT);
+  SINGLE_SERVICE_ENVIRONMENT(DeploymentStageTypeConstants.SINGLE_SERVICE_ENVIRONMENT),
+
+  @JsonProperty(DeploymentStageTypeConstants.MULTI_SERVICE_ENVIRONMENT)
+  MULTI_SERVICE_ENVIRONMENT(DeploymentStageTypeConstants.MULTI_SERVICE_ENVIRONMENT);
 
   private final String displayName;
 

@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class InputSetMergeHelperV1 {
   /***
-   * @param inputSetJsonNode: This is the inputs json node having the values for the given inputs.
+   * @param inputSetJsonNode This is the inputs json node having the values for the given inputs.
    * @param entityJsonNode This is JsonNode for the complete entity-yaml. This jsoNode might refer some inputs and we
    *     want to resolve those reference with the values.
    * @return returns the resolved YAML for the given entityJsonNode.

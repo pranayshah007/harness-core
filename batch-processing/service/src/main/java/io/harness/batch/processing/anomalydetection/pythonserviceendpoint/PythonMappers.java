@@ -49,6 +49,7 @@ public class PythonMappers {
         .azureResourceGroup(timeSeries.getAzureResourceGroup())
         .azureMeterCategory(timeSeries.getAzureMeterCategory())
         .newEntity(timeSeries.isNewEntity())
+        .cloudProvider(timeSeries.getCloudProvider())
         .build();
   }
 
@@ -74,6 +75,7 @@ public class PythonMappers {
     pythonInput.setAzureResourceGroup(source.getAzureResourceGroup());
     pythonInput.setAzureMeterCategory(source.getAzureMeterCategory());
     pythonInput.setNewEntity(source.isNewEntity());
+    pythonInput.setCloudProvider(source.getCloudProvider());
 
     PythonInput.APITimeSeries apiTimeSeries =
         PythonInput.APITimeSeries.builder()

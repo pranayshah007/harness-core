@@ -53,7 +53,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.CheckGraph;
-import io.harness.spec.server.idp.v1.model.CheckStats;
+import io.harness.spec.server.idp.v1.model.CheckStatsResponse;
 import io.harness.spec.server.idp.v1.model.CheckStatus;
 import io.harness.spec.server.idp.v1.model.DataPoint;
 import io.harness.spec.server.idp.v1.model.InputDetails;
@@ -300,6 +300,8 @@ public class CheckServiceImplTest extends CategoryTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testGetCheckStats() {
+    when(checkRepository.findByAccountIdentifierAndIdentifier(ACCOUNT_ID, GITHUB_CHECK_ID))
+        .thenReturn(getCheckEntities().get(0));
     when(scorecardService.getScorecardIdentifiers(ACCOUNT_ID, GITHUB_CHECK_ID, Boolean.TRUE))
         .thenReturn(List.of(SERVICE_MATURITY_SCORECARD));
     when(scorecardService.getScorecardFilters(ACCOUNT_ID, List.of(SERVICE_MATURITY_SCORECARD)))
@@ -308,21 +310,40 @@ public class CheckServiceImplTest extends CategoryTest {
     when(scoreService.getCheckStatusForEntityIdentifiersAndScorecardIdentifiers(
              any(), any(), any(), any(), any(), anyBoolean()))
         .thenReturn(getEntityIdentifierAndCheckStatus());
-    List<CheckStats> checkStats = checkServiceImpl.getCheckStats(ACCOUNT_ID, GITHUB_CHECK_ID, Boolean.TRUE);
-    assertEquals(1, checkStats.size());
-    assertEquals(IDP_SERVICE_ENTITY_NAME, checkStats.get(0).getName());
-    assertEquals(CheckStatus.StatusEnum.PASS.toString(), checkStats.get(0).getStatus());
+    CheckStatsResponse response = checkServiceImpl.getCheckStats(ACCOUNT_ID, GITHUB_CHECK_ID, Boolean.TRUE);
+    assertEquals(GITHUB_CHECK_NAME, response.getName());
+    assertEquals(1, response.getStats().size());
+    assertEquals(IDP_SERVICE_ENTITY_NAME, response.getStats().get(0).getName());
+    assertEquals(CheckStatus.StatusEnum.PASS.toString(), response.getStats().get(0).getStatus());
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testGetCheckStatsThrowsException() {
+    when(checkRepository.findByAccountIdentifierAndIdentifier(any(), any())).thenReturn(null);
+    checkServiceImpl.getCheckStats(ACCOUNT_ID, GITHUB_CHECK_ID, Boolean.FALSE);
   }
 
   @Test
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testGetCheckGraph() {
+    when(checkRepository.findByAccountIdentifierAndIdentifier(ACCOUNT_ID, GITHUB_CHECK_ID))
+        .thenReturn(getCheckEntities().get(0));
     when(checkStatusRepository.findByAccountIdentifierAndIdentifierAndIsCustom(ACCOUNT_ID, GITHUB_CHECK_ID, true))
         .thenReturn(getCheckStatusEntities());
     List<CheckGraph> checkGraphs = checkServiceImpl.getCheckGraph(ACCOUNT_ID, GITHUB_CHECK_ID, true);
     assertEquals(1, checkGraphs.size());
     assertEquals(5, (int) checkGraphs.get(0).getCount());
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testGetGraphStatsThrowsException() {
+    when(checkRepository.findByAccountIdentifierAndIdentifier(any(), any())).thenReturn(null);
+    checkServiceImpl.getCheckGraph(ACCOUNT_ID, GITHUB_CHECK_ID, Boolean.FALSE);
   }
 
   @Test

@@ -22,6 +22,6 @@ public class EnvClusterRefs {
   private String envRef;
   private String envName;
   private String envType;
-  private Set<String> clusterRefs;
+  private Set<ClusterAgentRef> clusterRefs;
   boolean deployToAll;
 }

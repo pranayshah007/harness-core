@@ -8,8 +8,8 @@
 package io.harness.data.validator.uuid;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.utils.UuidUtils.base64StrToUuid;
-import static io.harness.utils.UuidUtils.isValidUuidStr;
+import static io.harness.utils.UuidAndIdentifierUtils.base64StrToUuid;
+import static io.harness.utils.UuidAndIdentifierUtils.isValidUuidStr;
 
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;

@@ -133,6 +133,7 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
 
   @Override
   public void logDeploymentVerificationProgress(AnalysisInput analysisInput, AnalysisStatus analysisStatus) {
+    deploymentTimeSeriesAnalysisService.updateNoAnalysisMetricsAsFailureIfRequired(analysisInput);
     ProgressLog progressLog = AnalysisProgressLog.builder()
                                   .startTime(analysisInput.getStartTime())
                                   .endTime(analysisInput.getEndTime())

@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
+import static io.harness.rule.OwnerRule.SAHIBA;
 import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.security.encryption.EncryptionType.AWS_SECRETS_MANAGER;
@@ -1382,6 +1383,48 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     assertEquals(result.getOrgIdentifier(), orgIdentifier);
     assertEquals(result.getProjectIdentifier(), projectIdentifier);
     assertEquals(result.getSecretManagerIdentifier(), CONNECTOR_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testVersionUpdateInEncryptedData() {
+    String accountIdentifier = randomAlphabetic(10);
+    String secretManagerIdentifier = "secretManager1";
+    NGEncryptedData encryptedDataDTO =
+        NGEncryptedData.builder()
+            .type(SettingVariableTypes.SECRET_TEXT)
+            .additionalMetadata(AdditionalMetadata.builder().value("version", "1").build())
+            .secretManagerIdentifier(secretManagerIdentifier)
+            .build();
+    when(encryptedDataDao.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
+    SecretManagerConfigDTO secretManager = VaultConfigDTO.builder()
+                                               .harnessManaged(false)
+                                               .encryptionType(GCP_SECRETS_MANAGER)
+                                               .name(secretManagerIdentifier)
+                                               .secretId(randomAlphabetic(10))
+                                               .accountIdentifier(accountIdentifier)
+                                               .authToken(randomAlphabetic(10))
+                                               .build();
+    NGEncryptedData encryptedData = NGEncryptedData.builder()
+                                        .name(secretManagerIdentifier)
+                                        .secretManagerIdentifier(secretManagerIdentifier)
+                                        .build();
+    when(encryptedDataDao.get(any(), any(), any(), any())).thenReturn(encryptedData);
+    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
+        .thenReturn(secretManager);
+    SecretDTOV2 secretDTOV2 =
+        SecretDTOV2.builder()
+            .type(SecretType.SecretText)
+            .spec(SecretTextSpecDTO.builder()
+                      .additionalMetadata(AdditionalMetadata.builder().value("version", "2").build())
+                      .secretManagerIdentifier(secretManagerIdentifier)
+                      .build())
+            .build();
+    ngEncryptedDataService.updateSecretText(accountIdentifier, secretDTOV2);
+    ArgumentCaptor<NGEncryptedData> argumentCaptor = ArgumentCaptor.forClass(NGEncryptedData.class);
+    verify(encryptedDataDao, times(1)).save(argumentCaptor.capture());
+    assertThat(argumentCaptor.getValue().getAdditionalMetadata()).isNotNull();
   }
 
   private ConnectorInfoDTO createTemplate() {

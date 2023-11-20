@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -29,6 +30,11 @@ import io.harness.cdng.CDNGEntitiesTestBase;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.dto.InfrastructureInputsMergedResponseDto;
 import io.harness.ng.core.infrastructure.dto.NoInputMergeInputAction;
@@ -56,6 +62,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -75,8 +82,9 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock NGSettingsClient settingsClient;
   @Mock NGFeatureFlagHelperService featureFlagHelperService;
   @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
-
+  @Mock GitAwareEntityHelper gitAwareEntityHelper;
   @InjectMocks @Inject InfrastructureEntityServiceImpl infrastructureEntityService;
+  @Mock EnvironmentService environmentService;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "ORG_ID";
   private static final String PROJECT_ID = "PROJECT_ID";
@@ -88,6 +96,8 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
     SettingValueResponseDTO settingValueResponseDTO = SettingValueResponseDTO.builder().value("false").build();
     mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
+    Reflect.on(infrastructureEntityService).set("gitAwareEntityHelper", gitAwareEntityHelper);
+    Reflect.on(infrastructureEntityService).set("environmentService", environmentService);
   }
 
   @Test
@@ -674,5 +684,53 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     } catch (IOException e) {
       throw new InvalidRequestException("Could not read resource file: " + filename);
     }
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testGetGitDetailsForEnvironment() {
+    String filename = "env-with-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+    Environment inlineEnvironment = Environment.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .identifier("IDENTIFIER")
+                                        .orgIdentifier(ORG_ID)
+                                        .projectIdentifier(PROJECT_ID)
+                                        .yaml(yaml)
+                                        .build();
+    when(environmentService.getMetadata(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq("IDENTIFIER"), eq(false)))
+        .thenReturn(Optional.of(inlineEnvironment));
+
+    GitEntityInfo gitEntityInfo =
+        infrastructureEntityService.getGitDetailsForInfrastructure(ACCOUNT_ID, ORG_ID, PROJECT_ID, "IDENTIFIER", null);
+
+    // for inline environment, use default repo of infra
+    assertThat(gitEntityInfo).isNotNull();
+    assertThat(gitEntityInfo.getBranch()).isNull();
+
+    Environment remoteEnvironment = Environment.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .identifier("IDENTIFIER_2")
+                                        .orgIdentifier(ORG_ID)
+                                        .projectIdentifier(PROJECT_ID)
+                                        .yaml(yaml)
+                                        .storeType(StoreType.REMOTE)
+                                        .filePath("a/b.yaml")
+                                        .repo("gitRepo")
+                                        .connectorRef("gitConnectorRef")
+                                        .build();
+
+    when(environmentService.getMetadata(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq("IDENTIFIER_2"), eq(false)))
+        .thenReturn(Optional.of(remoteEnvironment));
+
+    String envGitBranch = "feature";
+    // remote environment with static linking
+    gitEntityInfo = infrastructureEntityService.getGitDetailsForInfrastructure(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "IDENTIFIER_2", envGitBranch);
+
+    assertThat(gitEntityInfo).isNotNull();
+    assertThat(gitEntityInfo.getBranch()).isEqualTo("feature");
+    assertThat(gitEntityInfo.getParentEntityRepoName()).isEqualTo("gitRepo");
   }
 }

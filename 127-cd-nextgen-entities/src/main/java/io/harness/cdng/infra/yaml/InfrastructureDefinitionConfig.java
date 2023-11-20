@@ -27,6 +27,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -72,6 +73,9 @@ public class InfrastructureDefinitionConfig implements Visitable {
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   @NotNull
   Infrastructure spec;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH, notes = "specifies list of serviceRefs")
+  public List<String> scopedServices;
 
   @Override
   public VisitableChildren getChildrenToWalk() {

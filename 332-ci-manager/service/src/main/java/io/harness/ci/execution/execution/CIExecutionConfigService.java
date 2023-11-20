@@ -573,6 +573,9 @@ public class CIExecutionConfigService {
       case SLSA_VERIFICATION_GCR:
         return getApplicableImage(stepInfoType, accountLevelExecutionConfig.getSlsaVerificationGcrTag(),
             globalExecutionConfig.getSlsaVerificationGcrTag());
+      case IACM_TERRAFORM_PLUGIN:
+      case IACM_APPROVAL:
+        return Strings.EMPTY;
       default:
         throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }

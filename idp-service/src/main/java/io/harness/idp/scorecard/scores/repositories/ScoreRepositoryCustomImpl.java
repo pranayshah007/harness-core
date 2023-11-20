@@ -8,6 +8,7 @@ package io.harness.idp.scorecard.scores.repositories;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.DOT_SEPARATOR;
+import static io.harness.idp.common.DateUtils.yesterdayInMilliseconds;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -72,7 +73,9 @@ public class ScoreRepositoryCustomImpl implements ScoreRepositoryCustom {
     Criteria criteria = Criteria.where(ScoreEntity.ScoreKeys.accountIdentifier)
                             .is(accountIdentifier)
                             .and(ScoreEntity.ScoreKeys.scorecardIdentifier)
-                            .in(scorecardIdentifiers);
+                            .in(scorecardIdentifiers)
+                            .and(ScoreEntity.ScoreKeys.lastComputedTimestamp)
+                            .gt(yesterdayInMilliseconds());
     ProjectionOperation projectionOperation =
         Aggregation.project()
             .andExpression(Constants.ID_KEY)
@@ -82,7 +85,7 @@ public class ScoreRepositoryCustomImpl implements ScoreRepositoryCustom {
             .and(
                 ConditionalOperators.when(Criteria.where(Constants.COUNT_KEY).ne(0))
                     .then(
-                        ArithmeticOperators.valueOf(Constants.SCORES_GREATER_THAN_75_KEY).divideBy(Constants.COUNT_KEY))
+                        ArithmeticOperators.valueOf(Constants.SCORES_GREATER_THAN_74_KEY).divideBy(Constants.COUNT_KEY))
                     .otherwise(0))
             .as(Constants.PERCENTAGE_KEY);
 
@@ -94,8 +97,8 @@ public class ScoreRepositoryCustomImpl implements ScoreRepositoryCustom {
         Aggregation.group(Constants.ID_KEY + DOT_SEPARATOR + Constants.SCORECARD_IDENTIFIER_KEY)
             .count()
             .as(Constants.COUNT_KEY)
-            .sum(ConditionalOperators.when(Criteria.where(Constants.SCORE_KEY).gt(75)).then(1).otherwise(0))
-            .as(Constants.SCORES_GREATER_THAN_75_KEY),
+            .sum(ConditionalOperators.when(Criteria.where(Constants.SCORE_KEY).gt(74)).then(1).otherwise(0))
+            .as(Constants.SCORES_GREATER_THAN_74_KEY),
         projectionOperation);
 
     return mongoTemplate.aggregate(aggregation, Constants.SCORE_COLLECTION_NAME, ScorecardIdentifierAndScore.class);

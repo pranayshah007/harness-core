@@ -35,7 +35,6 @@ import io.harness.aws.asg.manifest.AsgLaunchTemplateManifestHandler;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
-import io.harness.aws.asg.manifest.request.AsgInstanceCapacity;
 import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
@@ -63,6 +62,7 @@ import software.wings.beans.LogWeight;
 import software.wings.service.impl.AwsUtils;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -107,13 +107,7 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
         ? asgBlueGreenDeployRequest.getLoadBalancers()
         : Arrays.asList(asgBlueGreenDeployRequest.getAsgLoadBalancerConfig());
 
-    List<String> targetGroupArnsList =
-        lbConfigs.stream()
-            .map(lbConfig
-                -> isFirstDeployment ? lbConfig.getProdTargetGroupArnsList() : lbConfig.getStageTargetGroupArnsList())
-            .flatMap(List::stream)
-            .distinct()
-            .collect(Collectors.toList());
+    List<String> targetGroupArnsList = getTargetGroupArnsList(lbConfigs, isFirstDeployment);
 
     LogCallback logCallback = asgTaskHelper.getLogCallback(
         iLogStreamingTaskClient, AsgCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
@@ -213,8 +207,8 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
                     .awsInternalConfig(awsInternalConfig)
                     .region(region)
                     .useAlreadyRunningInstances(useAlreadyRunningInstances)
-                    .alreadyRunningInstanceCapacity(getRunningInstanceCapacity(
-                        asgSdkManager, useAlreadyRunningInstances, isFirstDeployment, prodAsgName))
+                    .alreadyRunningInstanceCapacity(asgTaskHelper.getRunningInstanceCapacity(
+                        asgSdkManager, useAlreadyRunningInstances, prodAsgName))
                     .build())
             .addHandler(
                 AsgScalingPolicy, AsgScalingPolicyManifestRequest.builder().manifests(asgScalingPolicyContent).build())
@@ -232,18 +226,17 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
     return asgTaskHelper.mapToAutoScalingGroupContainer(autoScalingGroup);
   }
 
-  AsgInstanceCapacity getRunningInstanceCapacity(
-      AsgSdkManager asgSdkManager, boolean useAlreadyRunningInstances, boolean isFirstDeployment, String prodAsgName) {
-    if (useAlreadyRunningInstances && !isFirstDeployment && isNotEmpty(prodAsgName)) {
-      AutoScalingGroup prodAutoScalingGroup = asgSdkManager.getASG(prodAsgName);
-      if (prodAutoScalingGroup != null) {
-        return AsgInstanceCapacity.builder()
-            .minCapacity(prodAutoScalingGroup.getMinSize())
-            .desiredCapacity(prodAutoScalingGroup.getDesiredCapacity())
-            .maxCapacity(prodAutoScalingGroup.getMaxSize())
-            .build();
-      }
-    }
-    return AsgInstanceCapacity.builder().build();
+  @VisibleForTesting
+  List<String> getTargetGroupArnsList(List<AsgLoadBalancerConfig> lbConfigs, boolean isFirstDeployment) {
+    return lbConfigs.stream()
+        .map(lbConfig -> {
+          if (!isFirstDeployment || asgTaskHelper.isShiftTrafficFeature(lbConfig)) {
+            return lbConfig.getStageTargetGroupArnsList();
+          }
+          return lbConfig.getProdTargetGroupArnsList();
+        })
+        .flatMap(List::stream)
+        .distinct()
+        .collect(Collectors.toList());
   }
 }

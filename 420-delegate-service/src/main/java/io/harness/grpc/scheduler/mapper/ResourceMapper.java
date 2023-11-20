@@ -13,7 +13,6 @@ import io.harness.delegate.core.beans.PVCVolume;
 import io.harness.delegate.core.beans.Resource;
 import io.harness.delegate.core.beans.ResourceType;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.mapstruct.IgnoreProtobufFields;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.GeneratedMessageV3;
@@ -22,6 +21,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.ValueMapping;
+import org.mapstruct.ValueMappings;
 import org.mapstruct.factory.Mappers;
 
 @Mapper(collectionMappingStrategy = CollectionMappingStrategy.ADDER_PREFERRED,
@@ -43,9 +43,13 @@ public interface ResourceMapper {
     return Resource.newBuilder().setSpec(Any.pack(res)).setType(type).build();
   }
 
-  @ValueMapping(source = "RES_UNKNOWN", target = MappingConstants.THROW_EXCEPTION)
-  ResourceType mapResourceType(io.harness.delegate.ResourceType resource);
-  @IgnoreProtobufFields EmptyDirVolume mapEmptyDir(io.harness.delegate.EmptyDirVolume resource);
-  @IgnoreProtobufFields PVCVolume mapPvc(io.harness.delegate.PVCVolume resource);
-  @IgnoreProtobufFields HostPathVolume mapHostPath(io.harness.delegate.HostPathVolume resource);
+  @ValueMappings({
+    @ValueMapping(source = "RESOURCE_TYPE_UNSPECIFIED", target = MappingConstants.THROW_EXCEPTION)
+    , @ValueMapping(source = MappingConstants.ANY_REMAINING, target = MappingConstants.THROW_EXCEPTION)
+  })
+  ResourceType
+  mapResourceType(io.harness.delegate.ResourceType resource);
+  EmptyDirVolume mapEmptyDir(io.harness.delegate.EmptyDirVolume resource);
+  PVCVolume mapPvc(io.harness.delegate.PVCVolume resource);
+  HostPathVolume mapHostPath(io.harness.delegate.HostPathVolume resource);
 }

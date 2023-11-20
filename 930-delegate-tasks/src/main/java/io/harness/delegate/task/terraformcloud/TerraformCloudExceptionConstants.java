@@ -26,6 +26,8 @@ public final class TerraformCloudExceptionConstants {
     public static final String PLEASE_CHECK_PLAN_STATUS = "Please check status of plan: %s";
     public static final String POLICY_OVERRIDE_HINT =
         "To override policies select option [ Continue on Soft-Mandatory Policy evaluation result ] in step configuration";
+    public static final String RESPONSE_401_HINT = "Check if Terraform Cloud token is valid";
+    public static final String RESPONSE_404_HINT = "Check if Terraform Cloud token have the required permissions";
   }
   public static final class Explanation {
     public static final String COULD_NOT_GET_WORKSPACE = "Could not get workspaces from: %s for organization: %s";
@@ -58,6 +60,10 @@ public final class TerraformCloudExceptionConstants {
         "Terraform changes didn't pass the policy checks for the following policies: %s";
     public static final String POLICY_CHECK_FAILURE_SUMMARY =
         "Policy with hard mandatory policy enforcement level failed";
+    public static final String RESPONSE_401_EXPLANATION =
+        "If the token is absent or invalid, Terraform Cloud responds with HTTP status 401 and an error object. The 401 status code is reserved for problems with the authentication token.";
+    public static final String RESPONSE_404_EXPLANATION =
+        "404 Not Found is returned for resources that a user doesn't have access to, as well as for resources that don't exist. Forbidden requests with a valid token also result in a 404.";
   }
 
   public static final class Message {

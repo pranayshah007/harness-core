@@ -1,0 +1,12 @@
+name: AccountRingInfo
+identifier: account_ring_info_entry
+labels:
+  - accountId
+  - accountName
+  - ringName
+  - delegateImageTag
+  - upgraderImageTag
+  - watcherVersion
+  - watcherJREVersion
+  - delegateJREVersion
+  - legacyDelegateVersion

@@ -12,20 +12,29 @@ import static io.harness.cdng.visitor.YamlTypes.ECS_BLUE_GREEN_SWAP_TARGET_GROUP
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
+import io.harness.cdng.ecs.EcsBlueGreenRollbackStep;
 import io.harness.cdng.ecs.EcsBlueGreenRollbackStepNode;
 import io.harness.cdng.ecs.EcsBlueGreenRollbackStepParameters;
+import io.harness.cdng.ecs.asyncsteps.EcsBlueGreenRollbackStepV2;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 public class EcsBlueGreenRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<EcsBlueGreenRollbackStepNode> {
+  @Inject private CDFeatureFlagHelper featureFlagService;
+
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK);
@@ -53,5 +62,23 @@ public class EcsBlueGreenRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<
     ecsBlueGreenRollbackStepParameters.setEcsBlueGreenCreateServiceFnq(ecsBlueGreenCreateServiceFnq);
     ecsBlueGreenRollbackStepParameters.setEcsBlueGreenSwapTargetGroupsFnq(ecsBlueGreenSwapTargetGroupsFnq);
     return stepParameters;
+  }
+
+  @Override
+  public StepType getStepSpecType(PlanCreationContext ctx, EcsBlueGreenRollbackStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_ECS_ASYNC_STEP_STRATEGY)) {
+      return EcsBlueGreenRollbackStepV2.STEP_TYPE;
+    }
+    return EcsBlueGreenRollbackStep.STEP_TYPE;
+  }
+
+  @Override
+  public String getFacilitatorType(PlanCreationContext ctx, EcsBlueGreenRollbackStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_ECS_ASYNC_STEP_STRATEGY)) {
+      return OrchestrationFacilitatorType.ASYNC;
+    }
+    return OrchestrationFacilitatorType.TASK;
   }
 }

@@ -197,7 +197,8 @@ public class BuildTriggerEventConditionsFilterTest extends CategoryTest {
     assertThat(webhookEventMappingResponse.getUnMatchedTriggerInfoList().get(0).getFinalStatus())
         .isEqualTo(TRIGGER_DID_NOT_MATCH_EVENT_CONDITION);
     assertThat(webhookEventMappingResponse.getUnMatchedTriggerInfoList().get(0).getMessage())
-        .isEqualTo("first_trigger didn't match conditions for payload event");
+        .isEqualTo(
+            "Conditions mentioned in trigger with identifier first_trigger did not match. v0 didn't match release.* on applying Regex operator");
   }
 
   @Test

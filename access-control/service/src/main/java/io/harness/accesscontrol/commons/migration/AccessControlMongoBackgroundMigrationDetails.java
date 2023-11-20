@@ -13,6 +13,7 @@ import io.harness.accesscontrol.acl.migration.ACLAddBooleanFieldsMigration;
 import io.harness.accesscontrol.resources.resourcegroups.migration.MultipleManagedResourceGroupMigration;
 import io.harness.accesscontrol.roleassignments.migration.AccountBasicRoleAssignmentAdditionMigration;
 import io.harness.accesscontrol.roleassignments.migration.AccountBasicRoleAssignmentInternalFieldMigration;
+import io.harness.accesscontrol.roleassignments.migration.RemoveSecondaryACLsMigration;
 import io.harness.accesscontrol.roleassignments.migration.RoleAssignmentPrincipalScopeLevelMigration;
 import io.harness.accesscontrol.roleassignments.migration.RoleAssignmentResourceGroupMigration;
 import io.harness.accesscontrol.roleassignments.migration.RoleAssignmentScopeAdditionMigration;
@@ -62,6 +63,7 @@ public class AccessControlMongoBackgroundMigrationDetails implements MigrationDe
         .add(Pair.of(17, NoopMigration.class))
         .add(Pair.of(18, UserInfoMigration.class))
         .add(Pair.of(19, NoopMigration.class))
+        .add(Pair.of(20, RemoveSecondaryACLsMigration.class))
         .build();
   }
 }

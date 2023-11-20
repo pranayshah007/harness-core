@@ -58,6 +58,13 @@ spec:
                 name: {{.Values.name}}
                 port:
                   number: 12003
+          - path: /(v2/status-info/.+)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
           - path: /(v1/onboarding/.+)
             pathType: Prefix
             backend:

@@ -35,7 +35,7 @@ public class GithubUpsertWebhookScmApiErrorHandler implements ScmApiErrorHandler
             "Please check if webhook read write permission is given to token/GithubApp. " + errorMessage);
       case 404:
         throw new ScmBadRequestException(
-            "Please check if the requested Github repository exists and if webhook read write permission is given to token/GithubApp. "
+            "Please check if the requested Github repository exists and if webhook read-write permissions are given both to the token/GithubApp used in the connector as well as to the user to whom the token belongs. "
             + errorMessage);
       case 422:
         throw new ScmBadRequestException("Please check if the secret provided for webhook is valid. " + errorMessage);

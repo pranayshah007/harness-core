@@ -174,6 +174,18 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
       return 20;
     }
   }
+
+  @Override
+  public String getAccountEdition(String accountId) {
+    try {
+      Edition edition = getEdition(accountId);
+      return edition.toString();
+    } catch (Exception e) {
+      // do nothing
+    }
+    return ENTERPRISE.name();
+  }
+
   @VisibleForTesting
   protected PlanExecutionSettingResponse shouldQueueInternal(long maxCount, long runningExecutionsForGivenPipeline) {
     if (runningExecutionsForGivenPipeline >= maxCount) {

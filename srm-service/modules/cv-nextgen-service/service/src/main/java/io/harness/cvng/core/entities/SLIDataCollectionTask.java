@@ -8,6 +8,7 @@
 package io.harness.cvng.core.entities;
 
 import static io.harness.cvng.CVConstants.DATA_COLLECTION_TIME_RANGE_FOR_SLI;
+import static io.harness.cvng.core.services.CVNextGenConstants.DATA_COLLECTION_DELAY;
 
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.core.utils.DateTimeUtils;
@@ -38,6 +39,12 @@ public class SLIDataCollectionTask extends DataCollectionTask {
       Lists.newArrayList(Duration.ofSeconds(5), Duration.ofSeconds(5), Duration.ofSeconds(15), Duration.ofSeconds(15),
           Duration.ofSeconds(60), Duration.ofSeconds(60), Duration.ofMinutes(5), Duration.ofMinutes(5),
           Duration.ofMinutes(20), Duration.ofMinutes(20), Duration.ofMinutes(30));
+
+  @Override
+  public Duration getValidAfterDuration() {
+    return DATA_COLLECTION_DELAY;
+  }
+
   @Override
   public boolean shouldCreateNextTask() {
     return !isRestore;

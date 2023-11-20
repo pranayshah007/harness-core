@@ -527,6 +527,17 @@ public class EngineExpressionEvaluator {
       } else {
         return evaluateExpressionInternal((String) object, ctx, depth - 1, expressionMode);
       }
+    } else if (isAnyCollection(object)) {
+      try {
+        return ExpressionEvaluatorUtils.updateExpressionsInternal(
+            object, new ResolveNestedObjectFunctorImpl(this, expressionMode), depth - 1, new HashSet<>());
+      } catch (Exception ex) {
+        log.error(
+            String.format(
+                "[EXPRESSION_WITH_NESTED_OBJECT_VALUE]: Exception while resolving nested object expression %s, object value %s",
+                expressionBlock, object),
+            ex);
+      }
     }
 
     observed(expressionBlock, object);
@@ -542,6 +553,11 @@ public class EngineExpressionEvaluator {
       return ExpressionConstants.EXPR_START + expressionBlock + ExpressionConstants.EXPR_END;
     }
     return object;
+  }
+
+  public static boolean isAnyCollection(Object value) {
+    return value instanceof Map || value instanceof Collection || value instanceof String[] || value instanceof List
+        || value instanceof Iterable || (value != null && value.getClass().isArray());
   }
 
   protected Object evaluateCombinations(String expressionBlock, List<String> finalExpressions,
@@ -791,11 +807,6 @@ public class EngineExpressionEvaluator {
       return expressionMode;
     }
 
-    public boolean isAnyCollection(Object value) {
-      return value instanceof Map || value instanceof Collection || value instanceof String[] || value instanceof List
-          || value instanceof Iterable || (value != null && value.getClass().isArray());
-    }
-
     @Override
     public String resolveInternal(String expression) {
       try {
@@ -950,6 +961,26 @@ public class EngineExpressionEvaluator {
     @Override
     public String processString(String expression) {
       return expressionEvaluator.renderExpression(expression, expressionMode);
+    }
+  }
+
+  @Getter
+  public static class ResolveNestedObjectFunctorImpl implements ExpressionResolveFunctor {
+    private final EngineExpressionEvaluator expressionEvaluator;
+    private ExpressionMode expressionMode;
+
+    public ResolveNestedObjectFunctorImpl(
+        EngineExpressionEvaluator expressionEvaluator, ExpressionMode expressionMode) {
+      this.expressionEvaluator = expressionEvaluator;
+      this.expressionMode = expressionMode;
+    }
+
+    @Override
+    public String processString(String expression) {
+      if (hasExpressions(expression)) {
+        return expressionEvaluator.evaluateExpression(expression, expressionMode).toString();
+      }
+      return expression;
     }
   }
 

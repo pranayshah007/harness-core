@@ -68,14 +68,7 @@ public class OrchestrationStepServiceImpl implements OrchestrationStepService {
     artifactEntity = artifactService.getArtifactFromSbomPayload(
         accountId, orgIdentifier, projectIdentifier, sbomProcessRequestBody, sbomDTO);
 
-    try {
-      s3StoreService.uploadSBOM(sbomDumpFile, artifactEntity);
-    } catch (Exception e) {
-      log.error(String.format("Upload SBOM Failed with exception: %s", e));
-      throw new RuntimeException("Upload SBOM Failed");
-    } finally {
-      sbomDumpFile.delete();
-    }
+    uploadSbomAndDeleteLocalFile(sbomDumpFile, artifactEntity);
 
     SettingsDTO settingsDTO =
         getSettingsDTO(accountId, orgIdentifier, projectIdentifier, sbomProcessRequestBody, artifactEntity);
@@ -93,6 +86,14 @@ public class OrchestrationStepServiceImpl implements OrchestrationStepService {
 
     log.info(String.format("SBOM Processed Successfully, Artifact ID: %s", artifactEntity.getArtifactId()));
     return artifactEntity.getArtifactId();
+  }
+
+  private void uploadSbomAndDeleteLocalFile(File sbomDumpFile, ArtifactEntity artifactEntity) {
+    try {
+      s3StoreService.uploadSBOM(sbomDumpFile, artifactEntity);
+    } finally {
+      sbomDumpFile.delete();
+    }
   }
 
   @Override

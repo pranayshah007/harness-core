@@ -561,8 +561,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
             .build();
       }
       PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity);
-      GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(
-          pipelineEntity, throwExceptionIfGovernanceFails, false);
+      GovernanceMetadata governanceMetadata;
+      if (isPatch && isEmpty(pipelineEntity.getYaml())) {
+        governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
+      } else {
+        governanceMetadata = pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(
+            pipelineEntity, throwExceptionIfGovernanceFails, false);
+      }
       if (governanceMetadata.getDeny()) {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }

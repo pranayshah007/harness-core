@@ -2921,7 +2921,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
 
     verify(gitDecryptionHelper, times(1)).decryptGitConfig(gitConfigDTO, encryptionDataDetails);
     verify(ngGitService, times(1))
-        .downloadFiles(storeDelegateConfig, "manifest", "accountId", sshSessionConfig, gitConfigDTO);
+        .downloadFiles(storeDelegateConfig, "manifest", "accountId", sshSessionConfig, gitConfigDTO, false);
   }
 
   @Test
@@ -3013,11 +3013,13 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isTrue();
 
     verify(mockSecretDecryptionService, times(1)).decrypt(any(), eq(apiAuthEncryptedDataDetails));
-    verify(scmFetchFilesHelper, times(1)).downloadFilesUsingScm("manifest", storeDelegateConfig, executionLogCallback);
+    verify(scmFetchFilesHelper, times(1))
+        .downloadFilesUsingScm("manifest", storeDelegateConfig, executionLogCallback, false);
 
     verify(gitDecryptionHelper, times(0)).decryptGitConfig(any(), eq(encryptionDataDetails));
     verify(ngGitService, times(0))
-        .downloadFiles(eq(storeDelegateConfig), eq("manifest"), eq("accountId"), eq(sshSessionConfig), any());
+        .downloadFiles(
+            eq(storeDelegateConfig), eq("manifest"), eq("accountId"), eq(sshSessionConfig), any(), anyBoolean());
   }
 
   @Test

@@ -69,7 +69,7 @@ public class NGAccessControlCheckHandler implements MethodInterceptor {
 
   @SneakyThrows
   private void populateNGAccessBuilderFromBeanParam(BaseNGAccess.Builder builder, Object object) {
-    for (Field field : object.getClass().getDeclaredFields()) {
+    for (Field field : FieldUtils.getAllFieldsList(object.getClass())) {
       if (!field.getType().equals(String.class)) {
         continue;
       }

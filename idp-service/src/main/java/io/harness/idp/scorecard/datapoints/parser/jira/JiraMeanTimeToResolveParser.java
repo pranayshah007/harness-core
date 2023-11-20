@@ -28,6 +28,7 @@ import java.util.Map;
 @OwnedBy(HarnessTeam.IDP)
 public class JiraMeanTimeToResolveParser implements DataPointParser {
   private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
+
   @Override
   public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
     Map<String, Object> dataPointData = new HashMap<>();

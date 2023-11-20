@@ -157,16 +157,16 @@ public class DatadogServiceImpl implements DatadogService {
 
   @Override
   public List<LinkedHashMap> getSampleLogData(
-      ProjectParams projectParams, String connectorIdentifier, String query, String tracingId) {
+      ProjectParams projectParams, String connectorIdentifier, String query, List<String> indexes, String tracingId) {
     try {
       Instant now = DateTimeUtils.roundDownTo1MinBoundary(Instant.now());
-
       DataCollectionRequest<DatadogConnectorDTO> request = DatadogLogSampleDataRequest.builder()
                                                                .type(DataCollectionRequestType.DATADOG_LOG_SAMPLE_DATA)
                                                                .from(now.minus(Duration.ofMinutes(1000)).toEpochMilli())
                                                                .to(now.toEpochMilli())
                                                                .limit(DatadogLogDataCollectionInfo.LOG_MAX_LIMIT)
                                                                .query(query)
+                                                               .indexes(indexes)
                                                                .build();
 
       Type type = new TypeToken<List<LinkedHashMap>>() {}.getType();

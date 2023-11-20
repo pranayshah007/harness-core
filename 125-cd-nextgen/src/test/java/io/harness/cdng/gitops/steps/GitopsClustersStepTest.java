@@ -133,27 +133,29 @@ public class GitopsClustersStepTest extends CategoryTest {
                           .projectIdentifier("projId")
                           .pageIndex(0)
                           .pageSize(2)
-                          .filter(ImmutableMap.of("identifier", ImmutableMap.of("$in", ImmutableSet.of("c1", "c2"))))
+                          .filter(getFilter(Arrays.asList(Map.of("identifier", "c2", "agentIdentifier", "a"),
+                              Map.of("identifier", "c1", "agentIdentifier", "a"))))
                           .build());
-    doReturn(
-        Response.success(
-            PageResponse.builder().content(asList(new Cluster("c1", "c1-name"), new Cluster("c2", "c2-name"))).build()))
-        .when(rmock1)
-        .execute();
+    Cluster c1 = new Cluster("c1", "c1-name");
+    c1.setAgentIdentifier("a");
+
+    Cluster c2 = new Cluster("c2", "c2-name");
+    c2.setAgentIdentifier("a");
+    doReturn(Response.success(PageResponse.builder().content(asList(c2, c1)).build())).when(rmock1).execute();
 
     // mock cluster list call from gitops service
     Call<ResponseDTO<List<Cluster>>> rmock2 = mock(Call.class);
     doReturn(rmock2)
         .when(gitopsResourceClient)
-        .listClusters(
-            ClusterQuery.builder()
-                .accountId("accountId")
-                .orgIdentifier("orgId")
-                .projectIdentifier("projId")
-                .pageIndex(0)
-                .pageSize(3)
-                .filter(ImmutableMap.of("identifier", ImmutableMap.of("$in", ImmutableSet.of("c3", "c4", "c5"))))
-                .build());
+        .listClusters(ClusterQuery.builder()
+                          .accountId("accountId")
+                          .orgIdentifier("orgId")
+                          .projectIdentifier("projId")
+                          .pageIndex(0)
+                          .pageSize(3)
+                          .filter(getFilter(Arrays.asList(
+                              Map.of("identifier", "c3"), Map.of("identifier", "c4"), Map.of("identifier", "c5"))))
+                          .build());
     doReturn(
         Response.success(
             PageResponse.builder().content(asList(new Cluster("c3", "c3-name"), new Cluster("c4", "c4-name"))).build()))
@@ -169,8 +171,8 @@ public class GitopsClustersStepTest extends CategoryTest {
                           .projectIdentifier("projId")
                           .pageIndex(0)
                           .pageSize(5)
-                          .filter(ImmutableMap.of(
-                              "identifier", ImmutableMap.of("$in", ImmutableSet.of("c3", "c4", "c5", "c1", "c2"))))
+                          .filter(getFilter(Arrays.asList(Map.of("identifier", "c3"), Map.of("identifier", "c4"),
+                              Map.of("identifier", "c5"), Map.of("identifier", "c1"), Map.of("identifier", "c2"))))
                           .build());
     doReturn(Response.success(PageResponse.builder()
                                   .content(asList(new Cluster("c1", "c1-name"), new Cluster("c2", "c2-name"),
@@ -178,7 +180,6 @@ public class GitopsClustersStepTest extends CategoryTest {
                                   .build()))
         .when(rmock3)
         .execute();
-
     Call<ResponseDTO<List<Cluster>>> rmock4 = mock(Call.class);
     doReturn(rmock4)
         .when(gitopsResourceClient)
@@ -188,7 +189,7 @@ public class GitopsClustersStepTest extends CategoryTest {
                           .projectIdentifier("projId")
                           .pageIndex(0)
                           .pageSize(1)
-                          .filter(ImmutableMap.of("identifier", ImmutableMap.of("$in", ImmutableSet.of("c4"))))
+                          .filter(getFilter(Arrays.asList(Map.of("identifier", "c4"))))
                           .build());
     doReturn(Response.success(PageResponse.builder().content(asList(new Cluster("c4", "c4-name"))).build()))
         .when(rmock4)
@@ -203,7 +204,7 @@ public class GitopsClustersStepTest extends CategoryTest {
                           .projectIdentifier("")
                           .pageIndex(0)
                           .pageSize(1)
-                          .filter(ImmutableMap.of("identifier", ImmutableMap.of("$in", ImmutableSet.of("x1"))))
+                          .filter(getFilter(Arrays.asList(Map.of("identifier", "x1"))))
                           .build());
     doReturn(Response.success(PageResponse.builder().content(asList(new Cluster("x1", "x1-name"))).build()))
         .when(rmock5)
@@ -218,11 +219,35 @@ public class GitopsClustersStepTest extends CategoryTest {
                           .projectIdentifier("")
                           .pageIndex(0)
                           .pageSize(1)
-                          .filter(ImmutableMap.of("identifier", ImmutableMap.of("$in", ImmutableSet.of("x2"))))
+                          .filter(getFilter(Arrays.asList(Map.of("identifier", "x2"))))
                           .build());
     doReturn(Response.success(PageResponse.builder().content(asList(new Cluster("x2", "x2-name"))).build()))
         .when(rmock6)
         .execute();
+
+    Call<ResponseDTO<List<Cluster>>> rmock7 = mock(Call.class);
+    doReturn(rmock7)
+        .when(gitopsResourceClient)
+        .listClusters(ClusterQuery.builder()
+                          .accountId("accountId")
+                          .orgIdentifier("orgId")
+                          .projectIdentifier("projId")
+                          .pageIndex(0)
+                          .pageSize(2)
+                          .filter(getFilter(Arrays.asList(Map.of("identifier", "c1"), Map.of("identifier", "c2"))))
+                          .build());
+
+    doReturn(
+        Response.success(
+            PageResponse.builder().content(asList(new Cluster("c1", "c1-name"), new Cluster("c2", "c2-name"))).build()))
+        .when(rmock7)
+        .execute();
+  }
+
+  private Map<String, Object> getFilter(List<Map<String, String>> conditions) {
+    Map<String, Object> filter = new HashMap<>();
+    filter.put("$or", conditions);
+    return filter;
   }
 
   @Test
@@ -248,22 +273,24 @@ public class GitopsClustersStepTest extends CategoryTest {
 
   // Test cases
   private Object[][] getData() {
-    final Object[] set1 =
-        new Object[] {ClusterStepParameters.builder()
-                          .envGroupRef("envGroupId")
-                          .deployToAllEnvs(true)
-                          .envClusterRefs(asList(EnvClusterRefs.builder()
-                                                     .envRef("env1Id")
-                                                     .deployToAll(false)
-                                                     .clusterRefs(Set.of("c1", "c2"))
-                                                     .envType(EnvironmentType.PreProduction.toString())
-                                                     .build()))
-                          .build(),
-            new GitopsClustersOutcome(new ArrayList<>())
-                .appendCluster(new Metadata("envGroupId", null), new Metadata("env1Id", null),
-                    EnvironmentType.PreProduction.toString(), new Metadata("c1", "c1-name"), Map.of(), null)
-                .appendCluster(new Metadata("envGroupId", null), new Metadata("env1Id", null),
-                    EnvironmentType.PreProduction.toString(), new Metadata("c2", "c2-name"), Map.of(), null)};
+    final Object[] set1 = new Object[] {
+        ClusterStepParameters.builder()
+            .envGroupRef("envGroupId")
+            .deployToAllEnvs(true)
+            .envClusterRefs(
+                asList(EnvClusterRefs.builder()
+                           .envRef("env1Id")
+                           .deployToAll(false)
+                           .clusterRefs(Set.of(ClusterAgentRef.builder().clusterId("c1").agentId("a").build(),
+                               ClusterAgentRef.builder().clusterId("c2").agentId("a").build()))
+                           .envType(EnvironmentType.PreProduction.toString())
+                           .build()))
+            .build(),
+        new GitopsClustersOutcome(new ArrayList<>())
+            .appendCluster(new Metadata("envGroupId", null), new Metadata("env1Id", null),
+                EnvironmentType.PreProduction.toString(), new Metadata("c2", "c2-name"), Map.of(), "a")
+            .appendCluster(new Metadata("envGroupId", null), new Metadata("env1Id", null),
+                EnvironmentType.PreProduction.toString(), new Metadata("c1", "c1-name"), Map.of(), "a")};
 
     final Object[] set2 = new Object[] {ClusterStepParameters.builder()
                                             .envClusterRefs(asList(EnvClusterRefs.builder()
@@ -273,14 +300,16 @@ public class GitopsClustersStepTest extends CategoryTest {
                                                                        .build()))
                                             .build(),
         new GitopsClustersOutcome(new ArrayList<>())
+            .appendCluster(new Metadata("env1Id", null), new Metadata("c1", "c1-name"),
+                EnvironmentType.Production.toString(), null)
+            .appendCluster(new Metadata("env1Id", null), new Metadata("c2", "c2-name"),
+                EnvironmentType.Production.toString(), null)
+            .appendCluster(new Metadata("env1Id", null), new Metadata("org.x2", "x2-name"),
+                EnvironmentType.Production.toString(), null)
             .appendCluster(new Metadata("env1Id", null), new Metadata("account.x1", "x1-name"),
-                EnvironmentType.Production.toString())
-            .appendCluster(
-                new Metadata("env1Id", null), new Metadata("org.x2", "x2-name"), EnvironmentType.Production.toString())
-            .appendCluster(
-                new Metadata("env1Id", null), new Metadata("c1", "c1-name"), EnvironmentType.Production.toString())
-            .appendCluster(
-                new Metadata("env1Id", null), new Metadata("c2", "c2-name"), EnvironmentType.Production.toString())};
+                EnvironmentType.Production.toString(), null)
+
+    };
 
     final Object[] set3 = new Object[] {
         ClusterStepParameters.builder()
@@ -291,10 +320,10 @@ public class GitopsClustersStepTest extends CategoryTest {
                                        .build()))
             .build(),
         new GitopsClustersOutcome(new ArrayList<>())
-            .appendCluster(
-                new Metadata("env2Id", null), new Metadata("c3", "c3-name"), EnvironmentType.Production.toString())
-            .appendCluster(
-                new Metadata("env2Id", null), new Metadata("c4", "c4-name"), EnvironmentType.Production.toString()),
+            .appendCluster(new Metadata("env2Id", null), new Metadata("c3", "c3-name"),
+                EnvironmentType.Production.toString(), null)
+            .appendCluster(new Metadata("env2Id", null), new Metadata("c4", "c4-name"),
+                EnvironmentType.Production.toString(), null),
     };
 
     final Object[] set4 = new Object[] {
@@ -302,14 +331,14 @@ public class GitopsClustersStepTest extends CategoryTest {
             .envClusterRefs(asList(EnvClusterRefs.builder()
                                        .envRef("env2Id")
                                        .deployToAll(false)
-                                       .clusterRefs(Set.of("c4"))
+                                       .clusterRefs(Set.of(ClusterAgentRef.builder().clusterId("c4").build()))
                                        .envType(EnvironmentType.Production.toString())
                                        .build()))
             .deployToAllEnvs(false)
             .build(),
         new GitopsClustersOutcome(new ArrayList<>())
-            .appendCluster(
-                new Metadata("env2Id", null), new Metadata("c4", "c4-name"), EnvironmentType.Production.toString()),
+            .appendCluster(new Metadata("env2Id", null), new Metadata("c4", "c4-name"),
+                EnvironmentType.Production.toString(), null),
     };
 
     return new Object[][] {set1, set2, set3, set4};
@@ -335,7 +364,7 @@ public class GitopsClustersStepTest extends CategoryTest {
   @Category(UnitTests.class)
   @HarnessAlwaysRun
   public void testToGitOpsOutcomeForServiceOverrides() {
-    Map<String, List<GitopsClustersStep.IndividualClusterInternal>> validatedClusters = new HashMap<>();
+    Map<ClusterAgentRef, List<GitopsClustersStep.IndividualClusterInternal>> validatedClusters = new HashMap<>();
     GitopsClustersStep.IndividualClusterInternal c1IndividualCluster =
         GitopsClustersStep.IndividualClusterInternal.builder()
             .clusterName("c1-Ref")
@@ -343,7 +372,7 @@ public class GitopsClustersStepTest extends CategoryTest {
             .envRef("env1")
             .envVariables(Map.of("k1", "v1"))
             .build();
-    validatedClusters.put("c1", Arrays.asList(c1IndividualCluster));
+    validatedClusters.put(ClusterAgentRef.builder().clusterId("c1").build(), Arrays.asList(c1IndividualCluster));
     Map<String, Object> svcVariables = Map.of("k1", "sv1");
     Map<String, Map<String, Object>> envSvcOverrideVars = Map.of("env1", Map.of("k1", "svcEnvOveride1"));
 
@@ -357,8 +386,8 @@ public class GitopsClustersStepTest extends CategoryTest {
   @Owner(developers = OwnerRule.ROHITKARELIA)
   @Category(UnitTests.class)
   @HarnessAlwaysRun
-  public void testToGitOpsOutcomeForEnvrionmentOveride() {
-    Map<String, List<GitopsClustersStep.IndividualClusterInternal>> validatedClusters = new HashMap<>();
+  public void testToGitOpsOutcomeForEnvironmentOverride() {
+    Map<ClusterAgentRef, List<GitopsClustersStep.IndividualClusterInternal>> validatedClusters = new HashMap<>();
     GitopsClustersStep.IndividualClusterInternal c1IndividualCluster =
         GitopsClustersStep.IndividualClusterInternal.builder()
             .clusterName("c1-Ref")
@@ -366,7 +395,7 @@ public class GitopsClustersStepTest extends CategoryTest {
             .envRef("env1")
             .envVariables(Map.of("k1", "v1"))
             .build();
-    validatedClusters.put("c1", Arrays.asList(c1IndividualCluster));
+    validatedClusters.put(ClusterAgentRef.builder().clusterId("c1").build(), Arrays.asList(c1IndividualCluster));
     Map<String, Object> svcVariables = Map.of("k1", "sv1");
 
     GitopsClustersOutcome outcome = step.toOutcome(validatedClusters, svcVariables, Map.of());
@@ -380,7 +409,7 @@ public class GitopsClustersStepTest extends CategoryTest {
   @Category(UnitTests.class)
   @HarnessAlwaysRun
   public void testMultipleEnvsToOneCluster() {
-    Map<String, List<GitopsClustersStep.IndividualClusterInternal>> validatedClusters = new HashMap<>();
+    Map<ClusterAgentRef, List<GitopsClustersStep.IndividualClusterInternal>> validatedClusters = new HashMap<>();
     GitopsClustersStep.IndividualClusterInternal env1 = GitopsClustersStep.IndividualClusterInternal.builder()
                                                             .clusterName("c1-Ref")
                                                             .clusterRef("c1Ref")
@@ -390,13 +419,14 @@ public class GitopsClustersStepTest extends CategoryTest {
                                                             .clusterName("c1-Ref")
                                                             .clusterRef("c1Ref")
                                                             .envRef("env2")
+
                                                             .build();
     GitopsClustersStep.IndividualClusterInternal env3 = GitopsClustersStep.IndividualClusterInternal.builder()
                                                             .clusterName("c1-Ref")
                                                             .clusterRef("c1Ref")
                                                             .envRef("env3")
                                                             .build();
-    validatedClusters.put("c1", Arrays.asList(env1, env2, env3));
+    validatedClusters.put(ClusterAgentRef.builder().clusterId("c1").build(), Arrays.asList(env1, env2, env3));
 
     GitopsClustersOutcome outcome = step.toOutcome(validatedClusters, new HashMap<>(), new HashMap<>());
     assertThat(outcome).isNotNull();

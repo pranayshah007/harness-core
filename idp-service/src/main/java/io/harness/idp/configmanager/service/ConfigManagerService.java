@@ -16,7 +16,6 @@ import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface ConfigManagerService {
@@ -31,8 +30,7 @@ public interface ConfigManagerService {
   AppConfig updateConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType)
       throws Exception;
 
-  AppConfig toggleConfigForAccount(String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType)
-      throws ExecutionException;
+  AppConfig toggleConfigForAccount(String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType);
 
   MergedAppConfigEntity mergeAndSaveAppConfig(String accountIdentifier) throws Exception;
 

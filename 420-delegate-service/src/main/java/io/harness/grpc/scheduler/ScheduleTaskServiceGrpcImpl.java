@@ -141,14 +141,22 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
     final var capabilities = mapSelectorCapability(config);
     capabilities.add(mapRunnerCapability(config));
 
-    sendTask(
-        config, null, k8SInfra.toByteArray(), SchedulingTaskEvent.EventType.SETUP, taskId, null, taskId, capabilities);
+    sendTask(config, null, k8SInfra.toByteArray(), SchedulingTaskEvent.EventType.SETUP, taskId, null, taskId,
+        capabilities, getSecretsFromK8sInfraSpec(infra));
 
     return SetupExecutionInfrastructureResponse.newBuilder()
         .setTaskId(TaskId.newBuilder().setId(taskId).build())
         .setInfraRefId(taskId)
         .putAllStepTaskIds(executionTaskIds)
         .build();
+  }
+
+  private List<String> getSecretsFromK8sInfraSpec(final K8sInfraSpec k8sInfraSpec) {
+    return k8sInfraSpec.getStepsList()
+        .stream()
+        .flatMap(containerSpec -> containerSpec.getSecrets().getSecretsList().stream())
+        .map(secret -> secret.getScopeSecretIdentifier())
+        .collect(Collectors.toList());
   }
 
   private ScheduleTaskResponse sendExecuteTask(final Execution execution, final SchedulingConfig config) {
@@ -158,14 +166,14 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
     capabilities.add(mapInfraCapability(execution.getInfraRefId()));
 
     sendTask(config, taskData, null, SchedulingTaskEvent.EventType.EXECUTE, execution.getInfraRefId(),
-        execution.getStepLogKey(), taskId, capabilities);
+        execution.getStepLogKey(), taskId, capabilities, null);
 
     return ScheduleTaskResponse.newBuilder().setTaskId(TaskId.newBuilder().setId(taskId).build()).build();
   }
 
   private void sendTask(final SchedulingConfig schedulingConfig, final byte[] taskData, final byte[] infraData,
       final SchedulingTaskEvent.EventType eventType, final String executionInfraRef, final String stepLogKey,
-      final String taskId, final List<ExecutionCapability> capabilities) {
+      final String taskId, final List<ExecutionCapability> capabilities, List<String> scopedSecretIds) {
     final var task =
         DelegateTask.builder()
             .uuid(taskId)
@@ -175,6 +183,8 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
             .driverId(schedulingConfig.hasCallbackToken() ? schedulingConfig.getCallbackToken().getToken() : null)
             .waitId(taskId)
             .accountId(schedulingConfig.getAccountId())
+            .orgId(schedulingConfig.getOrgId())
+            .projectId(schedulingConfig.getProjectId())
             .executionCapabilities(capabilities)
             .selectionLogsTrackingEnabled(schedulingConfig.getSelectionTrackingLogEnabled())
             .taskData(taskData)
@@ -186,6 +196,7 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
             .forceExecute(false)
             .baseLogKey(stepLogKey)
             // Check if we can do with baseLogKey itself only.
+            .secretsToDecrypt(scopedSecretIds)
             .build();
 
     taskClient.sendTask(task);

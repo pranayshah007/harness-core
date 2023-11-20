@@ -160,7 +160,7 @@ public class PMSYamlSchemaServiceImplTest {
   public void shouldNotValidateYamlSchema() throws IOException {
     when(pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DISABLE_PIPELINE_SCHEMA_VALIDATION, ACC_ID))
         .thenReturn(true);
-    pmsYamlSchemaService.validateYamlSchemaInternal(ACC_ID, ORG_ID, PRJ_ID, null);
+    pmsYamlSchemaService.validateYamlSchemaInternal(ACC_ID, ORG_ID, PRJ_ID, null, "0");
     verify(yamlSchemaValidator, never()).validate(anyString(), anyString());
   }
 
@@ -177,7 +177,7 @@ public class PMSYamlSchemaServiceImplTest {
     MockedStatic<JsonPipelineUtils> pipelineUtils = mockStatic(JsonPipelineUtils.class);
     pipelineUtils.when(() -> JsonPipelineUtils.writeJsonString(any())).thenReturn(schemaString);
 
-    pmsYamlSchemaService.validateYamlSchemaInternal(ACC_ID, ORG_ID, PRJ_ID, YamlUtils.readAsJsonNode(yaml));
+    pmsYamlSchemaService.validateYamlSchemaInternal(ACC_ID, ORG_ID, PRJ_ID, YamlUtils.readAsJsonNode(yaml), "0");
 
     verify(yamlSchemaValidator).validate(eq(YamlUtils.readAsJsonNode(yaml)), eq(schemaString));
   }

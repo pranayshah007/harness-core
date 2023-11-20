@@ -59,7 +59,11 @@ aws_cur_table_schema = [
         {"mode": "NULLABLE", "name": "key", "type": "STRING"},
         {"mode": "NULLABLE", "name": "value", "type": "STRING"}],
         "mode": "REPEATED", "name": "tags", "type": "RECORD"
-    }
+    },
+    {"mode": "NULLABLE", "name": "edpdiscount", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "bundleddiscount", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "privateratediscount", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "totaldiscount", "type": "FLOAT64"}
 ]
 
 
@@ -206,6 +210,10 @@ unifiedTableTableSchema = [
     {"mode": "NULLABLE", "name": "awsinstanceFamily", "type": "STRING"},
     {"mode": "NULLABLE", "name": "awsmarketoption", "type": "STRING"},
     {"mode": "NULLABLE", "name": "awsservicecode_simplified", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsedpdiscount", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "awsbundleddiscount", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "awsprivateratediscount", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "awstotaldiscount", "type": "FLOAT64"},
     {"mode": "NULLABLE", "name": "discount", "type": "FLOAT"},
     {"mode": "NULLABLE", "name": "endtime", "type": "TIMESTAMP"},
     {"mode": "NULLABLE", "name": "accountid", "type": "STRING"},

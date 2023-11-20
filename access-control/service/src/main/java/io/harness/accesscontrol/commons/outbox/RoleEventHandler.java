@@ -11,6 +11,7 @@ import static io.harness.accesscontrol.roles.RoleMapper.toDTO;
 import static io.harness.accesscontrol.roles.events.RoleCreateEvent.ROLE_CREATE_EVENT;
 import static io.harness.accesscontrol.roles.events.RoleDeleteEvent.ROLE_DELETE_EVENT;
 import static io.harness.accesscontrol.roles.events.RoleUpdateEvent.ROLE_UPDATE_EVENT;
+import static io.harness.aggregator.ACLEventProcessingConstants.UPDATE_ACTION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
@@ -136,18 +137,18 @@ public class RoleEventHandler implements OutboxEventHandler {
     Optional<ResourceScopeDTO> resourceScopeDTO = scopes.getLeft();
     Optional<Scope> scope = scopes.getRight();
     if (isEventV2(outboxEvent)) {
-      return processRoleUpdateEventV2(outboxEvent, globalContext, resourceScopeDTO);
+      return processRoleUpdateEventV2(outboxEvent, globalContext, resourceScopeDTO, scope);
     } else {
       return processRoleUpdateEventV1(outboxEvent, globalContext, resourceScopeDTO, scope);
     }
   }
 
-  private boolean processRoleUpdateEventV2(
-      OutboxEvent outboxEvent, GlobalContext globalContext, Optional<ResourceScopeDTO> resourceScopeDTO) {
+  private boolean processRoleUpdateEventV2(OutboxEvent outboxEvent, GlobalContext globalContext,
+      Optional<ResourceScopeDTO> resourceScopeDTO, Optional<Scope> scope) {
     try {
       RoleUpdateEventV2 roleUpdateEvent = objectMapper.readValue(outboxEvent.getEventData(), RoleUpdateEventV2.class);
       Role newRole = roleUpdateEvent.getNewRole();
-      computeACLOnRoleUpdateV2(roleUpdateEvent, newRole);
+      computeACLOnRoleUpdateV2(roleUpdateEvent, newRole, scope);
       RoleDTO newRoleDTO = toDTO(newRole);
       RoleDTO oldRoleDTO = toDTO(roleUpdateEvent.getOldRole());
       return auditRoleUpdate(outboxEvent, globalContext, resourceScopeDTO, oldRoleDTO, newRoleDTO);
@@ -178,7 +179,7 @@ public class RoleEventHandler implements OutboxEventHandler {
     return auditPublished;
   }
 
-  private void computeACLOnRoleUpdateV2(RoleUpdateEventV2 roleUpdateEvent, Role newRole) {
+  private void computeACLOnRoleUpdateV2(RoleUpdateEventV2 roleUpdateEvent, Role newRole, Optional<Scope> scope) {
     if (enableAclProcessingThroughOutbox) {
       Set<String> permissionsAddedToRole = getDiffPermissions(
           roleUpdateEvent.getNewRole().getPermissions(), roleUpdateEvent.getOldRole().getPermissions());
@@ -186,11 +187,12 @@ public class RoleEventHandler implements OutboxEventHandler {
           roleUpdateEvent.getOldRole().getPermissions(), roleUpdateEvent.getNewRole().getPermissions());
 
       RoleChangeEventData roleChangeEventData = RoleChangeEventData.builder()
+                                                    .scope(scope)
                                                     .updatedRole(newRole)
                                                     .permissionsAdded(permissionsAddedToRole)
                                                     .permissionsRemoved(permissionsRemovedFromRole)
                                                     .build();
-      roleChangeConsumer.consumeUpdateEvent(null, roleChangeEventData);
+      roleChangeConsumer.consumeEvent(UPDATE_ACTION, null, roleChangeEventData);
     }
   }
 
@@ -215,11 +217,12 @@ public class RoleEventHandler implements OutboxEventHandler {
           roleUpdateEvent.getOldRole().getPermissions(), roleUpdateEvent.getNewRole().getPermissions());
       Role newRole = RoleDTOMapper.fromDTO(scope.map(Scope::toString).orElse(null), roleUpdateEvent.getNewRole());
       RoleChangeEventData roleChangeEventData = RoleChangeEventData.builder()
+                                                    .scope(scope)
                                                     .updatedRole(newRole)
                                                     .permissionsAdded(permissionsAddedToRole)
                                                     .permissionsRemoved(permissionsRemovedFromRole)
                                                     .build();
-      roleChangeConsumer.consumeUpdateEvent(null, roleChangeEventData);
+      roleChangeConsumer.consumeEvent(UPDATE_ACTION, null, roleChangeEventData);
     }
   }
 

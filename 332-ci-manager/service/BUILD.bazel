@@ -38,7 +38,7 @@ shared_dependencies = [
     "//959-common-entities:module",
     "//960-continuous-features:module",
     "//960-yaml-sdk:module",
-    "//965-api-key-filter:module",
+    "//965-ng-filter:module",
     "//product/ci/scm/proto:ciscm_java_proto",
     "//952-remote-observers/src/main/proto:952_remote_observers_java_proto",
     "@maven//:de_skuzzle_semantic_version",
@@ -405,6 +405,7 @@ java_library(
         "//310-iacm-manager:__subpackages__",
         "//315-sto-manager/app:__subpackages__",
         "//332-ci-manager/app:__subpackages__",
+        "//idp-service/src/main/java/io/harness/idp/pipeline:__subpackages__",
         "//idp-service/src/main/java/io/harness/idp/scorecard:__subpackages__",
     ],
     deps = shared_dependencies + [

@@ -18,6 +18,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.gitops.steps.ClusterAgentRef;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -89,11 +90,16 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
         EnvironmentYamlV2.builder()
             .environmentRef(ParameterField.<String>builder().value("envId").build())
             .deployToAll(ParameterField.createValueField(false))
-            .gitOpsClusters(
-                ParameterField.<List<ClusterYaml>>builder()
-                    .value(asList(ClusterYaml.builder().identifier(ParameterField.createValueField("c1")).build(),
-                        ClusterYaml.builder().identifier(ParameterField.createValueField("c2")).build()))
-                    .build())
+            .gitOpsClusters(ParameterField.<List<ClusterYaml>>builder()
+                                .value(asList(ClusterYaml.builder()
+                                                  .identifier(ParameterField.createValueField("c1"))
+                                                  .agentIdentifier(ParameterField.createValueField(null))
+                                                  .build(),
+                                    ClusterYaml.builder()
+                                        .identifier(ParameterField.createValueField("c2"))
+                                        .agentIdentifier(ParameterField.createValueField(null))
+                                        .build()))
+                                .build())
             .build();
 
     EnvironmentPlanCreatorConfig config = toEnvPlanCreatorConfigWithGitops(envEntityYaml, envV2Yaml, null);
@@ -118,13 +124,18 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
         EnvironmentYamlV2.builder()
             .environmentRef(ParameterField.<String>builder().value("envId").build())
             .deployToAll(ParameterField.createValueField(false))
-            .gitOpsClusters(
-                ParameterField.<List<ClusterYaml>>builder()
-                    .value(asList(ClusterYaml.builder().identifier(ParameterField.createValueField("c1")).build(),
-                        ClusterYaml.builder().identifier(ParameterField.createValueField("c2")).build()))
-                    .build())
+            .gitOpsClusters(ParameterField.<List<ClusterYaml>>builder()
+                                .value(asList(ClusterYaml.builder()
+                                                  .identifier(ParameterField.createValueField("c1"))
+                                                  .agentIdentifier(ParameterField.createValueField(null))
+                                                  .build(),
+                                    ClusterYaml.builder()
+                                        .identifier(ParameterField.createValueField("c2"))
+                                        .agentIdentifier(ParameterField.createValueField(null))
+                                        .build()))
+                                .build())
             .build();
-    List<String> clusterRefs = environmentPlanCreatorConfigMapper.getClusterRefs(envV2Yaml);
+    List<ClusterAgentRef> clusterRefs = environmentPlanCreatorConfigMapper.getClusterRefs(envV2Yaml);
     assertTrue(!clusterRefs.isEmpty());
   }
 
@@ -136,13 +147,18 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
         EnvironmentYamlV2.builder()
             .environmentRef(ParameterField.<String>builder().value("envId").build())
             .deployToAll(ParameterField.createValueField(null))
-            .gitOpsClusters(
-                ParameterField.<List<ClusterYaml>>builder()
-                    .value(asList(ClusterYaml.builder().identifier(ParameterField.createValueField("c1")).build(),
-                        ClusterYaml.builder().identifier(ParameterField.createValueField("c2")).build()))
-                    .build())
+            .gitOpsClusters(ParameterField.<List<ClusterYaml>>builder()
+                                .value(asList(ClusterYaml.builder()
+                                                  .identifier(ParameterField.createValueField("c1"))
+                                                  .agentIdentifier(ParameterField.createValueField(null))
+                                                  .build(),
+                                    ClusterYaml.builder()
+                                        .identifier(ParameterField.createValueField("c2"))
+                                        .agentIdentifier(ParameterField.createValueField(null))
+                                        .build()))
+                                .build())
             .build();
-    List<String> clusterRefs = environmentPlanCreatorConfigMapper.getClusterRefs(envV2Yaml);
+    List<ClusterAgentRef> clusterRefs = environmentPlanCreatorConfigMapper.getClusterRefs(envV2Yaml);
     assertTrue(!clusterRefs.isEmpty());
   }
 
@@ -160,7 +176,7 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
                         ClusterYaml.builder().identifier(ParameterField.createValueField("c2")).build()))
                     .build())
             .build();
-    List<String> clusterRefs = environmentPlanCreatorConfigMapper.getClusterRefs(envV2Yaml);
+    List<ClusterAgentRef> clusterRefs = environmentPlanCreatorConfigMapper.getClusterRefs(envV2Yaml);
     assertTrue(clusterRefs.isEmpty());
   }
 }

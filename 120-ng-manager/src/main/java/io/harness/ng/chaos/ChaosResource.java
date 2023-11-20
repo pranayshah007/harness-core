@@ -91,4 +91,26 @@ public class ChaosResource {
     boolean result = chaosService.deleteChaosInfrastructure(chaosInfrastructureRequest);
     return ResponseDTO.newResponse(result);
   }
+
+  @POST
+  @Path("/chaosHub")
+  @InternalApi
+  @ApiOperation(
+      value = "Register the chaos hub entity with the github connector", nickname = "registerChaosHub", hidden = true)
+  public ResponseDTO<Boolean>
+  registerChaosHub(@Body ChaosHubRequest chaosHubRequest) {
+    boolean result = chaosService.registerChaosHub(chaosHubRequest);
+    return ResponseDTO.newResponse(result);
+  }
+
+  @DELETE
+  @Path("/chaosHub")
+  @InternalApi
+  @ApiOperation(
+      value = "Deregister the chaos hub entity with the github connector", nickname = "deleteChaosHub", hidden = true)
+  public ResponseDTO<Boolean>
+  deleteChaosHub(@Body ChaosHubRequest chaosHubRequest) {
+    boolean result = chaosService.deleteChaosHub(chaosHubRequest);
+    return ResponseDTO.newResponse(result);
+  }
 }

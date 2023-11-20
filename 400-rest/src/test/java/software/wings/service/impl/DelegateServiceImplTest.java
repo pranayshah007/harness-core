@@ -185,6 +185,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   private static final String TEST_DELEGATE_GROUP_NAME_IDENTIFIER = "_testDelegateGroupName";
   private static final String TOKEN_NAME = "tokenName";
   public static final String GLOBAL_DELEGATE_ACCOUNT_ID = "GLOBAL_DELEGATE_ACCOUNT_ID";
+  private static final String DELEGATE_VERSION = "23.08.90909";
 
   @Mock private UsageLimitedFeature delegatesFeature;
   @Mock private Broadcaster broadcaster;
@@ -1450,6 +1451,29 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     DelegateGroup delegateGroup = delegateService.upsertDelegateGroup("name2", ACCOUNT_ID, delegateSetupDetails);
 
     assertThat(delegateGroup.getIdentifier()).isEqualTo("_name1");
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegatesExpireOnDelegateGroup() {
+    DelegateSetupDetails delegateSetupDetails = DelegateSetupDetails.builder()
+                                                    .name(TEST_DELEGATE_GROUP_NAME)
+                                                    .size(DelegateSize.LAPTOP)
+                                                    .delegateConfigurationId("configId")
+                                                    .version(DELEGATE_VERSION)
+                                                    .delegateType(DelegateType.KUBERNETES)
+                                                    .build();
+    DelegateGroup delegateGroup =
+        delegateService.upsertDelegateGroup(TEST_DELEGATE_GROUP_NAME, ACCOUNT_ID, delegateSetupDetails);
+    assertThat(delegateGroup).isNotNull();
+    assertThat(delegateGroup.getAccountId()).isEqualTo(delegateGroup.getAccountId());
+    assertThat(delegateGroup.getName()).isEqualTo(delegateGroup.getName());
+    assertThat(delegateGroup.getIdentifier()).isEqualTo(TEST_DELEGATE_GROUP_NAME_IDENTIFIER);
+    long actualExpirationTime = delegateGroup.getDelegatesExpireOn();
+    double diffInDays = (double) TimeUnit.MILLISECONDS.toDays(actualExpirationTime - System.currentTimeMillis());
+    double diffInWeeks = Math.ceil(diffInDays / 7);
+    assertThat(diffInWeeks).isEqualTo(24.0);
   }
 
   @Test
