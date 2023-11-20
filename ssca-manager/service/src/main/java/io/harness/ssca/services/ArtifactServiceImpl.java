@@ -25,7 +25,6 @@ import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse;
-import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse.AttestedStatusEnum;
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse.EnvTypeEnum;
 import io.harness.spec.server.ssca.v1.model.ArtifactDetailResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody;
@@ -346,7 +345,6 @@ public class ArtifactServiceImpl implements ArtifactService {
               .envId(entity.getEnvIdentifier())
               .envName(entity.getEnvName())
               .envType(entity.getEnvType() == EnvType.Production ? EnvTypeEnum.PROD : EnvTypeEnum.NONPROD)
-              .attestedStatus(artifact.isAttested() ? AttestedStatusEnum.PASS : AttestedStatusEnum.FAIL)
               .pipelineName(entity.getLastPipelineName())
               .pipelineId(entity.getLastPipelineExecutionName())
               .pipelineExecutionId(entity.getLastPipelineExecutionId())
@@ -364,7 +362,8 @@ public class ArtifactServiceImpl implements ArtifactService {
 
       if (Objects.nonNull(entity.getSlsaVerificationSummary())) {
         response.slsaPolicyOutcomeStatus(entity.getSlsaVerificationSummary().getSlsaPolicyOutcomeStatus())
-            .provenanceArtifact(entity.getSlsaVerificationSummary().getProvenanceArtifact());
+            .provenanceArtifact(entity.getSlsaVerificationSummary().getProvenanceArtifact())
+            .hasSlsaVerification(entity.getSlsaVerificationSummary().isHasSlsaVerification());
       }
 
       return response;

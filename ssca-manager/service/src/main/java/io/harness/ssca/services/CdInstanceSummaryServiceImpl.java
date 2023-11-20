@@ -268,7 +268,7 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
                 parseField(node, OUTCOMES, fqnSlsaStepIdentifier, STEP_ARTIFACTS, PROVENANCE_ARTIFACTS);
             JsonNode provenanceArtifact =
                 Objects.nonNull(provenanceArtifactList) ? provenanceArtifactList.get(0) : null;
-            slsaVerificationSummaryBuilder
+            slsaVerificationSummaryBuilder.hasSlsaVerification(true)
                 .slsaPolicyOutcomeStatus(getNodeValue(parseField(node, OUTCOMES, POLICY_OUTPUT, STATUS)))
                 .provenanceArtifact(provenanceArtifact);
             break;

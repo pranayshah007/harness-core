@@ -23,6 +23,7 @@ import lombok.experimental.FieldNameConstants;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "SLSAVerificationSummaryKeys")
 public class SLSAVerificationSummary {
+  private boolean hasSlsaVerification;
   private String slsaPolicyOutcomeStatus;
   private JsonNode provenanceArtifact;
 }
