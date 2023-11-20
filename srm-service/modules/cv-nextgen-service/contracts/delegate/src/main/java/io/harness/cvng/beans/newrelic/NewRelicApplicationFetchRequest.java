@@ -28,14 +28,12 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @OwnedBy(CV)
 public class NewRelicApplicationFetchRequest extends DataCollectionRequest<NewRelicConnectorDTO> {
-  public static final String DSL = NewRelicApplicationFetchRequest.readDSL(
-      "newrelic-applications.datacollection", NewRelicApplicationFetchRequest.class);
-
   @Builder.Default private String filter = "";
 
   @Override
   public String getDSL() {
-    return DSL;
+    return NewRelicApplicationFetchRequest.readDSL(
+        NewRelicUtils.getDSLFilename(getConnectorConfigDTO()), NewRelicApplicationFetchRequest.class);
   }
 
   @Override

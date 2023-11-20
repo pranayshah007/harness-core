@@ -40,9 +40,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class NewRelicServiceImpl implements NewRelicService {
-  private static final List<String> NEW_RELIC_ENDPOINTS =
-      Arrays.asList("https://insights-api.newrelic.com/", "https://insights-api.eu.newrelic.com/");
-
+  private static final List<String> NEW_RELIC_ENDPOINTS = Arrays.asList("https://insights-api.newrelic.com/",
+      "https://insights-api.eu.newrelic.com/", "https://api.newrelic.com/v2/", "https://api.eu.newrelic.com/v2/");
   @Inject private OnboardingService onboardingService;
 
   @Override
