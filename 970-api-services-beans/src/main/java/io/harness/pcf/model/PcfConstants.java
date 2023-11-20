@@ -21,7 +21,6 @@ public interface PcfConstants {
   String PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX = "PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX: ";
   String PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION = "Pivotal Client Exception: ";
   String CUSTOM_SOURCE_MANIFESTS = "/extractedCustomSourceManifests-";
-  String ARTIFACT_BUNDLE_MANIFESTS = "/artifactBundleManifests-";
   String CF_HOME = "CF_HOME";
   String CF_USERNAME = "CF_USERNAME";
   String CF_PASSWORD = "CF_PASSWORD";
