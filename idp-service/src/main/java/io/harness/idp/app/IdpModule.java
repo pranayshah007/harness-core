@@ -66,6 +66,8 @@ import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
 import io.harness.client.NgConnectorManagerClientModule;
 import io.harness.clients.BackstageResourceClientModule;
 import io.harness.connector.ConnectorResourceClientModule;
+import io.harness.core.ci.dashboard.CIOverviewDashboardService;
+import io.harness.core.ci.dashboard.CIOverviewDashboardServiceImpl;
 import io.harness.creditcard.CreditCardClientModule;
 import io.harness.dashboard.DashboardResourceClientModule;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
@@ -254,6 +256,9 @@ import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.threading.ThreadPool;
 import io.harness.threading.ThreadPoolConfig;
 import io.harness.time.TimeModule;
+import io.harness.timescaledb.TimeScaleDBConfig;
+import io.harness.timescaledb.TimeScaleDBService;
+import io.harness.timescaledb.TimeScaleDBServiceImpl;
 import io.harness.token.TokenClientModule;
 import io.harness.user.UserClientModule;
 import io.harness.version.VersionModule;
@@ -505,6 +510,7 @@ public class IdpModule extends AbstractModule {
     bind(KubernetesDataPointsApi.class).to(KubernetesDataPointsApiImpl.class);
     bind(DataPointDataValueService.class).to(DataPointDataValueServiceImpl.class);
     bind(KubernetesDataPointsService.class).to(KubernetesDataPointsServiceImpl.class);
+    bind(CIOverviewDashboardService.class).to(CIOverviewDashboardServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("backstageEnvVariableSyncer"))
         .toInstance(new ManagedScheduledExecutorService("backstageEnvVariableSyncer"));
@@ -579,6 +585,15 @@ public class IdpModule extends AbstractModule {
                 .setNameFormat("idp-telemetry-publisher-Thread-%d")
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
+    bind(TimeScaleDBConfig.class)
+        .annotatedWith(Names.named("TimeScaleDBConfig"))
+        .toInstance(TimeScaleDBConfig.builder().build());
+    try {
+      bind(TimeScaleDBService.class)
+          .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
+    } catch (NoSuchMethodException e) {
+      log.error("TimeScaleDbServiceImpl Initialization Failed in due to missing constructor", e);
+    }
   }
 
   private void registerOutboxEventHandlers() {

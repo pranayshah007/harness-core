@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.creator.filters;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 
@@ -28,6 +29,7 @@ import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 
+import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -35,6 +37,8 @@ import java.util.stream.Collectors;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 public class CustomStageFilterCreator extends GenericStageFilterJsonCreatorV2<CustomStageNode> {
+  @Inject private StageFilterCreatorHelper stageFilterCreatorHelper;
+
   @Override
   public Set<String> getSupportedStageTypes() {
     return Collections.singleton(CUSTOM);
@@ -76,6 +80,7 @@ public class CustomStageFilterCreator extends GenericStageFilterJsonCreatorV2<Cu
                   YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
         }
       }
+      stageFilterCreatorHelper.addEnvAndInfraToFilterBuilder(filterCreationContext, filterBuilder, env);
     }
   }
 

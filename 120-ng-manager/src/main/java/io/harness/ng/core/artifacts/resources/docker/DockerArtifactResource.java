@@ -36,6 +36,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.utils.IdentifierRefHelper;
 
+import com.codahale.metrics.annotation.ResponseMetered;
+import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -73,6 +75,8 @@ public class DockerArtifactResource {
   @GET
   @Path("getBuildDetails")
   @ApiOperation(value = "Gets docker build details", nickname = "getBuildDetailsForDocker")
+  @Timed
+  @ResponseMetered
   public ResponseDTO<DockerResponseDTO> getBuildDetails(@QueryParam("imagePath") String imagePath,
       @QueryParam("connectorRef") String dockerConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -90,6 +94,8 @@ public class DockerArtifactResource {
   @Path("getBuildDetailsV2")
   @ApiOperation(value = "Gets docker build details with yaml input for expression resolution",
       nickname = "getBuildDetailsForDockerWithYaml")
+  @Timed
+  @ResponseMetered
   public ResponseDTO<DockerResponseDTO>
   getBuildDetailsV2(@QueryParam("imagePath") String imagePath,
       @QueryParam("connectorRef") String dockerConnectorIdentifier,
@@ -164,6 +170,8 @@ public class DockerArtifactResource {
   @POST
   @Path("getLabels")
   @ApiOperation(value = "Gets docker labels", nickname = "getLabelsForDocker")
+  @Timed
+  @ResponseMetered
   public ResponseDTO<DockerResponseDTO> getLabels(@QueryParam("imagePath") String imagePath,
       @QueryParam("connectorRef") String dockerConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -179,6 +187,8 @@ public class DockerArtifactResource {
   @POST
   @Path("getLastSuccessfulBuild")
   @ApiOperation(value = "Gets docker last successful build", nickname = "getLastSuccessfulBuildForDocker")
+  @Timed
+  @ResponseMetered
   public ResponseDTO<DockerBuildDetailsDTO> getLastSuccessfulBuild(
       @QueryParam(NGArtifactConstants.IMAGE_PATH) String imagePath,
       @QueryParam(NGArtifactConstants.CONNECTOR_REF) String dockerConnectorIdentifier,
@@ -196,6 +206,8 @@ public class DockerArtifactResource {
   @Path("getLastSuccessfulBuildV2")
   @ApiOperation(value = "Gets docker last successful build with yaml input for expression resolution",
       nickname = "getLastSuccessfulBuildForDockerWithYaml")
+  @Timed
+  @ResponseMetered
   public ResponseDTO<DockerBuildDetailsDTO>
   getLastSuccessfulBuildV2(@QueryParam(NGArtifactConstants.IMAGE_PATH) String imagePath,
       @QueryParam(NGArtifactConstants.CONNECTOR_REF) String dockerConnectorIdentifier,
@@ -215,6 +227,8 @@ public class DockerArtifactResource {
   @GET
   @Path("validateArtifactServer")
   @ApiOperation(value = "Validate docker artifact server", nickname = "validateArtifactServerForDocker")
+  @Timed
+  @ResponseMetered
   public ResponseDTO<Boolean> validateArtifactServer(@QueryParam("connectorRef") String dockerConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -229,6 +243,8 @@ public class DockerArtifactResource {
   @GET
   @Path("validateArtifactSource")
   @ApiOperation(value = "Validate docker image", nickname = "validateArtifactImageForDocker")
+  @Timed
+  @ResponseMetered
   public ResponseDTO<Boolean> validateArtifactImage(@QueryParam("imagePath") String imagePath,
       @QueryParam("connectorRef") String dockerConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -244,6 +260,8 @@ public class DockerArtifactResource {
   @POST
   @Path("validateArtifact")
   @ApiOperation(value = "Validate docker artifact with tag/tagregx if given", nickname = "validateArtifactForDocker")
+  @Timed
+  @ResponseMetered
   public ResponseDTO<Boolean> validateArtifact(@QueryParam("imagePath") String imagePath,
       @QueryParam("connectorRef") String dockerConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,

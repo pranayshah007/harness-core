@@ -34,6 +34,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
 import io.harness.exception.GeneralException;
@@ -510,7 +511,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
 
     ShellScriptTaskParametersNG taskParams =
         (ShellScriptTaskParametersNG) shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(
-            ambiance, stepParameters, null);
+            ambiance, stepParameters, null, ShellScriptTaskNG.COMMAND_UNIT);
     assertThat(taskParams.getScript()).isEqualTo(script);
     assertThat(taskParams.getK8sInfraDelegateConfig()).isEqualTo(k8sInfraDelegateConfig);
     assertThat(taskParams.getWorkingDirectory()).isEqualTo("/tmp");
@@ -520,37 +521,43 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     // onDelegate parameter field null/empty cases
     stepParameters.setOnDelegate(ParameterField.createValueField(null));
     stepParameters.setExecutionTarget(null);
-    shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null);
+    shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(
+        ambiance, stepParameters, null, ShellScriptTaskNG.COMMAND_UNIT);
     assertThat(stepParameters.onDelegate.getValue()).isTrue();
 
     stepParameters.setOnDelegate(ParameterField.createValueField(null));
     stepParameters.setExecutionTarget(ExecutionTarget.builder().build());
-    shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null);
+    shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(
+        ambiance, stepParameters, null, ShellScriptTaskNG.COMMAND_UNIT);
     assertThat(stepParameters.onDelegate.getValue()).isFalse();
     stepParameters.setOnDelegate(ParameterField.createValueField(true));
 
     // negative cases for output alias configuration
     stepParameters.setOutputAlias(OutputAlias.builder().build());
-    assertThatThrownBy(
-        () -> shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null))
+    assertThatThrownBy(()
+                           -> shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(
+                               ambiance, stepParameters, null, ShellScriptTaskNG.COMMAND_UNIT))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Empty value for key is not allowed in output alias configuration");
     stepParameters.setOutputAlias(
         OutputAlias.builder().key(ParameterField.createValueField("")).scope(ExportScope.PIPELINE).build());
-    assertThatThrownBy(
-        () -> shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null))
+    assertThatThrownBy(()
+                           -> shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(
+                               ambiance, stepParameters, null, ShellScriptTaskNG.COMMAND_UNIT))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Empty value for key is not allowed in output alias configuration");
     stepParameters.setOutputAlias(
         OutputAlias.builder().key(ParameterField.createValueField("   ")).scope(ExportScope.PIPELINE).build());
-    assertThatThrownBy(
-        () -> shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null))
+    assertThatThrownBy(()
+                           -> shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(
+                               ambiance, stepParameters, null, ShellScriptTaskNG.COMMAND_UNIT))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Empty value for key is not allowed in output alias configuration");
     stepParameters.setOutputAlias(
         OutputAlias.builder().key(ParameterField.createValueField("null")).scope(ExportScope.PIPELINE).build());
-    assertThatThrownBy(
-        () -> shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null))
+    assertThatThrownBy(()
+                           -> shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(
+                               ambiance, stepParameters, null, ShellScriptTaskNG.COMMAND_UNIT))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Expression provided for key in output alias configuration was not resolved");
   }

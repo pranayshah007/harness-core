@@ -24,4 +24,5 @@ public class FeatureFlagNames {
   public static final String CET_SAVED_SEARCH_NOTIFICATION = "CET_SAVED_SEARCH_NOTIFICATION";
 
   public static final String SRM_LOG_FEEDBACK_ENABLE_UI = "SRM_LOG_FEEDBACK_ENABLE_UI";
+  public static final String SRM_ENABLE_MS_TEMPLATE_RECONCILIATION = "SRM_ENABLE_MS_TEMPLATE_RECONCILIATION";
 }

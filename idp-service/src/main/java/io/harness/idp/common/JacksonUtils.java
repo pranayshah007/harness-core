@@ -51,4 +51,13 @@ public class JacksonUtils {
           "Error in convert json string to corresponding list<clazz> pojo's. Error = " + e.getMessage());
     }
   }
+
+  public static String write(Object obj) {
+    try {
+      return mapper.writeValueAsString(obj);
+    } catch (JsonProcessingException e) {
+      log.error("Error in convert object to string. Error = {}", e.getMessage(), e);
+      throw new UnexpectedException(e.getMessage());
+    }
+  }
 }

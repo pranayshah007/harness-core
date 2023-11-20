@@ -156,4 +156,3 @@ spec:
         - name: GRPC_SERVICE_CONNECTOR_PORT
           value: "0"
       restartPolicy: Always
-

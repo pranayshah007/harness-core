@@ -10,6 +10,6 @@ dependencies:
   version: 0.9.0
 - name: networking
   repository: file://./networking
-  version: 0.9.4
-digest: sha256:49cdac5f3d3666cd9007d5a4dbac31e9244b3333ba50c10e16a5462f5edafaca
-generated: "2023-11-07T17:14:46.858459+05:30"
+  version: 0.9.5
+digest: sha256:93e99f890c115118e12d61b7d5b6fa354888b095815b98461db49cf9ed651d0b
+generated: "2023-11-09T21:58:44.866784-08:00"

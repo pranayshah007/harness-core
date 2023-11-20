@@ -180,18 +180,31 @@ public class SettingResourceNg {
     SmtpConfig smtpConfig = (SmtpConfig) variable.getValue();
     SecretManagerConfig secretManagerConfig =
         secretManagerConfigService.getDefaultSecretManager(variable.getAccountId());
+    String secretName = variable.getName() + "-" + variable.getAccountId() + "-SmtpSecret";
     if (isNotEmpty(smtpConfig.getPassword())) {
       SecretText secretText = new SecretText();
       String password = (smtpConfig.getPassword() == null) ? "" : new String(smtpConfig.getPassword());
       secretText.setValue(password);
-      String secretName = variable.getName() + "-" + variable.getAccountId() + "-SmtpSecret";
       secretText.setName(secretName);
       secretText.setScopedToAccount(true);
       secretText.setKmsId(secretManagerConfig.getUuid());
       String secretId = existingSmtpConfig.getEncryptedPassword();
-      Boolean isSuccessful = secretManager.updateSecretText(variable.getAccountId(), secretId, secretText, true);
-      smtpConfig.setPassword(secretId.toCharArray());
+      if (secretId != null) {
+        secretManager.updateSecretText(variable.getAccountId(), secretId, secretText, true);
+        smtpConfig.setPassword(secretId.toCharArray());
+      } else {
+        log.info("Creating Secret for previously password less SMTP ");
+        smtpConfig.setPassword(secretManager.saveSecretText(variable.getAccountId(), secretText, true).toCharArray());
+      }
+    } else {
+      try {
+        secretManager.deleteSecret(variable.getAccountId(),
+            secretManager.getSecretByName(variable.getAccountId(), secretName).getUuid(), null, true);
+      } catch (Exception ex) {
+        log.error("Failed to delete secret in SMTP update flow", ex);
+      }
     }
+
     variable.setValue(smtpConfig);
     settingAuthHandler.authorize(variable, appId);
     SettingAttribute updatedSettingAttribute = settingsService.updateWithSettingFields(variable, attrId, appId);

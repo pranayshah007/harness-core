@@ -32,6 +32,8 @@ public interface GitSyncConnectorService {
   ScmConnector getScmConnector(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String connectorRef, String connectorRepo, String connectorBranch);
 
+  ScmConnector getScmConnector(Scope scope, String connectorRef);
+
   ScmConnector getDecryptedConnector(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoUrl);
 

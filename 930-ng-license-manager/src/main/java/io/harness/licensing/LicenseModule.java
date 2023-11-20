@@ -36,6 +36,8 @@ import io.harness.licensing.jobs.SMPLicenseValidationTaskFactory;
 import io.harness.licensing.mappers.LicenseObjectConverter;
 import io.harness.licensing.mappers.LicenseObjectMapper;
 import io.harness.licensing.services.DefaultLicenseServiceImpl;
+import io.harness.licensing.services.DeveloperMappingService;
+import io.harness.licensing.services.DeveloperMappingServiceImpl;
 import io.harness.licensing.services.LicenseService;
 import io.harness.licensing.services.SMPLicenseServiceImpl;
 import io.harness.smp.license.SMPLicenseModule;
@@ -107,6 +109,7 @@ public class LicenseModule extends AbstractModule {
       bind(LicenseService.class).to(DefaultLicenseServiceImpl.class);
     }
     bind(CreditService.class).to(CreditServiceImpl.class);
+    bind(DeveloperMappingService.class).to(DeveloperMappingServiceImpl.class);
     bind(LicenseComplianceResolver.class).to(DefaultLicenseComplianceResolver.class);
 
     bind(SMPLicenseValidationJob.class).to(SMPLicenseValidationJobImpl.class);

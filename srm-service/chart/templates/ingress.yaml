@@ -76,6 +76,13 @@ spec:
                   number: {{ $.Values.service.port }}
             path: /(v1/orgs/.+/projects/.+/slo.*)
             pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: cv-nextgen
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs/.+/projects/.+/metric-graph/.+)
+            pathType: ImplementationSpecific
     {{- end }}
   {{- if .Values.global.ingress.tls.enabled }}
   tls:

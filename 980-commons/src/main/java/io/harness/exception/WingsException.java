@@ -7,6 +7,7 @@
 
 package io.harness.exception;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
 import static io.harness.exception.WingsException.ReportTarget.DELEGATE_LOG_SYSTEM;
@@ -98,7 +99,7 @@ public class WingsException extends RuntimeException {
 
   protected WingsException(String message, Throwable cause, ErrorCode code, Level level,
       EnumSet<ReportTarget> reportTargets, EnumSet<FailureType> failureTypes, ErrorMetadataDTO metadata) {
-    super(message == null ? code.name() : message, cause);
+    super((isEmpty(message)) ? code.name() : message, cause);
     this.code = code == null ? UNKNOWN_ERROR : code;
     this.level = level == null ? Level.ERROR : level;
     this.reportTargets = reportTargets == null ? USER_SRE : reportTargets;
@@ -181,7 +182,7 @@ public class WingsException extends RuntimeException {
 
   @Deprecated
   public WingsException(ErrorCode errorCode, String message, Throwable cause) {
-    super(message == null ? errorCode.name() : message, cause);
+    super((isEmpty(message)) ? errorCode.name() : message, cause);
     code = errorCode;
   }
 

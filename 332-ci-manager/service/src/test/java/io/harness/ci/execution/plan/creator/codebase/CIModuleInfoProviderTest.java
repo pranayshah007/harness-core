@@ -10,6 +10,7 @@ package io.harness.ci.execution.plan.creator.codebase;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.STAGE_EXECUTION;
 import static io.harness.rule.OwnerRule.HARSH;
+import static io.harness.rule.OwnerRule.JAMIE;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 
@@ -133,6 +134,59 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
     assertThat(author.getId()).isEqualTo("userId");
     assertThat(author.getName()).isEqualTo("userId");
     assertThat(author.getAvatar()).isEqualTo("avatar");
+    assertThat(author.getEmail()).isEqualTo("email");
+
+    assertThat(ciPipelineModuleInfo.getScmDetailsList().size()).isEqualTo(0);
+    assertThat(ciPipelineModuleInfo.getInfraDetailsList().size()).isEqualTo(0);
+    assertThat(ciPipelineModuleInfo.getImageDetailsList().size()).isEqualTo(0);
+    assertThat(ciPipelineModuleInfo.getTiBuildDetailsList().size()).isEqualTo(0);
+
+    assertThat(ciPipelineModuleInfo.getCiLicenseType()).isEqualTo(LicenseType.PAID.toString());
+    assertThat(ciPipelineModuleInfo.getCiEditionType()).isEqualTo(Edition.ENTERPRISE.toString());
+  }
+
+  @Test
+  @Owner(developers = JAMIE)
+  @Category(UnitTests.class)
+  public void testGetPipelineLevelModuleInfoWithoutResolvedParametersNoAvatar() {
+    OrchestrationEvent event =
+        OrchestrationEvent.builder()
+            .ambiance(getAmbianceWithLevel(Level.newBuilder().setStepType(InitializeTaskStep.STEP_TYPE).build()))
+            .serviceName("ci")
+            .status(Status.RUNNING)
+            .build();
+    when(stepExecutionParametersRepository.findFirstByAccountIdAndRunTimeId(any(), any()))
+        .thenReturn(Optional.of(
+            StepExecutionParameters.builder().accountId("accountId").stepParameters("stepParameters").build()));
+    when(executionSweepingOutputService.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(CodebaseSweepingOutput.builder()
+                                    .branch("main")
+                                    .targetBranch("main")
+                                    .sourceBranch("test")
+                                    .tag("tag")
+                                    .prNumber("1")
+                                    .repoUrl("https://github.com/test/repo-name")
+                                    .gitUserId("userId")
+                                    .gitUser("userId")
+                                    .gitUserEmail("email")
+                                    .build())
+                        .build());
+    CILicenseSummaryDTO ciLicenseSummaryDTO =
+        CILicenseSummaryDTO.builder().licenseType(LicenseType.PAID).edition(Edition.ENTERPRISE).build();
+    when(ciLicenseService.getLicenseSummary(any())).thenReturn(ciLicenseSummaryDTO);
+    CIPipelineModuleInfo ciPipelineModuleInfo =
+        (CIPipelineModuleInfo) ciModuleInfoProvider.getPipelineLevelModuleInfo(event);
+    assertThat(ciPipelineModuleInfo.getRepoName()).isEqualTo("repo-name");
+    assertThat(ciPipelineModuleInfo.getPrNumber()).isEqualTo("1");
+    assertThat(ciPipelineModuleInfo.getTag()).isEqualTo("tag");
+    assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getPullRequest().getSourceBranch()).isEqualTo("test");
+    assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getPullRequest().getTargetBranch()).isEqualTo("main");
+
+    CIBuildAuthor author = ciPipelineModuleInfo.getCiExecutionInfoDTO().getAuthor();
+    assertThat(author.getId()).isEqualTo("userId");
+    assertThat(author.getName()).isEqualTo("userId");
     assertThat(author.getEmail()).isEqualTo("email");
 
     assertThat(ciPipelineModuleInfo.getScmDetailsList().size()).isEqualTo(0);

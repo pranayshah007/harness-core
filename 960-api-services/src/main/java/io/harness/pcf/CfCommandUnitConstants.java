@@ -14,6 +14,8 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(CDP)
 public interface CfCommandUnitConstants {
   String FetchFiles = "Download Manifest Files";
+
+  String ArtifactBundleFetchFiles = "Download Artifact Bundle Manifest Files";
   String FetchGitFiles = "Download Git Manifest Files";
   String FetchCustomFiles = "Download Custom Manifest Files";
   String VerifyManifests = "Verifying Manifests";

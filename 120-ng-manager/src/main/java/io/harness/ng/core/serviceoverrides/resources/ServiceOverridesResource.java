@@ -9,11 +9,13 @@ package io.harness.ng.core.serviceoverrides.resources;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.filter.FilterType.OVERRIDE;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
@@ -37,6 +39,8 @@ import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.Service
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorService;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.filter.dto.FilterDTO;
+import io.harness.filter.service.FilterService;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.beans.DocumentationConstants;
@@ -59,6 +63,7 @@ import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.CGRestUtils;
+import io.harness.scope.ScopeHelper;
 import io.harness.security.SourcePrincipalContextData;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.dto.Principal;
@@ -149,6 +154,7 @@ public class ServiceOverridesResource {
 
   @Inject private OrgAndProjectValidationHelper orgAndProjectValidationHelper;
   @Inject private AccountClient accountClient;
+  @Inject private FilterService filterService;
   private static final int MAX_LIMIT = 1000;
 
   @GET
@@ -335,7 +341,7 @@ public class ServiceOverridesResource {
   listServiceOverrides(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                            NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.SIZE) @DefaultValue("100") @Max(MAX_LIMIT) int size,
+          NGCommonEntityConstants.SIZE) @DefaultValue("500") @Max(MAX_LIMIT) int size,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -355,7 +361,7 @@ public class ServiceOverridesResource {
   }
 
   @POST
-  @Path("/list")
+  @Path("/v2/list")
   @Hidden
   @ApiOperation(value = "Gets Service Override List", nickname = "getServiceOverrideListV3")
   @Operation(operationId = "getServiceOverrideListV3", summary = "Gets Service Override List",
@@ -367,7 +373,7 @@ public class ServiceOverridesResource {
   listServiceOverrides(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                            NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.SIZE) @DefaultValue("100") @Max(MAX_LIMIT) int size,
+          NGCommonEntityConstants.SIZE) @DefaultValue("500") @Max(MAX_LIMIT) int size,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -379,9 +385,13 @@ public class ServiceOverridesResource {
       @RequestBody(description = "This is the body for the filter properties for listing overrides.")
       OverrideFilterPropertiesDTO filterProperties,
       @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
-          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @QueryParam(NGResourceFilterConstants.FILTER_KEY) String filterIdentifier) {
+    OverrideFilterPropertiesDTO finalFilterProperties = filterProperties != null
+        ? filterProperties
+        : fetchFilterPropertiesFromFilterIdentifier(filterIdentifier, accountId, orgIdentifier, projectIdentifier);
     Criteria criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
-        accountId, orgIdentifier, projectIdentifier, type, searchTerm, filterProperties);
+        accountId, orgIdentifier, projectIdentifier, type, searchTerm, finalFilterProperties);
     Pageable pageRequest =
         PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntityKeys.lastModifiedAt));
     Page<NGServiceOverridesEntity> serviceOverridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest);
@@ -644,5 +654,24 @@ public class ServiceOverridesResource {
     return ResponseDTO.newResponse(
         serviceOverridesEntityOptional.map(entity -> ServiceOverridesMapperV2.toResponseDTO(entity, false))
             .orElse(null));
+  }
+
+  private OverrideFilterPropertiesDTO fetchFilterPropertiesFromFilterIdentifier(
+      String filterIdentifier, String accountId, String orgIdentifier, String projectIdentifier) {
+    if (isNull(filterIdentifier)) {
+      return null;
+    }
+    FilterDTO overrideFilterDTO =
+        filterService.get(accountId, orgIdentifier, projectIdentifier, filterIdentifier, OVERRIDE);
+    if (overrideFilterDTO == null) {
+      throw new InvalidRequestException(String.format("Could not find a override filter with the identifier %s, in %s",
+          filterIdentifier, ScopeHelper.getScopeMessageForLogs(accountId, orgIdentifier, projectIdentifier)));
+    }
+
+    if (!(overrideFilterDTO.getFilterProperties() instanceof OverrideFilterPropertiesDTO)) {
+      throw new InvalidRequestException(String.format("Filter with the identifier %s, in %s is not an override filter",
+          filterIdentifier, ScopeHelper.getScopeMessageForLogs(accountId, orgIdentifier, projectIdentifier)));
+    }
+    return (OverrideFilterPropertiesDTO) overrideFilterDTO.getFilterProperties();
   }
 }

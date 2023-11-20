@@ -7,9 +7,11 @@
 
 package io.harness.cvng.core.beans;
 
+import java.util.List;
 import lombok.Value;
 
 @Value
 public class LogSampleRequestDTO {
   String query;
+  List<String> indexes;
 }

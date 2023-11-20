@@ -170,8 +170,8 @@ public class UserGroupResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @RequestBody(description = "User Group entity with the updates",
-          required = true) @NotNull @Valid UserGroupDTO userGroupDTO) {
+      @RequestBody(
+          description = "User Group entity with the updates", required = true) @NotNull UserGroupDTO userGroupDTO) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(USERGROUP, userGroupDTO.getIdentifier()), MANAGE_USERGROUP_PERMISSION);
     validateScopes(accountIdentifier, orgIdentifier, projectIdentifier, userGroupDTO);

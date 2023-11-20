@@ -7,21 +7,22 @@
 
 package io.harness.idp.scorecard.datapoints.parser.factory;
 
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.*;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.IS_BRANCH_PROTECTED;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.IS_FILE_EXISTS;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.PULL_REQUEST_MEAN_TIME_TO_MERGE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
-import io.harness.idp.scorecard.datapoints.parser.factory.DataPointParserFactory;
-import io.harness.idp.scorecard.datapoints.parser.gitlab.GitlabFileExistsParser;
-import io.harness.idp.scorecard.datapoints.parser.gitlab.GitlabIsBranchProtectedParser;
-import io.harness.idp.scorecard.datapoints.parser.gitlab.GitlabMeanTimeToMergeParser;
+import io.harness.idp.scorecard.datapoints.parser.scm.gitlab.GitlabFileExistsParser;
+import io.harness.idp.scorecard.datapoints.parser.scm.gitlab.GitlabIsBranchProtectedParser;
+import io.harness.idp.scorecard.datapoints.parser.scm.gitlab.GitlabMeanTimeToMergeParser;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
 
-@OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@OwnedBy(HarnessTeam.IDP)
 public class GitlabDataPointParserFactory implements DataPointParserFactory {
   private GitlabMeanTimeToMergeParser gitlabMeanTimeToMergeParser;
   private GitlabIsBranchProtectedParser gitlabIsBranchProtectedParser;
@@ -35,7 +36,6 @@ public class GitlabDataPointParserFactory implements DataPointParserFactory {
         return gitlabIsBranchProtectedParser;
       case IS_FILE_EXISTS:
         return gitlabFileExistsParser;
-      // Add more cases for other parsers
       default:
         throw new UnsupportedOperationException(String.format("Could not find DataPoint parser for %s", identifier));
     }

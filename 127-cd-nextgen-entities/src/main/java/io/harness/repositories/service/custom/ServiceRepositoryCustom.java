@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.entity.ServiceMoveConfigOperationDTO;
 
 import com.mongodb.DuplicateKeyException;
 import com.mongodb.client.result.DeleteResult;
@@ -56,4 +57,7 @@ public interface ServiceRepositoryCustom {
       ServiceEntity savedEntity, boolean loadFromCache, boolean loadFromFallbackBranch);
 
   List<String> getListOfDistinctRepos(Criteria criteria);
+
+  ServiceEntity moveServiceEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, ServiceMoveConfigOperationDTO moveConfigOperationDTO, ServiceEntity serviceEntity);
 }

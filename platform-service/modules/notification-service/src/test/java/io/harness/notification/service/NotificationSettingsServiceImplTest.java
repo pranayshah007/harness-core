@@ -11,13 +11,18 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.utils.DelegateOwner.NG_DELEGATE_OWNER_CONSTANT;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 
 import io.harness.CategoryTest;
@@ -32,12 +37,15 @@ import io.harness.ng.core.notification.SlackConfigDTO;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.remote.SmtpConfigClient;
+import io.harness.notification.remote.SmtpConfigResponse;
 import io.harness.notification.repositories.NotificationSettingRepository;
 import io.harness.remote.client.CGRestUtils;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.user.remote.UserClient;
 import io.harness.usergroups.UserGroupClient;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,6 +57,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
 
 @OwnedBy(PL)
 public class NotificationSettingsServiceImplTest extends CategoryTest {
@@ -120,6 +129,16 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
     List<String> resolvedUserGroups = notificationSettingsService.resolveUserGroups(
         NotificationChannelType.SLACK, notificationSettings, EXPRESSION_FUNCTOR_TOKEN_1);
     assertEquals(Arrays.asList(RESOLVED_SLACK_SECRET_1, RESOLVED_SLACK_SECRET_2), resolvedUserGroups);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testGetSmtpConfig_shouldReturnNullIfNgConfigIsNotSet() throws IOException {
+    Call<RestResponse<SmtpConfigResponse>> request = mock(Call.class);
+    doReturn(request).when(smtpConfigClient).getSmtpConfig(ACCOUNT_ID);
+    doThrow(InvalidRequestException.class).when(request).execute();
+    assertThat(notificationSettingsService.getSmtpConfigResponse(ACCOUNT_ID)).isEqualTo(null);
   }
 
   @Test

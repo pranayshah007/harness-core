@@ -17,10 +17,8 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
-@Slf4j
 public class KubernetesLastDeployedParser extends KubernetesExpressionParser implements DataPointParser {
   @Override
   Object parseValue(Object value) {

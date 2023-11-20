@@ -46,6 +46,16 @@ public class SLOGraphUtils {
     return minutes;
   }
 
+  public static List<Instant> getBucketMinutesInclusiveOfStartAndEndTime(
+      Instant startTime, Instant endTime, long numOfPointsRequiredInBetween, int bucketSize) {
+    List<Instant> minutes = new ArrayList<>();
+    minutes.add(startTime);
+    minutes.addAll(
+        getBucketMinutesExclusiveOfStartAndEndTime(startTime, endTime, numOfPointsRequiredInBetween, bucketSize));
+    minutes.add(endTime);
+    return minutes;
+  }
+
   private static Duration getDiffDuration(long numOfPointsRequiredInBetween, int bucketSize, long totalMinutes) {
     long bucketInterval = bucketSize;
     long currentNumOfPoints = totalMinutes / bucketInterval;

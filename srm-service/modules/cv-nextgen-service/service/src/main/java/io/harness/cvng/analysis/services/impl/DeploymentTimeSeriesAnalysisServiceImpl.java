@@ -135,7 +135,8 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
     }
     VerificationJobInstance verificationJobInstance = verificationJobInstanceService.getVerificationJobInstance(
         ((DeploymentInfo) verificationTask.getTaskInfo()).getVerificationJobInstanceId());
-    if (!Boolean.TRUE.toString().equals(
+    if (verificationJobInstance.getResolvedJob().getFailIfAnyCustomMetricInNoAnalysis() == null
+        || !Boolean.TRUE.toString().equals(
             verificationJobInstance.getResolvedJob().getFailIfAnyCustomMetricInNoAnalysis().getValue())) {
       return;
     }

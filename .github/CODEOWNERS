@@ -10,6 +10,7 @@ project/bazelproject-config @harness/build-engineering
 /clients/resource-group/ ankit.singhal@harness.io jimit.gandhi@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io ashish.sanodia@harness.io meenakshi.raikwar@harness.io
 WORKSPACE pranay.shah@harness.io jyoti.raval@harness.io
 # CDNG
+/125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/  tathagat.chaurasiya@harness.io lovish.bansal@harness.io
 /125-cd-nextgen/src/test/resources/recaster/alias/alias.txt deepak.puthraya@harness.io yogesh.chauhan@harness.io
 /125-cd-nextgen/src/main/java/io/harness/cdng/creator/CDNGPlanCreatorProvider.java yogesh.chauhan@harness.io deepak.puthraya@harness.io
 /125-cd-nextgen/src/main/java/io/harness/cdng/creator/ yogesh.chauhan@harness.io

@@ -758,7 +758,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       return "";
     }
 
-    return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineTemplate, inputSetYaml, false);
+    return InputSetMergeHelper.mergeInputSetIntoPipeline(
+        pipelineTemplate, inputSetYaml == null ? "" : inputSetYaml, false);
   }
 
   private String resolveExpressionsInYaml(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity,
