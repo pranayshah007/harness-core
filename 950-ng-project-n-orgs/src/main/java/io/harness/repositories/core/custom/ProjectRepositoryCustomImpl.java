@@ -39,7 +39,6 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
   @Override
   public Page<Project> findAll(Criteria criteria, Pageable pageable) {
     Query query = new Query(criteria).with(pageable);
-    query.collation(Collation.of("en").strength(Collation.ComparisonLevel.secondary()));
     List<Project> projects = mongoTemplate.find(query, Project.class);
     return PageableExecutionUtils.getPage(
         projects, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Project.class));
@@ -128,5 +127,14 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
   @Override
   public long count(Criteria criteria) {
     return mongoTemplate.count(new Query(criteria), Project.class);
+  }
+
+  @Override
+  public Page<Project> findAllWithCollation(Criteria criteria, Pageable pageable) {
+    Query query = new Query(criteria).with(pageable);
+    query.collation(Collation.of("en").strength(Collation.ComparisonLevel.secondary()));
+    List<Project> projects = mongoTemplate.find(query, Project.class);
+    return PageableExecutionUtils.getPage(
+        projects, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Project.class));
   }
 }
