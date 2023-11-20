@@ -64,10 +64,9 @@ pmsSdkOrchestrationEventPoolConfig:
 
 podCleanUpThreadPoolConfig:
   corePoolSize: ${POD_CLEANUP_POOL_CORE_SIZE:-5}
-  maxPoolSize: ${
-  {POD_CLEANUP_POOL_MAX_SIZE : -10} idleTime : $ {
-    {POD_CLEANUP_POOL_IDLE_TIME : -10} timeUnit : $ {
-      {POD_CLEANUP_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+  maxPoolSize: ${{POD_CLEANUP_POOL_MAX_SIZE:-10}
+  idleTime: ${{POD_CLEANUP_POOL_IDLE_TIME:-10}
+  timeUnit: ${{POD_CLEANUP_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 mongo:
   uri: mongodb://localhost:27017/pms-harness
@@ -228,113 +227,118 @@ ciServiceClientConfig:
 
 queueServiceClientConfig:
   httpClientConfig:
-    baseUrl: ${
-      HSQS_BASE_URL:
-        -http
-            :  // localhost:9544/}
-               connectTimeOutSeconds : 15 readTimeOutSeconds : 15 queueServiceSecret
-            : ${
-              HSQS_AUTH_TOKEN : -ThisIsMyUniqueJwtQueueServiceSecret
-            } envNamespace
-            : ${EVENTS_FRAMEWORK_ENV_NAMESPACE : -localhost} topic
-            : ${HSQS_TOPIC : -pipeline}
+    baseUrl: ${HSQS_BASE_URL:-http://localhost:9544/}
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  queueServiceSecret: ${HSQS_AUTH_TOKEN:-ThisIsMyUniqueJwtQueueServiceSecret}
+  envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
+  topic: ${HSQS_TOPIC:-pipeline}
 
-              ngManagerServiceSecret
-            : IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
-                  pipelineServiceSecret
-            : IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
-                  templateServiceSecret
-            : IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
-                  ciServiceSecret
-            : IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
-                  jwtAuthSecret
-            : dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq
-                  jwtIdentityServiceSecret
-            : HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU =
+ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+pipelineServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+templateServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+ciServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+jwtAuthSecret: dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq
+jwtIdentityServiceSecret: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU=
 
-            allowedOrigins : -"*"
+allowedOrigins:
+  - "*"
 
-                             accessControlClient : enableAccessControl
-            : false accessControlServiceConfig : baseUrl : http
-            :  // localhost:9006/api/
-               connectTimeOutSeconds : 15 readTimeOutSeconds : 15 accessControlServiceSecret
-            : IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+accessControlClient:
+  enableAccessControl: false
+  accessControlServiceConfig:
+    baseUrl: http://localhost:9006/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
-                  pipelineServiceBaseUrl : https :  // localhost:8181/#
-                                                    pmsApiBaseUrl : http
-            :  // localhost:12001/api/
+pipelineServiceBaseUrl: https://localhost:8181/#
+pmsApiBaseUrl: http://localhost:12001/api/
 
-               triggerConfig : webhookBaseUrl : http :  // localhost:7457/api/
-                                                        customBaseUrl : http
-            :  // localhost:12001/api/
+triggerConfig:
+  webhookBaseUrl: http://localhost:7457/api/
+  customBaseUrl: http://localhost:12001/api/
 
-               logStreamingServiceConfig : baseUrl : http :  // localhost:8079
-                                                             serviceToken
-            : token threadPoolConfig : corePoolSize : ${
-              LOG_STREAMING_CLIENT_POOL_CORE_SIZE : -10
-            } delayToClosePrefixLogStreamInSeconds : $ {
-        LOG_STREAMING_CLIENT_DELAY_TO_CLOSE_LOG_STREAM_IN_SECONDS:
-          -5
-        }
+logStreamingServiceConfig:
+  baseUrl: http://localhost:8079
+  serviceToken: token
+  threadPoolConfig:
+    corePoolSize: ${LOG_STREAMING_CLIENT_POOL_CORE_SIZE:-10}
+  delayToClosePrefixLogStreamInSeconds: ${LOG_STREAMING_CLIENT_DELAY_TO_CLOSE_LOG_STREAM_IN_SECONDS:-5}
 
-#remove in a few cycles
-      opaServerConfig:
-      baseUrl:
-      http:  // localhost:3000
-      secret:
-        secret
+# remove in a few cycles
+opaServerConfig:
+  baseUrl: http://localhost:3000
+  secret: secret
 
-                policyManagerSecret : secret
+policyManagerSecret: secret
 
-                                          opaClientConfig : baseUrl : http
-            :  // localhost:3000
-               connectTimeOutSeconds : 15 readTimeOutSeconds : 15
+opaClientConfig:
+  baseUrl: http://localhost:3000
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
 
-               iteratorsConfig : webhook : threadPoolCount : 2 enabled
-            : true targetIntervalInSeconds : 5 scheduledTrigger
-            : threadPoolCount : 2 enabled
-            : true targetIntervalInSeconds : 15 timeoutEngine
-            : threadPoolCount : 5 enabled
-            : true targetIntervalInSeconds : 10 timeoutEngineRedisMode
-            : threadPoolSize
-            : ${TIMEOUT_ITERATOR_REDIS_MODE_THREAD_POOL_SIZE : -5} enabled
-            : true targetIntervalInSeconds : 10 threadPoolIntervalInSeconds : 2 redisLockTimeout : 5 redisBatchSize
-            : ${TIMEOUT_ITERATOR_REDIS_BATCH_SIZE : -10} barrier
-            : threadPoolCount : 2 enabled
-            : true targetIntervalInSeconds : 60 approvalInstance
-            : threadPoolCount : 2 enabled
-            : true targetIntervalInSeconds : 60 resourceRestraint
-            : threadPoolCount : 2 enabled
-            : true targetIntervalInSeconds : 300 interruptMonitor
-            : threadPoolCount : 2 enabled : true targetIntervalInSeconds : 180
+iteratorsConfig:
+  webhook:
+    threadPoolCount: 2
+    enabled: true
+    targetIntervalInSeconds: 5
+  scheduledTrigger:
+    threadPoolCount: 2
+    enabled: true
+    targetIntervalInSeconds: 15
+  timeoutEngine:
+    threadPoolCount: 5
+    enabled: true
+    targetIntervalInSeconds: 10
+  timeoutEngineRedisMode:
+    threadPoolSize: ${TIMEOUT_ITERATOR_REDIS_MODE_THREAD_POOL_SIZE:-5}
+    enabled: true
+    targetIntervalInSeconds: 10
+    threadPoolIntervalInSeconds: 2
+    redisLockTimeout: 5
+    redisBatchSize: ${TIMEOUT_ITERATOR_REDIS_BATCH_SIZE:-10}
+  barrier:
+    threadPoolCount: 2
+    enabled: true
+    targetIntervalInSeconds: 60
+  approvalInstance:
+    threadPoolCount: 2
+    enabled: true
+    targetIntervalInSeconds: 60
+  resourceRestraint:
+    threadPoolCount: 2
+    enabled: true
+    targetIntervalInSeconds: 300
+  interruptMonitor:
+    threadPoolCount: 2
+    enabled: true
+    targetIntervalInSeconds: 180
 
-                                            orchestrationStepConfig
-            : ffServerBaseUrl : http :  // 127.0.0.1:3000/api/1.0
-                                        ffServerApiKey
-            : secret ffServerSSLVerify : false containerStepConfig
-            : addonImageTag : releaseBuild -
-                              30 liteEngineImageTag
-            : releaseBuild -
-              29 defaultMemoryLimit : 500 defaultCPULimit : 400 defaultInternalImageConnector
-            : 'account.harnessImage' pvcDefaultStorageSize : 25600 delegateServiceEndpointVariableValue
-            : "delegate-service:8080" addonImage : harness /
-                                                   ci -
-              addon : 1.16.29 liteEngineImage : harness / ci - lite -
-              engine : 1.16.29 isLocal : false logStreamingContainerStepBaseUrl
-            : $ {
-        LOG_STREAMING_CONTAINER_STEP_BASE_URL:
-          -http :  // localhost:8079}
-                   pluginConfig : sscaOrchestrationConfig : image
-              : ${
-                SSCA_ORCHESTRATION_IMAGE : -harness / ssca - plugin : 0.11.0
-              } sscaEnforcementConfig : image : $ {
-          SSCA_ENFORCEMENT_IMAGE:
-            -harness / ssca - plugin : 0.11.0
-          }
-#Todo : Move to config Management Service
-        moduleToSupportedSteps:
-        cd:
-          [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2", "ServerlessAwsLambdaPackageV2", "AwsCdkBootstrap", "AwsCdkSynth", "AwsCdkDiff", "ServerlessAwsLambdaRollbackV2", "AwsCdkDeploy", "AwsCdkDestroy", "AwsCdkRollback"]
+orchestrationStepConfig:
+  ffServerBaseUrl: http://127.0.0.1:3000/api/1.0
+  ffServerApiKey: secret
+  ffServerSSLVerify: false
+  containerStepConfig:
+    addonImageTag: releaseBuild-30
+    liteEngineImageTag: releaseBuild-29
+    defaultMemoryLimit: 500
+    defaultCPULimit: 400
+    defaultInternalImageConnector: 'account.harnessImage'
+    pvcDefaultStorageSize: 25600
+    delegateServiceEndpointVariableValue: "delegate-service:8080"
+    addonImage: harness/ci-addon:1.16.29
+    liteEngineImage: harness/ci-lite-engine:1.16.29
+    isLocal: false
+    logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
+    pluginConfig:
+      sscaOrchestrationConfig:
+        image: ${SSCA_ORCHESTRATION_IMAGE:-harness/ssca-plugin:0.11.0}
+      sscaEnforcementConfig:
+        image: ${SSCA_ENFORCEMENT_IMAGE:-harness/ssca-plugin:0.11.0}
+    #Todo: Move to config Management Service
+    moduleToSupportedSteps:
+      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2", "ServerlessAwsLambdaPackageV2", "AwsCdkBootstrap", "AwsCdkSynth", "AwsCdkDiff", "ServerlessAwsLambdaRollbackV2", "AwsCdkDeploy", "AwsCdkDestroy", "AwsCdkRollback"]
       ci: [ "Background", "background", "GitClone", "Run", "Plugin", "Action", "SlsaVerification"]
 
 
@@ -534,81 +538,58 @@ jsonExpansionPoolConfig:
   idleTime: ${JSON_EXPANSION_EXECUTOR_POOL_IDLE_TIME:-30}
   timeUnit: ${JSON_EXPANSION_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
-jsonExpansionRequestBatchSize: ${
-          JSON_EXPANSION_BATCH_SIZE:
-            -50
-          }
+jsonExpansionRequestBatchSize: ${JSON_EXPANSION_BATCH_SIZE:-50}
 
-          ############################################################ #
+#############################################################
 
-              orchestrationRestrictionConfiguration : maxNestedLevelsCount
-              : ${MAX_NESTED_LEVELS_COUNT : -25} useRestrictionForFree
-              : ${USE_RESTRICTION_FOR_FREE : -false} useRestrictionForTeam
-              : ${USE_RESTRICTION_FOR_TEAM : -false} useRestrictionForEnterprise
-              : ${
-                USE_RESTRICTION_FOR_ENTERPRISE : -false
-              } planExecutionRestriction : free
-              : ${PLAN_EXECUTION_RESTRICTION_FREE : -2} team
-              : ${PLAN_EXECUTION_RESTRICTION_TEAM : -200} enterprise : $ {
-          PLAN_EXECUTION_RESTRICTION_ENTERPRISE:
-            -500
-          }
-#remove below restriction
-        pipelineCreationRestriction:
-        free:
-          ${PIPELINE_CREATION_RESTRICTION_FREE : -5} team
-              : ${PIPELINE_CREATION_RESTRICTION_TEAM : -10000} enterprise : $ {
-          PIPELINE_CREATION_RESTRICTION_ENTERPRISE:
-            -10000
-          }
-#remove below restriction
-        maxConcurrencyRestriction:
-        free:
-          ${MAX_CONCURRENCY_RESTRICTION_FREE : -2} team
-              : ${MAX_CONCURRENCY_RESTRICTION_TEAM : -50} enterprise : $ {
-          MAX_CONCURRENCY_RESTRICTION_ENTERPRISE:
-            -100
-          }
-#Parallelism hard limit on number of nodes at any place
-        totalParallelismStopRestriction:
-        free:
-          ${TOTAL_PARALLELISM_RESTRICTION_FREE : -2} team
-              : ${TOTAL_PARALLELISM_RESTRICTION_TEAM : -256} enterprise : $ {
-          TOTAL_PARALLELISM_RESTRICTION_ENTERPRISE:
-            -256
-          }
-#TODO(archit) : Add passing timeout to all planCreators to adopt
-        maxPipelineTimeoutInHours:
-        free:
-          ${MAX_PIPELINE_TIMEOUT_FREE : -1} team
-              : ${MAX_PIPELINE_TIMEOUT_TEAM : -720} enterprise
-              : ${MAX_PIPELINE_TIMEOUT_ENTERPRISE : -840} maxStageTimeoutInHours
-              : free : ${MAX_STAGE_TIMEOUT_FREE : -1} team
-              : ${MAX_STAGE_TIMEOUT_TEAM : -720} enterprise : $ {
-          MAX_STAGE_TIMEOUT_ENTERPRISE:
-            -840
-          }
-# 0 means no limit
-        maxStepTimeoutInHours:
-        free:
-          ${MAX_STEP_TIMEOUT_FREE : -1} team
-              : ${MAX_STEP_TIMEOUT_TEAM : -0} enterprise
-              : ${MAX_STEP_TIMEOUT_ENTERPRISE : -0}
+orchestrationRestrictionConfiguration:
+  maxNestedLevelsCount: ${MAX_NESTED_LEVELS_COUNT:-25}
+  useRestrictionForFree: ${USE_RESTRICTION_FOR_FREE:-false}
+  useRestrictionForTeam: ${USE_RESTRICTION_FOR_TEAM:-false}
+  useRestrictionForEnterprise: ${USE_RESTRICTION_FOR_ENTERPRISE:-false}
+  planExecutionRestriction:
+     free: ${PLAN_EXECUTION_RESTRICTION_FREE:-2}
+     team: ${PLAN_EXECUTION_RESTRICTION_TEAM:-200}
+     enterprise: ${PLAN_EXECUTION_RESTRICTION_ENTERPRISE:-500}
+  #remove below restriction
+  pipelineCreationRestriction:
+    free: ${PIPELINE_CREATION_RESTRICTION_FREE:-5}
+    team: ${PIPELINE_CREATION_RESTRICTION_TEAM:-10000}
+    enterprise: ${PIPELINE_CREATION_RESTRICTION_ENTERPRISE:-10000}
+  #remove below restriction
+  maxConcurrencyRestriction:
+    free: ${MAX_CONCURRENCY_RESTRICTION_FREE:-2}
+    team: ${MAX_CONCURRENCY_RESTRICTION_TEAM:-50}
+    enterprise: ${MAX_CONCURRENCY_RESTRICTION_ENTERPRISE:-100}
+  # Parallelism hard limit on number of nodes at any place
+  totalParallelismStopRestriction:
+    free: ${TOTAL_PARALLELISM_RESTRICTION_FREE:-2}
+    team: ${TOTAL_PARALLELISM_RESTRICTION_TEAM:-256}
+    enterprise: ${TOTAL_PARALLELISM_RESTRICTION_ENTERPRISE:-256}
+  #TODO(archit): Add passing timeout to all planCreators to adopt
+  maxPipelineTimeoutInHours:
+    free: ${MAX_PIPELINE_TIMEOUT_FREE:-1}
+    team: ${MAX_PIPELINE_TIMEOUT_TEAM:-720}
+    enterprise: ${MAX_PIPELINE_TIMEOUT_ENTERPRISE:-840}
+  maxStageTimeoutInHours:
+    free: ${MAX_STAGE_TIMEOUT_FREE:-1}
+    team: ${MAX_STAGE_TIMEOUT_TEAM:-720}
+    enterprise: ${MAX_STAGE_TIMEOUT_ENTERPRISE:-840}
+  # 0 means no limit
+  maxStepTimeoutInHours:
+    free: ${MAX_STEP_TIMEOUT_FREE:-1}
+    team: ${MAX_STEP_TIMEOUT_TEAM:-0}
+    enterprise: ${MAX_STEP_TIMEOUT_ENTERPRISE:-0}
 
-                grpcNegotiationType : ${GRPC_NEGOTIATION_TYPE : -TLS}
+grpcNegotiationType: ${GRPC_NEGOTIATION_TYPE:-TLS}
 
-                                      lockNotifyResponseCleanup
-              : ${LOCK_NOTIFY_RESPONSE_CLEANUP : -true}
+lockNotifyResponseCleanup: ${LOCK_NOTIFY_RESPONSE_CLEANUP:-true}
 
-                shouldUseEventsFrameworkSnapshotDebezium : $ {
-          SHOULD_USE_EVENTS_FRAMEWORK_SNAPSHOT_DEBEZIUM:
-            -false
-          }
-#Events framework configuration for debezium consumer in case of snapshotting
-        eventsFrameworkSnapshotDebezium:
-        redis:
-        sentinel:
-          false
+shouldUseEventsFrameworkSnapshotDebezium: ${SHOULD_USE_EVENTS_FRAMEWORK_SNAPSHOT_DEBEZIUM:-false}
+# Events framework configuration for debezium consumer in case of snapshotting
+eventsFrameworkSnapshotDebezium:
+  redis:
+    sentinel: false
     masterName: "test"
     redisUrl: "redis://localhost:6379"
     sentinelUrls:
@@ -689,7 +670,4 @@ streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}
 
 publishAdviserEventForCustomAdvisers: ${PUBLISH_ADVISER_EVENT_FOR_CUSTOM_ADVISERS:-true}
 
-disableCustomStageInPipelineService: ${
-          DISABLE_CUSTOM_STAGE_IN_PIPELINE_SERVICE:
-            -false
-          }
+disableCustomStageInPipelineService: ${DISABLE_CUSTOM_STAGE_IN_PIPELINE_SERVICE:-false}
