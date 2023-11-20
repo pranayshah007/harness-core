@@ -44,7 +44,7 @@ public final class HelmConstants {
   public static final String CHARTS_YAML_KEY = "Chart.yaml";
   public static final String CHART_VERSION = "${CHART_VERSION}";
   public static final String INDEX_FILE_WARN_LOG =
-      "Size of index.yaml is greater than 20Mb for the given repo. This can lead to slowness of delegate";
+      "Index.yaml for helm repo: [%s] is of size %.2fMb which is greater than ideal 20Mb. This can lead to slowness of delegate";
 
   // Add more command types as needed
   enum CommandType { REPO_ADD, REPO_UPDATE }

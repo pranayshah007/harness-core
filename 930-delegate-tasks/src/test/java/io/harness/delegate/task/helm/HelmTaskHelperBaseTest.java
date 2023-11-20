@@ -19,7 +19,6 @@ import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfPr
 import static io.harness.filesystem.FileIo.writeFile;
 import static io.harness.helm.HelmConstants.HELM_CACHE_HOME_PLACEHOLDER;
 import static io.harness.helm.HelmConstants.HELM_HOME_PATH_FLAG;
-import static io.harness.helm.HelmConstants.INDEX_FILE_WARN_LOG;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_CACHE_INDEX_FILE;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_CACHE_INDEX_FILE_FROM_CHART_DIRECTORY;
 import static io.harness.k8s.model.HelmVersion.V2;
@@ -1521,8 +1520,10 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     FileIo.deleteDirectoryAndItsContentIfExists(cacheDir);
     helmTaskHelperBase.checkIndexFile(repoName, "", chartDirectory);
 
-    long numberOfInvocations =
-        loggerRule.getFormattedMessages().stream().filter(log -> log.equals(INDEX_FILE_WARN_LOG)).count();
+    long numberOfInvocations = loggerRule.getFormattedMessages()
+                                   .stream()
+                                   .filter(log -> log.contains("This can lead to slowness of delegate"))
+                                   .count();
     assertThat(numberOfInvocations).isEqualTo(2);
     FileIo.deleteDirectoryAndItsContentIfExists("sample");
   }
@@ -1547,8 +1548,10 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     FileIo.deleteDirectoryAndItsContentIfExists(cacheDir);
     helmTaskHelperBase.checkIndexFile(repoName, "", chartDirectory);
 
-    long numberOfInvocations =
-        loggerRule.getFormattedMessages().stream().filter(log -> log.equals(INDEX_FILE_WARN_LOG)).count();
+    long numberOfInvocations = loggerRule.getFormattedMessages()
+                                   .stream()
+                                   .filter(log -> log.contains("This can lead to slowness of delegate"))
+                                   .count();
     assertThat(numberOfInvocations).isEqualTo(0);
     FileIo.deleteDirectoryAndItsContentIfExists("sample2");
   }

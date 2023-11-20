@@ -1829,7 +1829,8 @@ public class HelmTaskHelperBase {
       return;
     }
     if (indexFile.exists() && (indexFile.length() > SAFE_LIMIT_OF_INDEX_FILE)) {
-      log.warn(INDEX_FILE_WARN_LOG);
+      double megabytes = (double) indexFile.length() / (1024 * 1024);
+      log.warn(String.format(INDEX_FILE_WARN_LOG, repoName, megabytes));
     }
   }
 }
