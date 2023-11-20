@@ -274,6 +274,7 @@ public class SLIRecordBucketServiceImplTest extends CvNextGenTestBase {
                               .timeStamp(startTime.plus(Duration.ofMinutes(i)))
                               .badEventCount(badCounts.get(i))
                               .goodEventCount(goodCounts.get(i))
+                              .skipEventCount(0l)
                               .build());
     }
     sliRecordBucketService.create(sliRecordParams, serviceLevelIndicator.getUuid(), 0);

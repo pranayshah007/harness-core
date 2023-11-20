@@ -464,6 +464,7 @@ public class VerificationTaskCleanupSideKickExecutorTest extends CvNextGenTestBa
                               .timeStamp(startTime.plus(Duration.ofMinutes(i)))
                               .goodEventCount(goodCount)
                               .badEventCount(badCount)
+                              .skipEventCount(0l)
                               .build());
     }
     return sliRecordParams;

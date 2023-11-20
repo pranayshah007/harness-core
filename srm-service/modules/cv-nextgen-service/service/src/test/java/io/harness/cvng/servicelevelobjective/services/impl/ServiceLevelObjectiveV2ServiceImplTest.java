@@ -3380,6 +3380,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                               .timeStamp(startTime.plus(Duration.ofMinutes(i)))
                               .badEventCount(badCounts.get(i))
                               .goodEventCount(goodCounts.get(i))
+                              .skipEventCount(0l)
                               .build());
     }
     sliRecordService.create(sliRecordParams, sliId, sliId, 0);
@@ -3401,6 +3402,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                               .timeStamp(startTime.plus(Duration.ofMinutes(i)))
                               .goodEventCount(goodCount)
                               .badEventCount(badCount)
+                              .skipEventCount(0l)
                               .build());
     }
     return sliRecordParams;
