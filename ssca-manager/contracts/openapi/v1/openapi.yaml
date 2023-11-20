@@ -1151,9 +1151,6 @@ components:
           description: Enforcement step identifier
         has_slsa_verification:
           type: boolean
-          enum:
-            - PASS
-            - FAIL
           x-stoplight:
             id: 9hebs62c7m888
           description: Flag denoting whether a SLSA step was found in the deploy stage.
