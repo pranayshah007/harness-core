@@ -191,7 +191,7 @@ public class AzureVaultEncryptor implements VaultEncryptor {
 
   private EncryptedRecord renameSecretInternal(String accountId, SecretText secretText, EncryptedRecord existingRecord,
       AzureVaultConfig azureConfig, SecretClient keyVaultClient) throws Exception {
-    char[] value = fetchSecretValueInternal(existingRecord, azureConfig, keyVaultClient);
+    char[] value = fetchSecretValueInternal(existingRecord, azureConfig, keyVaultClient, 0);
     return upsertInternal(accountId,
         SecretText.builder()
             .name(secretText.getName())
@@ -312,8 +312,9 @@ public class AzureVaultEncryptor implements VaultEncryptor {
       try {
         SecretClient keyVaultClient = getAzureVaultSecretsClient(azureConfig);
         log.info("Trying to decrypt record {} by {}", encryptedRecord.getEncryptionKey(), azureConfig.getVaultName());
+        final int fetchAttempt = failedAttempts;
         return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
-            () -> fetchSecretValueInternal(encryptedRecord, azureConfig, keyVaultClient));
+            () -> fetchSecretValueInternal(encryptedRecord, azureConfig, keyVaultClient, fetchAttempt));
       } catch (KeyVaultErrorException e) {
         throw new SecretManagementDelegateException(
             AZURE_KEY_VAULT_OPERATION_ERROR, prepareKeyVaultErrorMessage(e, accountId, azureConfig.getName()), e, USER);
@@ -373,8 +374,9 @@ public class AzureVaultEncryptor implements VaultEncryptor {
   }
 
   private char[] fetchSecretValueInternal(
-      EncryptedRecord data, AzureVaultConfig azureVaultConfig, SecretClient azureVaultSecretsClient) {
+      EncryptedRecord data, AzureVaultConfig azureVaultConfig, SecretClient azureVaultSecretsClient, int fetchAttempt) {
     long startTime = System.currentTimeMillis();
+    String exceptionMsg = "Failed to decrypt azure secret in vault due to exception.";
 
     AzureParsedSecretReference parsedSecretReference = isNotEmpty(data.getPath())
         ? new AzureParsedSecretReference(data.getPath())
@@ -398,7 +400,14 @@ public class AzureVaultEncryptor implements VaultEncryptor {
     } catch (KeyVaultErrorException | MsalException ex) {
       throw ex;
     } catch (Exception ex) {
-      log.error("Failed to decrypt azure secret in vault due to exception", ex);
+      // If interrupted exception is received then log error only in first attempt
+      if (ex instanceof InterruptedException) {
+        if (fetchAttempt < 1) {
+          log.error(exceptionMsg, ex);
+        }
+      } else {
+        log.error(exceptionMsg, ex);
+      }
       String message = format("Failed to decrypt Azure secret %s in vault %s in account %s due to error %s",
           parsedSecretReference.getSecretName(), azureVaultConfig.getName(), azureVaultConfig.getAccountId(),
           ex.getMessage());
