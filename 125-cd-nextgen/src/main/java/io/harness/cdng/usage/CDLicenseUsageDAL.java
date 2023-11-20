@@ -249,6 +249,35 @@ public class CDLicenseUsageDAL {
       + "    organizations.account_identifier = ?\n"
       + "    AND t.orgidentifier = organizations.identifier\n"
       + "ORDER BY :sortCriteria";
+  private static final String FETCH_ACTIVE_SERVICES_NAME_ORG_AND_PROJECT_NAME_QUERY_V2 = ""
+      + "SELECT DISTINCT\n"
+      + "    t.orgIdentifier, t.projectIdentifier, t.serviceIdentifier AS identifier, t.lastDeployed, t.instanceCount,\n"
+      + "    CASE\n"
+      + "        WHEN t.serviceIdentifier LIKE 'account.%' THEN NULL\n"
+      + "        ELSE COALESCE(organizations.name, 'Deleted')\n"
+      + "    END AS orgName,\n"
+      + "    CASE WHEN t.serviceIdentifier LIKE 'account.%' OR t.serviceIdentifier LIKE 'org.%' THEN NULL\n"
+      + "         ELSE COALESCE(projects.name, 'Deleted')\n"
+      + "    END AS projectName,\n"
+      + "    COALESCE(services.name, 'Deleted') AS name\n"
+      + "FROM \n"
+      + "    (\n"
+      + "        VALUES :constantTable\n"
+      + "    )\n"
+      + "    AS t (orgIdentifier, projectIdentifier, serviceIdentifier, lastDeployed, instanceCount)\n"
+      + "LEFT JOIN services ON\n"
+      + "    services.account_id = ?\n"
+      + "    AND t.orgidentifier = services.org_identifier\n"
+      + "    AND t.projectidentifier = services.project_identifier\n"
+      + "    AND t.serviceIdentifier = services.identifier\n"
+      + " LEFT JOIN projects ON\n"
+      + "    projects.account_identifier = ?\n"
+      + "    AND t.orgidentifier = projects.org_identifier\n"
+      + "    AND t.projectidentifier = projects.identifier\n"
+      + " LEFT JOIN organizations ON\n"
+      + "    organizations.account_identifier = ?\n"
+      + "    AND t.orgidentifier = organizations.identifier\n"
+      + "ORDER BY :sortCriteria";
 
   @Inject TimeScaleDBService timeScaleDBService;
 
@@ -339,15 +368,14 @@ public class CDLicenseUsageDAL {
                                                   fetchData.getProjectIdentifier(), fetchData.getServiceIdentifier()))
                                           .replace(":sortCriteria", buildSortCriteria(fetchData.getSort()));
     } else {
-      fetchActiveServicesFinalQuery =
-              FETCH_ACTIVE_SERVICES_WITH_INSTANCES_COUNT_QUERY
-                      .replace(":filterOnServiceInfraInfo",
-                              buildFilterOnServiceInfraInfoTable(
-                                      fetchData.getOrgIdentifier(), fetchData.getProjectIdentifier(), fetchData.getServiceIdentifier()))
-                      .replace(":filterOnNgInstanceStats",
-                              buildFilterOnNGInstanceStatsTable(
-                                      fetchData.getOrgIdentifier(), fetchData.getProjectIdentifier(), fetchData.getServiceIdentifier()))
-                      .replace(":sortCriteria", buildSortCriteria(fetchData.getSort()));
+      fetchActiveServicesFinalQuery = FETCH_ACTIVE_SERVICES_WITH_INSTANCES_COUNT_QUERY
+                                          .replace(":filterOnServiceInfraInfo",
+                                              buildFilterOnServiceInfraInfoTable(fetchData.getOrgIdentifier(),
+                                                  fetchData.getProjectIdentifier(), fetchData.getServiceIdentifier()))
+                                          .replace(":filterOnNgInstanceStats",
+                                              buildFilterOnNGInstanceStatsTable(fetchData.getOrgIdentifier(),
+                                                  fetchData.getProjectIdentifier(), fetchData.getServiceIdentifier()))
+                                          .replace(":sortCriteria", buildSortCriteria(fetchData.getSort()));
     }
 
     int retry = 0;
@@ -395,10 +423,18 @@ public class CDLicenseUsageDAL {
       return Collections.emptyList();
     }
 
-    final String fetchActiveServicesNameOrgAndProjectNameFinalQuery =
-        FETCH_ACTIVE_SERVICES_NAME_ORG_AND_PROJECT_NAME_QUERY
-            .replace(":constantTable", buildConstantTable(activeServiceBaseItems))
-            .replace(":sortCriteria", buildSortCriteria(sort));
+    final String fetchActiveServicesNameOrgAndProjectNameFinalQuery;
+    if (featureFlagService.isEnabled(accountIdentifier, FeatureName.CDS_NG_ACC_ORG_LEVEL_SERVICE_LICENSING_FIX)) {
+      fetchActiveServicesNameOrgAndProjectNameFinalQuery =
+          FETCH_ACTIVE_SERVICES_NAME_ORG_AND_PROJECT_NAME_QUERY_V2
+              .replace(":constantTable", buildConstantTable(activeServiceBaseItems))
+              .replace(":sortCriteria", buildSortCriteria(sort));
+    } else {
+      fetchActiveServicesNameOrgAndProjectNameFinalQuery =
+          FETCH_ACTIVE_SERVICES_NAME_ORG_AND_PROJECT_NAME_QUERY
+              .replace(":constantTable", buildConstantTable(activeServiceBaseItems))
+              .replace(":sortCriteria", buildSortCriteria(sort));
+    }
     int retry = 0;
     boolean successfulOperation = false;
     List<ActiveService> activeServices = new ArrayList<>();

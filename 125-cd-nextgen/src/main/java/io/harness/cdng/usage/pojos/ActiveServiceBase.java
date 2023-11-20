@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.StringJoiner;
+import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,8 +27,8 @@ import lombok.experimental.SuperBuilder;
 @FieldNameConstants(innerTypeName = "ActiveServiceBaseField")
 public class ActiveServiceBase {
   String identifier;
-  String orgIdentifier;
-  String projectIdentifier;
+  @Nullable String orgIdentifier;
+  @Nullable String projectIdentifier;
   long instanceCount;
   long lastDeployed;
 
@@ -35,8 +36,8 @@ public class ActiveServiceBase {
     // the order of properties is important because of constant table in query,
     // see io.harness.cdng.usage.CDLicenseUsageDAL.FETCH_ACTIVE_SERVICES_NAME_ORG_AND_PROJECT_NAME_QUERY
     return new StringJoiner(",", "(", ")")
-        .add("'" + this.orgIdentifier + "'")
-        .add("'" + this.projectIdentifier + "'")
+        .add(this.orgIdentifier == null ? null : "'" + this.orgIdentifier + "'")
+        .add(this.projectIdentifier == null ? null : "'" + this.projectIdentifier + "'")
         .add("'" + this.identifier + "'")
         .add(Long.toString(this.lastDeployed))
         .add(Long.toString(this.instanceCount))
