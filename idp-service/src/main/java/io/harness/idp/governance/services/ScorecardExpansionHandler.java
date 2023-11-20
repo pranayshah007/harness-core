@@ -86,7 +86,8 @@ public class ScorecardExpansionHandler implements JsonExpansionHandler {
       log.info("Before calling backstage API, Constructed names: " + serviceId + " & " + serviceIdExtended);
       Object entitiesResponse = getGeneralResponse(backstageResourceClient.getCatalogEntitiesByRefs(accountId,
           BackstageCatalogEntitiesByRefsRequest.builder().entityRefs(List.of(serviceId, serviceIdExtended)).build()));
-      List<BackstageCatalogEntity> entities = convert(mapper, entitiesResponse, BackstageCatalogEntity.class);
+      List<BackstageCatalogEntity> entities =
+          convert(mapper, ((Map<String, Object>) entitiesResponse).get("items"), BackstageCatalogEntity.class);
       log.info("Response from backstage. Size: " + entities.size());
       String uuid = getUUId(entities, orgId, projectId);
       if (uuid == null) {
