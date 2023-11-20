@@ -772,7 +772,7 @@ public class ProjectServiceImpl implements ProjectService {
     Optional<Project> project = get(accountIdentifier, orgIdentifier, projectIdentifier);
     if (project.isPresent()) {
       ScopeInfo projectScopeInfo = scopeInfoHelper.populateScopeInfo(
-          ScopeLevel.PROJECT, project.get().getUniqueId(), accountIdentifier, orgIdentifier, null);
+          ScopeLevel.PROJECT, project.get().getUniqueId(), accountIdentifier, orgIdentifier, projectIdentifier);
       scopeInfoCache.put(cacheKey, projectScopeInfo);
       return Optional.of(projectScopeInfo);
     } else {
