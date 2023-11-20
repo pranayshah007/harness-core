@@ -17,8 +17,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 public class BatchJobContext extends AutoMetricContext {
-  public BatchJobContext(String accountId, String batchJobType) {
+  public BatchJobContext(String accountId, String batchJobType, String batchJobStatus) {
     put("accountId", accountId);
     put("batchJobType", batchJobType);
+    put("batchJobStatus", batchJobStatus);
   }
 }
