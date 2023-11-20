@@ -69,6 +69,7 @@ import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivity;
 import io.harness.steps.approval.step.harness.beans.ScheduledDeadline;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.steps.approval.step.harness.outcomes.HarnessApprovalStepOutcome;
+import io.harness.telemetry.helpers.ApprovalInstrumentationHelper;
 import io.harness.user.remote.UserClient;
 import io.harness.utils.PmsFeatureFlagHelper;
 
@@ -104,6 +105,7 @@ public class HarnessApprovalStepTest {
   @Mock ExecutionSweepingOutputService sweepingOutputService;
   @Mock private UserClient userClient;
   @Mock private PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  @Mock private ApprovalInstrumentationHelper instrumentationHelper;
   @InjectMocks private HarnessApprovalStep harnessApprovalStep;
   private ILogStreamingStepClient logStreamingStepClient;
 

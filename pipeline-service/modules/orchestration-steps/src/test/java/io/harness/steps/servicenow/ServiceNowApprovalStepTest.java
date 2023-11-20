@@ -53,6 +53,7 @@ import io.harness.steps.approval.step.servicenow.ServiceNowApprovalSpecParameter
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalStep;
 import io.harness.steps.approval.step.servicenow.beans.ServiceNowApprovalResponseData;
 import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
+import io.harness.telemetry.helpers.ApprovalInstrumentationHelper;
 
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
@@ -79,6 +80,7 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
   @Mock ExecutorService dashboardExecutorService;
   @Mock ServiceNowApprovalHelperService serviceNowApprovalHelperService;
   @Mock IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
+  @Mock private ApprovalInstrumentationHelper instrumentationHelper;
   @InjectMocks private ServiceNowApprovalStep serviceNowApprovalStep;
   private ILogStreamingStepClient logStreamingStepClient;
 

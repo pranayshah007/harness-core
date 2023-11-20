@@ -52,6 +52,7 @@ import io.harness.steps.approval.step.jira.JiraApprovalSpecParameters;
 import io.harness.steps.approval.step.jira.JiraApprovalStep;
 import io.harness.steps.approval.step.jira.beans.JiraApprovalResponseData;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
+import io.harness.telemetry.helpers.ApprovalInstrumentationHelper;
 import io.harness.yaml.core.timeout.Timeout;
 
 import java.util.Collections;
@@ -79,6 +80,7 @@ public class JiraApprovalStepTest extends CategoryTest {
   @Mock Ambiance ambiance;
   @InjectMocks private JiraApprovalStep jiraApprovalStep;
   @Mock JiraApprovalInstance jiraApprovalInstance;
+  @Mock private ApprovalInstrumentationHelper instrumentationHelper;
   private ILogStreamingStepClient logStreamingStepClient;
 
   @Before

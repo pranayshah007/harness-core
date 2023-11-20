@@ -52,6 +52,7 @@ import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellType;
 import io.harness.tasks.ResponseData;
+import io.harness.telemetry.helpers.ApprovalInstrumentationHelper;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.common.collect.ImmutableMap;
@@ -73,6 +74,7 @@ public class CustomApprovalStepTest extends CategoryTest {
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   private static final String STATUS = "status";
   @Mock ExecutorService dashboardExecutorService;
+  @Mock private ApprovalInstrumentationHelper instrumentationHelper;
   @InjectMocks private CustomApprovalStep customApprovalStep;
   private ILogStreamingStepClient logStreamingStepClient;
 
