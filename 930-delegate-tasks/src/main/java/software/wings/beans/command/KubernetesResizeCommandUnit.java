@@ -83,7 +83,8 @@ public class KubernetesResizeCommandUnit extends ContainerResizeCommandUnit {
     KubernetesConfig kubernetesConfig = getKubernetesConfig(contextData);
 
     String controllerName = containerServiceData.getName();
-    HasMetadata controller = kubernetesContainerService.getFabric8Controller(kubernetesConfig, controllerName);
+    HasMetadata controller =
+        kubernetesContainerService.getControllerUsingFabric8Client(kubernetesConfig, controllerName);
     if (controller == null) {
       throw new WingsException(GENERAL_ERROR).addParam("message", "No controller with name: " + controllerName);
     }

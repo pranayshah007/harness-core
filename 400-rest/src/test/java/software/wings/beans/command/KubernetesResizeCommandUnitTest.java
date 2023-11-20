@@ -101,7 +101,7 @@ public class KubernetesResizeCommandUnitTest extends WingsBaseTest {
     when(kubernetesContainerService.setControllerPodCount(
              eq(kubernetesConfig), eq(CLUSTER_NAME), any(), anyInt(), anyInt(), anyInt(), any()))
         .thenAnswer(i -> buildContainerInfos((Integer) i.getArguments()[4], (Integer) i.getArguments()[3]));
-    when(kubernetesContainerService.getFabric8Controller(any(), any()))
+    when(kubernetesContainerService.getControllerUsingFabric8Client(any(), any()))
         .thenReturn(new ReplicationControllerBuilder().build());
   }
 

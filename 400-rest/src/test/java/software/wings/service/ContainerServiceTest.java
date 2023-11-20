@@ -261,13 +261,13 @@ public class ContainerServiceTest extends WingsBaseTest {
                                           .withLabels(ImmutableMap.of("app", "MyApp"))
                                           .endMetadata()
                                           .build();
-    when(kubernetesContainerService.getController(eq(kubernetesConfig), anyString()))
+    when(kubernetesContainerService.getControllerUsingK8sClient(eq(kubernetesConfig), anyString()))
         .thenThrow(new InvalidRequestException(""));
     when(kubernetesContainerService.listControllers(kubernetesConfig))
         .thenReturn((List) singletonList(replicationController));
-    when(kubernetesContainerService.getFabric8Controller(eq(kubernetesConfig), anyString()))
+    when(kubernetesContainerService.getControllerUsingFabric8Client(eq(kubernetesConfig), anyString()))
         .thenReturn(replicationController);
-    when(kubernetesContainerService.getFabric8Services(eq(kubernetesConfig), any()))
+    when(kubernetesContainerService.getServicesUsingFabric8Client(eq(kubernetesConfig), any()))
         .thenReturn(singletonList(kubernetesService));
     when(kubernetesContainerService.getControllers(eq(kubernetesConfig), any()))
         .thenReturn((List) singletonList(replicationController));
@@ -291,8 +291,10 @@ public class ContainerServiceTest extends WingsBaseTest {
     List<V1Service> v1Services = Collections.singletonList(v1Service);
     v1ServiceList.setItems(v1Services);
 
-    when(kubernetesContainerService.getController(eq(kubernetesConfig), anyString())).thenReturn(controllerObjectMeta);
-    when(kubernetesContainerService.getServiceList(kubernetesConfig, "harness.io/revision=value2,key=value"))
+    when(kubernetesContainerService.getControllerUsingK8sClient(eq(kubernetesConfig), anyString()))
+        .thenReturn(controllerObjectMeta);
+    when(kubernetesContainerService.getServiceListUsingK8sClient(
+             kubernetesConfig, "harness.io/revision=value2,key=value"))
         .thenReturn(v1ServiceList);
   }
 }

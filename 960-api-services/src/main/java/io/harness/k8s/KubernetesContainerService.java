@@ -53,9 +53,9 @@ import lombok.SneakyThrows;
 public interface KubernetesContainerService {
   HasMetadata createOrReplaceController(KubernetesConfig kubernetesConfig, HasMetadata definition);
 
-  HasMetadata getFabric8Controller(KubernetesConfig kubernetesConfig, String name);
+  HasMetadata getControllerUsingFabric8Client(KubernetesConfig kubernetesConfig, String name);
 
-  V1ObjectMeta getController(KubernetesConfig kubernetesConfig, String name);
+  V1ObjectMeta getControllerUsingK8sClient(KubernetesConfig kubernetesConfig, String name);
 
   @SuppressWarnings("squid:S1452")
   List<? extends HasMetadata> getControllers(KubernetesConfig kubernetesConfig, Map<String, String> labels);
@@ -106,9 +106,9 @@ public interface KubernetesContainerService {
 
   V1Service getService(KubernetesConfig kubernetesConfig, String name);
 
-  V1ServiceList getServiceList(KubernetesConfig kubernetesConfig, String labelSelector);
+  V1ServiceList getServiceListUsingK8sClient(KubernetesConfig kubernetesConfig, String labelSelector);
 
-  List<Service> getFabric8Services(KubernetesConfig kubernetesConfig, Map<String, String> labels);
+  List<Service> getServicesUsingFabric8Client(KubernetesConfig kubernetesConfig, Map<String, String> labels);
 
   void deleteService(KubernetesConfig kubernetesConfig, String name);
 
@@ -200,7 +200,7 @@ public interface KubernetesContainerService {
 
   void persistKubernetesConfig(KubernetesConfig config, String workingDir) throws IOException;
 
-  HasMetadata getFabric8Controller(KubernetesConfig kubernetesConfig, String name, String namespace);
+  HasMetadata getControllerUsingFabric8Client(KubernetesConfig kubernetesConfig, String name, String namespace);
 
   CEK8sDelegatePrerequisite.MetricsServerCheck validateMetricsServer(KubernetesConfig kubernetesConfig);
 
@@ -220,4 +220,10 @@ public interface KubernetesContainerService {
   void modifyKubeConfigReadableProperties(String path);
 
   void modifyFileReadableProperties(String path);
+
+  K8sServiceMetadata getK8sServiceMetadataUsingK8sClient(
+      KubernetesConfig kubernetesConfig, String containerServiceName, String accountId);
+
+  K8sServiceMetadata getK8sServiceMetadataUsingFabric8(
+      KubernetesConfig kubernetesConfig, String containerServiceName, String accountId);
 }
