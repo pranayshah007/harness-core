@@ -107,6 +107,7 @@ import io.harness.cdng.provision.terraformcloud.executiondetails.TerraformCloudP
 import io.harness.cdng.provision.terraformcloud.executiondetails.TerraformCloudPlanExecutionDetailsServiceImpl;
 import io.harness.cdng.provision.terraformcloud.resources.service.TerraformCloudResourceService;
 import io.harness.cdng.provision.terraformcloud.resources.service.TerraformCloudResourceServiceImpl;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.OverrideFilterPropertiesMapper;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2MigrationService;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2MigrationServiceImpl;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2SettingsUpdateService;
@@ -262,6 +263,7 @@ public class NGModule extends AbstractModule {
     filterPropertiesMapper.addBinding(FilterType.ENVIRONMENTGROUP.toString())
         .to(EnvironmentGroupFilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ENVIRONMENT.toString()).to(EnvironmentFilterPropertiesMapper.class);
+    filterPropertiesMapper.addBinding(FilterType.OVERRIDE.toString()).to(OverrideFilterPropertiesMapper.class);
 
     Multibinder<PluginInfoProvider> pluginInfoProviderMultibinder =
         Multibinder.newSetBinder(binder(), new TypeLiteral<>() {});

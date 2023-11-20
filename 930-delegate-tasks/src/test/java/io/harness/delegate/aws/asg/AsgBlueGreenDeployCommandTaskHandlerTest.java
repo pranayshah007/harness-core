@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -43,6 +44,7 @@ import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.ec2.model.LaunchTemplate;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -148,6 +150,41 @@ public class AsgBlueGreenDeployCommandTaskHandlerTest extends CategoryTest {
     AsgBlueGreenDeployResult result = response.getAsgBlueGreenDeployResult();
 
     assertThat(result.getProdAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getTargetGroupArnsList() {
+    AsgLoadBalancerConfig lb = AsgLoadBalancerConfig.builder()
+                                   .stageTargetGroupArnsList(List.of("s1"))
+                                   .prodTargetGroupArnsList(List.of("p1"))
+                                   .build();
+    AsgLoadBalancerConfig shiftTrLB1 = AsgLoadBalancerConfig.builder()
+                                           .stageTargetGroupArnsList(List.of("s2"))
+                                           .prodTargetGroupArnsList(List.of("p2"))
+                                           .build();
+    AsgLoadBalancerConfig shiftTrLB2 = AsgLoadBalancerConfig.builder()
+                                           .stageTargetGroupArnsList(List.of("s3"))
+                                           .prodTargetGroupArnsList(List.of("p3"))
+                                           .build();
+
+    List<AsgLoadBalancerConfig> lbConfigs = List.of(lb, shiftTrLB1, shiftTrLB2);
+
+    doReturn(true).when(asgTaskHelper).isShiftTrafficFeature(eq(shiftTrLB1));
+    doReturn(true).when(asgTaskHelper).isShiftTrafficFeature(eq(shiftTrLB2));
+
+    List<String> result = taskHandler.getTargetGroupArnsList(lbConfigs, true);
+
+    assertThat(result.get(0)).isEqualTo("p1");
+    assertThat(result.get(1)).isEqualTo("s2");
+    assertThat(result.get(2)).isEqualTo("s3");
+
+    result = taskHandler.getTargetGroupArnsList(lbConfigs, false);
+
+    assertThat(result.get(0)).isEqualTo("s1");
+    assertThat(result.get(1)).isEqualTo("s2");
+    assertThat(result.get(2)).isEqualTo("s3");
   }
 
   private AsgLoadBalancerConfig getAsgLoadBalancerConfig() {

@@ -206,6 +206,11 @@ public class CheckServiceImpl implements CheckService {
 
   @Override
   public List<CheckGraph> getCheckGraph(String accountIdentifier, String identifier, Boolean custom) {
+    CheckEntity checkEntity = checkRepository.findByAccountIdentifierAndIdentifier(
+        custom ? accountIdentifier : GLOBAL_ACCOUNT_ID, identifier);
+    if (checkEntity == null) {
+      throw new InvalidRequestException(String.format("Check graph not found for checkId [%s]", identifier));
+    }
     return CheckStatsMapper.toDTO(
         checkStatusRepository.findByAccountIdentifierAndIdentifierAndIsCustom(accountIdentifier, identifier, custom));
   }

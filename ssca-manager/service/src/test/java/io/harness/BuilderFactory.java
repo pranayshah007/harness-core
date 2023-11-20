@@ -338,8 +338,8 @@ public class BuilderFactory {
         .primaryArtifact(
             ArtifactDetails.builder()
                 .artifactId("artifactId")
-                .displayName("image")
-                .tag("tag")
+                .displayName("autosscauser/autosscauser-auto:5")
+                .tag("5")
                 .artifactIdentity(ArtifactCorrelationDetails.builder().image("artifactCorrelationId").build())
                 .build())
         .isDeleted(false);

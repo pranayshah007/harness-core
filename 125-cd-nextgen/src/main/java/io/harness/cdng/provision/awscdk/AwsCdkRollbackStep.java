@@ -128,9 +128,7 @@ public class AwsCdkRollbackStep extends AbstractContainerStepV2<StepElementParam
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    awsCdkStepHelper.validateFeatureEnabled(ambiance);
-  }
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 
   private Map<String, String> getEnvironmentVariables(
       AwsCdkConfig awsCdkConfig, AwsCdkRollbackStepParameters awsCdkRollbackStepParameters) {

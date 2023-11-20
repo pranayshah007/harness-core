@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHALINI;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
@@ -204,7 +205,6 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void shouldTestUpdateStatusForceful() {
@@ -219,7 +219,19 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void shouldTestUpdateStatusForcefulWithoutEndTs() {
+    String planExecutionId = generateUuid();
+    planExecutionService.save(PlanExecution.builder().uuid(planExecutionId).status(PAUSED).build());
+    PlanExecution planExecution =
+        planExecutionService.updateStatusForceful(planExecutionId, Status.ABORTED, null, true);
+    assertEquals(planExecution.getUuid(), planExecutionId);
+    assertEquals(planExecution.getStatus(), Status.ABORTED);
+    assertThat(planExecution.getEndTs()).isNotNull();
+  }
 
+  @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void shouldTestGet() {

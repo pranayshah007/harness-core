@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.task.pcf.artifact;
+package io.harness.delegate.task.artifactBundle;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
@@ -16,7 +16,7 @@ import io.harness.annotations.dev.ProductModule;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PCF})
 @OwnedBy(CDP)
-public enum TasArtifactBundledArtifactType {
-  ZIP,
-  TAR
+public enum ArtifactType {
+  CONTAINER,
+  PACKAGE
 }

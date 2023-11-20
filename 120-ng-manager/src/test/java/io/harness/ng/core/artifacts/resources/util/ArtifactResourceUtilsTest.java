@@ -69,6 +69,7 @@ import io.harness.cdng.artifact.resources.ecr.dtos.EcrRequestDTO;
 import io.harness.cdng.artifact.resources.ecr.service.EcrResourceService;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrRequestDTO;
+import io.harness.cdng.artifact.resources.gcr.dtos.GcrResponseDTO;
 import io.harness.cdng.artifact.resources.gcr.service.GcrResourceService;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
@@ -815,7 +816,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
 
     doReturn(googleArtifactRegistryConfig)
         .when(spyartifactResourceUtils)
-        .locateArtifactInService(any(), any(), any(), any(), any());
+        .locateArtifactInService(any(), any(), any(), any(), any(), any());
 
     doReturn(buildDetails)
         .when(garResourceService)
@@ -824,6 +825,109 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
 
     assertThat(spyartifactResourceUtils.getBuildDetailsV2GAR(null, null, null, null, null, "accountId", "orgId",
                    "projectId", "pipeId", "version", "versionRegex", "", "", "serviceref", null))
+        .isEqualTo(buildDetails);
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsV2GARForRemoteService() {
+    // spy for ArtifactResourceUtils
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    // Creating GoogleArtifactRegistryConfig for mock
+    GoogleArtifactRegistryConfig googleArtifactRegistryConfig =
+        GoogleArtifactRegistryConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("connectorref").build())
+            .project(ParameterField.<String>builder().value("project").build())
+            .pkg(ParameterField.<String>builder().value("pkg").build())
+            .repositoryName(ParameterField.<String>builder().value("reponame").build())
+            .region(ParameterField.<String>builder().value("region").build())
+            .version(ParameterField.<String>builder().value("version").build())
+            .build();
+
+    // Creating GARResponseDTO for mock
+    GARResponseDTO buildDetails = GARResponseDTO.builder().build();
+
+    Map<String, String> contextMap = new HashMap<>();
+    contextMap.put("serviceGitBranch", "main-patch");
+
+    YamlExpressionEvaluatorWithContext yamlExpressionEvaluatorWithContext =
+        YamlExpressionEvaluatorWithContext.builder()
+            .yamlExpressionEvaluator(cdYamlExpressionEvaluator)
+            .contextMap(contextMap)
+            .build();
+
+    doReturn(yamlExpressionEvaluatorWithContext)
+        .when(spyartifactResourceUtils)
+        .getYamlExpressionEvaluatorWithContext(any(), any(), any(), any(), any(), any(), any(), any());
+
+    // Creating IdentifierRef for mock
+    IdentifierRef identifierRef =
+        IdentifierRefHelper.getIdentifierRef("connectorref", "accountId", "orgId", "projectId");
+
+    doReturn(googleArtifactRegistryConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(any(), any(), any(), any(), any(), eq("main-patch"));
+
+    doReturn(true).when(spyartifactResourceUtils).isRemoteService(any(), any(), any(), any());
+
+    doReturn(buildDetails)
+        .when(garResourceService)
+        .getBuildDetails(
+            identifierRef, "region", "reponame", "project", "pkg", "version", "versionRegex", "orgId", "projectId");
+
+    assertThat(spyartifactResourceUtils.getBuildDetailsV2GAR(null, null, null, null, null, "accountId", "orgId",
+                   "projectId", "pipeId", "version", "versionRegex", "", "", "serviceref", null))
+        .isEqualTo(buildDetails);
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsV2GCR() {
+    // spy for ArtifactResourceUtils
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    // Creating GoogleArtifactRegistryConfig for mock
+    GcrArtifactConfig gcrArtifactConfig =
+        GcrArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("connectorref").build())
+            .imagePath(ParameterField.<String>builder().value("imagePath").build())
+            .tag(ParameterField.<String>builder().value("tag").build())
+            .registryHostname(ParameterField.<String>builder().value("registryHostName").build())
+            .build();
+
+    GcrResponseDTO buildDetails = GcrResponseDTO.builder().build();
+
+    Map<String, String> contextMap = new HashMap<>();
+    contextMap.put("serviceGitBranch", "main-patch");
+
+    YamlExpressionEvaluatorWithContext yamlExpressionEvaluatorWithContext =
+        YamlExpressionEvaluatorWithContext.builder()
+            .yamlExpressionEvaluator(cdYamlExpressionEvaluator)
+            .contextMap(contextMap)
+            .build();
+
+    doReturn(yamlExpressionEvaluatorWithContext)
+        .when(spyartifactResourceUtils)
+        .getYamlExpressionEvaluatorWithContext(any(), any(), any(), any(), any(), any(), any(), any());
+
+    IdentifierRef identifierRef =
+        IdentifierRefHelper.getIdentifierRef("connectorref", "accountId", "orgId", "projectId");
+
+    doReturn(true).when(spyartifactResourceUtils).isRemoteService(any(), any(), any(), any());
+
+    doReturn(gcrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(any(), any(), any(), any(), any(), eq("main-patch"));
+
+    doReturn(buildDetails)
+        .when(gcrResourceService)
+        .getBuildDetails(identifierRef, "imagePath", "registryHostName", "orgId", "projectId");
+
+    assertThat(spyartifactResourceUtils.getBuildDetailsV2GCR("imagePath", "registryHostName", "connectorref",
+                   "accountId", "orgId", "projectId", "pipeId", "", "", null, "serviceref"))
         .isEqualTo(buildDetails);
   }
 

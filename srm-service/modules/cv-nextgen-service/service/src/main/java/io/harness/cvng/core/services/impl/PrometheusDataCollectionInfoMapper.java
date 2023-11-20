@@ -117,5 +117,19 @@ public class PrometheusDataCollectionInfoMapper
 
   @Override
   public void postProcessDataCollectionInfo(
-      PrometheusDataCollectionInfo dataCollectionInfo, MetricCVConfig cvConfig, VerificationTask.TaskType taskType) {}
+      PrometheusDataCollectionInfo dataCollectionInfo, MetricCVConfig cvConfig, VerificationTask.TaskType taskType) {
+    PrometheusCVConfig prometheusCVConfig = (PrometheusCVConfig) cvConfig;
+    if (dataCollectionInfo.isCollectHostData()) {
+      dataCollectionInfo.setDataCollectionDsl(DataCollectionDSLFactory.readMetricDSL(DataSourceType.PROMETHEUS));
+      List<MetricCollectionInfo> metricCollectionInfoList =
+          prometheusCVConfig.getMetricInfos()
+              .stream()
+              .map(this::getMetricCollectionInfo)
+              .peek(metricCollectionInfo
+                  -> metricCollectionInfo.setQuery(PrometheusQueryUtils.formGroupByQuery(
+                      metricCollectionInfo.getQuery(), metricCollectionInfo.getServiceInstanceField())))
+              .collect(Collectors.toList());
+      dataCollectionInfo.setMetricCollectionInfoList(metricCollectionInfoList);
+    }
+  }
 }

@@ -9,11 +9,15 @@ package io.harness.cvng.core.services.impl;
 
 import static io.harness.NGConstants.ENTITY_REFERENCE_LOG_PREFIX;
 import static io.harness.annotations.dev.HarnessTeam.CV;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CONNECTORS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.MONITORED_SERVICE;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SERVICE;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
+
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -29,16 +33,22 @@ import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
+import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
+import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.google.protobuf.StringValue;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +58,9 @@ import lombok.extern.slf4j.Slf4j;
 public class SetupUsageEventServiceImpl implements SetupUsageEventService {
   @Inject @Named(SETUP_USAGE) private Producer eventProducer;
   @Inject private IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
+  private static final String ACCOUNT_IDENTIFIER_PREFIX = "account.";
+  private static final String ORG_IDENTIFIER_PREFIX = "org.";
+  public static final String STABLE_VERSION = "__STABLE__";
 
   @Override
   public void sendCreateEventsForMonitoredService(
@@ -70,6 +83,12 @@ public class SetupUsageEventServiceImpl implements SetupUsageEventService {
 
     List<EntityDetailProtoDTO> referredEnvEntities = getReferredEnvironmentEntities(projectParams, monitoredServiceDTO);
     sendEvents(projectParams.getAccountIdentifier(), referredByEntity, referredEnvEntities, ENVIRONMENT);
+
+    if (!Objects.isNull(monitoredServiceDTO.getTemplate())
+        && monitoredServiceDTO.getTemplate().isTemplateByReference()) {
+      sendEvents(projectParams.getAccountIdentifier(), referredByEntity,
+          Collections.singletonList(getTemplateReferenceProtoDTOFromDTO(projectParams, monitoredServiceDTO)), TEMPLATE);
+    }
   }
 
   @Override
@@ -87,6 +106,9 @@ public class SetupUsageEventServiceImpl implements SetupUsageEventService {
     sendEvents(projectParams.getAccountIdentifier(), referredByEntity, new ArrayList<>(), CONNECTORS);
     sendEvents(projectParams.getAccountIdentifier(), referredByEntity, new ArrayList<>(), SERVICE);
     sendEvents(projectParams.getAccountIdentifier(), referredByEntity, new ArrayList<>(), ENVIRONMENT);
+    if (monitoredService.isTemplateByReference()) {
+      sendEvents(projectParams.getAccountIdentifier(), referredByEntity, new ArrayList<>(), TEMPLATE);
+    }
   }
 
   @Override
@@ -162,5 +184,45 @@ public class SetupUsageEventServiceImpl implements SetupUsageEventService {
         identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(identifierRef.getAccountIdentifier(),
             identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
     return EntityDetailProtoDTO.newBuilder().setIdentifierRef(referredDTO).setType(entityType).build();
+  }
+
+  private EntityDetailProtoDTO getTemplateReferenceProtoDTOFromDTO(
+      ProjectParams projectParams, MonitoredServiceDTO monitoredServiceDTO) {
+    try {
+      String templateRef = monitoredServiceDTO.getTemplate().getTemplateRef();
+      String versionLabel = monitoredServiceDTO.getTemplate().getVersionLabel();
+      if (isEmpty(versionLabel)) {
+        versionLabel = STABLE_VERSION;
+      }
+      TemplateReferenceProtoDTO.Builder templateReferenceProtoDTO =
+          TemplateReferenceProtoDTO.newBuilder().setAccountIdentifier(
+              StringValue.of(projectParams.getAccountIdentifier()));
+      if (templateRef.contains(ACCOUNT_IDENTIFIER_PREFIX)) {
+        templateReferenceProtoDTO.setScope(ScopeProtoEnum.ACCOUNT)
+            .setIdentifier(StringValue.of(templateRef.replace(ACCOUNT_IDENTIFIER_PREFIX, "")));
+      } else if (templateRef.contains(ORG_IDENTIFIER_PREFIX)) {
+        templateReferenceProtoDTO.setScope(ScopeProtoEnum.ORG)
+            .setOrgIdentifier(StringValue.of(projectParams.getOrgIdentifier()))
+            .setIdentifier(StringValue.of(templateRef.replace(ORG_IDENTIFIER_PREFIX, "")));
+      } else {
+        templateReferenceProtoDTO.setScope(ScopeProtoEnum.PROJECT)
+            .setOrgIdentifier(StringValue.of(projectParams.getOrgIdentifier()))
+            .setProjectIdentifier(StringValue.of(projectParams.getProjectIdentifier()))
+            .setIdentifier(StringValue.of(templateRef));
+      }
+      templateReferenceProtoDTO.setVersionLabel(StringValue.of(versionLabel));
+      return EntityDetailProtoDTO.newBuilder()
+          .setType(TEMPLATE)
+          .setTemplateRef(templateReferenceProtoDTO.build())
+          .build();
+    } catch (Exception e) {
+      log.error(
+          "Could not add the reference in entity setup usage for acc: {}, project: {}, monitoredServiceRef: {}: {}",
+          projectParams.getAccountIdentifier(), projectParams.getProjectIdentifier(),
+          monitoredServiceDTO.getIdentifier(), e.getMessage());
+      throw new InvalidRequestException(
+          format("Could not add the reference in entity setup usage for monitoredServiceRef: [%s] and [%s]",
+              monitoredServiceDTO.getIdentifier(), e.getMessage()));
+    }
   }
 }

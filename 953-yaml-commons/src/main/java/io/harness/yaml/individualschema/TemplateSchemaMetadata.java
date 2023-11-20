@@ -22,6 +22,6 @@ public class TemplateSchemaMetadata extends IndividualSchemaMetadata {
   // in the map and for lookup.
   @Override
   String generateSchemaKey() {
-    return nodeGroup + (EmptyPredicate.isEmpty(nodeType) ? "" : "/" + nodeType);
+    return nodeGroup.toLowerCase() + (EmptyPredicate.isEmpty(nodeType) ? "" : "/" + nodeType);
   }
 }
