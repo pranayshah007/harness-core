@@ -129,7 +129,7 @@ public class ManifestHelper {
       if (o instanceof Map) {
         return (Map) o;
       } else {
-        throw new KubernetesYamlException("Invalid Yaml. Object is not a map.");
+        throw new KubernetesYamlException(format("Invalid Yaml. Spec: %n %s can't be loaded as map", spec));
       }
     } catch (YAMLException e) {
       throw new KubernetesYamlException(e.getMessage(), e.getCause());

@@ -21,6 +21,7 @@ import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.PUNEET;
 
 import static java.util.Arrays.asList;
@@ -339,7 +340,24 @@ public class ManifestHelperTest extends CategoryTest {
     try {
       processYaml("object");
     } catch (KubernetesYamlException e) {
-      assertThat(ExceptionUtils.getMessage(e)).contains("Object is not a map..");
+      assertThat(ExceptionUtils.getMessage(e))
+          .contains("Spec: \n"
+              + " object\n"
+              + " can't be loaded as map.");
+    }
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void invalidYamlObjectTest2() {
+    try {
+      processYaml("This is some dummy response");
+    } catch (KubernetesYamlException e) {
+      assertThat(ExceptionUtils.getMessage(e))
+          .contains("Spec: \n"
+              + " This is some dummy response\n"
+              + " can't be loaded as map.");
     }
   }
 
