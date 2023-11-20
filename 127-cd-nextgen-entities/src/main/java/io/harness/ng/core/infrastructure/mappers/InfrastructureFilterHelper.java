@@ -53,6 +53,8 @@ public class InfrastructureFilterHelper {
       } else {
         IdentifierRef envIdentifierRef =
             IdentifierRefHelper.getIdentifierRef(envIdentifier, accountId, orgIdentifier, projectIdentifier);
+        criteria = CoreCriteriaUtils.createCriteriaForGetList(envIdentifierRef.getAccountIdentifier(),
+            envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier());
         criteria.and(InfrastructureEntityKeys.envIdentifier).is(envIdentifierRef.getIdentifier());
       }
     }

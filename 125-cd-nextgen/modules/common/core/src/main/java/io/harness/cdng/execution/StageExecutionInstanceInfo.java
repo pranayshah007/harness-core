@@ -40,7 +40,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @FieldNameConstants(innerTypeName = "StageExecutionInstanceInfoKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @StoreIn(DbAliases.NG_MANAGER)
-@Entity(value = "StageExecutionInstanceInfo", noClassnameStored = true)
+@Entity(value = "stageExecutionInstanceInfo", noClassnameStored = true)
 @Document("stageExecutionInstanceInfo")
 @TypeAlias("stageExecutionInstanceInfo")
 @HarnessEntity(exportable = true)
