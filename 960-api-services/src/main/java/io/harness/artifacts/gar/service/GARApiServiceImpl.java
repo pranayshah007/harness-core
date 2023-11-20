@@ -214,7 +214,7 @@ public class GARApiServiceImpl implements GarApiService {
       }
       if (!response.isSuccessful()) {
         log.error("Request not successful. Reason: {}", response);
-        if (!isSuccessful(response.code(), response.errorBody().toString())) {
+        if (!isSuccessful_Repository(response.code(), response.errorBody().toString())) {
           throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch Repository for the region:" + region,
               "Please check region field", new InvalidArtifactServerException(response.message(), USER));
         }
@@ -285,6 +285,30 @@ public class GARApiServiceImpl implements GarApiService {
       case 404:
         throw new HintException(
             "Please provide valid values for region, project, repository, package and version fields.");
+      case 400:
+        return false;
+      case 401:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "The connector provided does not have sufficient privileges to access Google artifact registry",
+            "Please check connector's permission and credentials",
+            new InvalidArtifactServerException(errormessage, USER));
+      case 403:
+        throw new HintException("Connector provided does not have access to project. Please check the project field.");
+      default:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "The server could have failed authenticate ,Please check your credentials",
+            " Server responded with the following error code",
+            new InvalidArtifactServerException(StringUtils.isNotBlank(errormessage)
+                    ? errormessage
+                    : String.format("Server responded with the following error code - %d", code),
+                USER));
+    }
+  }
+
+  private boolean isSuccessful_Repository(int code, String errormessage) {
+    switch (code) {
+      case 404:
+        throw new HintException("Please provide valid values for region and project.");
       case 400:
         return false;
       case 401:

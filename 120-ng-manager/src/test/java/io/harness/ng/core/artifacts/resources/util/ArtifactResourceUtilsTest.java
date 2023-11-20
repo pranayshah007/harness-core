@@ -74,6 +74,7 @@ import io.harness.cdng.artifact.resources.gcr.service.GcrResourceService;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARRepositoryDTOList;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRepositoryDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusBuildDetailsDTO;
@@ -3507,6 +3508,150 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
       assertThat(filePathDTO.getBuildDetails().getNumber()).isEqualTo("b1");
       assertThat(filePathDTO.getBuildDetails().getUiDisplayName()).isEqualTo("Version# b1");
     }
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetRepositoriesV2GAR() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    GoogleArtifactRegistryConfig googleArtifactRegistryConfig =
+        GoogleArtifactRegistryConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value(CONNECTOR_REF).build())
+            .project(ParameterField.<String>builder().value(PROJECT).build())
+            .region(ParameterField.<String>builder().value(REGION).build())
+            .build();
+
+    GARRepositoryDTOList repositoryDetails = GARRepositoryDTOList.builder()
+                                                 .garRepositoryDTOS(List.of(GarRepositoryDTO.builder()
+                                                                                .repository("myRepo/repo1")
+                                                                                .format("format1")
+                                                                                .createTime("2023-01-01T12:00:00Z")
+                                                                                .updateTime("2023-01-02T12:00:00Z")
+                                                                                .build()))
+                                                 .build();
+
+    IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(CONNECTOR_REF, ACCOUNT_ID, ORG_ID, PROJECT_ID);
+
+    doReturn(googleArtifactRegistryConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(any(), any(), any(), any(), any(), any());
+
+    doReturn(repositoryDetails)
+        .when(garResourceService)
+        .getRepositories(identifierRef, REGION, PROJECT, ORG_ID, PROJECT_ID);
+
+    GARRepositoryDTOList modifiedRepositoryDetails = spyartifactResourceUtils.getRepositoriesV2GAR(
+        null, null, PROJECT, ACCOUNT_ID, ORG_ID, PIPELINE_ID, "", SERVICE_REF, "", PROJECT_ID, null);
+
+    int index = modifiedRepositoryDetails.getGarRepositoryDTOS().get(0).getRepository().lastIndexOf("/");
+
+    assertThat(modifiedRepositoryDetails).isNotNull();
+    assertThat(modifiedRepositoryDetails.getGarRepositoryDTOS()).hasSize(1);
+
+    GarRepositoryDTO modifiedRepo = modifiedRepositoryDetails.getGarRepositoryDTOS().get(0);
+
+    assertThat(modifiedRepo.getRepository().substring(index + 1)).isEqualTo("repo1");
+    assertThat(modifiedRepo.getFormat()).isEqualTo("format1");
+    assertThat(modifiedRepo.getCreateTime()).isEqualTo("2023-01-01T12:00:00Z");
+    assertThat(modifiedRepo.getUpdateTime()).isEqualTo("2023-01-02T12:00:00Z");
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetRepositoriesV2GARForRemoteService() {
+    // spy for ArtifactResourceUtils
+    ArtifactResourceUtils spyArtifactResourceUtils = spy(artifactResourceUtils);
+
+    // Creating GoogleArtifactRegistryConfig for mock
+    GoogleArtifactRegistryConfig googleArtifactRegistryConfig =
+        GoogleArtifactRegistryConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value(CONNECTOR_REF).build())
+            .region(ParameterField.<String>builder().value(REGION).build())
+            .project(ParameterField.<String>builder().value(PROJECT).build())
+            .build();
+
+    // Creating GARRepositoryDTOList for mock
+    GARRepositoryDTOList repositoryDetails = GARRepositoryDTOList.builder()
+                                                 .garRepositoryDTOS(List.of(GarRepositoryDTO.builder()
+                                                                                .repository("myRepo/repo1")
+                                                                                .format("format1")
+                                                                                .createTime("2023-01-01T12:00:00Z")
+                                                                                .updateTime("2023-01-02T12:00:00Z")
+                                                                                .build()))
+                                                 .build();
+
+    Map<String, String> contextMap = new HashMap<>();
+    contextMap.put("serviceGitBranch", "main-patch");
+
+    YamlExpressionEvaluatorWithContext yamlExpressionEvaluatorWithContext =
+        YamlExpressionEvaluatorWithContext.builder()
+            .yamlExpressionEvaluator(cdYamlExpressionEvaluator)
+            .contextMap(contextMap)
+            .build();
+
+    doReturn(yamlExpressionEvaluatorWithContext)
+        .when(spyArtifactResourceUtils)
+        .getYamlExpressionEvaluatorWithContext(any(), any(), any(), any(), any(), any(), any(), any());
+
+    // Creating IdentifierRef for mock
+    IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(CONNECTOR_REF, ACCOUNT_ID, ORG_ID, PROJECT_ID);
+
+    doReturn(googleArtifactRegistryConfig)
+        .when(spyArtifactResourceUtils)
+        .locateArtifactInService(any(), any(), any(), any(), any(), eq("main-patch"));
+
+    doReturn(true).when(spyArtifactResourceUtils).isRemoteService(any(), any(), any(), any());
+
+    doReturn(repositoryDetails)
+        .when(garResourceService)
+        .getRepositories(identifierRef, REGION, PROJECT, ORG_ID, PROJECT_ID);
+
+    // Call the method you want to test
+    GARRepositoryDTOList modifiedRepositoryDetails = spyArtifactResourceUtils.getRepositoriesV2GAR(
+        null, null, PROJECT, ACCOUNT_ID, ORG_ID, PIPELINE_ID, "", SERVICE_REF, "", PROJECT_ID, null);
+
+    // Perform assertions
+    assertThat(modifiedRepositoryDetails).isNotNull();
+    assertThat(modifiedRepositoryDetails.getGarRepositoryDTOS()).hasSize(1);
+
+    GarRepositoryDTO modifiedRepo = modifiedRepositoryDetails.getGarRepositoryDTOS().get(0);
+    assertThat(modifiedRepo.getRepository()).isEqualTo("repo1");
+    assertThat(modifiedRepo.getFormat()).isEqualTo("format1");
+    assertThat(modifiedRepo.getCreateTime()).isEqualTo("2023-01-01T12:00:00Z");
+    assertThat(modifiedRepo.getUpdateTime()).isEqualTo("2023-01-02T12:00:00Z");
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetRepositoriesGAR() {
+    GarRepositoryDTO repositoryDTO = GarRepositoryDTO.builder()
+                                         .repository("myRepo/repo1")
+                                         .format("format1")
+                                         .createTime("2023-01-01T12:00:00Z")
+                                         .updateTime("2023-01-02T12:00:00Z")
+                                         .build();
+    GARRepositoryDTOList buildDetails =
+        GARRepositoryDTOList.builder().garRepositoryDTOS(List.of(repositoryDTO)).build();
+    doReturn(buildDetails)
+        .when(garResourceService)
+        .getRepositories(eq(IDENTIFIER_REF), eq(REGION), eq(PROJECT), eq(ORG_ID), eq(PROJECT_ID));
+
+    GARRepositoryDTOList modifiedBuildDetails =
+        garResourceService.getRepositories(IDENTIFIER_REF, REGION, PROJECT, ORG_ID, PROJECT_ID);
+
+    int index = modifiedBuildDetails.getGarRepositoryDTOS().get(0).getRepository().lastIndexOf("/");
+    assertThat(modifiedBuildDetails).isNotNull();
+    assertThat(modifiedBuildDetails.getGarRepositoryDTOS()).hasSize(1);
+
+    GarRepositoryDTO modifiedRepo = modifiedBuildDetails.getGarRepositoryDTOS().get(0);
+    assertThat(modifiedRepo.getRepository().substring(index + 1)).isEqualTo("repo1");
+    assertThat(modifiedRepo.getFormat()).isEqualTo("format1");
+    assertThat(modifiedRepo.getCreateTime()).isEqualTo("2023-01-01T12:00:00Z");
+    assertThat(modifiedRepo.getUpdateTime()).isEqualTo("2023-01-02T12:00:00Z");
   }
 
   private void mockEnvironmentGetCall() {
