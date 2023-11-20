@@ -287,6 +287,19 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
   }
 
   @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void listDelegateShouldReturnDelegateGroupsFilteredByTagSameAsGroupName() {
+    prepareInitialData();
+
+    List<DelegateListResponse> delegateListResponses = delegateSetupService.listDelegates(TEST_ACCOUNT_ID, null, null,
+        DelegateFilterPropertiesDTO.builder().delegateTags(new HashSet<>(List.of("grp1"))).build());
+
+    assertThat(delegateListResponses).hasSize(1);
+    assertThat(delegateListResponses.get(0).getName()).isEqualTo("grp1");
+  }
+
+  @Test
   @Owner(developers = BOJAN)
   @Category(UnitTests.class)
   public void listV2ShouldReturnDelegateGroups() {
