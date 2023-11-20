@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.environment.helper;
+
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -26,8 +27,8 @@ import io.harness.cdng.environment.filters.TagsFilter;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.gitops.service.ClusterService;
+import io.harness.cdng.gitops.steps.ClusterAgentRef;
 import io.harness.cdng.gitops.steps.EnvClusterRefs;
-import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.CollectionUtils;
@@ -68,6 +69,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -527,13 +529,16 @@ public class EnvironmentInfraFilterHelper {
         .build();
   }
 
-  public List<String> getClusterRefs(EnvironmentYamlV2 environmentV2) {
-    if (!environmentV2.getDeployToAll().getValue()) {
+  public List<ClusterAgentRef> getClusterRefs(EnvironmentYamlV2 environmentV2) {
+    if (environmentV2.getDeployToAll().getValue() == null || !environmentV2.getDeployToAll().getValue()) {
       return environmentV2.getGitOpsClusters()
           .getValue()
           .stream()
-          .map(ClusterYaml::getIdentifier)
-          .map(ParameterField::getValue)
+          .map(cluster
+              -> ClusterAgentRef.builder()
+                     .clusterId(cluster.getIdentifier().getValue())
+                     .agentId(cluster.getAgentIdentifier().getValue())
+                     .build())
           .collect(Collectors.toList());
     }
     return new ArrayList<>();
@@ -550,8 +555,6 @@ public class EnvironmentInfraFilterHelper {
     Set<String> clsRefs =
         ngClusters.stream().map(io.harness.cdng.gitops.entity.Cluster::getClusterRef).collect(Collectors.toSet());
 
-    List<EnvClusterRefs> envClusterRefs = new ArrayList<>();
-
     if (isEmpty(clsRefs)) {
       log.info(String.format("No clusters found in environment: [%s]", envYamlV2.getEnvironmentRef().getValue()));
       return Collections.emptyList();
@@ -562,9 +565,21 @@ public class EnvironmentInfraFilterHelper {
     Set<io.harness.cdng.gitops.entity.Cluster> filteredClusters =
         EnvironmentInfraFilterUtils.applyFilteringOnClusters(filterYamls, ngClusters, new HashSet<>(clusterList));
 
-    List<String> filteredClusterRefs = filteredClusters.stream()
-                                           .map(io.harness.cdng.gitops.entity.Cluster::getClusterRef)
-                                           .collect(Collectors.toList());
+    List<EnvClusterRefs> envClusterRefs = getFilterClusterRefs(environment, filteredClusters.stream());
+
+    return envClusterRefs;
+  }
+
+  private List<EnvClusterRefs> getFilterClusterRefs(
+      Environment environment, Stream<io.harness.cdng.gitops.entity.Cluster> stream) {
+    List<EnvClusterRefs> envClusterRefs = new ArrayList<>();
+    List<ClusterAgentRef> filteredClusterRefs = stream
+                                                    .map(cluster
+                                                        -> ClusterAgentRef.builder()
+                                                               .clusterId(cluster.getClusterRef())
+                                                               .agentId(cluster.getAgentIdentifier())
+                                                               .build())
+                                                    .collect(Collectors.toList());
 
     if (isNotEmpty(filteredClusterRefs)) {
       envClusterRefs.add(EnvClusterRefs.builder()
@@ -574,7 +589,6 @@ public class EnvironmentInfraFilterHelper {
                              .clusterRefs(new HashSet<>(filteredClusterRefs))
                              .build());
     }
-
     return envClusterRefs;
   }
 
@@ -611,17 +625,7 @@ public class EnvironmentInfraFilterHelper {
           filteredClusters.stream()
               .filter(e -> e.getEnvRef() != null && e.fetchEnvRef().equals(env.fetchRef()))
               .collect(Collectors.toList());
-      List<String> filteredClusterRefs =
-          clustersInEnv.stream().map(io.harness.cdng.gitops.entity.Cluster::getClusterRef).collect(Collectors.toList());
-
-      if (isNotEmpty(filteredClusterRefs)) {
-        envClusterRefs.add(EnvClusterRefs.builder()
-                               .envRef(env.fetchRef())
-                               .envName(env.getName())
-                               .envType(env.getType().name())
-                               .clusterRefs(new HashSet<>(filteredClusterRefs))
-                               .build());
-      }
+      envClusterRefs.addAll(getFilterClusterRefs(env, clustersInEnv.stream()));
     }
     if (isEmpty(envClusterRefs)) {
       throw new InvalidRequestException("No Clusters found after applying filtering.");

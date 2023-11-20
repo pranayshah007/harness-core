@@ -59,6 +59,9 @@ public class NGTemplateDtoMapperTest extends CategoryTest {
   private final String TEMPLATE_IDENTIFIER = "template1";
   private final String TEMPLATE_VERSION_LABEL = "version1";
   private final String TEMPLATE_CHILD_TYPE = "ShellScript";
+  private final String PROJECT_IDENTIFIER_NOT_MATCHING =
+      "ProjectIdentifier for template is not matching as in template yaml.";
+  private final String ORG_IDENTIFIER_NOT_MATCHING = "OrgIdentifier for template is not matching as in template yaml.";
 
   private String yaml;
   TemplateEntity entity;
@@ -129,7 +132,7 @@ public class NGTemplateDtoMapperTest extends CategoryTest {
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  public void testToTemplateEntity() {
+  public void testToTemplateEntity() throws IOException {
     TemplateEntity result = NGTemplateDtoMapper.toTemplateEntity(ACCOUNT_ID, yaml);
     assertThat(result).isNotNull();
     assertThat(result.getIdentifier()).isEqualTo(entity.getIdentifier());
@@ -175,6 +178,37 @@ public class NGTemplateDtoMapperTest extends CategoryTest {
     assertThat(result.getChildType()).isEqualTo(entity.getChildType());
     assertThat(result.getTemplateScope()).isEqualTo(entity.getTemplateScope());
     assertThat(result.getVersionLabel()).isEqualTo(entity.getVersionLabel());
+
+    assertThatThrownBy(()
+                           -> NGTemplateDtoMapper.toTemplateEntity(
+                               ACCOUNT_ID, null, null, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, yaml))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PROJECT_IDENTIFIER_NOT_MATCHING);
+
+    assertThatThrownBy(()
+                           -> NGTemplateDtoMapper.toTemplateEntity(
+                               ACCOUNT_ID, null, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, yaml))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(ORG_IDENTIFIER_NOT_MATCHING);
+
+    assertThatThrownBy(()
+                           -> NGTemplateDtoMapper.toTemplateEntity(
+                               ACCOUNT_ID, null, "random", TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, yaml))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PROJECT_IDENTIFIER_NOT_MATCHING);
+
+    assertThatThrownBy(()
+                           -> NGTemplateDtoMapper.toTemplateEntity(ACCOUNT_ID, "random", PROJ_IDENTIFIER,
+                               TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, yaml))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(ORG_IDENTIFIER_NOT_MATCHING);
+
+    String accTemplateYaml = readFile("template-accScope.yaml");
+    assertThatThrownBy(()
+                           -> NGTemplateDtoMapper.toTemplateEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, accTemplateYaml))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PROJECT_IDENTIFIER_NOT_MATCHING);
   }
 
   @Test

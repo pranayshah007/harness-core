@@ -12,6 +12,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.MonitoredServiceType;
+import io.harness.cvng.core.beans.template.TemplateMetadata;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -30,6 +31,7 @@ import dev.morphia.annotations.Id;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -86,6 +88,7 @@ public final class MonitoredService implements PersistentEntity, UuidAware, Acco
   @FdIndex private long nextErrorTrackingNotificationIteration;
   String templateIdentifier;
   String templateVersionLabel;
+  TemplateMetadata templateMetadata;
 
   @NotNull @Singular @Size(max = 128) List<NGTag> tags;
   // usage of this should be replaced with environmentIdentifierList. A better type based api is needed.
@@ -118,6 +121,27 @@ public final class MonitoredService implements PersistentEntity, UuidAware, Acco
       return Collections.emptyList();
     }
     return notificationRuleRefs;
+  }
+
+  public String getTemplateIdentifier() {
+    if (templateIdentifier == null && !Objects.isNull(templateMetadata)) {
+      return templateMetadata.getTemplateIdentifier();
+    }
+    return templateIdentifier;
+  }
+
+  public String getTemplateVersionLabel() {
+    if (templateVersionLabel == null && !Objects.isNull(templateMetadata)) {
+      return templateMetadata.getVersionLabel();
+    }
+    return templateVersionLabel;
+  }
+
+  public boolean isTemplateByReference() {
+    if (!Objects.isNull(templateMetadata)) {
+      return templateMetadata.isTemplateByReference();
+    }
+    return false;
   }
 
   @Override

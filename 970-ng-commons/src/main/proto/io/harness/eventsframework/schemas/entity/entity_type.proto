@@ -252,4 +252,6 @@ enum EntityTypeProtoEnum {
   OVERRIDES = 239;
   ASG_SHIFT_TRAFFIC_STEP = 240;
   AQUA_SECURITY = 241;
+  IDP_STAGE = 242;
+  CHAOS_HUB = 243;
 }

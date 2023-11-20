@@ -66,6 +66,7 @@ import io.harness.cvng.core.beans.params.filterParams.LiveMonitoringLogAnalysisF
 import io.harness.cvng.core.beans.params.filterParams.TimeSeriesAnalysisFilter;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
 import io.harness.cvng.core.beans.template.TemplateDTO;
+import io.harness.cvng.core.beans.template.TemplateMetadata;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.EntityDisableTime;
 import io.harness.cvng.core.entities.MonitoredService;
@@ -383,6 +384,9 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
           monitoredServiceDTO.getIdentifier(), accountId, monitoredServiceDTO.getOrgIdentifier(),
           monitoredServiceDTO.getProjectIdentifier()));
     }
+    if (featureFlagService.isFeatureFlagEnabled(accountId, FeatureFlagNames.SRM_ENABLE_MS_TEMPLATE_RECONCILIATION)) {
+      validateTemplateMetadata(monitoredServiceDTO);
+    }
     Preconditions.checkArgument(monitoredService.getServiceIdentifier().equals(monitoredServiceDTO.getServiceRef()),
         "serviceRef update is not allowed");
     if (monitoredService.getType() == MonitoredServiceType.APPLICATION) {
@@ -419,6 +423,34 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             .build());
     setupUsageEventService.sendCreateEventsForMonitoredService(environmentParams, monitoredServiceDTO);
     return get(environmentParams, monitoredServiceDTO.getIdentifier());
+  }
+
+  private void validateTemplateMetadata(MonitoredServiceDTO monitoredServiceDTO) {
+    if (monitoredServiceDTO.getTemplate() != null && monitoredServiceDTO.getTemplate().isTemplateByReference()) {
+      if (monitoredServiceDTO.getSources().getChangeSources() != null
+          && monitoredServiceDTO.getSources().getChangeSources().size() > 0) {
+        throw new InvalidRequestException(
+            String.format("Update of Monitored Source Entity  with service identifier: %s and "
+                    + "environment identifier: %s is not allowed"
+                    + "with change source if it's created through template by reference.",
+                monitoredServiceDTO.getServiceRef(), monitoredServiceDTO.getEnvironmentRef()));
+      }
+      if (monitoredServiceDTO.getNotificationRuleRefs() != null
+          && monitoredServiceDTO.getNotificationRuleRefs().size() > 0) {
+        throw new InvalidRequestException(
+            String.format("Update of Monitored Source Entity  with service identifier: %s and "
+                    + "environment identifier: %s is not allowed"
+                    + "with notification rules if it's created through template by reference.",
+                monitoredServiceDTO.getServiceRef(), monitoredServiceDTO.getEnvironmentRef()));
+      }
+      if (monitoredServiceDTO.getDependencies() != null && monitoredServiceDTO.getDependencies().size() > 0) {
+        throw new InvalidRequestException(
+            String.format("Update of Monitored Source Entity  with service identifier: %s and "
+                    + "environment identifier: %s is not allowed"
+                    + "with notification rules if it's created through template by reference.",
+                monitoredServiceDTO.getServiceRef(), monitoredServiceDTO.getEnvironmentRef()));
+      }
+    }
   }
 
   private void updateMonitoredService(MonitoredService monitoredService, MonitoredServiceDTO monitoredServiceDTO) {
@@ -730,7 +762,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   public PageResponse<MonitoredServiceResponse> getList(ProjectParams projectParams,
       List<String> environmentIdentifiers, Integer offset, Integer pageSize, String filter) {
     List<MonitoredService> monitoredServiceEntities =
-        getFilteredMonitoredServices(projectParams, environmentIdentifiers, null, false);
+        getFilteredMonitoredServices(projectParams, environmentIdentifiers, null, false, null);
     if (isEmpty(monitoredServiceEntities)) {
       throw new InvalidRequestException(
           String.format("There are no Monitored Services for the environments: %s", environmentIdentifiers));
@@ -800,7 +832,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       List<String> environmentIdentifiers, Integer offset, Integer pageSize, String filter,
       MonitoredServiceType monitoredServiceType, boolean hideNotConfiguredServices) {
     List<MonitoredService> monitoredServices = getFilteredMonitoredServices(
-        projectParams, environmentIdentifiers, monitoredServiceType, hideNotConfiguredServices);
+        projectParams, environmentIdentifiers, monitoredServiceType, hideNotConfiguredServices, null);
     Map<String, String> serviceIdNameMap = getServiceIdNameMap(projectParams, monitoredServices);
     if (Objects.nonNull(filter)) {
       monitoredServices = filterMonitoredService(monitoredServices, serviceIdNameMap, filter);
@@ -929,8 +961,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   private List<MonitoredService> getFilteredMonitoredServices(ProjectParams projectParams,
-      List<String> environmentIdentifiers, MonitoredServiceType monitoredServiceType,
-      boolean hideNotConfiguredServices) {
+      List<String> environmentIdentifiers, MonitoredServiceType monitoredServiceType, boolean hideNotConfiguredServices,
+      String serviceIdentifier) {
     Query<MonitoredService> query =
         hPersistence.createQuery(MonitoredService.class)
             .filter(MonitoredServiceKeys.accountId, projectParams.getAccountIdentifier())
@@ -942,6 +974,9 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     }
     if (monitoredServiceType != null) {
       query = query.filter(MonitoredServiceKeys.type, monitoredServiceType);
+    }
+    if (isNotEmpty(serviceIdentifier)) {
+      query = query.filter(MonitoredServiceKeys.serviceIdentifier, serviceIdentifier);
     }
     if (hideNotConfiguredServices) {
       query.or(query.and(query.criteria(MonitoredServiceKeys.changeSourceIdentifiers).exists(),
@@ -1070,6 +1105,12 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       monitoredServiceEntity.setTemplateIdentifier(monitoredServiceDTO.getTemplate().getTemplateRef());
       monitoredServiceEntity.setTemplateVersionLabel(monitoredServiceDTO.getTemplate().getVersionLabel());
     }
+    if (monitoredServiceDTO.getTemplate() != null
+        && featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureFlagNames.SRM_ENABLE_MS_TEMPLATE_RECONCILIATION)
+        && monitoredServiceDTO.getTemplate().isTemplateByReference()) {
+      monitoredServiceEntity.setTemplateMetadata(TemplateMetadata.fromTemplateDTO(monitoredServiceDTO.getTemplate()));
+    }
     if (monitoredServiceDTO.getSources() != null) {
       monitoredServiceEntity.setHealthSourceIdentifiers(monitoredServiceDTO.getSources()
                                                             .getHealthSources()
@@ -1085,7 +1126,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     hPersistence.save(monitoredServiceEntity);
   }
 
-  private HistoricalTrend getMonitoredServiceHistorialTrend(
+  private HistoricalTrend getMonitoredServiceHistoricalTrend(
       MonitoredService monitoredService, ProjectParams projectParams, DurationDTO duration, Instant endTime) {
     Preconditions.checkNotNull(monitoredService,
         "Monitored service for provided serviceIdentifier and envIdentifier or monitoredServiceIdentifier does not exist.");
@@ -1175,10 +1216,10 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   @Override
   public PageResponse<MonitoredServiceListItemDTO> list(ProjectParams projectParams,
-      List<String> environmentIdentifiers, Integer offset, Integer pageSize, String filter,
+      List<String> environmentIdentifiers, String serviceIdentifier, Integer offset, Integer pageSize, String filter,
       MonitoredServiceType monitoredServiceType, boolean servicesAtRiskFilter) {
-    List<MonitoredService> monitoredServices =
-        getFilteredMonitoredServices(projectParams, environmentIdentifiers, monitoredServiceType, false);
+    List<MonitoredService> monitoredServices = getFilteredMonitoredServices(
+        projectParams, environmentIdentifiers, monitoredServiceType, false, serviceIdentifier);
     Map<String, String> serviceIdNameMap = getServiceIdNameMap(projectParams, monitoredServices);
     if (Objects.nonNull(filter)) {
       monitoredServices = filterMonitoredService(monitoredServices, serviceIdNameMap, filter);
@@ -1338,6 +1379,28 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       if (connectorRefs != null && connectorRefs.size() > 0) {
         nextGenService.validateConnectorIdList(accountId, monitoredServiceDTO.getOrgIdentifier(),
             monitoredServiceDTO.getProjectIdentifier(), connectorRefs);
+      }
+    }
+
+    if (featureFlagService.isFeatureFlagEnabled(accountId, FeatureName.SRM_ENABLE_MS_TEMPLATE_RECONCILIATION.name())
+        && monitoredServiceDTO.getTemplate() != null && monitoredServiceDTO.getTemplate().isTemplateByReference()) {
+      if (monitoredServiceDTO.getTemplate().getInputSetYaml() == null) {
+        throw new InvalidRequestException(
+            String.format("Input set yaml cannot be null if the template is used by reference for "
+                    + "monitored service with service identifier: %s and environment identifier: %s ",
+                monitoredServiceDTO.getServiceRef(), monitoredServiceDTO.getEnvironmentRef()));
+      }
+      if (monitoredServiceDTO.getTemplate().getVersionLabel() == null) {
+        throw new InvalidRequestException(
+            String.format("Template version label cannot be null if the template is used by reference for "
+                    + "monitored service with service identifier: %s and environment identifier: %s ",
+                monitoredServiceDTO.getServiceRef(), monitoredServiceDTO.getEnvironmentRef()));
+      }
+      if (monitoredServiceDTO.getTemplate().getTemplateVersionNumber() == null) {
+        throw new InvalidRequestException(
+            String.format("Template version number cannot be null if the template is used by reference for "
+                    + "monitored service with service identifier: %s and environment identifier: %s ",
+                monitoredServiceDTO.getServiceRef(), monitoredServiceDTO.getEnvironmentRef()));
       }
     }
 
@@ -1589,7 +1652,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     Duration duration = Duration.ofSeconds(endTime.getEpochSecond() - startTime.getEpochSecond());
     DurationDTO bestFitDuration = DurationDTO.findClosestGreaterDurationDTO(duration);
     HistoricalTrend historicalTrend =
-        getMonitoredServiceHistorialTrend(monitoredService, projectParams, bestFitDuration, endTime);
+        getMonitoredServiceHistoricalTrend(monitoredService, projectParams, bestFitDuration, endTime);
     historicalTrend.setHealthScores(historicalTrend.getHealthScores()
                                         .stream()
                                         .filter(healthScore -> healthScore.getEndTime() >= startTime.toEpochMilli())

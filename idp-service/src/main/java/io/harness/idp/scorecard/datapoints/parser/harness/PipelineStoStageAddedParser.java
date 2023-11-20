@@ -18,6 +18,8 @@ import java.util.Map;
 public class PipelineStoStageAddedParser implements DataPointParser {
   @Override
   public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
-    return Map.of(dataFetchDTO.getRuleIdentifier(), data.get(dataFetchDTO.getDataPoint().getIdentifier()));
+    return Map.of(dataFetchDTO.getRuleIdentifier(),
+        ((Map<String, Object>) data.get(dataFetchDTO.getRuleIdentifier()))
+            .get(dataFetchDTO.getDataPoint().getIdentifier()));
   }
 }

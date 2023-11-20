@@ -72,6 +72,8 @@ public class NGCommonEntityConstants {
   public static final String PLAN_KEY = "planExecutionId";
   public static final String NODE_KEY = "nodeExecutionId";
   public static final String STAGE_KEY = "stageExecutionId";
+
+  public static final String STAGE_NODE_KEY = "stageNodeId";
   public static final String STEP_KEY = "stepExecutionId";
   public static final String TYPE_KEY = "type";
   public static final String TOKEN_KEY = "tokenId";

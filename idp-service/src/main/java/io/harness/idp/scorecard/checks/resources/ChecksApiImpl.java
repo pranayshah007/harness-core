@@ -30,7 +30,7 @@ import io.harness.spec.server.idp.v1.model.CheckDetailsRequest;
 import io.harness.spec.server.idp.v1.model.CheckDetailsResponse;
 import io.harness.spec.server.idp.v1.model.CheckGraph;
 import io.harness.spec.server.idp.v1.model.CheckListItem;
-import io.harness.spec.server.idp.v1.model.CheckStats;
+import io.harness.spec.server.idp.v1.model.CheckStatsResponse;
 import io.harness.spec.server.idp.v1.model.DefaultSaveResponse;
 import io.harness.utils.PageUtils;
 
@@ -119,8 +119,8 @@ public class ChecksApiImpl implements ChecksApi {
   @Override
   public Response getCheckStats(String checkId, String harnessAccount, Boolean isCustom) {
     try {
-      List<CheckStats> checkStats = checkService.getCheckStats(harnessAccount, checkId, isCustom);
-      return Response.status(Response.Status.OK).entity(checkStats).build();
+      CheckStatsResponse response = checkService.getCheckStats(harnessAccount, checkId, isCustom);
+      return Response.status(Response.Status.OK).entity(response).build();
     } catch (Exception e) {
       String errorMessage = String.format(
           "Error occurred while fetching check stats for accountId: [%s], checkId: [%s]", harnessAccount, checkId);

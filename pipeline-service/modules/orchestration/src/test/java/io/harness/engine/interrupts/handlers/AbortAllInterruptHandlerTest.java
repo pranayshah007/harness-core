@@ -17,6 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.OrchestrationTestBase;
@@ -148,6 +150,23 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
              NodeProjectionUtils.fieldsForInterruptPropagatorHandler))
         .thenReturn(iterator);
     handledInterrupt = abortAllInterruptHandler.registerInterrupt(interruptWithNodeExecutionId);
+    assertThat(handledInterrupt).isNotNull();
+    assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);
+    assertThat(handledInterrupt.getState()).isEqualTo(State.PROCESSING);
+
+    planExecutionId = generateUuid();
+    interruptUuid = generateUuid();
+    Interrupt interruptNode = Interrupt.builder()
+                                  .uuid(interruptUuid)
+                                  .nodeExecutionId("nodeExecutionId")
+                                  .type(InterruptType.ABORT_ALL)
+                                  .interruptConfig(InterruptConfig.newBuilder().build())
+                                  .planExecutionId(planExecutionId)
+                                  .state(State.PROCESSING)
+                                  .build();
+    when(planExecutionService.getStatus(planExecutionId)).thenReturn(Status.QUEUED);
+    handledInterrupt = abortAllInterruptHandler.registerInterrupt(interruptNode);
+    verify(planExecutionService, times(1)).updateStatus(planExecutionId, Status.ABORTED);
     assertThat(handledInterrupt).isNotNull();
     assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);
     assertThat(handledInterrupt.getState()).isEqualTo(State.PROCESSING);

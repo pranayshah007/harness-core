@@ -219,7 +219,8 @@ public class AnomalyEntity {
       SLACK_DAILY_NOTIFICATION("slackDailyNotification", DataType.BOOLEAN),
       SLACK_WEEKLY_NOTIFICATION("slackWeeklyNotification", DataType.BOOLEAN),
       NEW_ENTITY("newentity", DataType.BOOLEAN),
-      NOTIFICATION_SENT("notificationsent", DataType.BOOLEAN);
+      NOTIFICATION_SENT("notificationsent", DataType.BOOLEAN),
+      CLOUD_PROVIDER("cloudProvider", DataType.STRING);
 
       private DataType dataType;
       private String fieldName;
@@ -290,6 +291,7 @@ public class AnomalyEntity {
     public static final DbColumn newEntity;
 
     public static final DbColumn notificationSent;
+    public static final DbColumn cloudProvider;
 
     static {
       spec = new DbSpec();
@@ -340,6 +342,7 @@ public class AnomalyEntity {
 
       newEntity = table.addColumn("newentity");
       notificationSent = table.addColumn("notificationsent");
+      cloudProvider = table.addColumn("cloudProvider");
     }
   }
 }

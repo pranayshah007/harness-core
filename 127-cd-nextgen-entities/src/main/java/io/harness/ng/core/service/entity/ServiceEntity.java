@@ -126,7 +126,7 @@ public class ServiceEntity implements PersistentEntity, GitAware, ScopeAware, Gi
   @Setter @NonFinal Boolean isFromDefaultBranch;
   @Setter @NonFinal String branch;
   @Setter @NonFinal String yamlGitConfigRef;
-  @Setter @NonFinal String filePath;
+  @With @Setter @NonFinal String filePath;
   @Setter @NonFinal String rootFolder;
 
   // GitX Entities

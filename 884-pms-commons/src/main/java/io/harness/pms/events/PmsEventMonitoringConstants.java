@@ -17,5 +17,6 @@ public class PmsEventMonitoringConstants {
   public String MODULE = "module";
   public String STEP_TYPE = "stepType";
   public String STATUS = "status";
+  public String EDITION = "edition";
   public String PIPELINE_IDENTIFIER = "pipelineIdentifier";
 }

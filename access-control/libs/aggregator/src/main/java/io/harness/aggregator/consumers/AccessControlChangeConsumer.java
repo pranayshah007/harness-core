@@ -12,7 +12,12 @@ import static io.harness.aggregator.ACLEventProcessingConstants.DELETE_ACTION;
 import static io.harness.aggregator.ACLEventProcessingConstants.UPDATE_ACTION;
 
 public interface AccessControlChangeConsumer<T extends AccessControlChangeEventData> {
+  boolean shouldBlock(T changeEventData);
+
   default void consumeEvent(String eventType, String id, T changeEventData) {
+    if (!DELETE_ACTION.equals(eventType) && shouldBlock(changeEventData)) {
+      return;
+    }
     switch (eventType) {
       case CREATE_ACTION:
         consumeCreateEvent(id, changeEventData);

@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.executions.plan;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.engine.pms.execution.strategy.plan.PlanExecutionStrategy.ENFORCEMENT_CALLBACK_ID;
@@ -125,6 +126,11 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
     Update updateOps = new Update()
                            .set(PlanExecutionKeys.status, status)
                            .set(PlanExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
+
+    boolean isFinalStatus = StatusUtils.isFinalStatus(status);
+    if (isFinalStatus) {
+      updateOps.set(PlanExecutionKeys.endTs, System.currentTimeMillis());
+    }
     if (ops != null) {
       ops.accept(updateOps);
     }
@@ -134,7 +140,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
     } else {
       emitEvent(updated);
     }
-    if (StatusUtils.isFinalStatus(status)) {
+    if (isFinalStatus) {
       waitNotifyEngine.doneWith(
           String.format(ENFORCEMENT_CALLBACK_ID, planExecutionId), StringNotifyResponseData.builder().build());
       waitNotifyEngine.doneWith(planExecutionId, PipelineStageResponseData.builder().status(status).build());

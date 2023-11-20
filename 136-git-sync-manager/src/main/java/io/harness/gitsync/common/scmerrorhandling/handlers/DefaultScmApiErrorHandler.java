@@ -54,6 +54,8 @@ public class DefaultScmApiErrorHandler implements ScmApiErrorHandler {
         return ErrorCode.SCM_CONFLICT_ERROR_V2;
       case 500:
         return ErrorCode.SCM_INTERNAL_SERVER_ERROR_V2;
+      case 504:
+        return ErrorCode.SCM_REQUEST_TIMEOUT;
       default:
         return ErrorCode.UNEXPECTED;
     }

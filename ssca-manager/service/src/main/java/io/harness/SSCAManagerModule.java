@@ -22,6 +22,7 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.KryoRegistrar;
@@ -122,6 +123,8 @@ public class SSCAManagerModule extends AbstractModule {
     install(PrimaryVersionManagerModule.getInstance());
     install(PersistentLockModule.getInstance());
     install(TimeModule.getInstance());
+    install(new PipelineRemoteClientModule(configuration.getPipelineServiceConfiguration(),
+        configuration.getPipelineServiceSecret(), SSCA_SERVICE.getServiceId()));
   }
 
   @Provides
@@ -167,6 +170,10 @@ public class SSCAManagerModule extends AbstractModule {
         .withEndpointConfiguration(
             new AwsClientBuilder.EndpointConfiguration(configuration.getS3Config().getEndpoint(), "auto"))
         .withCredentials(new AWSStaticCredentialsProvider(googleCreds))
+        /*Added this as suggested here: https://github.com/aws/aws-sdk-java-v2/issues/3524#issue-1426861417 to fix the
+         * DNS issue
+         */
+        .withPathStyleAccessEnabled(Boolean.TRUE)
         .build();
   }
 
@@ -182,6 +189,13 @@ public class SSCAManagerModule extends AbstractModule {
   DistributedLockImplementation distributedLockImplementation() {
     return configuration.getDistributedLockImplementation() == null ? REDIS
                                                                     : configuration.getDistributedLockImplementation();
+  }
+
+  @Provides
+  @Singleton
+  @Named("pipelineServiceClientConfigs")
+  public ServiceHttpClientConfig pipelineServiceConfiguration() {
+    return this.configuration.getPipelineServiceConfiguration();
   }
 
   @Provides

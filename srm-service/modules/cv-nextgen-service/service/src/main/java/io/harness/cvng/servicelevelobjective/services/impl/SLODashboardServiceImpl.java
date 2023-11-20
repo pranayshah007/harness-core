@@ -8,8 +8,12 @@
 package io.harness.cvng.servicelevelobjective.services.impl;
 
 import static io.harness.cvng.CVConstants.MAX_NUMBER_OF_SLOS;
+import static io.harness.cvng.core.services.CVNextGenConstants.SLI_RECORD_BUCKET_SIZE;
+import static io.harness.cvng.core.utils.DateTimeUtils.roundDownTo5MinBoundary;
+import static io.harness.cvng.core.utils.DateTimeUtils.roundUpTo5MinBoundary;
 import static io.harness.cvng.utils.ScopedInformation.getScopedInformation;
 
+import io.harness.beans.FeatureName;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
@@ -17,6 +21,10 @@ import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
+import io.harness.cvng.core.entities.TimeSeriesRecord;
+import io.harness.cvng.core.services.api.FeatureFlagService;
+import io.harness.cvng.core.services.api.TimeSeriesRecordService;
+import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.downtime.beans.DowntimeStatusDetails;
@@ -53,13 +61,19 @@ import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObj
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.entities.UserJourney;
 import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
 import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
+import io.harness.cvng.servicelevelobjective.services.api.GraphDataServiceV2;
+import io.harness.cvng.servicelevelobjective.services.api.SLIRecordBucketService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
@@ -67,15 +81,21 @@ import io.harness.cvng.servicelevelobjective.services.api.SecondaryEventDetailsS
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
+import io.harness.cvng.utils.SLOGraphUtils;
 import io.harness.ng.beans.PageResponse;
+import io.harness.spec.server.cvng.v1.model.DataPoints;
+import io.harness.spec.server.cvng.v1.model.MetricGraph;
 import io.harness.utils.PageUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -95,6 +115,13 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private GraphDataService graphDataService;
+  @Inject private GraphDataServiceV2 graphDataServiceV2;
+
+  @Inject private SLIRecordBucketService sliRecordBucketService;
+
+  @Inject private SLIRecordService sliRecordService;
+
+  @Inject private FeatureFlagService featureFlagService;
   @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
   @Inject private Clock clock;
   @Inject private NextGenService nextGenService;
@@ -106,7 +133,13 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   @Inject private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
   @Inject private SRMAnalysisStepService srmAnalysisStepService;
 
+  @Inject private TimeSeriesRecordService timeSeriesRecordService;
+
+  @Inject private VerificationTaskService verificationTaskService;
+
   @Inject private Map<SecondaryEventsType, SecondaryEventDetailsService> secondaryEventsTypeToDetailsMapBinder;
+
+  @VisibleForTesting public static final int MAX_NUMBER_OF_POINTS = 2000;
 
   @Override
   public PageResponse<SLOHealthListView> getSloHealthListView(
@@ -129,8 +162,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         getScopedMonitoredServiceIdentifierToDTOMap(sloPageResponse.getContent(), projectParams);
     Map<String, SLOHealthIndicator> scopedSloIdentifierToHealthIndicatorMap =
         getScopedSloIdentifierToHealthIndicatorMap(
-            scopedIdentifierToAllSLOsIncUnderlyingSLOsMap.values().stream().collect(Collectors.toList()),
-            projectParams);
+            new ArrayList<>(scopedIdentifierToAllSLOsIncUnderlyingSLOsMap.values()), projectParams);
     Map<String, SLOError> scopedIdentifierToSLOErrorMap = getScopedIdentifierToSLOErrorMap(sloPageResponse.getContent(),
         scopedIdentifierToAllSLOsIncUnderlyingSLOsMap, scopedSloIdentifierToHealthIndicatorMap);
     List<UserJourney> userJourneyList = userJourneyService.get(projectParams);
@@ -299,7 +331,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   }
 
   private SLOError getErrorForSimpleSLO(Optional<SLOHealthIndicator> sloHealthIndicator) {
-    if (!sloHealthIndicator.isPresent()) {
+    if (sloHealthIndicator.isEmpty()) {
       return SLOError.getErrorForDeletionOfSimpleSLOInConfigurationListView();
     }
     if (sloHealthIndicator.get().getFailedState()) {
@@ -414,8 +446,16 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           .sloError(SLOError.getErrorForDeletionOfSimpleSLOInConsumptionView())
           .build();
     }
-    SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphData(serviceLevelObjective,
-        startTimeForCurrentRange, endTimeForCurrentRange, sloDetail.getTotalErrorBudget(), filter);
+    SLODashboardWidget.SLOGraphData sloGraphData;
+    if (featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
+      log.debug("Fetching data from SLI record Buckets");
+      sloGraphData = graphDataServiceV2.getGraphData(serviceLevelObjective, startTimeForCurrentRange,
+          endTimeForCurrentRange, sloDetail.getTotalErrorBudget(), filter);
+    } else {
+      sloGraphData = graphDataService.getGraphData(serviceLevelObjective, startTimeForCurrentRange,
+          endTimeForCurrentRange, sloDetail.getTotalErrorBudget(), filter);
+    }
     String projectName = getProjectName(projectParams.getAccountIdentifier(), simpleSLOProjectParams.getOrgIdentifier(),
         simpleSLOProjectParams.getProjectIdentifier());
     String orgName = getOrgName(projectParams.getAccountIdentifier(), simpleSLOProjectParams.getOrgIdentifier());
@@ -440,6 +480,114 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           (int) ((weightPercentage / 100) * sloGraphData.getErrorBudgetBurned()));
     }
     return sloConsumptionBreakdown;
+  }
+
+  @Override
+  public Map<String, MetricGraph> getMetricGraphs(
+      ProjectParams projectParams, String sloIdentifier, Long startTime, Long endTime) {
+    // Retrieve Service Level Objective
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, sloIdentifier);
+    Preconditions.checkNotNull(serviceLevelObjective, "Value of Identifier is not present in the database");
+
+    // Ensure the Service Level Objective type is SIMPLE
+    Preconditions.checkArgument(serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE));
+    SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjective;
+
+    // Retrieve the Service Level Indicator
+    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+        projectParams, simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
+    String verificationTaskId =
+        verificationTaskService
+            .getSLIVerificationTaskId(projectParams.getAccountIdentifier(), serviceLevelIndicator.getUuid())
+            .orElseThrow(() -> new IllegalStateException("SLI Verification Task ID not found"));
+
+    // Calculate time range
+    LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
+    TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
+
+    // Calculate start time
+    Instant startTimeInstant = Objects.isNull(startTime)
+        ? roundUpTo5MinBoundary(timePeriod.getStartTime(ZoneOffset.UTC))
+        : roundUpTo5MinBoundary(Instant.ofEpochMilli(startTime));
+
+    // Adjust start time based on the first SLIRecord
+    Instant firstSLIRecordStartTime = null;
+    if (featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
+      SLIRecordBucket firstSLIRecord =
+          sliRecordBucketService.getFirstSLIRecord(serviceLevelIndicator.getUuid(), startTimeInstant);
+      if (firstSLIRecord != null) {
+        firstSLIRecordStartTime = firstSLIRecord.getBucketStartTime();
+      }
+    } else {
+      SLIRecord firstSLIRecord = sliRecordService.getFirstSLIRecord(serviceLevelIndicator.getUuid(), startTimeInstant);
+      if (firstSLIRecord != null) {
+        firstSLIRecordStartTime = roundUpTo5MinBoundary(firstSLIRecord.getTimestamp());
+      }
+    }
+    if (firstSLIRecordStartTime != null) {
+      startTimeInstant = firstSLIRecordStartTime.isAfter(startTimeInstant) ? firstSLIRecordStartTime : startTimeInstant;
+    }
+
+    // Calculate end time
+    Instant endTimeInstant = Objects.isNull(endTime) ? roundDownTo5MinBoundary(timePeriod.getEndTime(ZoneOffset.UTC))
+                                                     : roundDownTo5MinBoundary(Instant.ofEpochMilli(endTime));
+
+    // Adjust end time based on the current time
+    if (Instant.now().isBefore(endTimeInstant)) {
+      endTimeInstant = roundDownTo5MinBoundary(Instant.now());
+    }
+
+    // Get bucket minutes and retrieve TimeSeriesRecords
+    List<Instant> startTimes = SLOGraphUtils.getBucketMinutesInclusiveOfStartAndEndTime(
+        startTimeInstant, endTimeInstant, MAX_NUMBER_OF_POINTS, SLI_RECORD_BUCKET_SIZE);
+    List<TimeSeriesRecord> timeSeriesRecords =
+        timeSeriesRecordService.getTimeSeriesRecords(verificationTaskId, startTimes);
+
+    // Return MetricGraphs
+    return getMetricGraphs(timeSeriesRecords, serviceLevelIndicator.getMetricNames(), startTimeInstant, endTimeInstant);
+  }
+
+  public Map<String, MetricGraph> getMetricGraphs(
+      List<TimeSeriesRecord> timeSeriesRecords, List<String> metricIdentifiers, Instant startTime, Instant endTime) {
+    Map<String, List<DataPoints>> metricToDataPoints =
+        timeSeriesRecords.stream()
+            .filter(record -> metricIdentifiers.contains(record.getMetricIdentifier()))
+            .filter(record -> !record.getTimeSeriesGroupValues().isEmpty())
+            .collect(Collectors.groupingBy(TimeSeriesRecord::getMetricIdentifier,
+                Collectors.mapping(this::extractDataPoints, Collectors.toList())));
+
+    Map<String, String> metricIdentifierToNameMap = timeSeriesRecords.stream().collect(Collectors.toMap(
+        TimeSeriesRecord::getMetricIdentifier, TimeSeriesRecord::getMetricName, (existing, replacement) -> existing));
+
+    return metricToDataPoints.entrySet().stream().collect(Collectors.toMap(
+        Map.Entry::getKey, entry -> buildMetricGraph(entry, metricIdentifierToNameMap, startTime, endTime)));
+  }
+
+  private DataPoints extractDataPoints(TimeSeriesRecord record) {
+    TimeSeriesRecord.TimeSeriesGroupValue groupValue =
+        record.getTimeSeriesGroupValues().stream().findFirst().orElse(null);
+    return new DataPoints()
+        .value(groupValue != null ? groupValue.getMetricValue() : null)
+        .timestamp(groupValue != null ? groupValue.getTimeStamp().toEpochMilli() : null);
+  }
+
+  private MetricGraph buildMetricGraph(Map.Entry<String, List<DataPoints>> entry,
+      Map<String, String> metricIdentifierToNameMap, Instant startTime, Instant endTime) {
+    List<DataPoints> sortedDataPoints =
+        entry.getValue()
+            .stream()
+            .filter(dataPoint -> dataPoint.getTimestamp() != null && dataPoint.getValue() != null)
+            .sorted(Comparator.comparingLong(DataPoints::getTimestamp))
+            .collect(Collectors.toList());
+
+    MetricGraph metricGraph =
+        new MetricGraph().metricName(metricIdentifierToNameMap.get(entry.getKey())).metricIdentifier(entry.getKey());
+    metricGraph.setStartTime(startTime.toEpochMilli());
+    metricGraph.setEndTime(endTime.toEpochMilli());
+    metricGraph.setDataPoints(sortedDataPoints);
+    return metricGraph;
   }
 
   @Override
@@ -483,10 +631,16 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         sloErrorBudgetResetService.getErrorBudgetResets(projectParams, slo.getIdentifier());
     int totalErrorBudgetMinutes =
         serviceLevelObjective.getActiveErrorBudgetMinutes(errorBudgetResetDTOS, currentLocalDate);
-
-    SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphData(serviceLevelObjective,
-        timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes,
-        filter);
+    SLODashboardWidget.SLOGraphData sloGraphData;
+    if (featureFlagService.isGlobalFlagEnabled(FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
+      sloGraphData = graphDataServiceV2.getGraphData(serviceLevelObjective,
+          timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes,
+          filter);
+    } else {
+      sloGraphData = graphDataService.getGraphData(serviceLevelObjective,
+          timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes,
+          filter);
+    }
     if (slo.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
           (SimpleServiceLevelObjectiveSpec) sloResponse.getServiceLevelObjectiveV2DTO().getSpec();
@@ -647,8 +801,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         monitoredServiceResponseList.stream()
             .map(monitoredServiceResponse
                 -> getEnvironmentIdentifierResponse(projectParams, monitoredServiceResponse.getMonitoredServiceDTO()))
-            .collect(Collectors.toSet())
-            .stream()
+            .distinct()
             .collect(Collectors.toList());
 
     return PageUtils.offsetAndLimit(environmentIdentifierResponseList, pageParams.getPage(), pageParams.getSize());
@@ -714,7 +867,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
     List<String> sliIds =
         serviceLevelIndicatorService.getEntities(projectParams, Collections.singletonList(sliIdentifier))
             .stream()
-            .map(serviceLevelIndicator -> serviceLevelIndicator.getUuid())
+            .map(ServiceLevelIndicator::getUuid)
             .collect(Collectors.toList());
     List<EntityUnavailabilityStatuses> entityUnavailabilityInstances =
         entityUnavailabilityStatusesService.getAllUnavailabilityInstances(
@@ -736,7 +889,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                     && sliIds.contains(statusesDTO.getEntityIdentifier())
                     && (statusesDTO.getStatus().equals(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)
                         || statusesDTO.getStatus().equals(EntityUnavailabilityStatus.DATA_RECOLLECTION_PASSED)))
-            .sorted(Comparator.comparing(entry -> entry.getStartTime()))
+            .sorted(Comparator.comparing(EntityUnavailabilityStatuses::getStartTime))
             .collect(Collectors.toList());
 
     if (!dcEntityUnavailabilityStatuses.isEmpty()) {
@@ -796,7 +949,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
     try {
       Optional<SLOHealthIndicator> sloHealthIndicator = Optional.ofNullable(
           scopedSloIdentifierToHealthIndicatorMap.get(serviceLevelObjectiveV2Service.getScopedIdentifier(slo)));
-      if (!sloHealthIndicator.isPresent()) {
+      if (sloHealthIndicator.isEmpty()) {
         if (slo.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
           return SLOHealthListView.getSLOHealthListViewBuilderForDeletedSimpleSLO(slo).build();
         }

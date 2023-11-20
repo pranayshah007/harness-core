@@ -40,7 +40,6 @@ import io.harness.ci.cache.CICacheManagementService;
 import io.harness.ci.cache.CICacheManagementServiceImpl;
 import io.harness.ci.enforcement.CIBuildEnforcer;
 import io.harness.ci.enforcement.CIBuildEnforcerImpl;
-import io.harness.ci.event.AccountEntityListener;
 import io.harness.ci.execution.buildstate.SecretDecryptorViaNg;
 import io.harness.ci.execution.execution.DelegateTaskEventListener;
 import io.harness.ci.execution.queue.CIInitTaskMessageProcessor;
@@ -70,6 +69,7 @@ import io.harness.core.ci.dashboard.BuildNumberService;
 import io.harness.core.ci.dashboard.BuildNumberServiceImpl;
 import io.harness.core.ci.dashboard.CIOverviewDashboardService;
 import io.harness.core.ci.dashboard.CIOverviewDashboardServiceImpl;
+import io.harness.creditcard.CreditCardClientModule;
 import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -323,10 +323,10 @@ public class CIManagerServiceModule extends AbstractModule {
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
     bind(ScheduledExecutorService.class)
-        .annotatedWith(Names.named("ciDataDeleteScheduler"))
+        .annotatedWith(Names.named(this.configurationOverride.getModulePrefix() + "DataDeleteScheduler"))
         .toInstance(new ScheduledThreadPoolExecutor(1,
             new ThreadFactoryBuilder()
-                .setNameFormat("ci-data-delete-Thread-%d")
+                .setNameFormat(this.configurationOverride.getModulePrefix() + "-data-delete-Thread-%d")
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
     bind(AwsClient.class).to(AwsClientImpl.class);
@@ -426,6 +426,8 @@ public class CIManagerServiceModule extends AbstractModule {
         new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, ACCESS_CONTROL_SERVICE.getServiceId(), false));
     install(new ProjectClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), serviceId));
+    install(new CreditCardClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
+        ciManagerConfiguration.getNgManagerServiceSecret(), serviceId));
     install(new TIServiceClientModule(ciManagerConfiguration.getTiServiceConfig()));
     install(new STOServiceClientModule(ciManagerConfiguration.getStoServiceConfig()));
     install(new SSCAServiceClientModuleV2(ciManagerConfiguration.getSscaServiceConfig(), serviceId));
@@ -481,7 +483,7 @@ public class CIManagerServiceModule extends AbstractModule {
           .to(DelegateTaskEventListener.class);
       bind(MessageListener.class)
           .annotatedWith(Names.named(ACCOUNT_ENTITY + ENTITY_CRUD))
-          .to(AccountEntityListener.class);
+          .to(this.configurationOverride.getAccountEntityListenerClass());
 
       bind(Producer.class)
           .annotatedWith(Names.named(orchestrationEvent))

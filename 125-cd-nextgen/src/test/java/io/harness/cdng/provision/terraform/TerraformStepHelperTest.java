@@ -3499,6 +3499,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     doNothing().when(cdStepHelper).validateGitStoreConfig(any());
     doNothing().when(cdStepHelper).validateManifest(any(), any(), any());
 
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
     doReturn(connectorInfo).when(cdStepHelper).getConnector(any(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(mockGitConfigAuthenticationInfoHelper)

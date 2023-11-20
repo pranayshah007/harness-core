@@ -21,12 +21,13 @@ import io.harness.idp.scorecard.datapoints.parser.jira.JiraMeanTimeToResolvePars
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
 
-@OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@OwnedBy(HarnessTeam.IDP)
 public class JiraDataPointParserFactory implements DataPointParserFactory {
   JiraMeanTimeToResolveParser jiraMeanTimeToResolveParser;
   JiraIssuesCountParser jiraIssuesCountParser;
   JiraIssuesOpenCloseRatioParser jiraIssuesOpenCloseRatioParser;
+
   @Override
   public DataPointParser getParser(String identifier) {
     switch (identifier) {

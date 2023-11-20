@@ -33,4 +33,5 @@ public class PollingTriggerStatusUpdateDTO {
   String errorMessage;
   List<String> lastCollectedVersions;
   long lastCollectedTime;
+  Long errorStatusValidUntil;
 }

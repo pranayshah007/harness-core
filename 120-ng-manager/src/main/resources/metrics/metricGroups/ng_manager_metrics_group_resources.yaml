@@ -1,0 +1,8 @@
+name: NG Manager Metrics Group per Resource Method
+identifier: NgManagerMetricsResourceGroup
+labels:
+  - resource
+  - method
+  - namespace
+  - containerName
+  - serviceName

@@ -27,4 +27,8 @@ public class ScmErrorHints {
   public static final String BRANCH_NOT_FOUND = "Please check if the requested Github branch<BRANCH> exists.";
   public static final String OAUTH_ACCESS_FAILURE =
       "In-case you are using OAUTH, please check your OAUTH configurations and access permissions from Github, or try reconfiguring OAUTH setup.";
+  public static final String HINT_REQUEST_TIMED_OUT = "Please try these out: \n"
+      + "1. Check if Github server is working as expected from GitHub's status page (https://www.githubstatus.com/)\n"
+      + "2. Check if your delegates are able to connect to the github server\n"
+      + "3. If the problem persists, please contact Harness Support Team.";
 }

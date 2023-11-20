@@ -164,7 +164,8 @@ public class ScmFetchFilesHelper {
 
     try {
       for (FileContent fileContent : fileContents) {
-        ScmFetcherUtils.writeFile(directoryPath, fileContent, gitFileConfig.getFilePath(), relativize, useBase64);
+        ScmFetcherUtils.writeFile(
+            directoryPath, fileContent, gitFileConfig.getFilePath(), relativize, useBase64, false);
       }
     } catch (Exception ex) {
       executionLogCallback.saveExecutionLog(ExceptionUtils.getMessage(ex), ERROR, CommandExecutionStatus.FAILURE);

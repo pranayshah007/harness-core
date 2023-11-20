@@ -9,6 +9,7 @@ package io.harness.ng.gitxwebhook;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.Scope;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookResponseDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.DeleteGitXWebhookRequestDTO;
@@ -34,6 +35,7 @@ import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookResponse;
 import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
@@ -51,14 +53,14 @@ import org.springframework.data.domain.Page;
 public class GitXWebhooksApiImpl implements GitXWebhooksApi {
   GitXWebhookService gitXWebhookService;
   GitXWebhookEventService gitXWebhookEventService;
-  private final int HTTP_201 = 201;
-  private final int HTTP_404 = 404;
-  private final int HTTP_204 = 204;
+  public static final int HTTP_201 = 201;
+  public static final int HTTP_404 = 404;
+  public static final int HTTP_204 = 204;
 
   @Override
   public Response createGitxWebhook(@Valid CreateGitXWebhookRequest body, String harnessAccount) {
     CreateGitXWebhookRequestDTO createGitXWebhookRequestDTO =
-        GitXWebhookMapper.buildCreateGitXWebhookRequestDTO(harnessAccount, body);
+        GitXWebhookMapper.buildCreateGitXWebhookRequestDTO(Scope.of(harnessAccount), body);
     CreateGitXWebhookResponseDTO createGitXWebhookResponseDTO =
         gitXWebhookService.createGitXWebhook(createGitXWebhookRequestDTO);
     CreateGitXWebhookResponse responseBody =
@@ -69,7 +71,7 @@ public class GitXWebhooksApiImpl implements GitXWebhooksApi {
   @Override
   public Response getGitxWebhook(String gitXWebhookIdentifier, String harnessAccount) {
     GetGitXWebhookRequestDTO getGitXWebhookRequestDTO =
-        GitXWebhookMapper.buildGetGitXWebhookRequestDTO(harnessAccount, gitXWebhookIdentifier);
+        GitXWebhookMapper.buildGetGitXWebhookRequestDTO(Scope.of(harnessAccount), gitXWebhookIdentifier);
     Optional<GetGitXWebhookResponseDTO> optionalGetGitXWebhookResponseDTO =
         gitXWebhookService.getGitXWebhook(getGitXWebhookRequestDTO);
     if (optionalGetGitXWebhookResponseDTO.isEmpty()) {
@@ -86,7 +88,7 @@ public class GitXWebhooksApiImpl implements GitXWebhooksApi {
     UpdateGitXWebhookRequestDTO updateGitXWebhookRequestDTO = GitXWebhookMapper.buildUpdateGitXWebhookRequestDTO(body);
     UpdateGitXWebhookResponseDTO updateGitXWebhookResponseDTO =
         gitXWebhookService.updateGitXWebhook(UpdateGitXWebhookCriteriaDTO.builder()
-                                                 .accountIdentifier(harnessAccount)
+                                                 .scope(Scope.of(harnessAccount))
                                                  .webhookIdentifier(gitXWebhookIdentifier)
                                                  .build(),
             updateGitXWebhookRequestDTO);
@@ -98,7 +100,7 @@ public class GitXWebhooksApiImpl implements GitXWebhooksApi {
   @Override
   public Response deleteGitxWebhook(String gitXWebhookIdentifier, String harnessAccount) {
     DeleteGitXWebhookRequestDTO deleteGitXWebhookRequestDTO =
-        GitXWebhookMapper.buildDeleteGitXWebhookRequestDTO(harnessAccount, gitXWebhookIdentifier);
+        GitXWebhookMapper.buildDeleteGitXWebhookRequestDTO(Scope.of(harnessAccount), gitXWebhookIdentifier);
     gitXWebhookService.deleteGitXWebhook(deleteGitXWebhookRequestDTO);
     return Response.status(HTTP_204).build();
   }
@@ -107,7 +109,7 @@ public class GitXWebhooksApiImpl implements GitXWebhooksApi {
   public Response listGitxWebhooks(
       String harnessAccount, Integer page, @Max(1000L) Integer limit, String webhookIdentifier) {
     ListGitXWebhookRequestDTO listGitXWebhookRequestDTO =
-        GitXWebhookMapper.buildListGitXWebhookRequestDTO(harnessAccount, webhookIdentifier);
+        GitXWebhookMapper.buildListGitXWebhookRequestDTO(Scope.of(harnessAccount), webhookIdentifier);
     ListGitXWebhookResponseDTO listGitXWebhookResponseDTO =
         gitXWebhookService.listGitXWebhooks(listGitXWebhookRequestDTO);
     Page<GitXWebhookResponse> gitXWebhooks =
@@ -127,9 +129,10 @@ public class GitXWebhooksApiImpl implements GitXWebhooksApi {
   @Override
   public Response listGitxWebhookEvents(String harnessAccount, Integer page, @Max(1000L) Integer limit,
       String webhookIdentifier, Long eventStartTime, Long eventEndTime, String repoName, String filePath,
-      String eventIdentifier) {
-    GitXEventsListRequestDTO gitXEventsListRequestDTO = GitXWebhookMapper.buildEventsListGitXWebhookRequestDTO(
-        harnessAccount, webhookIdentifier, eventStartTime, eventEndTime, repoName, filePath, eventIdentifier);
+      String eventIdentifier, List<String> eventStatus) {
+    GitXEventsListRequestDTO gitXEventsListRequestDTO =
+        GitXWebhookMapper.buildEventsListGitXWebhookRequestDTO(Scope.of(harnessAccount), webhookIdentifier,
+            eventStartTime, eventEndTime, repoName, filePath, eventIdentifier, eventStatus);
     GitXEventsListResponseDTO gitXEventsListResponseDTO = gitXWebhookEventService.listEvents(gitXEventsListRequestDTO);
 
     Page<GitXWebhookEventResponse> gitXWebhookEvents =

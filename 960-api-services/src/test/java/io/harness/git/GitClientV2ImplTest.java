@@ -1128,4 +1128,37 @@ public class GitClientV2ImplTest extends CategoryTest {
     FetchFilesResult fetchFilesResult = gitClient.fetchFilesByPath(request);
     assertThat(fetchFilesResult.getFiles()).isEmpty();
   }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testDownloadFiles_Branch_Directory_And_May_Have_Multiple_Folders() throws Exception {
+    String destinationDirectory = Files.createTempDirectory(UUID.randomUUID().toString()).toString();
+    DownloadFilesRequest request = DownloadFilesRequest.builder()
+                                       .repoUrl(repoPath)
+                                       .authRequest(new UsernamePasswordAuthRequest(USERNAME, PASSWORD.toCharArray()))
+                                       .branch("master")
+                                       .connectorId(CONNECTOR_ID)
+                                       .accountId("ACCOUNT_ID")
+                                       .destinationDirectory(destinationDirectory)
+                                       .mayHaveMultipleFolders(true)
+                                       .build();
+    addRemote(repoPath);
+    String data = "ABCD\nDEP\n";
+    createDirectoryIfDoesNotExist(Paths.get(repoPath, "sample/"));
+    Files.createFile(Paths.get(repoPath, "sample/base.txt"));
+    FileUtils.writeStringToFile(new File(Paths.get(repoPath, "sample/base.txt").toString()), data, UTF_8);
+
+    request.setFilePaths(Collections.singletonList("sample/"));
+    doReturn(cache.get(CONNECTOR_ID)).when(gitClientHelper).getLockObject(request.getConnectorId());
+
+    doNothing().when(gitClientHelper).createDirStructureForFileDownload(any());
+    doReturn(repoPath).when(gitClientHelper).getFileDownloadRepoDirectory(any());
+    gitClient.downloadFiles(request);
+    assertThat(FileUtils.readFileToString(new File(Paths.get(repoPath, "sample/base.txt").toString()), UTF_8))
+        .isEqualTo(data);
+
+    doReturn(null).when(gitClientHelper).getFileDownloadRepoDirectory(any());
+    assertThatThrownBy(() -> gitClient.downloadFiles(request)).isInstanceOf(YamlException.class);
+  }
 }

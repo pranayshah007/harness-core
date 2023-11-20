@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.SANDESH_SALUNKHE;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
@@ -20,6 +21,7 @@ import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 import static io.harness.template.resources.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
@@ -175,7 +177,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock GitXSettingsHelper gitXSettingsHelper;
   @Mock TemplateRbacHelper templateRbacHelper;
 
-  @InjectMocks NGTemplateServiceImpl templateService;
+  @Spy @InjectMocks NGTemplateServiceImpl templateService;
 
   @Mock private NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
 
@@ -2282,5 +2284,105 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(flagOffMetadata.getDeny()).isFalse();
     assertThat(flagOffMetadata.getMessage())
         .isEqualTo("Template OPA is disabled. Configure \"enableOpaRule: true\" in config.yaml file");
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testGetAndValidateOldTemplateEntityInvalidStageChange() {
+    TemplateEntity newTemplateEntity = mock(TemplateEntity.class);
+    TemplateEntity oldTemplateEntity = mock(TemplateEntity.class);
+
+    doReturn(ACCOUNT_ID).when(newTemplateEntity).getAccountIdentifier();
+    doReturn(ACCOUNT_ID).when(newTemplateEntity).getAccountId();
+    doReturn("Custom").when(newTemplateEntity).getChildType();
+    doReturn(TemplateEntityType.STAGE_TEMPLATE).when(newTemplateEntity).getTemplateEntityType();
+    doReturn(TEMPLATE_IDENTIFIER).when(newTemplateEntity).getIdentifier();
+    doReturn(TEMPLATE_VERSION_LABEL).when(newTemplateEntity).getVersionLabel();
+    doReturn(ORG_IDENTIFIER).when(newTemplateEntity).getOrgIdentifier();
+    doReturn(PROJ_IDENTIFIER).when(newTemplateEntity).getProjectIdentifier();
+
+    doReturn(ACCOUNT_ID).when(oldTemplateEntity).getAccountIdentifier();
+    doReturn(ACCOUNT_ID).when(oldTemplateEntity).getAccountId();
+    doReturn("CI").when(oldTemplateEntity).getChildType();
+    doReturn(TemplateEntityType.STAGE_TEMPLATE).when(oldTemplateEntity).getTemplateEntityType();
+    doReturn(TEMPLATE_IDENTIFIER).when(oldTemplateEntity).getIdentifier();
+    doReturn(TEMPLATE_VERSION_LABEL).when(oldTemplateEntity).getVersionLabel();
+    doReturn(ORG_IDENTIFIER).when(oldTemplateEntity).getOrgIdentifier();
+    doReturn(PROJ_IDENTIFIER).when(oldTemplateEntity).getProjectIdentifier();
+
+    String invalidArgumentsExceptionErrorMessage = String.format(
+        "Template with identifier [%s] and versionLabel [%s] under Project[%s], Organization [%s] cannot update the internal template type, current type is [CI] and the requested type is [Custom].",
+        TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, PROJ_IDENTIFIER, ORG_IDENTIFIER);
+    Optional<TemplateEntity> optionalTemplateEntity = Optional.of(oldTemplateEntity);
+    doReturn(optionalTemplateEntity)
+        .when(templateServiceHelper)
+        .getTemplateWithVersionLabel(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
+            TEMPLATE_VERSION_LABEL, false, false, false, false);
+    try {
+      templateService.getAndValidateOldTemplateEntity(newTemplateEntity, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    } catch (InvalidRequestException invalidRequestException) {
+      assertThat(invalidRequestException.getMessage()).isEqualTo(invalidArgumentsExceptionErrorMessage);
+    }
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testGetAndValidateOldTemplateEntityValidStageChange() {
+    TemplateEntity newTemplateEntity = mock(TemplateEntity.class);
+    TemplateEntity oldTemplateEntity = mock(TemplateEntity.class);
+
+    doReturn(ACCOUNT_ID).when(newTemplateEntity).getAccountIdentifier();
+    doReturn(ACCOUNT_ID).when(newTemplateEntity).getAccountId();
+    doReturn("Custom").when(newTemplateEntity).getChildType();
+    doReturn(TemplateEntityType.STAGE_TEMPLATE).when(newTemplateEntity).getTemplateEntityType();
+    doReturn(TEMPLATE_IDENTIFIER).when(newTemplateEntity).getIdentifier();
+    doReturn(TEMPLATE_VERSION_LABEL).when(newTemplateEntity).getVersionLabel();
+    doReturn(ORG_IDENTIFIER).when(newTemplateEntity).getOrgIdentifier();
+    doReturn(PROJ_IDENTIFIER).when(newTemplateEntity).getProjectIdentifier();
+
+    doReturn(ACCOUNT_ID).when(oldTemplateEntity).getAccountIdentifier();
+    doReturn(ACCOUNT_ID).when(oldTemplateEntity).getAccountId();
+    doReturn("Custom").when(oldTemplateEntity).getChildType();
+    doReturn(TemplateEntityType.STAGE_TEMPLATE).when(oldTemplateEntity).getTemplateEntityType();
+    doReturn(TEMPLATE_IDENTIFIER).when(oldTemplateEntity).getIdentifier();
+    doReturn(TEMPLATE_VERSION_LABEL).when(oldTemplateEntity).getVersionLabel();
+    doReturn(ORG_IDENTIFIER).when(oldTemplateEntity).getOrgIdentifier();
+    doReturn(PROJ_IDENTIFIER).when(oldTemplateEntity).getProjectIdentifier();
+
+    Optional<TemplateEntity> optionalTemplateEntity = Optional.of(oldTemplateEntity);
+    doReturn(optionalTemplateEntity)
+        .when(templateServiceHelper)
+        .getTemplateWithVersionLabel(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
+            TEMPLATE_VERSION_LABEL, false, false, false, false);
+
+    TemplateEntity result =
+        templateService.getAndValidateOldTemplateEntity(newTemplateEntity, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    assertThat(result).isEqualTo(oldTemplateEntity);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testStoreTypeCheckWithNullStoreType() {
+    TemplateMoveConfigRequestDTO requestDTO =
+        TemplateMoveConfigRequestDTO.builder()
+            .isNewBranch(false)
+            .moveConfigOperationType(TemplateMoveConfigOperationType.INLINE_TO_REMOTE)
+            .versionLabel(TEMPLATE_VERSION_LABEL)
+            .build();
+    // entity with null storeType.
+    doReturn(Optional.of(entity))
+        .when(templateService)
+        .get(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean());
+
+    doReturn(entity)
+        .when(templateService)
+        .moveTemplateEntity(anyString(), anyString(), anyString(), anyString(), anyString(), any(), any());
+    assertThatCode(()
+                       -> templateService.moveTemplateStoreTypeConfig(
+                           ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, requestDTO))
+        .doesNotThrowAnyException();
   }
 }

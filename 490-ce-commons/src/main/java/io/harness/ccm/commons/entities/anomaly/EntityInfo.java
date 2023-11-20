@@ -38,4 +38,5 @@ public class EntityInfo {
   String azureMeterCategory;
   String azureServiceName;
   String azureInstanceId;
+  String cloudProvider;
 }

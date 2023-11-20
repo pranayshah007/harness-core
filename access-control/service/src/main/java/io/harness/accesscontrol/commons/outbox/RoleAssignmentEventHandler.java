@@ -40,6 +40,7 @@ import io.harness.accesscontrol.roleassignments.events.RoleAssignmentUpdateEvent
 import io.harness.accesscontrol.roleassignments.events.RoleAssignmentUpdateEventV2;
 import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.accesscontrol.scopes.core.Scope;
+import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.aggregator.consumers.AccessControlChangeConsumer;
 import io.harness.aggregator.models.RoleAssignmentChangeEventData;
 import io.harness.annotations.dev.OwnedBy;
@@ -152,7 +153,10 @@ public class RoleAssignmentEventHandler implements OutboxEventHandler {
     }
     if (enableAclProcessingThroughOutbox) {
       RoleAssignmentChangeEventData roleAssignmentChangeEventData =
-          RoleAssignmentChangeEventData.builder().newRoleAssignment(roleAssignment).build();
+          RoleAssignmentChangeEventData.builder()
+              .scope(Optional.ofNullable(ScopeMapper.fromDTO(scopeDTO)))
+              .newRoleAssignment(roleAssignment)
+              .build();
       roleAssignmentChangeConsumer.consumeEvent(CREATE_ACTION, null, roleAssignmentChangeEventData);
     }
     ResourceDTO resourceDTO = getAuditResource(scopeDTO, roleAssignmentDTO);
@@ -196,10 +200,12 @@ public class RoleAssignmentEventHandler implements OutboxEventHandler {
       oldRoleAssignment = RoleAssignmentDTOMapper.fromDTO(scope, oldRoleAssignmentDTO);
     }
     if (enableAclProcessingThroughOutbox) {
-      RoleAssignmentChangeEventData roleAssignmentChangeEventData = RoleAssignmentChangeEventData.builder()
-                                                                        .newRoleAssignment(newRoleAssignment)
-                                                                        .updatedRoleAssignment(oldRoleAssignment)
-                                                                        .build();
+      RoleAssignmentChangeEventData roleAssignmentChangeEventData =
+          RoleAssignmentChangeEventData.builder()
+              .scope(Optional.ofNullable(ScopeMapper.fromDTO(scopeDTO)))
+              .newRoleAssignment(newRoleAssignment)
+              .updatedRoleAssignment(oldRoleAssignment)
+              .build();
       roleAssignmentChangeConsumer.consumeEvent(UPDATE_ACTION, null, roleAssignmentChangeEventData);
     }
     ResourceDTO resourceDTO = getAuditResource(scopeDTO, newRoleAssignmentDTO);
@@ -241,8 +247,10 @@ public class RoleAssignmentEventHandler implements OutboxEventHandler {
       roleAssignment.setId(roleAssignmentDeleteEvent.getRoleAssignmentId());
     }
     if (enableAclProcessingThroughOutbox) {
-      RoleAssignmentChangeEventData changeEventData =
-          RoleAssignmentChangeEventData.builder().deletedRoleAssignment(roleAssignment).build();
+      RoleAssignmentChangeEventData changeEventData = RoleAssignmentChangeEventData.builder()
+                                                          .scope(Optional.ofNullable(ScopeMapper.fromDTO(scopeDTO)))
+                                                          .deletedRoleAssignment(roleAssignment)
+                                                          .build();
       roleAssignmentChangeConsumer.consumeEvent(DELETE_ACTION, null, changeEventData);
     }
     if (!skipAudit) {

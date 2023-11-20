@@ -34,6 +34,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.pms.yaml.HarnessYamlVersion;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -71,45 +72,62 @@ public enum TemplateEntityType {
   STEPGROUP_TEMPLATE(
       STEP_GROUP, STEP_GROUP_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE, true, "stepgroup");
 
-  private final String yamlType;
-  private String rootYamlName;
+  // yaml type in template yaml v0 eg: Stage, Step, Pipeline, StepGroup, etc.
+  private final String yamlTypeV0;
+  // root yaml name to be added in pipeline yaml while merging template yaml v0 eg: step, stage, stepGroup, etc.
+  private String rootYamlNameV0;
   private final List<String> yamlFieldKeys;
   @Getter private HarnessTeam ownerTeam;
   private boolean isGitEntity;
-  private String nodeGroup;
+  // yaml type of template v1 eg: stage, step, group, etc.
+  private String yamlTypeV1;
 
-  TemplateEntityType(String yamlType, String rootYamlName, List<String> yamlFieldKeys, HarnessTeam ownerTeam,
-      boolean isGitEntity, String nodeGroup) {
-    this.yamlType = yamlType;
-    this.rootYamlName = rootYamlName;
+  TemplateEntityType(String yamlTypeV0, String rootYamlNameV0, List<String> yamlFieldKeys, HarnessTeam ownerTeam,
+      boolean isGitEntity, String yamlTypeV1) {
+    this.yamlTypeV0 = yamlTypeV0;
+    this.rootYamlNameV0 = rootYamlNameV0;
     this.yamlFieldKeys = yamlFieldKeys;
     this.ownerTeam = ownerTeam;
     this.isGitEntity = isGitEntity;
-    this.nodeGroup = nodeGroup;
+    this.yamlTypeV1 = yamlTypeV1;
   }
 
-  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-  public static TemplateEntityType getTemplateType(@JsonProperty("type") String yamlType) {
-    if (yamlType.equals("group")) {
-      return TemplateEntityType.STEPGROUP_TEMPLATE;
-    }
-    for (TemplateEntityType value : TemplateEntityType.values()) {
-      if (value.yamlType.equalsIgnoreCase(yamlType)) {
-        return value;
-      }
+  public static TemplateEntityType getTemplateType(@JsonProperty("type") String yamlType, String version) {
+    switch (version) {
+      case HarnessYamlVersion.V0:
+        for (TemplateEntityType value : TemplateEntityType.values()) {
+          if (value.yamlTypeV0.equalsIgnoreCase(yamlType)) {
+            return value;
+          }
+        }
+        break;
+      case HarnessYamlVersion.V1:
+        for (TemplateEntityType value : TemplateEntityType.values()) {
+          if (value.yamlTypeV1.equalsIgnoreCase(yamlType)) {
+            return value;
+          }
+        }
+        break;
+      default:
+        throw new IllegalArgumentException(String.format("Yaml version %s does not exist", version));
     }
     throw new IllegalArgumentException(String.format(
         "Invalid value:%s, the expected values are: %s", yamlType, Arrays.toString(TemplateEntityType.values())));
   }
 
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
+  public static TemplateEntityType getTemplateType(@JsonProperty("type") String yamlType) {
+    return getTemplateType(yamlType, HarnessYamlVersion.V0);
+  }
+
   @Override
   @JsonValue
   public String toString() {
-    return this.yamlType;
+    return this.yamlTypeV0;
   }
 
   public String getRootYamlName() {
-    return this.rootYamlName;
+    return this.rootYamlNameV0;
   }
 
   public List<String> getYamlFieldKeys() {
@@ -124,7 +142,7 @@ public enum TemplateEntityType {
     return isGitEntity;
   }
 
-  public String getNodeGroup() {
-    return nodeGroup;
+  public String getYamlTypeV1() {
+    return yamlTypeV1;
   }
 }

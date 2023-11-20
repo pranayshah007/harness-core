@@ -9,11 +9,13 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 
 import static io.harness.cvng.utils.ScopedInformation.getScopedInformation;
 
+import io.harness.beans.FeatureName;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
@@ -26,6 +28,7 @@ import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHeal
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
+import io.harness.cvng.servicelevelobjective.services.api.GraphDataServiceV2;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -44,6 +47,8 @@ import java.util.Optional;
 public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService {
   @Inject private HPersistence hPersistence;
   @Inject private GraphDataService graphDataService;
+  @Inject private GraphDataServiceV2 graphDataServiceV2;
+  @Inject private FeatureFlagService featureFlagService;
   @Inject private Clock clock;
   @Inject private SLOErrorBudgetResetService sloErrorBudgetResetService;
 
@@ -221,9 +226,18 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
         serviceLevelObjective.getActiveErrorBudgetMinutes(errorBudgetResetDTOS, currentLocalDate);
     TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
     Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
-    return graphDataService.getGraphData(serviceLevelObjective,
-        timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes,
-        filter, 0L);
+    SLOGraphData sloGraphData;
+    if (featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
+      sloGraphData = graphDataServiceV2.getGraphData(serviceLevelObjective,
+          timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes,
+          filter, 0L);
+    } else {
+      sloGraphData = graphDataService.getGraphData(serviceLevelObjective,
+          timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes,
+          filter, 0L);
+    }
+    return sloGraphData;
   }
 
   @Override

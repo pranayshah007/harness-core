@@ -91,8 +91,8 @@ public class ChaosServiceImpl implements ChaosService {
               .build());
     } catch (Exception ex) {
       log.info(ENTITY_REFERENCE_LOG_PREFIX
-              + "The entity reference could not be created when the chaosInfrastructure [{}] was created in the environment [{}]",
-          chaosInfrastructureFQN, environmentFQN);
+              + "The entity reference was not created when the chaosInfrastructure [{}] was created in the environment [{}] with the exception [{}]",
+          chaosInfrastructureFQN, environmentFQN, ex.getMessage());
       return false;
     }
     return true;
@@ -132,6 +132,99 @@ public class ChaosServiceImpl implements ChaosService {
       log.info(ENTITY_REFERENCE_LOG_PREFIX
               + "The entity reference was not deleted when the infrastructure [{}] was deleted from the environment [{}] with the exception [{}]",
           chaosInfrastructureFQN, environmentFQN, ex.getMessage());
+      return false;
+    }
+    return true;
+  }
+
+  @Override
+  public boolean registerChaosHub(ChaosHubRequest chaosHubRequest) {
+    String accountIdentifier = chaosHubRequest.getAccountId();
+    String orgIdentifier = chaosHubRequest.getOrgId();
+    String projectIdentifier = chaosHubRequest.getProjectId();
+    String connectorIdentifier = chaosHubRequest.getConnectorId();
+    String chaosHubId = chaosHubRequest.getChaosHubId();
+    String chaosHubName = chaosHubRequest.getChaosHubName();
+
+    String connectorFQN = FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
+
+    String chaosHubFQN = FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+        accountIdentifier, orgIdentifier, projectIdentifier, chaosHubId);
+
+    IdentifierRefProtoDTO chaosHubReference = identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+        accountIdentifier, orgIdentifier, projectIdentifier, chaosHubId);
+
+    IdentifierRefProtoDTO connectorReference = identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
+
+    EntityDetailProtoDTO chaosHubDetails = EntityDetailProtoDTO.newBuilder()
+                                               .setIdentifierRef(chaosHubReference)
+                                               .setType(EntityTypeProtoEnum.CHAOS_HUB)
+                                               .setName(emptyIfNull(chaosHubName))
+                                               .build();
+
+    EntityDetailProtoDTO connectorDetails = EntityDetailProtoDTO.newBuilder()
+                                                .setIdentifierRef(connectorReference)
+                                                .setType(EntityTypeProtoEnum.CONNECTORS)
+                                                .build();
+
+    EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()
+                                                         .setAccountIdentifier(accountIdentifier)
+                                                         .setReferredByEntity(chaosHubDetails)
+                                                         .addReferredEntities(connectorDetails)
+                                                         .setDeleteOldReferredByRecords(false)
+                                                         .build();
+    try {
+      eventProducer.send(
+          Message.newBuilder()
+              .putAllMetadata(ImmutableMap.of("accountId", accountIdentifier,
+                  EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.CONNECTORS.name(),
+                  EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+              .setData(entityReferenceDTO.toByteString())
+              .build());
+    } catch (Exception ex) {
+      log.info(ENTITY_REFERENCE_LOG_PREFIX
+              + "The entity reference was not created when the chaosHub [{}] was created for the connector [{}] with the exception [{}]",
+          chaosHubFQN, connectorFQN, ex.getMessage());
+      return false;
+    }
+    return true;
+  }
+
+  @Override
+  public boolean deleteChaosHub(ChaosHubRequest chaosHubRequest) {
+    String accountIdentifier = chaosHubRequest.getAccountId();
+    String orgIdentifier = chaosHubRequest.getOrgId();
+    String projectIdentifier = chaosHubRequest.getProjectId();
+    String connectorIdentifier = chaosHubRequest.getConnectorId();
+    String chaosHubId = chaosHubRequest.getChaosHubId();
+
+    String connectorFQN = FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
+
+    String chaosHubFQN = FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+        accountIdentifier, orgIdentifier, projectIdentifier, chaosHubId);
+
+    DeleteSetupUsageDTO deleteSetupUsageDTO = DeleteSetupUsageDTO.newBuilder()
+                                                  .setAccountIdentifier(accountIdentifier)
+                                                  .setReferredByEntityFQN(chaosHubFQN)
+                                                  .setReferredByEntityType(EntityTypeProtoEnum.CHAOS_HUB)
+                                                  .setReferredEntityFQN(connectorFQN)
+                                                  .setReferredEntityType(EntityTypeProtoEnum.CONNECTORS)
+                                                  .build();
+    try {
+      eventProducer.send(
+          Message.newBuilder()
+              .putAllMetadata(ImmutableMap.of("accountId", accountIdentifier,
+                  EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.CHAOS_HUB.name(),
+                  EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.DELETE_ACTION))
+              .setData(deleteSetupUsageDTO.toByteString())
+              .build());
+    } catch (Exception ex) {
+      log.info(ENTITY_REFERENCE_LOG_PREFIX
+              + "The entity reference was not deleted when the chaos hub [{}] was deleted from the connector [{}] with the exception [{}]",
+          chaosHubFQN, connectorFQN, ex.getMessage());
       return false;
     }
     return true;

@@ -128,6 +128,7 @@ public class ArtifactStepHelper {
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Inject ArtifactConfigToDelegateReqMapper artifactConfigToDelegateReqMapper;
 
   public void saveArtifactExecutionDataToStageInfo(Ambiance ambiance, ArtifactsOutcome artifactsOutcome) {
     if (artifactsOutcome != null) {
@@ -169,6 +170,7 @@ public class ArtifactStepHelper {
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
     ConnectorInfoDTO connectorDTO;
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+
     switch (artifactConfig.getSourceType()) {
       case DOCKER_REGISTRY:
         DockerHubArtifactConfig dockerConfig = (DockerHubArtifactConfig) artifactConfig;
@@ -183,8 +185,8 @@ public class ArtifactStepHelper {
           encryptedDataDetails =
               secretManagerClientService.getEncryptionDetails(ngAccess, connectorConfig.getAuth().getCredentials());
         }
-        return ArtifactConfigToDelegateReqMapper.getDockerDelegateRequest(
-            dockerConfig, connectorConfig, encryptedDataDetails, dockerConfig.getConnectorRef().getValue());
+        return artifactConfigToDelegateReqMapper.getDockerDelegateRequest(
+            dockerConfig, connectorConfig, encryptedDataDetails, dockerConfig.getConnectorRef().getValue(), ambiance);
       case GOOGLE_ARTIFACT_REGISTRY:
         GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
         connectorDTO = getConnector(googleArtifactRegistryConfig.getConnectorRef().getValue(), ambiance);
@@ -199,8 +201,8 @@ public class ArtifactStepHelper {
           encryptedDataDetails =
               secretManagerClientService.getEncryptionDetails(ngAccess, gcpConnectorDTO.getCredential().getConfig());
         }
-        return ArtifactConfigToDelegateReqMapper.getGarDelegateRequest(googleArtifactRegistryConfig, gcpConnectorDTO,
-            encryptedDataDetails, googleArtifactRegistryConfig.getConnectorRef().getValue());
+        return artifactConfigToDelegateReqMapper.getGarDelegateRequest(googleArtifactRegistryConfig, gcpConnectorDTO,
+            encryptedDataDetails, googleArtifactRegistryConfig.getConnectorRef().getValue(), ambiance);
 
       case AMAZONS3:
         AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactConfig;
@@ -216,8 +218,8 @@ public class ArtifactStepHelper {
           encryptedDataDetails =
               secretManagerClientService.getEncryptionDetails(ngAccess, awsConnectorDTO.getCredential().getConfig());
         }
-        return ArtifactConfigToDelegateReqMapper.getAmazonS3DelegateRequest(amazonS3ArtifactConfig, awsConnectorDTO,
-            encryptedDataDetails, amazonS3ArtifactConfig.getConnectorRef().getValue());
+        return artifactConfigToDelegateReqMapper.getAmazonS3DelegateRequest(amazonS3ArtifactConfig, awsConnectorDTO,
+            encryptedDataDetails, amazonS3ArtifactConfig.getConnectorRef().getValue(), ambiance);
       case GITHUB_PACKAGES:
         GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
         connectorDTO = getConnector(githubPackagesArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -232,8 +234,9 @@ public class ArtifactStepHelper {
         GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
         encryptedDataDetails = getGithubEncryptedDetails(githubConnectorDTO, ngAccess);
 
-        return ArtifactConfigToDelegateReqMapper.getGithubPackagesDelegateRequest(githubPackagesArtifactConfig,
-            githubConnectorDTO, encryptedDataDetails, githubPackagesArtifactConfig.getConnectorRef().getValue());
+        return artifactConfigToDelegateReqMapper.getGithubPackagesDelegateRequest(githubPackagesArtifactConfig,
+            githubConnectorDTO, encryptedDataDetails, githubPackagesArtifactConfig.getConnectorRef().getValue(),
+            ambiance);
       case AZURE_ARTIFACTS:
         AzureArtifactsConfig azureArtifactsConfig = (AzureArtifactsConfig) artifactConfig;
 
@@ -251,8 +254,9 @@ public class ArtifactStepHelper {
 
         encryptedDataDetails = getAzureArtifactsEncryptionDetails(azureArtifactsConnectorDTO, ngAccess);
 
-        return ArtifactConfigToDelegateReqMapper.getAzureArtifactsDelegateRequest(azureArtifactsConfig,
-            azureArtifactsConnectorDTO, encryptedDataDetails, azureArtifactsConfig.getConnectorRef().getValue());
+        return artifactConfigToDelegateReqMapper.getAzureArtifactsDelegateRequest(azureArtifactsConfig,
+            azureArtifactsConnectorDTO, encryptedDataDetails, azureArtifactsConfig.getConnectorRef().getValue(),
+            ambiance);
       case AMI:
         AMIArtifactConfig amiArtifactConfig = (AMIArtifactConfig) artifactConfig;
 
@@ -271,8 +275,8 @@ public class ArtifactStepHelper {
               secretManagerClientService.getEncryptionDetails(ngAccess, awsConnectorDTO1.getCredential().getConfig());
         }
 
-        return ArtifactConfigToDelegateReqMapper.getAMIDelegateRequest(
-            amiArtifactConfig, awsConnectorDTO1, encryptedDataDetails, amiArtifactConfig.getConnectorRef().getValue());
+        return artifactConfigToDelegateReqMapper.getAMIDelegateRequest(amiArtifactConfig, awsConnectorDTO1,
+            encryptedDataDetails, amiArtifactConfig.getConnectorRef().getValue(), ambiance);
       case GCR:
         GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactConfig;
         connectorDTO = getConnector(gcrArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -286,8 +290,8 @@ public class ArtifactStepHelper {
           encryptedDataDetails =
               secretManagerClientService.getEncryptionDetails(ngAccess, gcpConnectorDTO.getCredential().getConfig());
         }
-        return ArtifactConfigToDelegateReqMapper.getGcrDelegateRequest(
-            gcrArtifactConfig, gcpConnectorDTO, encryptedDataDetails, gcrArtifactConfig.getConnectorRef().getValue());
+        return artifactConfigToDelegateReqMapper.getGcrDelegateRequest(gcrArtifactConfig, gcpConnectorDTO,
+            encryptedDataDetails, gcrArtifactConfig.getConnectorRef().getValue(), ambiance);
       case ECR:
         EcrArtifactConfig ecrArtifactConfig = (EcrArtifactConfig) artifactConfig;
         connectorDTO = getConnector(ecrArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -301,8 +305,8 @@ public class ArtifactStepHelper {
           encryptedDataDetails = secretManagerClientService.getEncryptionDetails(
               ngAccess, (DecryptableEntity) connector.getCredential().getConfig());
         }
-        return ArtifactConfigToDelegateReqMapper.getEcrDelegateRequest(
-            ecrArtifactConfig, connector, encryptedDataDetails, ecrArtifactConfig.getConnectorRef().getValue());
+        return artifactConfigToDelegateReqMapper.getEcrDelegateRequest(ecrArtifactConfig, connector,
+            encryptedDataDetails, ecrArtifactConfig.getConnectorRef().getValue(), ambiance);
       case NEXUS3_REGISTRY:
         NexusRegistryArtifactConfig nexusRegistryArtifactConfig = (NexusRegistryArtifactConfig) artifactConfig;
         connectorDTO = getConnector(nexusRegistryArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -317,8 +321,9 @@ public class ArtifactStepHelper {
           encryptedDataDetails =
               secretManagerClientService.getEncryptionDetails(ngAccess, nexusConnectorDTO.getAuth().getCredentials());
         }
-        return ArtifactConfigToDelegateReqMapper.getNexusArtifactDelegateRequest(nexusRegistryArtifactConfig,
-            nexusConnectorDTO, encryptedDataDetails, nexusRegistryArtifactConfig.getConnectorRef().getValue());
+        return artifactConfigToDelegateReqMapper.getNexusArtifactDelegateRequest(nexusRegistryArtifactConfig,
+            nexusConnectorDTO, encryptedDataDetails, nexusRegistryArtifactConfig.getConnectorRef().getValue(),
+            ambiance);
       case NEXUS2_REGISTRY:
         Nexus2RegistryArtifactConfig nexus2RegistryArtifactConfig = (Nexus2RegistryArtifactConfig) artifactConfig;
         connectorDTO = getConnector(nexus2RegistryArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -333,8 +338,9 @@ public class ArtifactStepHelper {
           encryptedDataDetails =
               secretManagerClientService.getEncryptionDetails(ngAccess, nexus2ConnectorDTO.getAuth().getCredentials());
         }
-        return ArtifactConfigToDelegateReqMapper.getNexus2ArtifactDelegateRequest(nexus2RegistryArtifactConfig,
-            nexus2ConnectorDTO, encryptedDataDetails, nexus2RegistryArtifactConfig.getConnectorRef().getValue());
+        return artifactConfigToDelegateReqMapper.getNexus2ArtifactDelegateRequest(nexus2RegistryArtifactConfig,
+            nexus2ConnectorDTO, encryptedDataDetails, nexus2RegistryArtifactConfig.getConnectorRef().getValue(),
+            ambiance);
       case ARTIFACTORY_REGISTRY:
         ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
             (ArtifactoryRegistryArtifactConfig) artifactConfig;
@@ -350,9 +356,9 @@ public class ArtifactStepHelper {
           encryptedDataDetails = secretManagerClientService.getEncryptionDetails(
               ngAccess, artifactoryConnectorDTO.getAuth().getCredentials());
         }
-        return ArtifactConfigToDelegateReqMapper.getArtifactoryArtifactDelegateRequest(
+        return artifactConfigToDelegateReqMapper.getArtifactoryArtifactDelegateRequest(
             artifactoryRegistryArtifactConfig, artifactoryConnectorDTO, encryptedDataDetails,
-            artifactoryRegistryArtifactConfig.getConnectorRef().getValue());
+            artifactoryRegistryArtifactConfig.getConnectorRef().getValue(), ambiance);
       case ACR:
         AcrArtifactConfig acrArtifactConfig = (AcrArtifactConfig) artifactConfig;
         connectorDTO = getConnector(acrArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -377,8 +383,8 @@ public class ArtifactStepHelper {
             }
           }
         }
-        return ArtifactConfigToDelegateReqMapper.getAcrDelegateRequest(
-            acrArtifactConfig, azureConnectorDTO, encryptedDataDetails, acrArtifactConfig.getConnectorRef().getValue());
+        return artifactConfigToDelegateReqMapper.getAcrDelegateRequest(acrArtifactConfig, azureConnectorDTO,
+            encryptedDataDetails, acrArtifactConfig.getConnectorRef().getValue(), ambiance);
       case JENKINS:
         JenkinsArtifactConfig jenkinsArtifactConfig = (JenkinsArtifactConfig) artifactConfig;
         connectorDTO = getConnector(jenkinsArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -393,8 +399,8 @@ public class ArtifactStepHelper {
           encryptedDataDetails =
               secretManagerClientService.getEncryptionDetails(ngAccess, jenkinsConnectorDTO.getAuth().getCredentials());
         }
-        return ArtifactConfigToDelegateReqMapper.getJenkinsDelegateRequest(jenkinsArtifactConfig, jenkinsConnectorDTO,
-            encryptedDataDetails, jenkinsArtifactConfig.getConnectorRef().getValue());
+        return artifactConfigToDelegateReqMapper.getJenkinsDelegateRequest(jenkinsArtifactConfig, jenkinsConnectorDTO,
+            encryptedDataDetails, jenkinsArtifactConfig.getConnectorRef().getValue(), ambiance);
       case BAMBOO:
         BambooArtifactConfig bambooArtifactConfig = (BambooArtifactConfig) artifactConfig;
         connectorDTO = getConnector(bambooArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -409,8 +415,8 @@ public class ArtifactStepHelper {
           encryptedDataDetails =
               secretManagerClientService.getEncryptionDetails(ngAccess, bambooConnectorDTO.getAuth().getCredentials());
         }
-        return ArtifactConfigToDelegateReqMapper.getBambooDelegateRequest(bambooArtifactConfig, bambooConnectorDTO,
-            encryptedDataDetails, bambooArtifactConfig.getConnectorRef().getValue());
+        return artifactConfigToDelegateReqMapper.getBambooDelegateRequest(bambooArtifactConfig, bambooConnectorDTO,
+            encryptedDataDetails, bambooArtifactConfig.getConnectorRef().getValue(), ambiance);
       case CUSTOM_ARTIFACT:
         CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
         /*
@@ -419,10 +425,10 @@ public class ArtifactStepHelper {
         In Case of trigger, We will be resolving the expression in Ng Manager.
          */
         if (customArtifactConfig.isFromTrigger()) {
-          return ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+          return artifactConfigToDelegateReqMapper.getCustomDelegateRequest(
               customArtifactConfig, ambiance, delegateMetricsService, ngSecretService);
         }
-        return ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, ambiance);
+        return artifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, ambiance);
       case GOOGLE_CLOUD_STORAGE_ARTIFACT:
         GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
             (GoogleCloudStorageArtifactConfig) artifactConfig;
@@ -438,9 +444,9 @@ public class ArtifactStepHelper {
           encryptedDataDetails =
               secretManagerClientService.getEncryptionDetails(ngAccess, gcpConnectorDTO.getCredential().getConfig());
         }
-        return ArtifactConfigToDelegateReqMapper.getGoogleCloudStorageArtifactDelegateRequest(
+        return artifactConfigToDelegateReqMapper.getGoogleCloudStorageArtifactDelegateRequest(
             googleCloudStorageArtifactConfig, gcpConnectorDTO, encryptedDataDetails,
-            googleCloudStorageArtifactConfig.getConnectorRef().getValue());
+            googleCloudStorageArtifactConfig.getConnectorRef().getValue(), ambiance);
       case GOOGLE_CLOUD_SOURCE_ARTIFACT:
         GoogleCloudSourceArtifactConfig googleCloudSourceArtifactConfig =
             (GoogleCloudSourceArtifactConfig) artifactConfig;
@@ -456,7 +462,7 @@ public class ArtifactStepHelper {
           encryptedDataDetails =
               secretManagerClientService.getEncryptionDetails(ngAccess, gcpConnectorDTO.getCredential().getConfig());
         }
-        return ArtifactConfigToDelegateReqMapper.getGoogleCloudSourceArtifactDelegateRequest(
+        return artifactConfigToDelegateReqMapper.getGoogleCloudSourceArtifactDelegateRequest(
             googleCloudSourceArtifactConfig, gcpConnectorDTO, encryptedDataDetails,
             googleCloudSourceArtifactConfig.getConnectorRef().getValue());
       default:

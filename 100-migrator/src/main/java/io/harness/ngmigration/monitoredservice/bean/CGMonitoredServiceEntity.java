@@ -6,12 +6,15 @@
  */
 
 package io.harness.ngmigration.monitoredservice.bean;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 
 import software.wings.beans.GraphNode;
+import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
+import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -26,12 +29,16 @@ import org.apache.commons.lang3.StringUtils;
 public class CGMonitoredServiceEntity implements NGMigrationEntity {
   private static final String WORKFLOW_ID_PREFIX = "workflow_";
   private static final String STEP_DIVIDER = "_step_";
+  private static final String PHASE_STEP_DIVIDER = "_phasestep_";
+  private static final String PHASE_DIVIDER = "_phase_";
 
   Workflow workflow;
   GraphNode stepNode;
+  PhaseStep phaseStep;
+  WorkflowPhase phase;
 
   public static String getWorkflowIdFromMonitoredServiceId(String monitoredServiceId) {
-    int endOfWorkflowId = monitoredServiceId.indexOf(STEP_DIVIDER);
+    int endOfWorkflowId = monitoredServiceId.indexOf(PHASE_DIVIDER);
     int startOfWorkflowId = WORKFLOW_ID_PREFIX.length();
     return StringUtils.substring(monitoredServiceId, startOfWorkflowId, endOfWorkflowId);
   }
@@ -41,16 +48,19 @@ public class CGMonitoredServiceEntity implements NGMigrationEntity {
     return StringUtils.substring(monitoredServiceId, startOfStepId);
   }
 
-  public static String getMonitoredServiceId(String workflowId, String stepId) {
-    return WORKFLOW_ID_PREFIX + workflowId + STEP_DIVIDER + stepId;
+  public static String getMonitoredServiceId(
+      String workflowId, WorkflowPhase phase, PhaseStep phaseStep, String stepId) {
+    return String.format("%s%s%s%s%s%s%s%s", WORKFLOW_ID_PREFIX, workflowId, PHASE_DIVIDER,
+        phase == null ? "" : phase.getName(), PHASE_STEP_DIVIDER, phaseStep == null ? "" : phaseStep.getName(),
+        STEP_DIVIDER, stepId);
   }
 
   public String getId() {
-    return getMonitoredServiceId(workflow.getUuid(), stepNode.getId());
+    return getMonitoredServiceId(workflow.getUuid(), phase, phaseStep, stepNode.getId());
   }
 
   public String getName() {
-    return getMonitoredServiceId(workflow.getName(), stepNode.getName());
+    return getMonitoredServiceId(workflow.getName(), phase, phaseStep, stepNode.getName());
   }
 
   @Override

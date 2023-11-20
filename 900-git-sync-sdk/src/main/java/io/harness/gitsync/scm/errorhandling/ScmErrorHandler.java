@@ -6,6 +6,7 @@
  */
 
 package io.harness.gitsync.scm.errorhandling;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.CodePulse;
@@ -19,6 +20,7 @@ import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmConflictException;
 import io.harness.exception.ScmException;
 import io.harness.exception.ScmInternalServerErrorException;
+import io.harness.exception.ScmRequestTimeoutException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.exceptions.GitErrorMetadataDTO;
@@ -37,21 +39,7 @@ public class ScmErrorHandler {
   }
 
   public final void processAndThrowException(int statusCode, ScmErrorDetails errorDetails) {
-    handleError(statusCode, errorDetails);
-  }
-
-  void handleError(int statusCode, ScmErrorDetails errorDetails) {
-    switch (statusCode) {
-      case 400:
-      case 401:
-        throw prepareException(new ScmBadRequestException(errorDetails.getErrorMessage()), errorDetails);
-      case 409:
-        throw prepareException(new ScmConflictException(errorDetails.getErrorMessage()), errorDetails);
-      case 500:
-        throw prepareException(new ScmInternalServerErrorException(errorDetails.getErrorMessage()), errorDetails);
-      default:
-        throw prepareException(new ScmUnexpectedException(errorDetails.getErrorMessage()), errorDetails);
-    }
+    handleError(statusCode, errorDetails, null);
   }
 
   void handleError(int statusCode, ScmErrorDetails errorDetails, ScmGitMetaData errorMetadata) {
@@ -66,6 +54,10 @@ public class ScmErrorHandler {
       case 500:
         throw addMetadata(
             prepareException(new ScmInternalServerErrorException(errorDetails.getErrorMessage()), errorDetails),
+            errorMetadata);
+      case 504:
+        throw addMetadata(
+            prepareException(new ScmRequestTimeoutException(errorDetails.getErrorMessage()), errorDetails),
             errorMetadata);
       default:
         throw addMetadata(
@@ -85,8 +77,12 @@ public class ScmErrorHandler {
   }
 
   private WingsException addMetadata(WingsException wingsException, ScmGitMetaData errorMetadata) {
-    wingsException.setMetadata(
-        GitErrorMetadataDTO.builder().branch(errorMetadata.getBranchName()).repo(errorMetadata.getRepoName()).build());
+    if (errorMetadata != null) {
+      wingsException.setMetadata(GitErrorMetadataDTO.builder()
+                                     .branch(errorMetadata.getBranchName())
+                                     .repo(errorMetadata.getRepoName())
+                                     .build());
+    }
 
     return wingsException;
   }

@@ -64,13 +64,12 @@ public class SecretsBuilder {
     }
   }
 
-  public V1Secret createSecret(
-      final String infraId, final String taskId, String fullyQualifiedSecretId, final char[] value) {
+  public V1Secret createSecret(final String infraId, final String taskId, String scopedSecretId, final char[] value) {
     final var secretName = K8SResourceHelper.getSecretName(taskId);
     try {
       // TODO: create secret file
       return K8SSecret.secret(secretName, config.getNamespace(), infraId)
-          .putCharDataItem(K8SResourceHelper.normalizeResourceName(fullyQualifiedSecretId), value)
+          .putCharDataItem(K8SResourceHelper.normalizeResourceName(scopedSecretId), value)
           .create(coreApi);
     } catch (ApiException e) {
       log.error(ApiExceptionLogger.format(e));

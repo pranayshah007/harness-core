@@ -71,6 +71,7 @@ import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PMSYamlSchemaService;
 import io.harness.pms.pipeline.service.PipelineEnforcementService;
@@ -82,9 +83,6 @@ import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.preprocess.YamlPreProcessorFactory;
-import io.harness.pms.yaml.preprocess.YamlPreprocessorResponseDTO;
-import io.harness.pms.yaml.preprocess.YamlV1PreProcessor;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
@@ -137,8 +135,7 @@ public class ExecutionHelperTest extends CategoryTest {
   @Mock RollbackModeExecutionHelper rollbackModeExecutionHelper;
   @Mock PlanService planService;
   @Mock NGSettingsClient settingsClient;
-  @Mock YamlPreProcessorFactory yamlPreprocessorFactory;
-  @Mock YamlV1PreProcessor preProcessor;
+  @Mock PMSPipelineServiceHelper pmsPipelineServiceHelper;
 
   String accountId = "accountId";
   String orgId = "orgId";
@@ -482,9 +479,9 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(principalInfoHelper, times(1)).getPrincipalInfoFromSecurityContext();
     verify(pmsGitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal(pipelineEntity, null, null, null);
     verify(pmsYamlSchemaService, times(0))
-        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(pipelineYaml));
+        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(pipelineYaml), "0");
     verify(pmsYamlSchemaService, times(1))
-        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(mergedPipelineYaml));
+        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(mergedPipelineYaml), "0");
     verify(pipelineRbacServiceImpl, times(1))
         .extractAndValidateStaticallyReferredEntities(
             accountId, orgId, projectId, pipelineId, YamlUtils.readAsJsonNode(mergedPipelineYaml));
@@ -536,7 +533,7 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(pmsGitSyncHelper, times(1))
         .getGitSyncBranchContextBytesThreadLocal(pipelineEntity, pipelineEntity.getStoreType(), null, null);
     verify(pmsYamlSchemaService, times(1))
-        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(mergedPipelineYaml));
+        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(mergedPipelineYaml), "0");
     if (pipelineEntity.getStoreType() != StoreType.REMOTE) {
       verify(pipelineRbacServiceImpl, times(1))
           .extractAndValidateStaticallyReferredEntities(
@@ -586,7 +583,7 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(pmsGitSyncHelper, times(1))
         .getGitSyncBranchContextBytesThreadLocal(pipelineEntityWithExpressions, null, null, null);
     verify(pmsYamlSchemaService, times(1))
-        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(pipelineYamlWithExpressions));
+        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(pipelineYamlWithExpressions), "0");
     verify(pipelineRbacServiceImpl, times(1))
         .extractAndValidateStaticallyReferredEntities(
             accountId, orgId, projectId, pipelineId, YamlUtils.readAsJsonNode(pipelineYamlWithExpressions));
@@ -624,7 +621,7 @@ public class ExecutionHelperTest extends CategoryTest {
     doReturn(null).when(pmsGitSyncHelper).getGitSyncBranchContextBytesThreadLocal(pipelineEntity, null, null, null);
     doReturn(true)
         .when(pmsYamlSchemaService)
-        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(mergedPipelineYaml));
+        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(mergedPipelineYaml), "0");
     doNothing()
         .when(pipelineRbacServiceImpl)
         .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, mergedPipelineYaml);
@@ -646,9 +643,9 @@ public class ExecutionHelperTest extends CategoryTest {
         .getGitSyncBranchContextBytesThreadLocal(
             pipelineEntity, pipelineEntity.getStoreType(), null, pipelineEntity.getConnectorRef());
     verify(pmsYamlSchemaService, times(0))
-        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(pipelineYaml));
+        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(pipelineYaml), "0");
     verify(pmsYamlSchemaService, times(1))
-        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(mergedPipelineYaml));
+        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(mergedPipelineYaml), "0");
     if (pipelineEntity.getStoreType() != StoreType.REMOTE) {
       verify(pipelineRbacServiceImpl, times(1))
           .extractAndValidateStaticallyReferredEntities(
@@ -931,7 +928,7 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(pmsGitSyncHelper, times(1))
         .getGitSyncBranchContextBytesThreadLocal(pipelineEntity, pipelineEntity.getStoreType(), null, null);
     verify(pmsYamlSchemaService, times(0))
-        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(pipelineYaml));
+        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(pipelineYaml), "0");
     verify(pipelineRbacServiceImpl, times(0))
         .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, pipelineYaml);
     verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());
@@ -947,11 +944,7 @@ public class ExecutionHelperTest extends CategoryTest {
     doReturn(executionPrincipalInfo).when(principalInfoHelper).getPrincipalInfoFromSecurityContext();
     pipelineEntity.setYaml(pipelineYamlV1);
     pipelineEntity.setHarnessVersion(HarnessYamlVersion.V1);
-    doReturn(preProcessor).when(yamlPreprocessorFactory).getProcessorInstance(HarnessYamlVersion.V1);
-    doReturn(
-        YamlPreprocessorResponseDTO.builder().preprocessedJsonNode(YamlUtils.readAsJsonNode(pipelineYamlV1)).build())
-        .when(preProcessor)
-        .preProcess(pipelineYamlV1);
+    doReturn(pipelineYamlV1).when(pmsPipelineServiceHelper).preProcessPipelineYaml(pipelineYamlV1);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, Collections.emptyList(), null,
         executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false, null,
         null);
@@ -977,7 +970,7 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(pmsGitSyncHelper, times(1))
         .getGitSyncBranchContextBytesThreadLocal(pipelineEntity, pipelineEntity.getStoreType(), null, null);
     verify(pmsYamlSchemaService, times(0))
-        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(pipelineYamlV1));
+        .validateYamlSchema(accountId, orgId, projectId, YamlUtils.readAsJsonNode(pipelineYamlV1), "0");
     verify(pipelineRbacServiceImpl, times(0))
         .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, pipelineYamlV1);
     verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());

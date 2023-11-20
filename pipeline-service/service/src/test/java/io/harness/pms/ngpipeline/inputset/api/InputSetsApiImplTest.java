@@ -9,6 +9,7 @@ package io.harness.pms.ngpipeline.inputset.api;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.MANKRIT;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -17,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.OwnedBy;
@@ -25,6 +27,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
+import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -39,11 +42,14 @@ import io.harness.spec.server.pipeline.v1.model.InputSetMoveConfigRequestBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetMoveConfigResponseBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.MergeInputSetRequestBody;
+import io.harness.spec.server.pipeline.v1.model.MergeInputSetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.MoveConfigOperationType;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -67,6 +73,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
   InputSetsApiImpl inputSetsApiImpl;
   @Mock PMSInputSetService pmsInputSetService;
   @Mock InputSetsApiUtils inputSetsApiUtils;
+  @Mock ValidateAndMergeHelper validateAndMergeHelper;
   private static final String account = randomAlphabetic(10);
   private static final String org = randomAlphabetic(10);
   private static final String project = randomAlphabetic(10);
@@ -93,7 +100,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    inputSetsApiImpl = new InputSetsApiImpl(pmsInputSetService, inputSetsApiUtils);
+    inputSetsApiImpl = new InputSetsApiImpl(pmsInputSetService, inputSetsApiUtils, validateAndMergeHelper);
 
     String inputSetFilename = "inputSet1.yml";
     inputSetYaml = readFile(inputSetFilename);
@@ -220,6 +227,23 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
     assertEquals(responseBody.getName(), inputSetName);
     assertEquals(responseBody.getOrg(), org);
     assertEquals(responseBody.getProject(), project);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testMerge() {
+    doReturn(HarnessYamlVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
+    when(validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(
+             any(), any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean()))
+        .thenReturn("yaml");
+    MergeInputSetRequestBody mergeInputSetRequestBody = new MergeInputSetRequestBody();
+    mergeInputSetRequestBody.setInputSetReferences(Arrays.asList("ip1"));
+
+    Response response = inputSetsApiImpl.mergedInputSets(
+        pipeline, org, project, mergeInputSetRequestBody, account, "false", null, null, null, null, null);
+    MergeInputSetResponseBody responseBody = (MergeInputSetResponseBody) response.getEntity();
+    assertEquals(responseBody.getInputsYamlMerged(), "yaml");
   }
 
   @Test

@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 62
+version: 64
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1577,49 +1577,49 @@ permissions:
       - project
   - identifier: iac_workspace_view
     name: View Infrastructure Workspace
-    status: STAGING
+    status: ACTIVE
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: iac_workspace_edit
     name: Create/Edit Infrastructure Workspace
-    status: STAGING
+    status: ACTIVE
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: iac_workspace_delete
     name: Delete Infrastructure Workspace
-    status: STAGING
+    status: ACTIVE
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: iac_workspace_editvariable
     name: Create/Edit Infrastructure Workspace Variable
-    status: STAGING
+    status: ACTIVE
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: iac_workspace_deletevariable
     name: Delete Infrastructure Workspace Variable
-    status: STAGING
+    status: ACTIVE
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: iac_workspace_approve
     name: Approve Infrastructure Workspace
-    status: STAGING
+    status: ACTIVE
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: iac_workspace_accessstate
     name: Access Infrastructure Workspace State
-    status: STAGING
+    status: ACTIVE
     allowedScopeLevels:
       - account
       - organization
@@ -1720,6 +1720,18 @@ permissions:
       - account
   - identifier: ccm_recommendations_view
     name: View CCM Recommendations
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_commitmentOrchestrator_edit
+    name: Setup CCM Commitment Orchestration
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_commitmentOrchestrator_view
+    name: View CCM Commitment Orchestration
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:

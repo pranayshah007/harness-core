@@ -912,7 +912,11 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
           awsAuthEnvVariables = getAwsAuthVariablesInternal(
               (TerraformAwsProviderCredentialDelegateInfo) taskParameters.getProviderCredentialDelegateInfo());
         } catch (Exception e) {
-          throw new InvalidRequestException(ExceptionMessageSanitizer.sanitizeException(e).getMessage());
+          Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+          log.error("Error Occurred while getting aws auth variables for terraform task. {} at {}",
+              sanitizeException.getMessage(), sanitizeException.getStackTrace());
+          throw new InvalidRequestException(
+              "Error Occurred while getting aws auth variables for terraform task. " + sanitizeException.getMessage());
         }
       }
     }

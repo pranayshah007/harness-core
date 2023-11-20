@@ -22,6 +22,12 @@ CREATE TABLE IF NOT EXISTS public.infrastructures (
     namespace text,
     resource_group text
 );
+-- drop constraint first if it exists
+ALTER TABLE ONLY public.infrastructures
+    DROP CONSTRAINT IF EXISTS infrastructures_pkey;
+
+-- add primary key constraint, this is done to resolve issues in re-running migrations
+-- this query will fail as only one primary key constraint can exist
 ALTER TABLE ONLY public.infrastructures
     ADD CONSTRAINT infrastructures_pkey PRIMARY KEY (id);
 

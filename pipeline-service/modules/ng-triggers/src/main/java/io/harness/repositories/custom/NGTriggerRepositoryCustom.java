@@ -34,5 +34,5 @@ public interface NGTriggerRepositoryCustom {
   DeleteResult hardDelete(Criteria criteria);
   TriggerUpdateCount updateTriggerYaml(List<NGTriggerEntity> ngTriggerEntityList);
   boolean updateManyTriggerPollingSubscriptionStatusBySignatures(String accountId, List<String> signatures,
-      boolean status, String errorMessage, List<String> versions, Long timestamp);
+      boolean status, String errorMessage, List<String> versions, Long timestamp, Long errorStatusValidUntil);
 }

@@ -18,6 +18,7 @@ import io.harness.rest.RestResponse;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import okhttp3.Request;
 import retrofit2.Call;
@@ -239,6 +240,12 @@ public class FakeAccountClient implements AccountClient {
 
   @Override
   public Call<RestResponse<PageResponse<AccountDTO>>> listAccounts(int offset, int pageSize) {
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
+  }
+
+  @Override
+  public Call<RestResponse<Map<String, String>>> getInstallationCommand(
+      String accountId, String commandType, String os, String arch) {
     throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 }

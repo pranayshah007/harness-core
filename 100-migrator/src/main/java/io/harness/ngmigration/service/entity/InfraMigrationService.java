@@ -71,6 +71,7 @@ import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.InfrastructureDefinitionService;
+import software.wings.service.intfc.WorkflowService;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -92,6 +93,7 @@ public class InfraMigrationService extends NgMigrationService {
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject private ElastigroupConfigurationMigrationService elastigroupConfigurationMigrationService;
   @Inject InfrastructureResourceClient infrastructureResourceClient;
+  @Inject private WorkflowService workflowService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -265,6 +267,9 @@ public class InfraMigrationService extends NgMigrationService {
         elastigroupConfigurationMigrationService.getElastigroupConfigurations(migrationContext, infraSpecIds);
 
     Infrastructure infraSpec = infraDefMapper.getSpec(migrationContext, infra, elastigroupConfigurations);
+    Map<String, Object> custom = MigratorUtility.updateContextVariables(migrationContext, entities, infra);
+    MigratorExpressionUtils.render(migrationContext, infraSpec, custom);
+
     if (infraSpec == null) {
       log.error(String.format("We could not migrate the infra %s", infra.getUuid()));
       return YamlGenerationDetails.builder()

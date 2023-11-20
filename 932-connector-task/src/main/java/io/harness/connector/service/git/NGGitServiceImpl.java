@@ -174,7 +174,8 @@ public class NGGitServiceImpl implements NGGitService {
 
   @Override
   public void downloadFiles(GitStoreDelegateConfig gitStoreDelegateConfig, String destinationDirectory,
-      String accountId, SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException {
+      String accountId, SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO, boolean mayHaveMultipleFolders)
+      throws IOException {
     DownloadFilesRequest downloadFilesRequest =
         DownloadFilesRequest.builder()
             .authRequest(getAuthRequest(gitConfigDTO, sshSessionConfig))
@@ -188,6 +189,7 @@ public class NGGitServiceImpl implements NGGitService {
             .repoType(YAML)
             .repoUrl(gitConfigDTO.getUrl())
             .destinationDirectory(destinationDirectory)
+            .mayHaveMultipleFolders(mayHaveMultipleFolders)
             .build();
     gitClientV2.downloadFiles(downloadFilesRequest);
   }

@@ -17,7 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
-import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
+import io.harness.artifacts.comparator.BuildDetailsInternalTimeComparator;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.artifacts.docker.service.ArtifactUtils;
 import io.harness.artifacts.docker.service.DockerRegistryUtils;
@@ -25,6 +25,7 @@ import io.harness.artifacts.gar.GarDockerRestClient;
 import io.harness.artifacts.gar.GarRestClient;
 import io.harness.artifacts.gar.beans.GarInternalConfig;
 import io.harness.artifacts.gar.beans.GarPackageVersionResponse;
+import io.harness.artifacts.gar.beans.GarVersions;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactServerException;
@@ -40,8 +41,10 @@ import io.harness.network.Http;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -192,7 +195,7 @@ public class GARApiServiceImpl implements GarApiService {
     // process rest of pages
     do {
       Response<GarPackageVersionResponse> response = garRestClient
-                                                         .listImageTags(garinternalConfig.getBearerToken(), project,
+                                                         .listImageVersions(garinternalConfig.getBearerToken(), project,
                                                              region, repositoryName, pkg, PAGESIZE, nextPage)
                                                          .execute();
 
@@ -222,7 +225,7 @@ public class GARApiServiceImpl implements GarApiService {
 
     return details.stream()
         .limit(maxNumberOfBuilds)
-        .sorted(new BuildDetailsInternalComparatorDescending())
+        .sorted(new BuildDetailsInternalTimeComparator())
         .collect(Collectors.toList());
   }
 
@@ -250,37 +253,46 @@ public class GARApiServiceImpl implements GarApiService {
                 USER));
     }
   }
-  public List<BuildDetailsInternal> processPage(
-      GarPackageVersionResponse tagsPage, String versionRegex, GarInternalConfig garinternalConfig) {
-    if (tagsPage != null && EmptyPredicate.isNotEmpty(tagsPage.getTags())) {
-      int index = tagsPage.getTags().get(0).getName().lastIndexOf("/");
-      List<BuildDetailsInternal> buildDetails =
-          tagsPage.getTags()
-              .stream()
-              .map(tag -> {
-                String tagFinal = tag.getName().substring(index + 1);
-                Map<String, String> metadata = new HashMap();
-                metadata.put(ArtifactMetadataKeys.artifactPackage, tagFinal);
-                metadata.put(ArtifactMetadataKeys.artifactPackage, garinternalConfig.getPkg());
-                metadata.put(ArtifactMetadataKeys.artifactProject, garinternalConfig.getProject());
-                metadata.put(ArtifactMetadataKeys.artifactRepositoryName, garinternalConfig.getRepositoryName());
-                metadata.put(ArtifactMetadataKeys.artifactRegion, garinternalConfig.getRegion());
-                metadata.put(ArtifactMetadataKeys.TAG, tagFinal);
-                metadata.put(ArtifactMetadataKeys.IMAGE, getImageName(garinternalConfig, tagFinal));
-                return BuildDetailsInternal.builder()
-                    .uiDisplayName("Tag# " + tagFinal)
-                    .number(tagFinal)
-                    .metadata(metadata)
-                    .build();
-              })
-              .filter(build
-                  -> StringUtils.isBlank(versionRegex) || new RegexFunctor().match(versionRegex, build.getNumber()))
-              .collect(toList());
 
-      return buildDetails.stream().sorted(new BuildDetailsInternalComparatorDescending()).collect(toList());
+  public List<BuildDetailsInternal> processPage(
+      GarPackageVersionResponse versionsPage, String versionRegex, GarInternalConfig garinternalConfig) {
+    if (versionsPage != null && EmptyPredicate.isNotEmpty(versionsPage.getVersions())) {
+      List<BuildDetailsInternal> buildDetails = new ArrayList<>();
+      for (GarVersions garVersions : versionsPage.getVersions()) {
+        if (EmptyPredicate.isEmpty(garVersions.getRelatedTags())) {
+          continue;
+        }
+        buildDetails.addAll(
+            garVersions.getRelatedTags()
+                .stream()
+                .map(tag -> {
+                  int index = tag.getName().lastIndexOf("/");
+                  String tagFinal = tag.getName().substring(index + 1);
+                  Map<String, String> metadata = new HashMap();
+                  metadata.put(ArtifactMetadataKeys.artifactPackage, tagFinal);
+                  metadata.put(ArtifactMetadataKeys.artifactPackage, garinternalConfig.getPkg());
+                  metadata.put(ArtifactMetadataKeys.artifactProject, garinternalConfig.getProject());
+                  metadata.put(ArtifactMetadataKeys.artifactRepositoryName, garinternalConfig.getRepositoryName());
+                  metadata.put(ArtifactMetadataKeys.artifactRegion, garinternalConfig.getRegion());
+                  metadata.put(ArtifactMetadataKeys.TAG, tagFinal);
+                  metadata.put(ArtifactMetadataKeys.IMAGE, getImageName(garinternalConfig, tagFinal));
+                  return BuildDetailsInternal.builder()
+                      .uiDisplayName("Tag# " + tagFinal)
+                      .number(tagFinal)
+                      .metadata(metadata)
+                      .imagePushedAt(EmptyPredicate.isNotEmpty(garVersions.getUpdateTime())
+                              ? Date.from(Instant.parse(garVersions.getUpdateTime()))
+                              : null)
+                      .build();
+                })
+                .filter(build
+                    -> StringUtils.isBlank(versionRegex) || new RegexFunctor().match(versionRegex, build.getNumber()))
+                .collect(toList()));
+      }
+      return buildDetails.stream().sorted(new BuildDetailsInternalTimeComparator()).collect(toList());
 
     } else {
-      if (tagsPage == null) {
+      if (versionsPage == null) {
         log.warn("Google Artifact Registry Package version response was null.");
       } else {
         log.warn("Google Artifact Registry Package version response had an empty or missing tag list.");

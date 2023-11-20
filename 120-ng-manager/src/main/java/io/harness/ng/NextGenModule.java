@@ -94,6 +94,8 @@ import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperService;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
+import io.harness.cdng.stage.resources.CDNGStageSummaryResource;
+import io.harness.cdng.stage.resources.CDNGStageSummaryResourceImpl;
 import io.harness.client.DelegateSelectionLogHttpClientModule;
 import io.harness.client.NgConnectorManagerClientModule;
 import io.harness.connector.ConnectorModule;
@@ -339,6 +341,7 @@ import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
 import io.harness.scim.service.ScimGroupService;
 import io.harness.scim.service.ScimUserService;
+import io.harness.scopeinfoclient.ScopeInfoClientModule;
 import io.harness.secretmanagerclient.SecretManagementClientModule;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.security.ServiceTokenGenerator;
@@ -896,6 +899,7 @@ public class NextGenModule extends AbstractModule {
     bind(FreezeSchemaService.class).to(FreezeSchemaServiceImpl.class);
     bind(DelegateMetricsService.class).to(DelegateMetricsServiceImpl.class);
     bind(FrozenExecutionService.class).to(FrozenExecutionServiceImpl.class);
+    bind(CDNGStageSummaryResource.class).to(CDNGStageSummaryResourceImpl.class);
     install(new ProviderModule() {
       @Provides
       @Singleton
@@ -959,6 +963,8 @@ public class NextGenModule extends AbstractModule {
         appConfig.getResourceGroupClientConfig().getSecret(), NG_MANAGER.getServiceId()));
     install(NGFileServiceModule.getInstance(appConfig.getFileServiceConfiguration().getFileStorageMode(),
         appConfig.getFileServiceConfiguration().getClusterName()));
+    install(new ScopeInfoClientModule(appConfig.getNgManagerClientConfig(),
+        appConfig.getNextGenConfig().getNgManagerServiceSecret(), NG_MANAGER.getServiceId()));
     install(NgFileStoreModule.getInstance());
     install(new GitopsResourceClientModule(appConfig.getGitopsResourceClientConfig(), NG_MANAGER.getServiceId()));
     if (TRUE.equals(appConfig.getAccessControlAdminClientConfiguration().getMockAccessControlService())) {

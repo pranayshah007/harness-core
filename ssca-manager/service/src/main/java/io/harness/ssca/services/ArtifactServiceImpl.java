@@ -58,6 +58,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -79,7 +80,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class ArtifactServiceImpl implements ArtifactService {
   @Inject ArtifactRepository artifactRepository;
   @Inject EnforcementSummaryRepo enforcementSummaryRepo;
-
   @Inject EnforcementSummaryService enforcementSummaryService;
   @Inject NormalisedSbomComponentService normalisedSbomComponentService;
   @Inject CdInstanceSummaryService cdInstanceSummaryService;
@@ -184,6 +184,7 @@ public class ArtifactServiceImpl implements ArtifactService {
         .id(artifact.getArtifactId())
         .name(artifact.getName())
         .tag(artifact.getTag())
+        .url(artifact.getUrl())
         .componentsCount(artifact.getComponentsCount().intValue())
         .updated(String.format("%d", artifact.getLastUpdatedAt()))
         .prodEnvCount(artifact.getProdEnvCount().intValue())
@@ -201,8 +202,12 @@ public class ArtifactServiceImpl implements ArtifactService {
   @Override
   @Transactional
   public void saveArtifactAndInvalidateOldArtifact(ArtifactEntity artifact) {
+    ArtifactEntity lastArtifact = getLatestArtifact(artifact.getAccountId(), artifact.getOrgId(),
+        artifact.getProjectId(), artifact.getArtifactId(), artifact.getTag());
     artifactRepository.invalidateOldArtifact(artifact);
     artifact.setLastUpdatedAt(artifact.getCreatedOn().toEpochMilli());
+    artifact.setProdEnvCount(lastArtifact.getProdEnvCount());
+    artifact.setNonProdEnvCount(lastArtifact.getNonProdEnvCount());
     artifactRepository.save(artifact);
   }
 
@@ -219,7 +224,7 @@ public class ArtifactServiceImpl implements ArtifactService {
                             .is(false);
 
     MatchOperation matchOperation = match(criteria);
-    SortOperation sortOperation = sort(Sort.by(Direction.DESC, ArtifactEntityKeys.lastUpdatedAt));
+    SortOperation sortOperation = sort(Sort.by(Direction.DESC, ArtifactEntityKeys.createdOn));
     GroupOperation groupByArtifactId = group(ArtifactEntityKeys.artifactId).first("$$ROOT").as("document");
     Sort.Order customSort = pageable.getSort().get().collect(Collectors.toList()).get(0);
     SortOperation customSortOperation =
@@ -245,28 +250,6 @@ public class ArtifactServiceImpl implements ArtifactService {
     return new PageImpl<>(artifactListingResponses, pageable, total);
   }
 
-  private Criteria getLicenseCriteria(
-      String accountId, String orgIdentifier, String projectIdentifier, LicenseFilter licenseFilter) {
-    Criteria criteria = new Criteria();
-    List<String> orchestrationIds =
-        normalisedSbomComponentService.getOrchestrationIds(accountId, orgIdentifier, projectIdentifier, licenseFilter);
-    if (isNotEmpty(orchestrationIds)) {
-      return Criteria.where(ArtifactEntityKeys.orchestrationId).in(orchestrationIds);
-    }
-    return criteria;
-  }
-
-  private Criteria getComponentFilterCriteria(
-      String accountId, String orgIdentifier, String projectIdentifier, List<ComponentFilter> componentFilter) {
-    Criteria criteria = new Criteria();
-    List<String> orchestrationIds = normalisedSbomComponentService.getOrchestrationIds(
-        accountId, orgIdentifier, projectIdentifier, componentFilter);
-    if (isNotEmpty(orchestrationIds)) {
-      return Criteria.where(ArtifactEntityKeys.orchestrationId).in(orchestrationIds);
-    }
-    return criteria;
-  }
-
   @Override
   public Page<ArtifactListingResponse> listArtifacts(String accountId, String orgIdentifier, String projectIdentifier,
       ArtifactListingRequestBody body, Pageable pageable) {
@@ -279,9 +262,24 @@ public class ArtifactServiceImpl implements ArtifactService {
                             .and(ArtifactEntityKeys.invalid)
                             .is(false);
 
-    criteria.andOperator(getPolicyFilterCriteria(body), getDeploymentFilterCriteria(body),
-        getLicenseCriteria(accountId, orgIdentifier, projectIdentifier, body.getLicenseFilter()),
-        getComponentFilterCriteria(accountId, orgIdentifier, projectIdentifier, body.getComponentFilter()));
+    if (!StringUtils.isEmpty(body.getSearchTerm())) {
+      criteria.and(ArtifactEntityKeys.name).regex(body.getSearchTerm());
+    }
+
+    LicenseFilter licenseFilter = body.getLicenseFilter();
+    List<ComponentFilter> componentFilter = body.getComponentFilter();
+    Criteria filterCriteria = new Criteria();
+    if (Objects.nonNull(licenseFilter) || isNotEmpty(componentFilter)) {
+      List<String> orchestrationIds = normalisedSbomComponentService.getOrchestrationIds(
+          accountId, orgIdentifier, projectIdentifier, licenseFilter, componentFilter);
+      if (isNotEmpty(orchestrationIds)) {
+        filterCriteria = Criteria.where(ArtifactEntityKeys.orchestrationId).in(orchestrationIds);
+      } else {
+        return Page.empty();
+      }
+    }
+
+    criteria.andOperator(getPolicyFilterCriteria(body), getDeploymentFilterCriteria(body), filterCriteria);
 
     Page<ArtifactEntity> artifactEntities = artifactRepository.findAll(criteria, pageable);
 
@@ -349,17 +347,26 @@ public class ArtifactServiceImpl implements ArtifactService {
               .envName(entity.getEnvName())
               .envType(entity.getEnvType() == EnvType.Production ? EnvTypeEnum.PROD : EnvTypeEnum.NONPROD)
               .attestedStatus(artifact.isAttested() ? AttestedStatusEnum.PASS : AttestedStatusEnum.FAIL)
+              .pipelineName(entity.getLastPipelineName())
               .pipelineId(entity.getLastPipelineExecutionName())
               .pipelineExecutionId(entity.getLastPipelineExecutionId())
+              .pipelineSequenceId(entity.getSequenceId())
               .triggeredById(entity.getLastDeployedById())
               .triggeredBy(entity.getLastDeployedByName())
-              .triggeredAt(entity.getLastDeployedAt().toString());
+              .triggeredAt(entity.getLastDeployedAt().toString())
+              .triggeredType(entity.getTriggerType());
 
       if (Objects.nonNull(enforcementSummaryEntity)) {
         response.allowListViolationCount(String.valueOf(enforcementSummaryEntity.getAllowListViolationCount()))
             .denyListViolationCount(String.valueOf(enforcementSummaryEntity.getDenyListViolationCount()))
             .enforcementId(enforcementSummaryEntity.getEnforcementId());
       }
+
+      if (Objects.nonNull(entity.getSlsaVerificationSummary())) {
+        response.slsaPolicyOutcomeStatus(entity.getSlsaVerificationSummary().getSlsaPolicyOutcomeStatus())
+            .provenanceArtifact(entity.getSlsaVerificationSummary().getProvenanceArtifact());
+      }
+
       return response;
     });
   }
@@ -409,6 +416,7 @@ public class ArtifactServiceImpl implements ArtifactService {
               .id(artifact.getArtifactId())
               .name(artifact.getName())
               .tag(artifact.getTag())
+              .url(artifact.getUrl())
               .componentsCount(artifact.getComponentsCount().intValue())
               .allowListViolationCount(String.valueOf(enforcementSummary.getAllowListViolationCount()))
               .denyListViolationCount(String.valueOf(enforcementSummary.getDenyListViolationCount()))
@@ -486,7 +494,8 @@ public class ArtifactServiceImpl implements ArtifactService {
       case PROD:
         return Criteria.where(ArtifactEntityKeys.prodEnvCount).gt(0);
       case ALL:
-        return Criteria.where(ArtifactEntityKeys.nonProdEnvCount).gt(0).and(ArtifactEntityKeys.prodEnvCount).gt(0);
+        return new Criteria().orOperator(Criteria.where(ArtifactEntityKeys.nonProdEnvCount).gt(0),
+            Criteria.where(ArtifactEntityKeys.prodEnvCount).gt(0));
       case NONE:
         return Criteria.where(ArtifactEntityKeys.nonProdEnvCount).is(0).and(ArtifactEntityKeys.prodEnvCount).is(0);
       default:

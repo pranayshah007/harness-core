@@ -58,8 +58,7 @@ public class CreditCardServiceImpl implements CreditCardService {
 
   @Override
   public CreditCardResponse saveCreditCard(CreditCardDTO creditCardRequest) {
-    StripeCustomer stripeCustomer =
-        stripeCustomerRepository.findByAccountIdentifier(creditCardRequest.getAccountIdentifier());
+    StripeCustomer stripeCustomer = getStripeCustomer(creditCardRequest.getAccountIdentifier());
 
     PaymentMethodCollectionDTO paymentMethodCollectionDTO =
         stripeHelper.listPaymentMethods(stripeCustomer.getCustomerId());
@@ -137,7 +136,14 @@ public class CreditCardServiceImpl implements CreditCardService {
 
   @Override
   public boolean hasAtleastOneValidCreditCard(String accountIdentifier) {
-    List<CardDTO> creditCards = getCreditCards(accountIdentifier);
+    List<CardDTO> creditCards;
+
+    try {
+      creditCards = getCreditCards(accountIdentifier);
+    } catch (Exception ex) {
+      log.error("Could not fetch Stripe customer details", ex);
+      return false;
+    }
 
     return creditCards.stream().anyMatch(creditCard -> !isCreditCardExpired(creditCard));
   }
@@ -153,12 +159,7 @@ public class CreditCardServiceImpl implements CreditCardService {
 
   @Override
   public CardDTO getDefaultCreditCard(String accountIdentifier) {
-    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
-    if (stripeCustomer == null) {
-      String errorMessage = String.format(CUSTOMER_DOES_NOT_EXIST, accountIdentifier);
-      log.error(errorMessage);
-      throw new InvalidRequestException(errorMessage);
-    }
+    StripeCustomer stripeCustomer = getStripeCustomer(accountIdentifier);
 
     PaymentMethodCollectionDTO paymentMethodCollectionDTO =
         stripeHelper.listPaymentMethods(stripeCustomer.getCustomerId());
@@ -207,12 +208,7 @@ public class CreditCardServiceImpl implements CreditCardService {
   }
 
   private List<CardDTO> getCreditCards(String accountIdentifier) {
-    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
-    if (stripeCustomer == null) {
-      String errorMessage = String.format(CUSTOMER_DOES_NOT_EXIST, accountIdentifier);
-      log.error(errorMessage);
-      throw new InvalidRequestException(errorMessage);
-    }
+    StripeCustomer stripeCustomer = getStripeCustomer(accountIdentifier);
 
     return stripeHelper.listPaymentMethods(stripeCustomer.getCustomerId()).getPaymentMethods();
   }
@@ -223,5 +219,17 @@ public class CreditCardServiceImpl implements CreditCardService {
 
     return currentYear > cardDTO.getExpireYear()
         || (currentYear == cardDTO.getExpireYear() && currentMonth > cardDTO.getExpireMonth());
+  }
+
+  private StripeCustomer getStripeCustomer(String accountIdentifier) {
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
+
+    if (stripeCustomer == null) {
+      String errorMessage = String.format(CUSTOMER_DOES_NOT_EXIST, accountIdentifier);
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage);
+    }
+
+    return stripeCustomer;
   }
 }

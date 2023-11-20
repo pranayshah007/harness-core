@@ -12,7 +12,8 @@ import io.harness.delegate.beans.DelegateEntityOwner;
 import java.io.IOException;
 
 public interface DelegateInstallationCommandService {
-  String getCommand(String commandType, String managerUrl, String accountId, DelegateEntityOwner owner);
+  String getCommand(
+      String commandType, String managerUrl, String accountId, DelegateEntityOwner owner, String os, String arch);
   String getTerraformExampleModuleFile(String managerUrl, String accountId, DelegateEntityOwner owner)
       throws IOException;
 
