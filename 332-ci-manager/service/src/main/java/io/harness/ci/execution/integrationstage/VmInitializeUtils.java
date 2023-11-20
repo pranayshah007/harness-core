@@ -237,12 +237,17 @@ public class VmInitializeUtils {
       envVars.put(DRONE_WORKSPACE, workDir);
     }
 
+    if (integrationStageConfig.getInfrastructure().getType() != Infrastructure.Type.HOSTED_VM
+        && integrationStageConfig.getInfrastructure().getType() != Infrastructure.Type.VM) {
+      return envVars;
+    }
+
     List<String> connectorsRef = IntegrationStageUtils.getStageConnectorRefs(integrationStageConfig);
 
     for (String connectorRef : connectorsRef) {
       ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
 
-      if (connectorDetails.getConnectorConfig() instanceof WithProxy) {
+      if (connectorDetails != null && connectorDetails.getConnectorConfig() instanceof WithProxy) {
         WithProxy connectorProxy = (WithProxy) connectorDetails.getConnectorConfig();
         if (connectorProxy.getProxy() && connectorProxy.getProxyUrl() != null)
           envVars.put(DRONE_HTTP_PROXY, connectorProxy.getProxyUrl());
