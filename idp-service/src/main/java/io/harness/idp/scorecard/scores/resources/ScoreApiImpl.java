@@ -7,6 +7,7 @@
 
 package io.harness.idp.scorecard.scores.resources;
 
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
@@ -37,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @com.google.inject.Inject }))
-//@NextGenManagerAuth
+@NextGenManagerAuth
 @Slf4j
 public class ScoreApiImpl implements ScoresApi {
   private ScoreService scoreService;
@@ -82,7 +83,7 @@ public class ScoreApiImpl implements ScoresApi {
 
   @Override
   public Response scorecardRecalibrateV2(
-      @Valid ScorecardRecalibrateRequest scorecardRecalibrateRequest, String harnessAccount) {
+      @Valid ScorecardRecalibrateRequest scorecardRecalibrateRequest, @AccountIdentifier String harnessAccount) {
     try {
       ScorecardRecalibrateInfo scorecardRecalibrateInfo = scoreComputerService.computeScoresAsync(harnessAccount,
           scorecardRecalibrateRequest.getIdentifiers().getScorecardIdentifier(),

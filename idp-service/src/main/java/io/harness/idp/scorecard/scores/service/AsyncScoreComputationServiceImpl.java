@@ -90,9 +90,14 @@ public class AsyncScoreComputationServiceImpl implements AsyncScoreComputationSe
     String entityIdentifier = entityChangeDTO.getMetadataMap().get(AsyncScoreComputationKeys.entityIdentifier);
     entityIdentifier = !entityIdentifier.isBlank() ? entityIdentifier : null;
 
-    scoreComputerService.computeScores(accountIdentifier,
-        scorecardIdentifier == null ? Collections.emptyList() : Collections.singletonList(scorecardIdentifier),
-        entityIdentifier == null ? Collections.emptyList() : Collections.singletonList(entityIdentifier));
+    try {
+      scoreComputerService.computeScores(accountIdentifier,
+          scorecardIdentifier == null ? Collections.emptyList() : Collections.singletonList(scorecardIdentifier),
+          entityIdentifier == null ? Collections.emptyList() : Collections.singletonList(entityIdentifier));
+    } catch (Exception ex) {
+      log.error("Could not compute score for account {}, scorecard {}, entity {}", accountIdentifier,
+          scorecardIdentifier, entityIdentifier);
+    }
     this.deleteScoreComputationRequest(accountIdentifier, scorecardIdentifier, entityIdentifier);
   }
 }
