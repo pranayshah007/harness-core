@@ -41,7 +41,7 @@ global:
             keys:
               MONGO_USER: ""
               MONGO_PASSWORD: ""
-        secretManagement: 
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -74,7 +74,7 @@ global:
               TIMESCALEDB_USERNAME: ""
               TIMESCALEDB_PASSWORD: ""
               TIMESCALEDB_SSL_ROOT_CERT: ""
-        secretManagement: 
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -89,7 +89,6 @@ global:
                 TIMESCALEDB_SSL_ROOT_CERT:
                   name: ""
                   property: ""
-
     redis:
       installed: true
       protocol: "redis"
@@ -106,7 +105,7 @@ global:
             keys:
               REDIS_USERNAME: ""
               REDIS_PASSWORD: ""
-        secretManagement: 
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -128,7 +127,7 @@ global:
           keys:
             CG_LICENSE: ""
             NG_LICENSE: ""
-      secretManagement: 
+      secretManagement:
         externalSecretsOperator:
           - secretStore:
               name: ""
@@ -186,7 +185,7 @@ global:
             SMTP_HOST: ""
             SMTP_PORT: ""
             SMTP_USE_SSL: ""
-      secretManagement: 
+      secretManagement:
         externalSecretsOperator:
           - secretStore:
               name: ""
@@ -245,7 +244,6 @@ global:
     stsEndPointUrl: https://sts.us-east-2.amazonaws.com
     ecsEndPointUrl: https://ecs.us-east-2.amazonaws.com
     cloudwatchEndPointUrl: https://monitoring.us-east-2.amazonaws.com
-
 redis:
   protocol: ""
   hosts: []
@@ -256,7 +254,7 @@ redis:
         keys:
           REDIS_USERNAME: ""
           REDIS_PASSWORD: ""
-    secretManagement: 
+    secretManagement:
       externalSecretsOperator:
         - secretStore:
             name: ""
@@ -268,7 +266,6 @@ redis:
             REDIS_PASSWORD:
               name: ""
               property: ""
-
 timescaledb:
   # -- TimescaleDB host names
   hosts: []
@@ -282,7 +279,7 @@ timescaledb:
           TIMESCALEDB_USERNAME: ""
           TIMESCALEDB_PASSWORD: ""
           TIMESCALEDB_SSL_ROOT_CERT: ""
-    secretManagement: 
+    secretManagement:
       externalSecretsOperator:
         - secretStore:
             name: ""
@@ -307,7 +304,7 @@ mongo:
         keys:
           MONGO_USER: ""
           MONGO_PASSWORD: ""
-    secretManagement: 
+    secretManagement:
       externalSecretsOperator:
         - secretStore:
             name: ""
@@ -319,13 +316,10 @@ mongo:
             MONGO_PASSWORD:
               name: ""
               property: ""
-
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
-
 allowedOrigins: ""
-
 image:
   registry: docker.io
   repository: harness/manager-signed
@@ -334,7 +328,6 @@ image:
   tag: "80212"
   digest: ""
   imagePullSecrets: []
-
 waitForInitContainer:
   image:
     registry: docker.io
@@ -343,7 +336,6 @@ waitForInitContainer:
     tag: "latest"
     digest: ""
     imagePullSecrets: []
-
 initContainer:
   image:
     registry: docker.io
@@ -351,7 +343,6 @@ initContainer:
     pullPolicy: IfNotPresent
     tag: latest
     digest: ""
-
 mongoSecrets:
   userName:
     name: harness-secrets
@@ -359,49 +350,37 @@ mongoSecrets:
   password:
     name: mongodb-replicaset-chart
     key: mongodb-root-password
-
 timescaleSecret:
   password:
     name: harness-secrets
     key: timescaledbPostgresPassword
-
 version: 1.0.80209
-
 delegate_docker_image:
   image:
     registry: docker.io
     repository: harness/delegate
     tag: latest
     digest: ""
-
-
 immutable_delegate_docker_image:
   image:
     registry: docker.io
     repository: harness/delegate
     tag: 23.08.80104
     digest: ""
-
 upgrader_docker_image:
   image:
     registry: docker.io
     repository: harness/upgrader
     tag: latest
     digest: ""
-
 appLogLevel: INFO
-
 redisConfig:
   nettyThreads: "32"
-
 java:
   memory: "2048"
-
 external_graphql_rate_limit: "500"
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   # Specifies whether a service account should be created
   create: false
@@ -410,42 +389,33 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: "harness-default"
-
 podAnnotations: {}
-
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
 
 securityContext:
   runAsUser: 65534
   runAsNonRoot: true
-
 service:
   annotations: {}
   type: ClusterIP
   port: 9090
   grpcport: 9879
-
 resources:
   limits:
     memory: 8192Mi
   requests:
     cpu: 2
     memory: 3000Mi
-
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPU: ""
   targetMemory: ""
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 ### These flags are used by the helper function to create the FEATURES config value based off the global.<feature>.enabled boolean
 # -- Feature Flags
 featureFlags:
@@ -481,23 +451,18 @@ featureFlags:
   CET: "SRM_CODE_ERROR_NOTIFICATIONS,SRM_ET_RESOLVED_EVENTS,SRM_ET_CRITICAL_EVENTS"
   # -- Additional Feature Flag
   ADDITIONAL: ""
-
 additionalConfigs: {}
-
 java17flags: ""
-
 # extraVolumes:
-  # - name: volume-test
-  #   configMap:
-  #     name: test-config
-  #     readOnly: true
+# - name: volume-test
+#   configMap:
+#     name: test-config
+#     readOnly: true
 extraVolumes: []
-
 # extraVolumeMounts:
 #   - name: test-volume-mount
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
-
 # lifecycleHooks:
 #   postStart:
 #     exec:
@@ -505,44 +470,63 @@ extraVolumeMounts: []
 #   preStop:
 #     exec:
 #       command:
-
 lifecycleHooks:
   preStop:
     exec:
       command:
         - touch
         - shutdown
-
 # extraEnvVars:
 # - name: POD_NAME
 #   valueFrom:
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
-
 virtualService:
   annotations: {}
 ingress:
   annotations: {}
-
 secrets:
   default:
     LOG_STREAMING_SERVICE_TOKEN: "c76e567a-b341-404d-a8dd-d9738714eb82"
     VERIFICATION_SERVICE_SECRET: "59MR5RlVARcdH7zb7pNx6GzqiglBmXR8"
   kubernetesSecrets:
-  - secretName: ""
-    keys:
-      LOG_STREAMING_SERVICE_TOKEN: ""
-      VERIFICATION_SERVICE_SECRET: ""
-  secretManagement: 
+    - secretName: ""
+      keys:
+        LOG_STREAMING_SERVICE_TOKEN: ""
+        VERIFICATION_SERVICE_SECRET: ""
+  secretManagement:
     externalSecretsOperator:
-    - secretStore:
-        name: ""
-        kind: ""
-      remoteKeys:
-        LOG_STREAMING_SERVICE_TOKEN:
+      - secretStore:
           name: ""
-          property: ""
-        VERIFICATION_SERVICE_SECRET:
-          name: ""
-          property: "" 
+          kind: ""
+        remoteKeys:
+          LOG_STREAMING_SERVICE_TOKEN:
+            name: ""
+            property: ""
+          VERIFICATION_SERVICE_SECRET:
+            name: ""
+            property: ""
+configData:
+  GITOPS_SERVICE_CLIENT_BASEURL: http://gitops:7908/api/v1/
+  ATMOSPHERE_BACKEND: REDIS
+  BACKGROUND_SCHEDULER_CLUSTERED: "true"
+  CACHE_BACKEND: REDIS
+  CAPSULE_JAR: rest-capsule.jar
+  DELEGATE_SERVICE_TARGET: harness-manager:9879
+  DELEGATE_SERVICE_AUTHORITY: harness-manager:9879
+  DISTRIBUTED_LOCK_IMPLEMENTATION: REDIS
+  DEPLOY_MODE: KUBERNETES_ONPREM
+  DISABLE_NEW_RELIC: "true"
+  ENABLE_G1GC: "true"
+  HAZELCAST_SERVICE: harness-manager
+  HZ_CLUSTER_NAME: harness-manager
+  REDIS_MASTER_NAME: harness-redis
+  SERVER_PORT: "9090"
+  SERVICE_ACC: /opt/harness/svc/service_acc.json
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: harness-redis
+  EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM: "true"
+  HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: "true"
+  ENABLE_ITERATORS: "true"
+  ITERATOR_CONFIG_PATH: /opt/harness/config
+configData2: {}

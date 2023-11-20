@@ -12,7 +12,7 @@ metadata:
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
-  GITOPS_SERVICE_CLIENT_BASEURL: http://gitops:7908/api/v1/
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
   API_URL: '{{  .Values.global.loadbalancerURL }}'
   DELEGATE_METADATA_URL: '{{  .Values.global.loadbalancerURL }}/storage/wingsdelegates/delegateprod.txt'
@@ -20,49 +20,29 @@ data:
   WATCHER_METADATA_URL: '{{  .Values.global.loadbalancerURL }}/storage/wingswatchers/watcherprod.txt'
   LOG_STREAMING_SERVICE_BASEURL: 'http://log-service.{{ .Release.Namespace }}.svc.cluster.local:8079/'
   LOG_STREAMING_SERVICE_EXTERNAL_URL: '{{ .Values.global.loadbalancerURL }}/log-service/'
-  ATMOSPHERE_BACKEND: REDIS
-  BACKGROUND_SCHEDULER_CLUSTERED: "true"
-  CACHE_BACKEND: REDIS
-  CAPSULE_JAR: rest-capsule.jar
   DELEGATE_DOCKER_IMAGE: {{ include "harness-manager.delegate_docker_image" . }}
   IMMUTABLE_DELEGATE_ENABLED: '{{ .Values.global.useImmutableDelegate }}'
   IMMUTABLE_DELEGATE_DOCKER_IMAGE: {{ include "harness-manager.immutable_delegate_docker_image" . }}
   UPGRADER_DOCKER_IMAGE: {{ include "harness-manager.upgrader_docker_image" . }}
-  DELEGATE_SERVICE_TARGET: harness-manager:9879
-  DELEGATE_SERVICE_AUTHORITY: harness-manager:9879
-  DISTRIBUTED_LOCK_IMPLEMENTATION: REDIS
-  DEPLOY_MODE: KUBERNETES_ONPREM
-  DISABLE_NEW_RELIC: "true"
-  ENABLE_G1GC: "true"
   EXTERNAL_GRAPHQL_RATE_LIMIT: '{{ .Values.external_graphql_rate_limit }}'
   FEATURES: {{ include "harness-manager.ffString" . | quote }}
   HAZELCAST_NAMESPACE: '{{ .Release.Namespace }}'
-  HAZELCAST_SERVICE: harness-manager
-  HZ_CLUSTER_NAME: harness-manager
   LOGGING_LEVEL: '{{ .Values.appLogLevel }}'
   MEMORY: '{{ .Values.java.memory }}'
   REDIS_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  REDIS_MASTER_NAME: 'harness-redis'
   REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   REDIS_NETTY_THREADS: '{{ .Values.redisConfig.nettyThreads }}'
-  SERVER_PORT: "9090"
-  SERVICE_ACC: /opt/harness/svc/service_acc.json
   VERSION: '{{ .Values.version }}'
   STACK_DRIVER_LOGGING_ENABLED: '{{ .Values.global.stackDriverLoggingEnabled }}'
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
   EVENTS_FRAMEWORK_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM: "true"
-  HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: "true"
   {{- if .Values.global.mongoSSL }}
   MONGO_SSL_CONFIG: "true"
   MONGO_SSL_CA_TRUST_STORE_PATH: /opt/harness/keystore.jks
   MONGO_SSL_CA_TRUST_STORE_PASSWORD: password
   {{- end }}
-  ENABLE_ITERATORS: 'true'
-  ITERATOR_CONFIG_PATH: '/opt/harness/config'
   {{- if .Values.global.proxy.enabled }}
   PROXY_ENABLED: '{{ .Values.global.proxy.enabled }}'
   PROXY_HOST: {{ .Values.global.proxy.host }}
@@ -105,6 +85,7 @@ metadata:
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData2 "context" $) | nindent 2}}
   iterator_config.json: |
     [
       {
