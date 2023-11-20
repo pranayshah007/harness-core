@@ -50,4 +50,9 @@ public class GitXWebhookRepositoryCustomImpl implements GitXWebhookRepositoryCus
   public GitXWebhook find(Query query) {
     return mongoTemplate.findOne(query, GitXWebhook.class);
   }
+
+  @Override
+  public List<GitXWebhook> findAll(Query query) {
+    return mongoTemplate.find(query, GitXWebhook.class);
+  }
 }
