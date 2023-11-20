@@ -33,8 +33,10 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.cd.CDLicenseType;
 import io.harness.cdlicense.exception.CgLicenseUsageException;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.usage.impl.AggregateServiceUsageInfo;
 import io.harness.cdng.usage.pojos.ActiveService;
 import io.harness.cdng.usage.pojos.ActiveServiceBase;
@@ -73,6 +75,7 @@ import org.springframework.data.domain.Sort;
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class CDLicenseUsageDAL {
+  @Inject private CDFeatureFlagHelper featureFlagService;
   private static final double INSTANCE_COUNT_PERCENTILE_DISC = 0.95;
   private static final int MAX_RETRY = 3;
   private static final String MAX_RETRY_MSG = format("%s retries", MAX_RETRY);
@@ -136,6 +139,81 @@ public class CDLicenseUsageDAL {
       + "                WHERE accountid = ? AND reportedat > NOW() - INTERVAL '30 day' :filterOnNgInstanceStats\n"
       + "                GROUP BY orgid,\n"
       + "                         projectid,\n"
+      + "                         serviceid,\n"
+      + "                         DATE_TRUNC('minute', reportedat)\n"
+      + "            ) instancesPerService\n"
+      + "        GROUP BY orgid,projectid,serviceid\n"
+      + "    ) percentileInstancesPerServices\n"
+      + "ON activeServices.orgIdentifier = percentileInstancesPerServices.orgid\n"
+      + "    AND activeServices.projectIdentifier = percentileInstancesPerServices.projectid\n"
+      + "    AND activeServices.serviceIdentifier = percentileInstancesPerServices.serviceid\n"
+      + "ORDER BY :sortCriteria\n"
+      + "LIMIT ?\n"
+      + "OFFSET (? * ?)";
+  private static final String FETCH_ACTIVE_SERVICES_WITH_INSTANCES_COUNT_QUERY_V2 = ""
+      + "SELECT activeServices.orgIdentifier,\n"
+      + "       activeServices.projectIdentifier,\n"
+      + "       activeServices.serviceIdentifier AS identifier,\n"
+      + "       activeServices.lastDeployedServiceTime AS lastDeployed,\n"
+      + "       activeServices.totalCount,\n"
+      + "       COALESCE(percentileInstancesPerServices.instanceCount, 0) AS instanceCount\n"
+      + "FROM\n"
+      + "-- List services deployed in last 30 days from service_infra_info table. 'Group by' is needed for lastDeployedServiceTime calculation\n"
+      + "(\n"
+      + "    SELECT\n"
+      + "           CASE\n"
+      + "               WHEN service_id LIKE 'account.%' THEN NULL\n"
+      + "               ELSE orgIdentifier\n"
+      + "           END AS orgIdentifier,\n"
+      + "           CASE\n"
+      + "               WHEN service_id LIKE 'account.%' OR service_id LIKE 'org.%' THEN NULL\n"
+      + "               ELSE projectIdentifier\n"
+      + "           END AS projectIdentifier,\n"
+      + "           service_id AS serviceIdentifier,\n"
+      + "           MAX(service_startts) as lastDeployedServiceTime,\n"
+      + "           COUNT(*) OVER () AS totalCount\n"
+      + "    FROM service_infra_info\n"
+      + "    WHERE (accountid = ? AND service_startts >= ? AND service_startts <= ? :filterOnServiceInfraInfo)\n"
+      + "    GROUP BY\n"
+      + "        CASE WHEN service_id LIKE 'account.%' THEN NULL\n"
+      + "            ELSE orgidentifier\n"
+      + "        END,\n"
+      + "        CASE WHEN service_id LIKE 'account.%' OR service_id LIKE 'org.%' THEN NULL\n"
+      + "            ELSE projectidentifier\n"
+      + "        END,\n"
+      + "        service_id\n"
+      + ") activeServices\n"
+      + "    LEFT JOIN\n"
+      + "-- List services percentile instances count from ng_instance_stats table\n"
+      + "    (\n"
+      + "        SELECT PERCENTILE_DISC(?) WITHIN GROUP (ORDER BY instancesPerService.instanceCount) AS instanceCount,\n"
+      + "            orgid,\n"
+      + "            projectid,\n"
+      + "            serviceid\n"
+      + "        FROM\n"
+      + "            (\n"
+      + "                SELECT DATE_TRUNC('minute', reportedat) AS reportedat,\n"
+      + "                    CASE\n"
+      + "                        WHEN serviceid LIKE 'account.%' THEN NULL\n"
+      + "                        ELSE orgid\n"
+      + "                    END AS orgid,\n"
+      + "                    CASE\n"
+      + "                        WHEN serviceid LIKE 'account.%' OR serviceid LIKE 'org.%' THEN NULL\n"
+      + "                        ELSE projectid\n"
+      + "                    END AS projectid,\n"
+      + "                    serviceid,\n"
+      + "                    SUM(instancecount) AS instanceCount\n"
+      + "                FROM ng_instance_stats\n"
+      + "                WHERE accountid = ? AND reportedat > NOW() - INTERVAL '30 day' :filterOnNgInstanceStats\n"
+      + "                GROUP BY\n"
+      + "                    CASE\n"
+      + "                        WHEN serviceid LIKE 'account.%' THEN NULL\n"
+      + "                        ELSE orgid\n"
+      + "                    END,\n"
+      + "                    CASE\n"
+      + "                        WHEN serviceid LIKE 'account.%' OR serviceid LIKE 'org.%' THEN NULL\n"
+      + "                        ELSE projectid\n"
+      + "                    END,\n"
       + "                         serviceid,\n"
       + "                         DATE_TRUNC('minute', reportedat)\n"
       + "            ) instancesPerService\n"
@@ -250,15 +328,27 @@ public class CDLicenseUsageDAL {
       throw new InvalidArgumentsException("AccountIdentifier cannot be null or empty for fetching active services");
     }
 
-    final String fetchActiveServicesFinalQuery =
-        FETCH_ACTIVE_SERVICES_WITH_INSTANCES_COUNT_QUERY
-            .replace(":filterOnServiceInfraInfo",
-                buildFilterOnServiceInfraInfoTable(
-                    fetchData.getOrgIdentifier(), fetchData.getProjectIdentifier(), fetchData.getServiceIdentifier()))
-            .replace(":filterOnNgInstanceStats",
-                buildFilterOnNGInstanceStatsTable(
-                    fetchData.getOrgIdentifier(), fetchData.getProjectIdentifier(), fetchData.getServiceIdentifier()))
-            .replace(":sortCriteria", buildSortCriteria(fetchData.getSort()));
+    final String fetchActiveServicesFinalQuery;
+    if (featureFlagService.isEnabled(accountIdentifier, FeatureName.CDS_NG_ACC_ORG_LEVEL_SERVICE_LICENSING_FIX)) {
+      fetchActiveServicesFinalQuery = FETCH_ACTIVE_SERVICES_WITH_INSTANCES_COUNT_QUERY_V2
+                                          .replace(":filterOnServiceInfraInfo",
+                                              buildFilterOnServiceInfraInfoTable(fetchData.getOrgIdentifier(),
+                                                  fetchData.getProjectIdentifier(), fetchData.getServiceIdentifier()))
+                                          .replace(":filterOnNgInstanceStats",
+                                              buildFilterOnNGInstanceStatsTable(fetchData.getOrgIdentifier(),
+                                                  fetchData.getProjectIdentifier(), fetchData.getServiceIdentifier()))
+                                          .replace(":sortCriteria", buildSortCriteria(fetchData.getSort()));
+    } else {
+      fetchActiveServicesFinalQuery =
+              FETCH_ACTIVE_SERVICES_WITH_INSTANCES_COUNT_QUERY
+                      .replace(":filterOnServiceInfraInfo",
+                              buildFilterOnServiceInfraInfoTable(
+                                      fetchData.getOrgIdentifier(), fetchData.getProjectIdentifier(), fetchData.getServiceIdentifier()))
+                      .replace(":filterOnNgInstanceStats",
+                              buildFilterOnNGInstanceStatsTable(
+                                      fetchData.getOrgIdentifier(), fetchData.getProjectIdentifier(), fetchData.getServiceIdentifier()))
+                      .replace(":sortCriteria", buildSortCriteria(fetchData.getSort()));
+    }
 
     int retry = 0;
     boolean successfulOperation = false;
