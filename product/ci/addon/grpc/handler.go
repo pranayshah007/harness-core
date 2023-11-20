@@ -135,8 +135,7 @@ func close(w logs.StreamWriter, err error) error {
 		if err != nil {
 			// Wrap error with log upload error
 			err = fmt.Errorf("%w\n%s", err, logErr)
-		} else {
-			err = logErr
+			fmt.Println("Error while uploading the logs :", err)
 		}
 	}
 	return err

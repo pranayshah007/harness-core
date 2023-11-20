@@ -48,7 +48,8 @@ func (h *logProxyHandler) Write(ctx context.Context, in *pb.WriteRequest) (*pb.W
 	h.log.Infow("LogProxy - starting write API call", "key", in.GetKey())
 	err = h.client.Write(ctx, in.GetKey(), lines)
 	if err != nil {
-		h.log.Errorw("Could not write to the log stream", zap.Error(err))
+		fmt.Println("error while writing to the stream: ", err)
+		h.log.Errorw("Could not write to the log stream", "key", in.GetKey(), zap.Error(err))
 		return &pb.WriteResponse{}, err
 	}
 	h.log.Infow("LogProxy - completed write API call", "key", in.GetKey())
@@ -60,7 +61,8 @@ func (h *logProxyHandler) Write(ctx context.Context, in *pb.WriteRequest) (*pb.W
 func (h *logProxyHandler) UploadLink(ctx context.Context, in *pb.UploadLinkRequest) (*pb.UploadLinkResponse, error) {
 	link, err := h.client.UploadLink(ctx, in.GetKey())
 	if err != nil {
-		h.log.Errorw("Could not generate an upload link for log upload", zap.Error(err))
+		fmt.Println("error while generating an upload link: ", err)
+		h.log.Errorw("Could not generate an upload link for log upload", "key", in.GetKey(), zap.Error(err))
 		return &pb.UploadLinkResponse{}, err
 	}
 	return &pb.UploadLinkResponse{Link: link.Value}, nil
@@ -131,6 +133,7 @@ func (h *logProxyHandler) Upload(stream pb.LogProxy_UploadServer) error {
 
 	err = h.client.Upload(stream.Context(), key, data)
 	if err != nil {
+		fmt.Println("error while uploading the stream: ", err)
 		h.log.Errorw("could not upload logs using uploadRPC", key, zap.Error(err))
 		return err
 	}
@@ -150,7 +153,8 @@ func (h *logProxyHandler) Open(ctx context.Context, in *pb.OpenRequest) (*pb.Ope
 	h.log.Infow("LogProxy - starting open stream API call", "key", in.GetKey())
 	err = h.client.Open(ctx, in.GetKey())
 	if err != nil {
-		h.log.Errorw("Could not open log stream", zap.Error(err))
+		fmt.Println("error while opening the stream: ", err)
+		h.log.Errorw("Could not open log stream", "key", in.GetKey(), zap.Error(err))
 		return &pb.OpenResponse{}, err
 	}
 	h.log.Infow("LogProxy - completed open stream API call", "key", in.GetKey())
@@ -164,6 +168,7 @@ func (h *logProxyHandler) Close(ctx context.Context, in *pb.CloseRequest) (*pb.C
 	h.log.Infow("LogProxy - starting close stream API call", "key", in.GetKey())
 	err = h.client.Close(ctx, in.GetKey())
 	if err != nil {
+		fmt.Println("error while closing the stream: ", err)
 		h.log.Errorw("Could not close log stream", "key", in.GetKey(), zap.Error(err))
 		return &pb.CloseResponse{}, err
 	}
