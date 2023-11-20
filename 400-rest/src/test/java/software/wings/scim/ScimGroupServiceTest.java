@@ -453,11 +453,12 @@ public class ScimGroupServiceTest extends WingsBaseTest {
                               .memberIds(Collections.emptyList())
                               .build();
 
-    when(userGroupService.get(anyString(), anyString())).thenReturn(userGroup);
+    when(userGroupService.get(anyString(), anyString(), anyBoolean())).thenReturn(userGroup);
     when(wingsPersistence.createUpdateOperations(UserGroup.class)).thenReturn(updateOperations);
 
     scimGroupService.deleteGroup(userGroup.getUuid(), account.getUuid());
     verify(wingsPersistence, times(1)).delete(account.getUuid(), UserGroup.class, userGroup.getUuid());
+    verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId(account.getUuid(), userGroup);
   }
 
   @Test
