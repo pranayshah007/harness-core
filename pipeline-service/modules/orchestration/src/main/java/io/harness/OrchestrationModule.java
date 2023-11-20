@@ -93,6 +93,9 @@ import io.harness.waiter.WaiterConfiguration;
 import io.harness.waiter.WaiterConfiguration.PersistenceLayer;
 
 import com.codahale.metrics.MetricRegistry;
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -102,7 +105,9 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import java.io.Closeable;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.cache.Cache;
@@ -111,6 +116,8 @@ import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -290,6 +297,22 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
     return harnessCacheManager.getCache("pmsMetricsCache", String.class, Integer.class,
         AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.MINUTES, 1)),
         versionInfoManager.getVersionInfo().getBuildNo());
+  }
+
+  @Provides
+  @Singleton
+  @Named("pmsMetricsLoadingCache")
+  public LoadingCache<String, Set<String>> metricsLoadingCache() {
+    return Caffeine.newBuilder()
+        .maximumSize(1000)
+        .expireAfterWrite(5, TimeUnit.DAYS)
+        .build(new CacheLoader<String, Set<String>>() {
+          @NotNull
+          @Override
+          public Set<String> load(@NonNull String s) {
+            return new HashSet<>();
+          }
+        });
   }
 
   @Provides

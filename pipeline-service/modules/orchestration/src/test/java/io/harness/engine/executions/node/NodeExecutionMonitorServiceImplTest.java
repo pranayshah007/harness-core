@@ -27,8 +27,11 @@ import io.harness.monitoring.ExecutionCountWithStepTypeResult;
 import io.harness.monitoring.ExecutionStatistics;
 import io.harness.rule.Owner;
 
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import javax.cache.Cache;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,13 +44,14 @@ public class NodeExecutionMonitorServiceImplTest extends CategoryTest {
   @Mock NodeExecutionService nodeExecutionService;
   @Mock MetricService metricService;
   @Mock Cache<String, Integer> metricsCache;
+  @Mock LoadingCache<String, Set<String>> metricsLoadingCache;
   NodeExecutionMonitorService nodeExecutionMonitorService;
 
   @Before
   public void beforeTest() {
     MockitoAnnotations.openMocks(this);
     nodeExecutionMonitorService =
-        new NodeExecutionMonitorServiceImpl(nodeExecutionService, metricService, metricsCache);
+        new NodeExecutionMonitorServiceImpl(nodeExecutionService, metricService, metricsCache, metricsLoadingCache);
   }
 
   @Test
@@ -55,6 +59,9 @@ public class NodeExecutionMonitorServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRegisterActiveExecutionMetrics() {
     doReturn(true).when(metricsCache).putIfAbsent(any(), any());
+    doReturn(new HashSet<>()).when(metricsLoadingCache).get("accountIds");
+    doReturn(new HashSet<>()).when(metricsLoadingCache).get("modules");
+    doReturn(new HashSet<>()).when(metricsLoadingCache).get("stepTypes");
 
     List<ExecutionCountWithAccountResult> accountResults = new LinkedList<>();
     accountResults.add(ExecutionCountWithAccountResult.builder().accountId("ABC").count(1).build());
