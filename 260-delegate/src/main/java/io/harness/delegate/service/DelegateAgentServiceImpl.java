@@ -551,14 +551,16 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                                  : "[New] Timed out waiting for go-ahead. Proceeding anyway");
         messageService.removeData(DELEGATE_DASH + getProcessId(), DELEGATE_IS_NEW);
         startLocalHeartbeat();
-        watcherMonitorExecutor.scheduleWithFixedDelay(() -> {
-          try {
-            log.info("Checking for watcher upgrade");
-            watcherUpgrade(false);
-          } catch (Exception e) {
-            log.error("Error while upgrading watcher", e);
-          }
-        }, 0, 60, TimeUnit.MINUTES);
+        if (!isImmutableDelegate) {
+          watcherMonitorExecutor.scheduleWithFixedDelay(() -> {
+            try {
+              log.info("Checking for watcher upgrade");
+              watcherUpgrade(false);
+            } catch (Exception e) {
+              log.error("Error while upgrading watcher", e);
+            }
+          }, 0, 60, TimeUnit.MINUTES);
+        }
       } else {
         log.info("Delegate process started");
         if (delegateConfiguration.isGrpcServiceEnabled()) {
@@ -1644,6 +1646,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void startMonitoringWatcher() {
+    if (isImmutableDelegate) {
+      return;
+    }
     watcherMonitorExecutor.scheduleAtFixedRate(() -> {
       try {
         long watcherHeartbeat = Optional.ofNullable(messageService.getData(WATCHER_DATA, WATCHER_HEARTBEAT, Long.class))
