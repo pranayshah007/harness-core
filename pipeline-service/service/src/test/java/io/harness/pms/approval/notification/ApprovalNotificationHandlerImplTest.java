@@ -21,7 +21,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -81,9 +80,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -616,6 +615,18 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
     List<String> userGroups =
         approvalNotificationHandler.findInvalidInputUserGroups(validatedUserGroups, inputUserGroups);
     assertThat(userGroups).isNotEmpty().containsExactly("UserGroup1");
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testGetNotificationChannelWithoutUserGroupReturnsNull() {
+    HarnessApprovalInstance instance = HarnessApprovalInstance.builder().build();
+    NotificationSettingConfigDTO notificationSettingConfig = mock(NotificationSettingConfigDTO.class);
+    Map<String, String> templateData = Collections.singletonMap("key", "value");
+    assertThat(
+        approvalNotificationHandler.getNotificationChannel(instance, notificationSettingConfig, null, templateData))
+        .isNull();
   }
 
   @Test

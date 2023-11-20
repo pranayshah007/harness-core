@@ -17,6 +17,7 @@ import static io.harness.utils.IdentifierRefHelper.IDENTIFIER_REF_DELIMITER;
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
@@ -63,7 +64,6 @@ import io.harness.usergroups.UserGroupClient;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.harness.annotations.dev.OwnedBy;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -276,7 +276,8 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
     }
   }
 
-  private NotificationChannel getNotificationChannel(HarnessApprovalInstance instance,
+  @VisibleForTesting
+  protected NotificationChannel getNotificationChannel(HarnessApprovalInstance instance,
       NotificationSettingConfigDTO notificationSettingConfig, UserGroupDTO userGroup,
       Map<String, String> templateData) {
     if (isNull(userGroup)) {
