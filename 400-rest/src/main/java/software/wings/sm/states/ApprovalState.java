@@ -71,6 +71,7 @@ import io.harness.scheduler.PersistentScheduler;
 import io.harness.serializer.KryoSerializer;
 import io.harness.shell.ScriptType;
 import io.harness.tasks.ResponseData;
+import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.api.ApprovalStateExecutionData;
 import software.wings.api.ApprovalStateExecutionData.ApprovalStateExecutionDataKeys;
@@ -216,6 +217,7 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
 
   @Inject @Transient private TemplateExpressionProcessor templateExpressionProcessor;
   @Transient @Inject KryoSerializer kryoSerializer;
+  @Transient @Inject private WaitNotifyEngine waitNotifyEngine;
 
   @Inject @Named("ServiceJobScheduler") private PersistentScheduler serviceJobScheduler;
   private Integer DEFAULT_APPROVAL_STATE_TIMEOUT_MILLIS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -1455,6 +1457,12 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
     }
 
     context.getStateExecutionData().setErrorMsg(errorMsg);
+    try {
+      waitNotifyEngine.doneWithWithoutCallback(
+          ((ApprovalStateExecutionData) context.getStateExecutionData()).getApprovalId());
+    } catch (Exception e) {
+      log.error("Failed to notify aborted approval step", e);
+    }
 
     switch (approvalStateType) {
       case JIRA:
