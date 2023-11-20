@@ -232,7 +232,7 @@ public abstract class WorkflowHandler {
   }
 
   public List<NGVariable> getVariables(MigrationContext context, Workflow workflow, Object ngEntitySpec) {
-    List<Variable> variables = new ArrayList<>();
+    Set<Variable> variables = new HashSet<>();
     // We get the list of expressions that have not been replaced in next gen.
     Set<String> expressions = MigratorExpressionUtils.getExpressions(ngEntitySpec);
     if (EmptyPredicate.isNotEmpty(expressions)) {

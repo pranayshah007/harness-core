@@ -7,4 +7,15 @@
 
 package io.harness.aggregator.consumers;
 
-public interface AccessControlChangeEventData {}
+import io.harness.accesscontrol.scopes.core.Scope;
+
+import java.util.Optional;
+import lombok.experimental.SuperBuilder;
+
+@SuperBuilder
+public abstract class AccessControlChangeEventData {
+  private Optional<Scope> scope;
+  public Optional<Scope> getScope() {
+    return scope;
+  }
+}

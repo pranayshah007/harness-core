@@ -10,8 +10,9 @@ package io.harness.idp.metrics;
 import io.harness.metrics.AutoMetricContext;
 
 public class IDPMetricContext extends AutoMetricContext {
-  public IDPMetricContext(String accountIdentifier, String path) {
+  public IDPMetricContext(String accountIdentifier, String path, String method) {
     put("accountIdentifier", accountIdentifier);
     put("path", path);
+    put("method", method);
   }
 }

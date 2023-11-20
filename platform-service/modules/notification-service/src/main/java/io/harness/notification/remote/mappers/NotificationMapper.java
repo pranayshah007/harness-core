@@ -75,6 +75,7 @@ public class NotificationMapper {
         break;
       case SLACK:
         SlackChannel slackChannel = (SlackChannel) notificationChannel.getChannel();
+        slackChannel.setTemplateData(templateData);
         notificationRequestBuilder.setSlack((NotificationRequest.Slack) slackChannel.toObjectofProtoSchema());
         break;
       case PAGERDUTY:

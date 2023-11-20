@@ -155,7 +155,6 @@ public interface InputSetResourcePMS {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description = "The Overlay Input Set that corresponds to the given Overlay Input Set Identifier")
       })
-  @Hidden
   ResponseDTO<OverlayInputSetResponseDTOPMS>
   getOverlayInputSet(
       @PathParam(NGCommonEntityConstants.INPUT_SET_IDENTIFIER_KEY) @Parameter(
@@ -224,7 +223,6 @@ public interface InputSetResourcePMS {
             description =
                 "If the YAML is valid, returns created Overlay Input Set. If not, it sends what is wrong with the YAML")
       })
-  @Hidden
   ResponseDTO<OverlayInputSetResponseDTOPMS>
   createOverlayInputSet(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
@@ -294,7 +292,6 @@ public interface InputSetResourcePMS {
             description =
                 "If the YAML is valid, returns the updated Overlay Input Set. If not, it sends what is wrong with the YAML")
       })
-  @Hidden
   ResponseDTO<OverlayInputSetResponseDTOPMS>
   updateOverlayInputSet(
       @Parameter(description = PipelineResourceConstants.IF_MATCH_PARAM_MESSAGE) @HeaderParam(IF_MATCH) String ifMatch,

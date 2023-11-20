@@ -10,6 +10,7 @@ package io.harness.template.resources;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YamlUtils;
@@ -52,6 +53,16 @@ public class SchemasApiImpl implements SchemasApi {
   @Override
   public Response getTemplateSchema(String nodeGroup, String nodeType, String harnessAccount, String version) {
     ObjectNode schema = ngTemplateSchemaService.getIndividualStaticSchema(nodeGroup, nodeType, version);
+    // TODO (Shalini): remove this once ui and schema changes are also done
+    if (schema == null) {
+      if (nodeGroup.equalsIgnoreCase(TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE.getYamlTypeV1())) {
+        schema = ngTemplateSchemaService.getIndividualStaticSchema(
+            TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE.getRootYamlName(), nodeType, version);
+      } else if (nodeGroup.equalsIgnoreCase(TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE.getRootYamlName())) {
+        schema = ngTemplateSchemaService.getIndividualStaticSchema(
+            TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE.getYamlTypeV1(), nodeType, version);
+      }
+    }
     TemplateSchemaResponse response = new TemplateSchemaResponse();
     response.setData(schema);
     return Response.ok().entity(response).build();

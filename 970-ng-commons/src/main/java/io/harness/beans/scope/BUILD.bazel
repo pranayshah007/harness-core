@@ -23,7 +23,9 @@ java_library(
         "//980-commons/src/main/java/io/harness/encryption:module",
         "//980-commons/src/main/java/io/harness/exception:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:javax_javaee_api",
         "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_glassfish_hk2_hk2_api",
         "@maven//:org_hibernate_validator_hibernate_validator",
     ],
 )

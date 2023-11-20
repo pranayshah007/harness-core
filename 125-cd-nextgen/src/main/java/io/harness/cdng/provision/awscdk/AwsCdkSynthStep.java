@@ -108,7 +108,6 @@ public class AwsCdkSynthStep extends AbstractContainerStepV2<StepElementParamete
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    awsCdkStepHelper.validateFeatureEnabled(ambiance);
     awsCdkStepHelper.validateRuntimePermissions(ambiance, (AwsCdkBaseStepInfo) stepParameters.getSpec());
   }
 }

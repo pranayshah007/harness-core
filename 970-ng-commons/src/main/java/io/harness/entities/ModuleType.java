@@ -47,7 +47,7 @@ public enum ModuleType {
   // Internal modules which have not been onboarded yet
   @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", INTERNAL, ONBOARDING_IN_PROGRESS),
   // moving SEI to Onboarded for qa
-  @JsonProperty("SEI") SEI("Software Engineering Insights", PUBLIC, ONBOARDING_IN_PROGRESS);
+  @JsonProperty("SEI") SEI("Software Engineering Insights", PUBLIC, ONBOARDED);
 
   String displayName;
   ModuleVisibility visibility;

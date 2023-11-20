@@ -14,10 +14,11 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
-public final class UuidUtils {
-  private UuidUtils() {}
+public final class UuidAndIdentifierUtils {
+  private UuidAndIdentifierUtils() {}
   public static String base64StrToUuid(String str) throws BufferUnderflowException, BufferOverflowException {
     byte[] bytes = decodeBase64(str);
     ByteBuffer bb = ByteBuffer.wrap(bytes);
@@ -33,5 +34,16 @@ public final class UuidUtils {
       log.info("{} is not a valid UUID", value);
     }
     return false;
+  }
+
+  public static String generateHarnessUIFormatIdentifier(String name) {
+    if (StringUtils.isBlank(name)) {
+      return "";
+    }
+    name = StringUtils.stripAccents(name);
+    return name.trim()
+        .replaceAll("^[0-9-$]*", "") // remove starting digits, dashes and $
+        .replaceAll("[^0-9a-zA-Z_$ ]", "") // remove special chars except _ and $
+        .replaceAll("\\s", "_"); // replace spaces with _
   }
 }

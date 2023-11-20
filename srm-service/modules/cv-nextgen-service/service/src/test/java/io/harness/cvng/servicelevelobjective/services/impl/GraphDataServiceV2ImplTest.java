@@ -8,11 +8,12 @@
 package io.harness.cvng.servicelevelobjective.services.impl;
 
 import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
+import static io.harness.cvng.core.services.CVNextGenConstants.MAX_NUMBER_OF_POINTS;
+import static io.harness.cvng.core.services.CVNextGenConstants.SLI_RECORD_BUCKET_SIZE;
 import static io.harness.cvng.servicelevelobjective.entities.SLIState.BAD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIState.GOOD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIState.NO_DATA;
 import static io.harness.cvng.servicelevelobjective.entities.SLIState.SKIP_DATA;
-import static io.harness.cvng.servicelevelobjective.services.impl.SLIRecordBucketServiceImpl.SLI_RECORD_BUCKET_SIZE;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ANSUMAN;
 import static io.harness.rule.OwnerRule.ARPITJ;
@@ -483,7 +484,7 @@ public class GraphDataServiceV2ImplTest extends CvNextGenTestBase {
     SLODashboardWidget.SLOGraphData sloGraphData = graphDataServiceV2.getGraphDataForSimpleSLO(serviceLevelIndicator,
         startTime, startTime.plus(Duration.ofMinutes(sliStates.size() + 1)), 100,
         TimeRangeParams.builder().startTime(customStartTime).endTime(customEndTime).build(), null,
-        graphDataServiceV2.MAX_NUMBER_OF_POINTS);
+        MAX_NUMBER_OF_POINTS);
     Duration duration = Duration.between(customStartTime, customEndTime);
     if (customMinutesEnd == 0) {
       assertThat(sloGraphData.getSloPerformanceTrend()).hasSize((int) (duration.toMinutes() - 1) / 5);
@@ -532,7 +533,7 @@ public class GraphDataServiceV2ImplTest extends CvNextGenTestBase {
     SLODashboardWidget.SLOGraphData sloGraphData = graphDataServiceV2.getGraphDataForSimpleSLO(
         requestServiceLevelIndicator, startTime, startTime.plus(Duration.ofMinutes(sliStates.size() + 1)), 100,
         TimeRangeParams.builder().startTime(customStartTime).endTime(customEndTime).build(),
-        simpleRequestServiceLevelObjective, graphDataServiceV2.MAX_NUMBER_OF_POINTS);
+        simpleRequestServiceLevelObjective, MAX_NUMBER_OF_POINTS);
     Duration duration = Duration.between(customStartTime, customEndTime);
     if (customMinutesEnd == 0) {
       assertThat(sloGraphData.getSloPerformanceTrend()).hasSize((int) (duration.toMinutes() - 1) / 5);
@@ -567,17 +568,3 @@ public class GraphDataServiceV2ImplTest extends CvNextGenTestBase {
     assertThat(sloGraphData.getTotalErrorBudgetFromGraph()).isEqualTo(expectedErrorBudget);
   }
 }
-
-/*
-   5000 Buckets
-
-   2000 Buckets
-
-
-   T1   T2
-
-
-   total mins 5000 * 5
-   total mins / 5  = diff
-
- */

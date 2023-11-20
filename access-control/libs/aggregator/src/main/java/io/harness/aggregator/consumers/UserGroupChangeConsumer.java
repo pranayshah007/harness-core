@@ -21,6 +21,7 @@ import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.accesscontrol.scopes.core.ScopeService;
+import io.harness.aggregator.AccessControlAdminService;
 import io.harness.aggregator.models.UserGroupUpdateEventData;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
@@ -47,7 +48,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(PL)
 @Singleton
 @Slf4j
-public class UserGroupChangeConsumer implements AccessControlChangeConsumer<UserGroupUpdateEventData> {
+public class UserGroupChangeConsumer extends AbstractAccessControlChangeConsumer<UserGroupUpdateEventData> {
   private final ExecutorService executorService;
   private final RoleAssignmentRepository roleAssignmentRepository;
   private final ACLGeneratorService aclGeneratorService;
@@ -57,7 +58,8 @@ public class UserGroupChangeConsumer implements AccessControlChangeConsumer<User
   @Inject
   public UserGroupChangeConsumer(@Named(ACL.PRIMARY_COLLECTION) ACLRepository aclRepository,
       RoleAssignmentRepository roleAssignmentRepository, ACLGeneratorService aclGeneratorService,
-      ScopeService scopeService) {
+      ScopeService scopeService, AccessControlAdminService accessControlAdminService) {
+    super(accessControlAdminService);
     this.aclRepository = aclRepository;
     this.aclGeneratorService = aclGeneratorService;
     this.roleAssignmentRepository = roleAssignmentRepository;

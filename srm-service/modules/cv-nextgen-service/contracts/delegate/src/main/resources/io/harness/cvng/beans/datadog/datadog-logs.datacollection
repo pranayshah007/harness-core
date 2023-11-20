@@ -1,12 +1,15 @@
 Var logsSearchUrl = concat(Env:baseUrl, "v2/logs/events/search")
 
+Var nullObject = null
 Var body = {}
 Var filter = {}
 Var:filter.put("from", Env:from)
 Var:filter.put("to", Env:to)
 Var:filter.put("query", Env:query)
 Var:body.put("filter", Var:filter)
-
+if Env:indexes != Var:nullObject {
+   Var:filter.put("indexes", Env:indexes)
+}
 Var page = {}
 Var:page.put("limit", Env:limit)
 Var:body.put("page", Var:page)

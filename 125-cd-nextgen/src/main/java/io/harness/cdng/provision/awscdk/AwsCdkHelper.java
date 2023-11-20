@@ -19,13 +19,9 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
-import io.harness.eraro.ErrorCode;
-import io.harness.exception.AccessDeniedException;
-import io.harness.exception.WingsException;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.ng.core.EntityDetail;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -70,13 +66,6 @@ public class AwsCdkHelper {
   @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
 
   @Inject private KryoSerializer referenceFalseKryoSerializer;
-
-  public void validateFeatureEnabled(Ambiance ambiance) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_AWS_CDK)) {
-      throw new AccessDeniedException("AWS CDK is not enabled for this account. Please contact harness customer care.",
-          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-    }
-  }
 
   public void handleBinaryResponseData(Map<String, ResponseData> responseDataMap) {
     for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {

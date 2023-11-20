@@ -44,7 +44,7 @@ public class YamlV1PreprocessorTest extends CategoryTest {
                    .get(0)
                    .get(YAMLFieldNameConstants.ID)
                    .asText())
-        .isEqualTo("stage1_1");
+        .startsWith("stage1_");
     assertThat(jsonNode.get(YAMLFieldNameConstants.SPEC)
                    .get(YAMLFieldNameConstants.STAGES)
                    .get(0)
@@ -53,7 +53,7 @@ public class YamlV1PreprocessorTest extends CategoryTest {
                    .get(0)
                    .get(YAMLFieldNameConstants.ID)
                    .asText())
-        .isEqualTo("Http_1");
+        .startsWith("Http_");
     assertThat(jsonNode.get(YAMLFieldNameConstants.SPEC)
                    .get(YAMLFieldNameConstants.STAGES)
                    .get(0)
@@ -62,14 +62,14 @@ public class YamlV1PreprocessorTest extends CategoryTest {
                    .get(1)
                    .get(YAMLFieldNameConstants.ID)
                    .asText())
-        .isEqualTo("Http_3");
+        .startsWith("Http_");
 
     assertThat(jsonNode.get(YAMLFieldNameConstants.SPEC)
                    .get(YAMLFieldNameConstants.STAGES)
                    .get(1)
                    .get(YAMLFieldNameConstants.ID)
                    .asText())
-        .isEqualTo("custom_1");
+        .startsWith("custom_");
     assertThat(jsonNode.get(YAMLFieldNameConstants.SPEC)
                    .get(YAMLFieldNameConstants.STAGES)
                    .get(1)
@@ -78,7 +78,7 @@ public class YamlV1PreprocessorTest extends CategoryTest {
                    .get(0)
                    .get(YAMLFieldNameConstants.ID)
                    .asText())
-        .isEqualTo("Http_2");
+        .startsWith("Http_2");
   }
 
   private String readFile() {

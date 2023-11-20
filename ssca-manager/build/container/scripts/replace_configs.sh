@@ -218,6 +218,14 @@ if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
   done
 fi
 
+if [[ "" != "$PIPELINE_SERVICE_CLIENT_BASEURL" ]]; then
+  export PIPELINE_SERVICE_CLIENT_BASEURL; yq -i '.pipelineServiceClientConfig.baseUrl=env(PIPELINE_SERVICE_CLIENT_BASEURL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$PIPELINE_SERVICE_SECRET" ]]; then
+  export PIPELINE_SERVICE_SECRET; yq -i '.pipelineServiceSecret=env(PIPELINE_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
 replace_key_value eventsFramework.redis.redisUrl $EVENTS_FRAMEWORK_REDIS_URL

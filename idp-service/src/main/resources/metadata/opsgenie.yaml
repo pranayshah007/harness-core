@@ -1,0 +1,42 @@
+identifier: opsgenie
+name: OpsGenie
+description: Opsgenie offers a simple way to associate alerts to components and visualize incidents.
+createdBy: K-Phoen
+category: Monitoring
+source: https://github.com/K-Phoen/backstage-plugin-opsgenie/
+iconUrl: https://avatars.githubusercontent.com/u/1818843?s=200&v=4
+imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/opsgenie/
+config: |-
+  proxy:
+    '/opsgenie/api':
+      target: https://api.eu.opsgenie.com
+      pathRewrite:
+        /api/proxy/opsgenie/api/?: /
+      headers:
+        Authorization: GenieKey ${OPSGENIE_TOKEN}
+  
+  opsgenie:
+    domain: https://<your-organization>.app.opsgenie.com/
+environmentVariables:
+  - OPSGENIE_TOKEN
+exports:
+  defaultEntityTypes:
+    - service
+  exportDetails:
+    - type: CARD
+      name: EntityOpsgenieAlertsCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntityOpsgenieAlertsCard
+        specs:
+          gridProps:
+            md: 6
+    - type: CARD
+      name: EntityOpsgenieOnCallListCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntityOpsgenieOnCallListCard
+        specs:
+          gridProps:
+            md: 6

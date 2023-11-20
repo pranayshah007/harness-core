@@ -190,7 +190,7 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
       response = NGRestUtils.getResponse(creditCardClient.validateCreditCard(accountId));
     } catch (Exception e) {
       log.error("Exception occurred while checking for valid credit cards", e);
-      return true;
+      return false;
     }
     return response.isHasAtleastOneValidCreditCard();
   }
