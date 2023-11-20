@@ -104,6 +104,8 @@ public class BuildEnvironmentConstants {
   public static final String DRONE_HTTP_PROXY_URL = "DRONE_HTTP_PROXY_URL";
   public static final String DRONE_HTTP_PROXY_PORT = "DRONE_HTTP_PROXY_PORT";
 
+  public static final String DRONE_HTTP_PROXY = "DRONE_HTTP_PROXY";
+
   public static final String CI_REPO = "CI_REPO";
   public static final String CI_REPO_NAME = "CI_REPO_NAME";
   public static final String CI_REPO_LINK = "CI_REPO_LINK";

@@ -9,12 +9,7 @@ package io.harness.ci.execution.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_ARCH;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_MACHINE;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_NAME;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_OS;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_TYPE;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_WORKSPACE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.*;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ACCOUNT_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ADDON_VOLUME;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ADDON_VOL_MOUNT_PATH;
@@ -69,10 +64,14 @@ import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.beans.yaml.extended.platform.Platform;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.ci.execution.buildstate.PluginSettingUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.connector.WithProxy;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
@@ -223,10 +222,10 @@ public class VmInitializeUtils {
     envVars.put(GRADLE_CACHE_ENV_NAME, GRADLE_CACHE_DIR);
     return envVars;
   }
-  public Map<String, String> getStageEnvVars(
-      ParameterField<Platform> platform, OSType os, String workDir, String poolID, Infrastructure infrastructure) {
+  public Map<String, String> getStageEnvVars(IntegrationStageConfig integrationStageConfig, OSType os, String workDir,
+      String poolID, Infrastructure infrastructure, NGAccess ngAccess, ConnectorUtils connectorUtils) {
     Map<String, String> envVars = new HashMap<>();
-
+    ParameterField<Platform> platform = integrationStageConfig.getPlatform();
     if (platform != null && platform.getValue() != null && platform.getValue().getArch() != null) {
       ArchType arch = RunTimeInputHandler.resolveArchType(platform.getValue().getArch());
       envVars.put(DRONE_STAGE_ARCH, arch.toString());
@@ -236,6 +235,18 @@ public class VmInitializeUtils {
     envVars.put(DRONE_STAGE_TYPE, infrastructure.getType().toString());
     if (infrastructure.getType() != Infrastructure.Type.DOCKER) {
       envVars.put(DRONE_WORKSPACE, workDir);
+    }
+
+    List<String> connectorsRef = IntegrationStageUtils.getStageConnectorRefs(integrationStageConfig);
+
+    for (String connectorRef : connectorsRef) {
+      ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
+
+      if (connectorDetails.getConnectorConfig() instanceof WithProxy) {
+        WithProxy connectorProxy = (WithProxy) connectorDetails.getConnectorConfig();
+        if (connectorProxy.getProxy() && connectorProxy.getProxyUrl() != null)
+          envVars.put(DRONE_HTTP_PROXY, connectorProxy.getProxyUrl());
+      }
     }
 
     return envVars;
