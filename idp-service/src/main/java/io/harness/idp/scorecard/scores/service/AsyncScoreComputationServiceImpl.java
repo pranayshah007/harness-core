@@ -63,14 +63,15 @@ public class AsyncScoreComputationServiceImpl implements AsyncScoreComputationSe
                                              .accountIdentifier(harnessAccount)
                                              .scorecardIdentifier(scorecardIdentifier)
                                              .entityIdentifier(entityIdentifier)
+                                             .startTime(System.currentTimeMillis())
                                              .build();
-    AsyncScoreComputationEntity createdOrUpdatedEntity = asyncScoreComputationRepository.saveOrUpdate(entity);
+    AsyncScoreComputationEntity createdEntity = asyncScoreComputationRepository.save(entity);
     boolean producerResult = idpEntityCrudStreamProducer.publishAsyncScoreComputationChangeEventToRedis(
         harnessAccount, scorecardIdentifier, entityIdentifier);
     if (!producerResult) {
       throw new UnexpectedException("Error in producing event for async score computation.");
     }
-    return AsyncScoreComputationMapper.toDTO(createdOrUpdatedEntity);
+    return AsyncScoreComputationMapper.toDTO(createdEntity);
   }
 
   @Override

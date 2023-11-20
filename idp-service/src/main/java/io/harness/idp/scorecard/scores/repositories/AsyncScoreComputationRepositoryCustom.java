@@ -8,9 +8,6 @@ package io.harness.idp.scorecard.scores.repositories;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.scores.entity.AsyncScoreComputationEntity;
 
 @OwnedBy(HarnessTeam.IDP)
-public interface AsyncScoreComputationRepositoryCustom {
-  AsyncScoreComputationEntity saveOrUpdate(AsyncScoreComputationEntity asyncScoreComputationEntity);
-}
+public interface AsyncScoreComputationRepositoryCustom {}
