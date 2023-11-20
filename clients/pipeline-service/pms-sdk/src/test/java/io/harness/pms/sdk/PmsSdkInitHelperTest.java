@@ -133,7 +133,7 @@ public class PmsSdkInitHelperTest extends CategoryTest {
     StepType stepType2 = StepType.newBuilder().setType("abcd").build();
 
     StepInfo stepInfo1 = StepInfo.newBuilder().setType("abc").build();
-    //StepInfo stepInfo2 = StepInfo.newBuilder().setType("ab").build();
+
     stepTypeList.add(stepType1);
 
     stepInfoList.add(stepInfo1);
