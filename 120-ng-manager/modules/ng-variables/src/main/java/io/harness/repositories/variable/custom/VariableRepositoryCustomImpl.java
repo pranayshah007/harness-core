@@ -15,10 +15,12 @@ import io.harness.ng.core.variable.entity.Variable;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Collation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.repository.support.PageableExecutionUtils;
@@ -42,5 +44,14 @@ public class VariableRepositoryCustomImpl implements VariableRepositoryCustom {
   public List<Variable> findAll(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.find(query, Variable.class);
+  }
+
+  @Override
+  public Page<Variable> findAllWithCollation(Criteria criteria, Pageable pageable) {
+    Query query = new Query(criteria).with(pageable);
+    query.collation(Collation.of("en").strength(Collation.ComparisonLevel.secondary()));
+    List<Variable> variables = mongoTemplate.find(query, Variable.class);
+    return PageableExecutionUtils.getPage(
+        variables, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Variable.class));
   }
 }

@@ -13,6 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
 import io.harness.data.validator.Trimmed;
+import io.harness.mongo.collation.CollationLocale;
+import io.harness.mongo.collation.CollationStrength;
+import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
@@ -79,6 +82,14 @@ public abstract class Variable implements PersistentEntity, NGAccountAccess {
                  .fields(Arrays.asList(
                      VariableKeys.accountIdentifier, VariableKeys.orgIdentifier, VariableKeys.projectIdentifier))
                  .descSortField(VariableKeys.lastModifiedAt)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_with_collation")
+                 .field(VariableKeys.accountIdentifier)
+                 .field(VariableKeys.orgIdentifier)
+                 .field(VariableKeys.projectIdentifier)
+                 .collation(
+                     Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.SECONDARY).build())
                  .build())
         .build();
   }

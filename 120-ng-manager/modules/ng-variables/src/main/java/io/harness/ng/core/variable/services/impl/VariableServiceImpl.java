@@ -107,7 +107,7 @@ public class VariableServiceImpl implements VariableService {
       String projectIdentifier, String searchTerm, boolean includeVariablesFromEverySubScope, Pageable pageable) {
     Criteria criteria = getCriteriaForVariableList(
         accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, includeVariablesFromEverySubScope);
-    Page<Variable> variables = variableRepository.findAll(criteria, pageable);
+    Page<Variable> variables = variableRepository.findAllWithCollation(criteria, pageable);
 
     return PageUtils.getNGPageResponse(
         variables, variables.getContent().stream().map(variableMapper::toResponseWrapper).collect(Collectors.toList()));
