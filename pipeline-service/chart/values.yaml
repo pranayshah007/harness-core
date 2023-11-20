@@ -244,7 +244,7 @@ image:
   repository: harness/pipeline-service-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "1.49.8"
+  tag: "1.49.11"
   imagePullSecrets: []
 
 waitForInitContainer:
@@ -399,3 +399,19 @@ secrets:
         OPA_SERVER_SECRET:
           name: ""
           property: ""
+
+ssca_images:
+  ssca_plugin:
+    image:
+      registry: docker.io
+      digest: ""
+      tag: "0.12.2"
+      repository: harness/ssca-plugin
+      imagePullSecrets: []
+  slsa_plugin:
+    image:
+      registry: docker.io
+      digest: ""
+      tag: "0.12.0"
+      repository: harness/slsa-plugin
+      imagePullSecrets: []
