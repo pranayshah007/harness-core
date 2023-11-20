@@ -11,6 +11,7 @@ metadata:
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   ALLOWED_ORIGINS: '{{ .Values.config.ALLOWED_ORIGINS | default .Values.global.loadbalancerURL }}'
   API_URL: '{{ .Values.config.API_URL | default .Values.global.loadbalancerURL }}'
   DELEGATE_METADATA_URL: {{ .Values.config.DELEGATE_METADATA_URL | default "loadbalancerURL/storage/wingsdelegates/delegateprod.txt" | replace "loadbalancerURL" .Values.global.loadbalancerURL }}
@@ -38,7 +39,6 @@ data:
   MEMORY: '{{ .Values.config.MEMORY }}'
   REDIS_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  REDIS_MASTER_NAME: 'harness-redis'
   REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   SERVER_PORT: '{{ .Values.config.SERVER_PORT }}'
   SERVICE_ACC: '{{ .Values.config.SERVICE_ACC }}'
@@ -57,7 +57,6 @@ data:
   MONGO_SSL_CA_TRUST_STORE_PASSWORD: '{{ .Values.secrets.default.MONGO_SSL_CA_TRUST_STORE_PASSWORD }}'
   ENABLE_ITERATORS: '{{ .Values.config.ENABLE_ITERATORS }}'
   ITERATOR_CONFIG_PATH: '{{ .Values.config.ITERATOR_CONFIG_PATH }}'
-  ENABLE_AUDIT: 'true'
   AUDIT_CLIENT_BASEURL: {{ .Values.config.AUDIT_CLIENT_BASEURL | default "http://platform-service:9005/api/" }}
   TEMPLATE_SERVICE_ENDPOINT: {{ .Values.config.TEMPLATE_SERVICE_ENDPOINT | default "http://template-service:15002/api/" }}
   PIPELINE_SERVICE_CLIENT_BASEURL: {{ .Values.config.PIPELINE_SERVICE_CLIENT_BASEURL | default "http://pipeline-service:12001/api/" }}
@@ -70,6 +69,7 @@ kind: ConfigMap
 metadata:
   name: migrator-iterator-config
 data:
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData2 "context" $) | nindent 2}}
   iterator_config.json: |
     [
       {
