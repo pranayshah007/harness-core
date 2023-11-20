@@ -413,8 +413,11 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   }
 
   private InfrastructureConfig fetchInfraConfigFromOrThrow(
-      Ambiance ambiance, InfrastructureTaskExecutableStepV2Params stepParameters, String infraGitBranch) {
-    GitEntityInfo gitContextForInfra = getGitContextForInfra(ambiance, stepParameters, infraGitBranch);
+      Ambiance ambiance, InfrastructureTaskExecutableStepV2Params stepParameters, String envGitBranch) {
+    GitEntityInfo gitContextForInfra = infrastructureEntityService.getGitDetailsForInfrastructure(
+        AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+        AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getEnvRef().getValue(), envGitBranch);
+
     Optional<InfrastructureEntity> infrastructureEntityOpt;
 
     try (EntityGitDetailsGuard ignore = new EntityGitDetailsGuard(gitContextForInfra)) {
@@ -449,7 +452,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
   @VisibleForTesting
   GitEntityInfo getGitContextForInfra(
-      Ambiance ambiance, InfrastructureTaskExecutableStepV2Params stepParameters, String infraGitBranch) {
+      Ambiance ambiance, InfrastructureTaskExecutableStepV2Params stepParameters, String envGitBranch) {
     String environmentRef = stepParameters.getEnvRef().getValue();
     String infraRef = stepParameters.getInfraRef().getValue();
     GitEntityInfo defaultGitContext = GitEntityInfo.builder().build();
@@ -480,7 +483,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     if (checkIfEnvAndPipelineAreInDifferentRepo(environment)) {
       if (environment.getRepo().equals(infrastructure.getRepo())) {
-        defaultGitContext.setTransientBranch(infraGitBranch);
+        defaultGitContext.setTransientBranch(envGitBranch);
       }
       return defaultGitContext;
     }
@@ -492,7 +495,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     // But required only when the repo of parent and child entity is same.
     defaultGitContext.setParentEntityRepoName(environment.getRepo());
     defaultGitContext.setBranch(GitAwareContextHelper.getBranchInRequest());
-    defaultGitContext.setTransientBranch(infraGitBranch);
+    defaultGitContext.setTransientBranch(envGitBranch);
 
     return defaultGitContext;
   }

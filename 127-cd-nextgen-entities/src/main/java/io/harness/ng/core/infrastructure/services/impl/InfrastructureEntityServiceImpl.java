@@ -461,7 +461,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     Criteria criteria = getInfrastructureEqualityCriteriaForEnv(accountId, orgIdentifier, projectIdentifier, envRef);
 
     List<InfrastructureEntity> infrastructureEntityListForEnvIdentifier =
-        getAllInfrastructureFromEnvRef(accountId, orgIdentifier, projectIdentifier, envRef);
+        getAllInfrastructureMetadataFromEnvRef(accountId, orgIdentifier, projectIdentifier, envRef);
 
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       DeleteResult deleteResult = infrastructureRepository.delete(criteria);
@@ -612,7 +612,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   }
 
   @Override
-  public List<InfrastructureEntity> getAllInfrastructureFromIdentifierList(String accountIdentifier,
+  public List<InfrastructureEntity> getAllInfrastructureMetadataFromIdentifierList(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String envIdentifier, List<String> infraIdentifierList) {
     String[] envRefSplit = StringUtils.split(envIdentifier, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     if (envRefSplit == null || envRefSplit.length == 1) {
@@ -628,7 +628,35 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   }
 
   @Override
-  public List<InfrastructureEntity> getAllInfrastructureFromEnvRef(
+  public List<InfrastructureEntity> getAllInfrastructuresWithYamlFromIdentifierList(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, String environmentBranch,
+      List<String> infraIdentifierList) {
+    // fetch entities from db
+    List<InfrastructureEntity> infrastructureEntities = getAllInfrastructureMetadataFromIdentifierList(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifierList);
+    GitEntityInfo gitContextForInfra = getGitDetailsForInfrastructure(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, environmentBranch);
+
+    try (EntityGitDetailsGuard ignore = new EntityGitDetailsGuard(gitContextForInfra)) {
+      populateInfrastructuresWithYaml(infrastructureEntities, true);
+    } catch (CompletionException ex) {
+      // internal method always wraps the CompletionException, so we will have a cause
+      log.error(String.format("Error while getting infrastructure YAML: %s", infraIdentifierList), ex);
+      Throwables.throwIfUnchecked(ex.getCause());
+    } catch (Exception ex) {
+      log.error(
+          String.format("Unexpected error occurred while getting infrastructure YAML: %s", infraIdentifierList), ex);
+      throw new InternalServerErrorException(
+          String.format("Unexpected error occurred while getting infrastructure YAML: %s: [%s]", infraIdentifierList,
+              ex.getMessage()),
+          ex);
+    }
+
+    return infrastructureEntities;
+  }
+
+  @Override
+  public List<InfrastructureEntity> getAllInfrastructureMetadataFromEnvRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envRef) {
     String[] envRefSplit = StringUtils.split(envRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     if (envRefSplit == null || envRefSplit.length == 1) {
@@ -643,6 +671,31 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     }
   }
 
+  @Override
+  public List<InfrastructureEntity> getAllInfrastructuresWithYamlFromEnvRef(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envRef, String environmentBranch) {
+    List<InfrastructureEntity> infrastructureEntities =
+        getAllInfrastructureMetadataFromEnvRef(accountIdentifier, orgIdentifier, projectIdentifier, envRef);
+    GitEntityInfo gitContextForInfra =
+        getGitDetailsForInfrastructure(accountIdentifier, orgIdentifier, projectIdentifier, envRef, environmentBranch);
+
+    try (EntityGitDetailsGuard ignore = new EntityGitDetailsGuard(gitContextForInfra)) {
+      populateInfrastructuresWithYaml(infrastructureEntities, true);
+    } catch (CompletionException ex) {
+      // internal method always wraps the CompletionException, so we will have a cause
+      log.error(String.format("Error while getting infrastructure YAML for environment: %s", envRef), ex);
+      Throwables.throwIfUnchecked(ex.getCause());
+    } catch (Exception ex) {
+      log.error(
+          String.format("Unexpected error occurred while getting infrastructure YAML for environment: %s", envRef), ex);
+      throw new InternalServerErrorException(
+          String.format("Unexpected error occurred while getting infrastructure YAML for environment: %s: [%s]", envRef,
+              ex.getMessage()),
+          ex);
+    }
+
+    return infrastructureEntities;
+  }
   @Override
   public List<InfrastructureEntity> getAllInfrastructureFromEnvRefAndDeploymentType(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String envRef, ServiceDefinitionType deploymentType) {
@@ -666,10 +719,10 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   }
   @Override
   public String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
-      String envRef, List<String> infraIdentifiers, boolean deployToAll,
+      String envRef, String environmentBranch, List<String> infraIdentifiers, boolean deployToAll,
       NoInputMergeInputAction noInputMergeInputAction) {
-    Map<String, Object> yamlInputs = createInfrastructureInputsYamlInternal(
-        accountId, orgIdentifier, projectIdentifier, envRef, deployToAll, infraIdentifiers, noInputMergeInputAction);
+    Map<String, Object> yamlInputs = createInfrastructureInputsYamlInternal(accountId, orgIdentifier, projectIdentifier,
+        envRef, environmentBranch, deployToAll, infraIdentifiers, noInputMergeInputAction);
 
     if (isEmpty(yamlInputs)) {
       return null;
@@ -694,8 +747,8 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   }
 
   private Map<String, Object> createInfrastructureInputsYamlInternal(String accountId, String orgIdentifier,
-      String projectIdentifier, String envIdentifier, boolean deployToAll, List<String> infraIdentifiers,
-      NoInputMergeInputAction noInputMergeInputAction) {
+      String projectIdentifier, String envIdentifier, String environmentBranch, boolean deployToAll,
+      List<String> infraIdentifiers, NoInputMergeInputAction noInputMergeInputAction) {
     Map<String, Object> yamlInputs = new HashMap<>();
     List<ObjectNode> infraDefinitionInputList = new ArrayList<>();
     // create one mapper for all infra defs
@@ -703,11 +756,11 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
 
     List<InfrastructureEntity> infrastructureEntities;
     if (deployToAll) {
-      infrastructureEntities =
-          getAllInfrastructureFromEnvRef(accountId, orgIdentifier, projectIdentifier, envIdentifier);
+      infrastructureEntities = getAllInfrastructuresWithYamlFromEnvRef(
+          accountId, orgIdentifier, projectIdentifier, envIdentifier, environmentBranch);
     } else {
-      infrastructureEntities = getAllInfrastructureFromIdentifierList(
-          accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifiers);
+      infrastructureEntities = getAllInfrastructuresWithYamlFromIdentifierList(
+          accountId, orgIdentifier, projectIdentifier, envIdentifier, environmentBranch, infraIdentifiers);
     }
 
     for (InfrastructureEntity infraEntity : infrastructureEntities) {
@@ -874,8 +927,9 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, List<String> infraIds) {
     List<InfrastructureEntity> infrastructureEntities = new ArrayList<>();
     if (!EngineExpressionEvaluator.hasExpressions(environmentRef)) {
-      infrastructureEntities =
-          getAllInfrastructureFromIdentifierList(accountId, orgIdentifier, projectIdentifier, environmentRef, infraIds);
+      // this gets just metadata and will be deprecated with remote infrastructure support
+      infrastructureEntities = getAllInfrastructureMetadataFromIdentifierList(
+          accountId, orgIdentifier, projectIdentifier, environmentRef, infraIds);
     }
     List<InfrastructureYamlMetadata> infrastructureYamlMetadataList = new ArrayList<>();
     infrastructureEntities.forEach(infrastructureEntity
@@ -948,9 +1002,35 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
 
     try (EntityGitDetailsGuard ignore = new EntityGitDetailsGuard(getGitDetailsForInfrastructure(
              accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, environmentBranch))) {
-      return getInfrastructuresYamlInBatches(getAllInfrastructureFromIdentifierList(accountIdentifier, orgIdentifier,
-                                                 projectIdentifier, environmentRef, infraIds),
+      return getInfrastructuresYamlInBatches(getAllInfrastructureMetadataFromIdentifierList(accountIdentifier,
+                                                 orgIdentifier, projectIdentifier, environmentRef, infraIds),
           loadFromCache);
+    }
+  }
+
+  private void populateInfrastructuresWithYaml(
+      List<InfrastructureEntity> infrastructureEntities, boolean loadFromCache) {
+    // Sorting List so that git calls are made parallelly at the earliest.
+    List<InfrastructureEntity> sortedInfrastructureEntities = sortByStoreType(infrastructureEntities);
+    for (int i = 0; i < sortedInfrastructureEntities.size(); i += REMOTE_INFRASTRUCTURES_BATCH_SIZE) {
+      List<InfrastructureEntity> batch = getBatch(sortedInfrastructureEntities, i);
+
+      List<CompletableFuture<Void>> batchFutures = new ArrayList<>();
+
+      for (InfrastructureEntity infra : batch) {
+        if (StoreType.REMOTE.equals(infra.getStoreType())) {
+          CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+            // this updates the YAML from remote
+            infrastructureRepository.getRemoteInfrastructureWithYaml(infra, loadFromCache, false);
+          }, executorService);
+
+          batchFutures.add(future);
+        }
+      }
+
+      // Wait for the batch to complete
+      CompletableFuture<Void> allOf = CompletableFuture.allOf(batchFutures.toArray(new CompletableFuture[0]));
+      allOf.join();
     }
   }
 
@@ -1171,8 +1251,9 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
 
   private void checkIfInfraIsScopedToService(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<String> serviceRefs, String envRef, List<String> infraRefs) {
-    List<InfrastructureEntity> infrastructureEntities =
-        getAllInfrastructureFromIdentifierList(accountIdentifier, orgIdentifier, projectIdentifier, envRef, infraRefs);
+    // todo: support for remote infrastructures
+    List<InfrastructureEntity> infrastructureEntities = getAllInfrastructureMetadataFromIdentifierList(
+        accountIdentifier, orgIdentifier, projectIdentifier, envRef, infraRefs);
     if (CollectionUtils.isEmpty(infrastructureEntities)) {
       return;
     }
@@ -1196,8 +1277,9 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
 
   private void filterServicesForScopedInfra(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<String> serviceRefs, String envRef, List<String> infraRefs) {
-    List<InfrastructureEntity> infrastructureEntities =
-        getAllInfrastructureFromIdentifierList(accountIdentifier, orgIdentifier, projectIdentifier, envRef, infraRefs);
+    // todo: support for remote infrastructures
+    List<InfrastructureEntity> infrastructureEntities = getAllInfrastructureMetadataFromIdentifierList(
+        accountIdentifier, orgIdentifier, projectIdentifier, envRef, infraRefs);
     if (CollectionUtils.isEmpty(infrastructureEntities)) {
       return;
     }

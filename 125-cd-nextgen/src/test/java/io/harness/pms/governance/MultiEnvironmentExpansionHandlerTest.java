@@ -170,7 +170,8 @@ public class MultiEnvironmentExpansionHandlerTest extends CategoryTest {
                      .yaml(YamlUtils.writeYamlString(config1))
                      .build()))
         .when(infrastructureEntityService)
-        .getAllInfrastructureFromIdentifierList(anyString(), anyString(), anyString(), eq("my_environment"), anyList());
+        .getAllInfrastructureMetadataFromIdentifierList(
+            anyString(), anyString(), anyString(), eq("my_environment"), anyList());
   }
 
   @After

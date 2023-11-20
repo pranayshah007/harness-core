@@ -25,8 +25,11 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entity.InfraDefinitionReferenceProtoDTO;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitx.EntityGitDetailsGuard;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.security.NgManagerSourcePrincipalGuard;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.yaml.ParameterField;
@@ -75,13 +78,15 @@ public class InfraStructureDefinitionVisitorHelper implements ConfigValidator, E
       String projectIdentifier, Map<String, Object> contextMap) {
     InfraStructureDefinitionYaml infraYaml = (InfraStructureDefinitionYaml) object;
     final String infraRef = (String) infraYaml.getIdentifier().fetchFinalValue();
-    try {
+    try (NgManagerSourcePrincipalGuard ignore = new NgManagerSourcePrincipalGuard()) {
       final String fullQualifiedDomainName =
           VisitorParentPathUtils.getFullQualifiedDomainName(contextMap) + PATH_CONNECTOR + infraRef;
       final Map<String, String> metadata =
           new HashMap<>(Collections.singletonMap(PreFlightCheckMetadata.FQN, fullQualifiedDomainName));
 
       final String envRef = (String) contextMap.getOrDefault(EnvironmentYamlV2VisitorHelper.ENV_REF, "");
+      final String environmentBranch =
+          (String) contextMap.getOrDefault(EnvironmentYamlV2VisitorHelper.ENV_GIT_BRANCH, "");
 
       if (EmptyPredicate.isEmpty(envRef)) {
         log.warn("environmentRef is not present in context map while updating infrastructure references.");
@@ -105,9 +110,15 @@ public class InfraStructureDefinitionVisitorHelper implements ConfigValidator, E
             return result;
           }
 
-          Optional<InfrastructureEntity> infraEntity = infrastructureEntityService.get(
-              envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
-              envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), infraRef);
+          Optional<InfrastructureEntity> infraEntity;
+          GitEntityInfo gitContextForInfra = infrastructureEntityService.getGitDetailsForInfrastructure(
+              accountIdentifier, orgIdentifier, projectIdentifier, envRef, environmentBranch);
+
+          try (EntityGitDetailsGuard entityGitDetailsGuard = new EntityGitDetailsGuard(gitContextForInfra)) {
+            infraEntity = infrastructureEntityService.get(envIdentifierRef.getAccountIdentifier(),
+                envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier(),
+                envIdentifierRef.getIdentifier(), infraRef);
+          }
 
           if (infraEntity.isEmpty()) {
             return result;

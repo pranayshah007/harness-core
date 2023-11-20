@@ -53,6 +53,7 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 public class EnvironmentYamlV2VisitorHelper implements ConfigValidator, EntityReferenceExtractor {
   public static final String ENV_REF = "envRef";
+  public static final String ENV_GIT_BRANCH = "envGitBranch";
 
   @Override
   public void validate(Object object, ValidationVisitor visitor) {
@@ -133,6 +134,7 @@ public class EnvironmentYamlV2VisitorHelper implements ConfigValidator, EntityRe
       contextMap.put(ENV_REF, environmentYamlV2.getEnvironmentRef().getExpressionValue());
       result.add(entityDetail);
     }
+    contextMap.put(ENV_GIT_BRANCH, environmentYamlV2.getGitBranch());
     return result;
   }
 

@@ -499,7 +499,7 @@ public class InfrastructureResource {
           NGCommonEntityConstants.DEPLOY_TO_ALL) @DefaultValue("false") boolean deployToAll) {
     String infrastructureInputsYaml =
         infrastructureEntityService.createInfrastructureInputsFromYaml(accountId, orgIdentifier, projectIdentifier,
-            environmentIdentifier, infraIdentifiers, deployToAll, NoInputMergeInputAction.RETURN_EMPTY);
+            environmentIdentifier, null, infraIdentifiers, deployToAll, NoInputMergeInputAction.RETURN_EMPTY);
     return ResponseDTO.newResponse(
         NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(infrastructureInputsYaml).build());
   }

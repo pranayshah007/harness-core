@@ -42,11 +42,14 @@ import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.HarnessStringUtils;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.security.NgManagerSourcePrincipalGuard;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -109,16 +112,24 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   public PipelineFilter getFilter(
       FilterCreationContext filterCreationContext, DeploymentStageNode deploymentStageNode) {
     CdFilterBuilder filterBuilder = CdFilter.builder();
+    try (NgManagerSourcePrincipalGuard ignore =
+             new NgManagerSourcePrincipalGuard(filterCreationContext.getSetupMetadata())) {
+      validateStrategy(deploymentStageNode);
 
-    validateStrategy(deploymentStageNode);
+      final DeploymentStageConfig deploymentStageConfig = deploymentStageNode.getDeploymentStageConfig();
 
-    final DeploymentStageConfig deploymentStageConfig = deploymentStageNode.getDeploymentStageConfig();
+      validate(filterCreationContext, deploymentStageConfig);
+      addServiceFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
+      addInfraFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
 
-    validate(filterCreationContext, deploymentStageConfig);
-    addServiceFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
-    addInfraFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
-
-    return filterBuilder.build();
+      return filterBuilder.build();
+    } catch (WingsException ex) {
+      log.error("Error while adding filters in DeploymentStageFilterJsonCreatorV2", ex);
+      throw ex;
+    } catch (Exception ex) {
+      throw new InternalServerErrorException(
+          "Unexpected error while adding filters in DeploymentStageFilterJsonCreatorV2", ex);
+    }
   }
 
   private void validateStrategy(DeploymentStageNode stageNode) {

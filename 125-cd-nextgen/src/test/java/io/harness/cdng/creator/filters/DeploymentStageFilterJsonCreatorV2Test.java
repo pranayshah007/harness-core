@@ -157,7 +157,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
     doReturn(Optional.of(infra)).when(infraService).get("accountId", "orgId", "projectId", "env-id", "infra-id");
     doReturn(Lists.newArrayList(infra))
         .when(infraService)
-        .getAllInfrastructureFromIdentifierList(
+        .getAllInfrastructureMetadataFromIdentifierList(
             "accountId", "orgId", "projectId", "env-id", Lists.newArrayList("infra-id"));
     doReturn(true).when(ngFeatureFlagHelperService).isEnabled("accountId", FeatureName.CDS_SCOPE_INFRA_TO_SERVICES);
   }

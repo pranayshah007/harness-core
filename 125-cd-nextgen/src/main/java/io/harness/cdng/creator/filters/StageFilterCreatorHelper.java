@@ -48,6 +48,7 @@ public class StageFilterCreatorHelper {
       return;
     }
     final ParameterField<String> environmentRef = env.getEnvironmentRef();
+    String environmentBranch = env.getGitBranch();
     if (environmentRef == null) {
       return;
     }
@@ -57,7 +58,7 @@ public class StageFilterCreatorHelper {
     environmentEntityOptional.ifPresent(environment -> {
       filterBuilder.environmentName(environmentRef.getValue());
       final List<InfraStructureDefinitionYaml> infraList = getInfraStructureDefinitionYamlsList(env);
-      addFiltersForInfraYamlList(filterCreationContext, filterBuilder, environment, infraList);
+      addFiltersForInfraYamlList(filterCreationContext, filterBuilder, environment, infraList, environmentBranch);
     });
   }
 
@@ -76,13 +77,13 @@ public class StageFilterCreatorHelper {
   }
 
   private void addFiltersForInfraYamlList(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
-      Environment entity, List<InfraStructureDefinitionYaml> infraList) {
+      Environment entity, List<InfraStructureDefinitionYaml> infraList, String environmentBranch) {
     if (isEmpty(infraList)) {
       return;
     }
-    List<InfrastructureEntity> infrastructureEntities = infraService.getAllInfrastructureFromIdentifierList(
+    List<InfrastructureEntity> infrastructureEntities = infraService.getAllInfrastructuresWithYamlFromIdentifierList(
         filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
-        filterCreationContext.getSetupMetadata().getProjectId(), entity.getIdentifier(),
+        filterCreationContext.getSetupMetadata().getProjectId(), entity.getIdentifier(), environmentBranch,
         infraList.stream()
             .map(InfraStructureDefinitionYaml::getIdentifier)
             .filter(field -> !field.isExpression())

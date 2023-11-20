@@ -127,14 +127,16 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     infrastructureEntityService.create(createInfraRequest);
     verify(infrastructureEntitySetupUsageHelper, times(1)).createSetupUsages(eq(createInfraRequest), any());
 
-    String infrastructureInputsFromYaml = infrastructureEntityService.createInfrastructureInputsFromYaml(ACCOUNT_ID,
-        ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER"), false, NoInputMergeInputAction.RETURN_EMPTY);
+    String infrastructureInputsFromYaml =
+        infrastructureEntityService.createInfrastructureInputsFromYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER",
+            null, Arrays.asList("IDENTIFIER"), false, NoInputMergeInputAction.RETURN_EMPTY);
     String resFile = "infrastructure-with-runtime-inputs-res.yaml";
     String resInputs = readFile(resFile);
     assertThat(infrastructureInputsFromYaml).isEqualTo(resInputs);
 
-    infrastructureInputsFromYaml = infrastructureEntityService.createInfrastructureInputsFromYaml(ACCOUNT_ID, ORG_ID,
-        PROJECT_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER"), false, NoInputMergeInputAction.ADD_IDENTIFIER_NODE);
+    infrastructureInputsFromYaml =
+        infrastructureEntityService.createInfrastructureInputsFromYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER",
+            null, Arrays.asList("IDENTIFIER"), false, NoInputMergeInputAction.ADD_IDENTIFIER_NODE);
     assertThat(infrastructureInputsFromYaml).isEqualTo(resInputs);
   }
 
@@ -157,7 +159,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     String infrastructureInputsFromYaml =
         infrastructureEntityService.createInfrastructureInputsFromYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER",
-            Arrays.asList("IDENTIFIER1"), false, NoInputMergeInputAction.RETURN_EMPTY);
+            null, Arrays.asList("IDENTIFIER1"), false, NoInputMergeInputAction.RETURN_EMPTY);
 
     assertThat(infrastructureInputsFromYaml).isNull();
   }
@@ -181,7 +183,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     String infrastructureInputsFromYaml =
         infrastructureEntityService.createInfrastructureInputsFromYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER",
-            Arrays.asList("IDENTIFIER"), false, NoInputMergeInputAction.ADD_IDENTIFIER_NODE);
+            null, Arrays.asList("IDENTIFIER"), false, NoInputMergeInputAction.ADD_IDENTIFIER_NODE);
 
     assertThat(infrastructureInputsFromYaml).isNotNull().isNotEmpty();
     String resInputs = readFile("infra-inputset-yaml-with-no-runtime-inputs.yaml");

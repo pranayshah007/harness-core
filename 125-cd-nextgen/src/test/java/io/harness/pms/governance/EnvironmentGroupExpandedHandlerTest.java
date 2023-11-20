@@ -188,7 +188,7 @@ public class EnvironmentGroupExpandedHandlerTest extends CategoryTest {
                      .yaml(YamlUtils.writeYamlString(config1))
                      .build()))
         .when(infrastructureEntityService)
-        .getAllInfrastructureFromIdentifierList(
+        .getAllInfrastructureMetadataFromIdentifierList(
             anyString(), anyString(), anyString(), eq("account.my_environment"), anyList());
   }
 }

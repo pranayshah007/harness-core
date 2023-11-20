@@ -585,11 +585,14 @@ public class ArtifactResourceUtils {
             service -> yamlFields.add(getYamlField(service.fetchNonEmptyYaml(), YAMLFieldNameConstants.SERVICE)));
       }
     }
+    String envGitBranch = contextMap.get(ENV_GIT_BRANCH);
     if (isNotEmpty(environmentId)) {
-      Optional<Environment> optionalEnvironment =
-          environmentService.get(accountId, orgIdentifier, projectIdentifier, environmentId, false);
-      optionalEnvironment.ifPresent(environment
-          -> yamlFields.add(getYamlField(environment.fetchNonEmptyYaml(), YAMLFieldNameConstants.ENVIRONMENT)));
+      try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(envGitBranch)) {
+        Optional<Environment> optionalEnvironment =
+            environmentService.get(accountId, orgIdentifier, projectIdentifier, environmentId, false);
+        optionalEnvironment.ifPresent(environment
+            -> yamlFields.add(getYamlField(environment.fetchNonEmptyYaml(), YAMLFieldNameConstants.ENVIRONMENT)));
+      }
     }
     return yamlFields;
   }

@@ -184,8 +184,10 @@ public class EnvironmentExpansionUtils {
                                          .filter(Predicate.not(NGExpressionUtils::matchesGenericExpressionPattern))
                                          .collect(Collectors.toList());
 
-    final List<InfrastructureEntity> infrastructures = infrastructureService.getAllInfrastructureFromIdentifierList(
-        accountId, orgId, projectId, environmentRef, identifiers);
+    // todo: implement support for remote infrastructures
+    final List<InfrastructureEntity> infrastructures =
+        infrastructureService.getAllInfrastructureMetadataFromIdentifierList(
+            accountId, orgId, projectId, environmentRef, identifiers);
 
     if (isEmpty(infrastructures)) {
       return List.of();

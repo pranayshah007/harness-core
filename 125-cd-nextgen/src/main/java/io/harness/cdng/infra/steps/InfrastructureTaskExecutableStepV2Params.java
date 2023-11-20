@@ -26,5 +26,6 @@ public class InfrastructureTaskExecutableStepV2Params implements StepParameters 
   private ParameterField<Map<String, Object>> infraInputs;
   private ServiceDefinitionType deploymentType;
   private ParameterField<Boolean> skipInstances;
-  public String gitBranch;
+  // statically linked environment's branch
+  private String gitBranch;
 }

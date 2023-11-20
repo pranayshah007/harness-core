@@ -73,11 +73,18 @@ public interface InfrastructureEntityService {
   Page<InfrastructureEntity> bulkCreate(
       @NotEmpty String accountId, @NotNull List<InfrastructureEntity> infrastructureEntities);
 
-  List<InfrastructureEntity> getAllInfrastructureFromIdentifierList(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String envIdentifier, List<String> infraIdentifier);
+  List<InfrastructureEntity> getAllInfrastructureMetadataFromIdentifierList(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, List<String> infraIdentifier);
 
-  List<InfrastructureEntity> getAllInfrastructureFromEnvRef(
+  List<InfrastructureEntity> getAllInfrastructuresWithYamlFromIdentifierList(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, String environmentBranch,
+      List<String> infraIdentifiers);
+
+  List<InfrastructureEntity> getAllInfrastructureMetadataFromEnvRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier);
+
+  List<InfrastructureEntity> getAllInfrastructuresWithYamlFromEnvRef(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String envIdentifier, String environmentBranch);
 
   List<InfrastructureEntity> getAllInfrastructureFromEnvRefAndDeploymentType(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String envIdentifier, ServiceDefinitionType deploymentType);
@@ -86,7 +93,7 @@ public interface InfrastructureEntityService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
   String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
-      String environmentIdentifier, List<String> infraIdentifiers, boolean deployToAll,
+      String environmentIdentifier, String environmentBranch, List<String> infraIdentifiers, boolean deployToAll,
       NoInputMergeInputAction noInputMergeInputAction);
 
   UpdateResult batchUpdateInfrastructure(String accountIdentifier, String orgIdentifier, String projectIdentifier,

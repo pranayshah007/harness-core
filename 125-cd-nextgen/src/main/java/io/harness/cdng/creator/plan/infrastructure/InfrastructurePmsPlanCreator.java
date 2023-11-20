@@ -119,14 +119,14 @@ public class InfrastructurePmsPlanCreator {
       infraInputs = ParameterField.createValueField(null);
     }
 
-    String gitBranch = GitXUtils.getBranchIfNotEmpty(environmentYamlV2.getGitBranch());
+    String envGitBranch = GitXUtils.getBranchIfNotEmpty(environmentYamlV2.getGitBranch());
     InfrastructureTaskExecutableStepV2Params params = InfrastructureTaskExecutableStepV2Params.builder()
                                                           .envRef(environmentYamlV2.getEnvironmentRef())
                                                           .infraRef(infraRef)
                                                           .infraInputs(infraInputs)
                                                           .deploymentType(deploymentType)
                                                           .skipInstances(skipInstances)
-                                                          .gitBranch(gitBranch)
+                                                          .gitBranch(envGitBranch)
                                                           .build();
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
@@ -165,12 +165,12 @@ public class InfrastructurePmsPlanCreator {
       infraInputs = ParameterField.createValueField(null);
     }
 
-    String gitBranch = GitXUtils.getBranchIfNotEmpty(environmentYamlV2.getGitBranch());
+    String envGitBranch = GitXUtils.getBranchIfNotEmpty(environmentYamlV2.getGitBranch());
     InfrastructureTaskExecutableStepV2Params params = InfrastructureTaskExecutableStepV2Params.builder()
                                                           .envRef(environmentYamlV2.getEnvironmentRef())
                                                           .infraRef(infraRef)
                                                           .infraInputs(infraInputs)
-                                                          .gitBranch(gitBranch)
+                                                          .gitBranch(envGitBranch)
                                                           .build();
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
