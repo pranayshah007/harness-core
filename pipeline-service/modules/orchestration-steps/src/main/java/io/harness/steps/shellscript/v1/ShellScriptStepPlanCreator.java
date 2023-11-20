@@ -32,7 +32,7 @@ import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.HarnessYamlVersion;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
@@ -43,6 +43,7 @@ import io.harness.when.utils.v1.RunInfoUtilsV1;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -51,12 +52,16 @@ import java.util.Set;
 import lombok.SneakyThrows;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
-public class ShellScriptStepPlanCreator implements PartialPlanCreator<YamlField> {
+public class ShellScriptStepPlanCreator implements PartialPlanCreator<ShellScriptStepNodeV1> {
   @Inject private KryoSerializer kryoSerializer;
 
   @Override
-  public Class<YamlField> getFieldClass() {
-    return YamlField.class;
+  public ShellScriptStepNodeV1 getFieldObject(YamlField field) {
+    try {
+      return YamlUtils.read(field.getNode().toString(), ShellScriptStepNodeV1.class);
+    } catch (IOException e) {
+      return null;
+    }
   }
 
   @Override
@@ -66,15 +71,14 @@ public class ShellScriptStepPlanCreator implements PartialPlanCreator<YamlField>
 
   @SneakyThrows
   @Override
-  public PlanCreationResponse createPlanForField(PlanCreationContext ctx, YamlField field) {
+  public PlanCreationResponse createPlanForField(PlanCreationContext ctx, ShellScriptStepNodeV1 stepNode) {
     final boolean isStepInsideRollback = PlanCreatorUtilsV1.isStepInsideRollback(ctx.getDependency());
-    ShellScriptStepNodeV1 stepNode = YamlUtils.read(field.getNode().toString(), ShellScriptStepNodeV1.class);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, stepNode.getUuid()))
-            .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, field.getNodeName()))
-            .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, field.getId()))
+            .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, stepNode.getName()))
+            .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, stepNode.getId()))
             .stepType(StepSpecTypeConstantsV1.SHELL_SCRIPT_STEP_TYPE)
             .group(StepOutcomeGroup.STEP.name())
             // TODO: send rollback parameters to this method which can be extracted from dependency
@@ -94,18 +98,18 @@ public class ShellScriptStepPlanCreator implements PartialPlanCreator<YamlField>
             .skipUnresolvedExpressionsCheck(true)
             .expressionMode(ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
 
-    List<AdviserObtainment> adviserObtainmentList =
-        PlanCreatorUtilsV1.getAdviserObtainmentsForStep(kryoSerializer, ctx.getDependency(), field.getNode());
-    if (field.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField("strategy") == null) {
+    List<AdviserObtainment> adviserObtainmentList = PlanCreatorUtilsV1.getAdviserObtainmentsForStep(
+        kryoSerializer, ctx.getDependency(), stepNode.getFailure() != null ? stepNode.getFailure().getValue() : null);
+    if (ParameterField.isNull(stepNode.getStrategy())) {
       builder.adviserObtainments(adviserObtainmentList);
     }
     Map<String, HarnessValue> dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(
-        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, adviserObtainmentList);
+        kryoSerializer, ctx, stepNode.getUuid(), dependenciesNodeMap, adviserObtainmentList);
     return PlanCreationResponse.builder()
         .planNode(builder.build())
         .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                           .toBuilder()
-                          .putDependencyMetadata(field.getUuid(),
+                          .putDependencyMetadata(stepNode.getUuid(),
                               Dependency.newBuilder()
                                   .setNodeMetadata(HarnessStruct.newBuilder().putAllData(dependencyMetadata).build())
                                   .build())

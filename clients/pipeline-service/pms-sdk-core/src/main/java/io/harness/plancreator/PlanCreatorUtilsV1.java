@@ -100,6 +100,18 @@ public class PlanCreatorUtilsV1 {
     return adviserObtainments;
   }
 
+  public List<AdviserObtainment> getAdviserObtainmentsForStep(
+      KryoSerializer kryoSerializer, Dependency dependency, List<FailureConfigV1> stepFailureStrategies) {
+    List<AdviserObtainment> adviserObtainments = new ArrayList<>();
+    List<AdviserObtainment> failureStrategyAdvisers = getFailureStrategiesAdvisers(
+        kryoSerializer, dependency, stepFailureStrategies, getNextNodeUuid(kryoSerializer, dependency), false);
+    adviserObtainments.addAll(failureStrategyAdvisers);
+    AdviserObtainment nextStepAdviser = getNextStepAdviser(kryoSerializer, dependency);
+    if (nextStepAdviser != null) {
+      adviserObtainments.add(nextStepAdviser);
+    }
+    return adviserObtainments;
+  }
   public String getNextNodeUuid(KryoSerializer kryoSerializer, Dependency dependency) {
     Optional<Object> nextNodeIdOptional =
         getDeserializedObjectFromDependency(dependency, kryoSerializer, PlanCreatorConstants.NEXT_ID, false);
@@ -234,6 +246,12 @@ public class PlanCreatorUtilsV1 {
   private List<AdviserObtainment> getFailureStrategiesAdvisers(KryoSerializer kryoSerializer, Dependency dependency,
       YamlNode yamlNode, String nextNodeUuid, boolean isStepInsideRollback) {
     List<FailureConfigV1> stepFailureStrategies = getFailureStrategies(yamlNode);
+    return getFailureStrategiesAdvisers(
+        kryoSerializer, dependency, stepFailureStrategies, nextNodeUuid, isStepInsideRollback);
+  }
+
+  private List<AdviserObtainment> getFailureStrategiesAdvisers(KryoSerializer kryoSerializer, Dependency dependency,
+      List<FailureConfigV1> stepFailureStrategies, String nextNodeUuid, boolean isStepInsideRollback) {
     List<FailureConfigV1> stageFailureStrategies = getStageFailureStrategies(kryoSerializer, dependency);
     List<FailureConfigV1> stepGroupFailureStrategies = getStepGroupFailureStrategies(kryoSerializer, dependency);
     Map<FailureStrategyActionConfigV1, Collection<FailureType>> actionMap =
@@ -242,7 +260,6 @@ public class PlanCreatorUtilsV1 {
     return getFailureStrategiesAdvisers(
         kryoSerializer, actionMap, isStepInsideRollback, nextNodeUuid, PlanCreatorUtilsV1::getAdviserObtainmentForStep);
   }
-
   Optional<Object> getDeserializedObjectFromParentInfo(
       KryoSerializer kryoSerializer, Dependency dependency, String key, boolean asInflatedObject) {
     if (dependency != null && dependency.getParentInfo().getDataMap().containsKey(key)) {

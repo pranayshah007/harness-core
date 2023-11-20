@@ -16,7 +16,14 @@ import java.util.Map;
 import java.util.Set;
 
 public interface PartialPlanCreator<T> {
-  Class<T> getFieldClass();
+  default Class<T> getFieldClass() {
+    return null;
+  }
+
+  default T getFieldObject(YamlField field) {
+    return null;
+  }
+
   Map<String, Set<String>> getSupportedTypes();
 
   PlanCreationResponse createPlanForField(PlanCreationContext ctx, T field);

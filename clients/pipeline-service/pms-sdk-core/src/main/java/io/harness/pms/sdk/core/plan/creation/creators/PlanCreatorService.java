@@ -280,13 +280,16 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
         }
 
         PartialPlanCreator planCreator = planCreatorOptional.get();
-        Class<?> cls = planCreator.getFieldClass();
+        Object obj = planCreator.getFieldObject(field);
+        if (obj == null) {
+          Class<?> cls = planCreator.getFieldClass();
+          // ExecutionInput is supported for V0 YAML only. Not supported with YAML simplification.
+          obj = YamlField.class.isAssignableFrom(cls) ? field : YamlUtils.read(field.getNode().toString(), cls);
+        }
         String executionInputTemplate = "";
-        // ExecutionInput is supported for V0 YAML only. Not supported with YAML simplification.
         if (HarnessYamlVersion.V0.equals(ctx.getYamlVersion())) {
           executionInputTemplate = planCreator.getExecutionInputTemplateAndModifyYamlField(field);
         }
-        Object obj = YamlField.class.isAssignableFrom(cls) ? field : YamlUtils.read(field.getNode().toString(), cls);
 
         try {
           PlanCreationResponse planForField = planCreator.createPlanForField(
