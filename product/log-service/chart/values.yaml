@@ -32,7 +32,7 @@ global:
             keys:
               S3_USER: ""
               S3_PASSWORD: ""
-        secretManagement: 
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -86,7 +86,6 @@ s3:
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
-
 redis:
   disableWatcher: false
   protocol: ""
@@ -113,7 +112,6 @@ redis:
             REDIS_PASSWORD:
               name: ""
               property: ""
-
 image:
   registry: docker.io
   repository: harness/log-service-signed
@@ -122,18 +120,14 @@ image:
   tag: "release-128-ubi"
   digest: ""
   imagePullSecrets: []
-
 logServiceS3AccessKeyID:
   name: minio
   key: root-user
-
 logServiceS3SecretAccessKey:
   name: minio
   key: root-password
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   # Specifies whether a service account should be created
   create: false
@@ -142,50 +136,38 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: "harness-default"
-
 podAnnotations: {}
-
 imagePullSecrets: {}
-
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
 
 securityContext:
   runAsUser: 65534
   runAsNonRoot: true
-
 resources:
   limits:
     memory: 3072Mi
   requests:
     cpu: 1
     memory: 3072Mi
-
 service:
   type: ClusterIP
   port: 8079
   annotations: {}
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 additionalConfigs: {}
-
 # extraVolumes:
 # - name: volume-test
 #   configMap:
 #     name: test-config
 #     readOnly: true
 extraVolumes: []
-
 # extraVolumeMounts:
 #   - name: test-volume-mount
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
-
 # lifecycleHooks:
 #   postStart:
 #     exec:
@@ -197,7 +179,6 @@ virtualService:
   annotations: {}
 ingress:
   annotations: {}
-
 secrets:
   default:
     LOG_SERVICE_GLOBAL_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
@@ -219,4 +200,6 @@ secrets:
           LOG_SERVICE_SECRET:
             name: ""
             property: ""
-
+configData:
+  LOG_SERVICE_S3_PATH_STYLE: "true"
+  LOG_SERVICE_DISABLE_AUTH: "true"
