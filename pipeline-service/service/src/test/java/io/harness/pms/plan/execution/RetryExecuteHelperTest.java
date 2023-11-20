@@ -616,6 +616,15 @@ public class RetryExecuteHelperTest extends CategoryTest {
     replacedProcessedYaml = retryExecuteHelper.retryProcessedYaml(
         previousYaml, currentYaml, Collections.singletonList("sssss"), new ArrayList<>(), HarnessYamlVersion.V0);
     assertEquals(replacedProcessedYaml, resultProcessedYaml);
+
+    // Retry failed deployment stage. First run was missing infrastructureDefinitions input. Retry execution is fixed
+    // to provide infrastructureDefinitions.
+    previousYaml = readFile("retry/previous-retry-processed-yaml-without-infraDef.yaml");
+    currentYaml = readFile("retry/current-retry-processed-yaml-without-infraDef.yaml");
+    resultProcessedYaml = readFile("retry/result-retry-processed-yaml-without-infraDef.yaml");
+    replacedProcessedYaml = retryExecuteHelper.retryProcessedYaml(
+        previousYaml, currentYaml, Collections.singletonList("stage1"), new ArrayList<>(), HarnessYamlVersion.V0);
+    assertEquals(replacedProcessedYaml, resultProcessedYaml);
   }
 
   @Test

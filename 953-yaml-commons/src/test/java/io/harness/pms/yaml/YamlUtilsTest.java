@@ -970,4 +970,52 @@ public class YamlUtilsTest extends CategoryTest {
     StringNGVariableV1 stringNGVariableV1 = (StringNGVariableV1) ngVariableV1Wrapper.getMap().get("var1");
     assertEquals(stringNGVariableV1.getValue().getValue(), "abc");
   }
+
+  @Test
+  @Owner(developers = OwnerRule.VINICIUS)
+  @Category(UnitTests.class)
+  public void testReplaceFieldInJsonNodeFromAnotherJsonNode() throws IOException {
+    String previousYaml = "someNode:\n"
+        + "  stringNode: managerServiceDeployment\n"
+        + "  listNode: someValue\n";
+    String currentYaml = "someNode:\n"
+        + "  stringNode: managerServiceDeployment\n"
+        + "  listNode:\n"
+        + "    - name: entry1\n"
+        + "      type: Number\n"
+        + "      default: 1\n"
+        + "      value: someValue\n"
+        + "  additionalNode: Manager Service Deployment\n";
+    YamlField previousYamlField = YamlUtils.readTree(YamlUtils.injectUuid(previousYaml));
+    YamlField currentYamlField = YamlUtils.readTree(YamlUtils.injectUuid(currentYaml));
+    String expectedSomeNodeUuid = previousYamlField.getNode().getField("someNode").getNode().getUuid();
+    String expectedStringNode =
+        previousYamlField.getNode().getField("someNode").getNode().getField("stringNode").toString();
+    String expectedListNodeFirstEntryUuid = currentYamlField.getNode()
+                                                .getField("someNode")
+                                                .getNode()
+                                                .getField("listNode")
+                                                .getNode()
+                                                .asArray()
+                                                .get(0)
+                                                .getUuid();
+    String expectedAdditionalNode =
+        currentYamlField.getNode().getField("someNode").getNode().getField("additionalNode").toString();
+    YamlUtils.replaceFieldInJsonNodeFromAnotherJsonNode(currentYamlField.getNode().getCurrJsonNode(),
+        previousYamlField.getNode().getCurrJsonNode(), YAMLFieldNameConstants.UUID);
+    assertThat(currentYamlField.getNode().getField("someNode").getNode().getUuid()).isEqualTo(expectedSomeNodeUuid);
+    assertThat(currentYamlField.getNode().getField("someNode").getNode().getField("stringNode").toString())
+        .isEqualTo(expectedStringNode);
+    assertThat(currentYamlField.getNode()
+                   .getField("someNode")
+                   .getNode()
+                   .getField("listNode")
+                   .getNode()
+                   .asArray()
+                   .get(0)
+                   .getUuid())
+        .isEqualTo(expectedListNodeFirstEntryUuid);
+    assertThat(currentYamlField.getNode().getField("someNode").getNode().getField("additionalNode").toString())
+        .isEqualTo(expectedAdditionalNode);
+  }
 }
