@@ -11,64 +11,27 @@ metadata:
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
-  CACHE_BACKEND: "REDIS"
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   CACHE_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  CACHE_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
   CACHE_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   CACHE_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  DEPLOY_MODE: KUBERNETES_ONPREM
   LOGGING_LEVEL: {{ .Values.appLogLevel }}
   LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
   LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   MEMORY: {{ .Values.java.memory | quote }}
-  MANAGER_TARGET: harness-manager:9879
-  MANAGER_AUTHORITY: harness-manager:9879
-  GRPC_SERVER_PORT: "12011"
-  NG_MANAGER_TARGET: ng-manager:9979
-  NG_MANAGER_AUTHORITY: ng-manager:9979
-  NG_MANAGER_GITSYNC_TARGET: ng-manager:13002
-  NG_MANAGER_GITSYNC_AUTHORITY: ng-manager:13002
-  CI_MANAGER_TARGET: ci-manager:9979
-  CI_MANAGER_AUTHORITY: ci-manager:9979
-  SCM_SERVICE_URI: "scm-service:8091"
   EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   PIPELINE_SERVICE_BASE_URL: '{{ .Values.global.loadbalancerURL }}/ng/#'
   PMS_API_BASE_URL: '{{ .Values.global.loadbalancerURL }}/gateway/pipeline/api/'
   LOG_STREAMING_SERVICE_BASEURL: 'http://log-service.{{ .Release.Namespace }}.svc.cluster.local:8079/'
-  MANAGER_BASE_URL: 'http://harness-manager:9090/api/'
-  NG_MANAGER_BASE_URL: 'http://ng-manager:7090/'
   WEBHOOK_TRIGGER_BASEURL: '{{ .Values.global.loadbalancerURL }}/ng/api/'
   CUSTOM_TRIGGER_BASEURL: '{{ .Values.global.loadbalancerURL }}/gateway/pipeline/api/'
-  ACCESS_CONTROL_BASE_URL: 'http://access-control:9006/api/'
-  NOTIFICATION_BASE_URL: 'http://platform-service:9005/api/'
-  TEMPLATE_SERVICE_ENDPOINT: 'http://template-service:15002/api/'
-  CI_MANAGER_BASE_URL: 'http://ci-manager:7090/'
-  MANAGER_CLIENT_BASEURL: 'http://harness-manager:9090/api/'
-  AUTH_ENABLED: "true"
-  USE_REDIS_FOR_INTERRUPTS: "true"
-  USE_REDIS_FOR_ORCHESTRATION_EVENTS: "true"
-  USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
-  MOCK_ACCESS_CONTROL_SERVICE: "false"
-  ACCESS_CONTROL_ENABLED: "true"
-  ENABLE_DASHBOARD_TIMESCALE: "true"
-  SHOULD_USE_INSTANCE_CACHE: "false"
-  STO_MANAGER_BASE_URL: 'http://sto-manager:7090/'
-  STO_MANAGER_AUTHORITY: sto-manager:9979
-  STO_MANAGER_TARGET: sto-manager:9979
-  CV_MANAGER_BASE_URL: 'http://cv-nextgen:6060/cv/api/'
-  CVNG_MANAGER_AUTHORITY: cv-nextgen:9979
-  CVNG_MANAGER_TARGET: cv-nextgen:9979
   {{- if .Values.global.opa.enabled }}
   OPA_SERVER_BASEURL: 'http://policy-mgmt.{{ .Release.Namespace }}.svc.cluster.local:3000/'
   {{- end }}
-  ENABLE_AUDIT : 'true'
-  AUDIT_SERVICE_BASE_URL: http://platform-service:9005/api/
   DISABLE_FREEZE_NOTIFY_TEMPLATE: '{{ .Values.global.disableFreezeNotifyTemplate }}'
   LOG_STREAMING_CONTAINER_STEP_BASE_URL: '{{ .Values.global.loadbalancerURL }}/log-service/'
   ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
