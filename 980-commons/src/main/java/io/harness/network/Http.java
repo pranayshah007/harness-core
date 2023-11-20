@@ -129,6 +129,41 @@ public class Http {
             }
           });
 
+  LoadingCache<HttpURLWithProxy, Integer> responseCodeForValidationWithProxy =
+      CacheBuilder.newBuilder()
+          .maximumSize(1000)
+          .expireAfterWrite(1, TimeUnit.MINUTES)
+          .build(new CacheLoader<HttpURLWithProxy, Integer>() {
+            @Override
+            public Integer load(HttpURLWithProxy httpURLWithProxy) throws IOException {
+              log.info("Testing connectivity");
+
+              // Create a trust manager that does not validate certificate chains
+              // Install the all-trusting trust manager
+              HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+              // Create all-trusting host name verifier
+              HostnameVerifier allHostsValid = (s, sslSession) -> true;
+              // Install the all-trusting host verifier
+              HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+              HttpURLConnection connection = getHttpsURLConnectionWithProxy(
+                  httpURLWithProxy.getUrl(), httpURLWithProxy.getProxyHost(), httpURLWithProxy.getProxyPort());
+              try {
+                // Changed to GET as some providers like artifactory SAAS is not
+                // accepting HEAD requests
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(15000);
+                connection.setReadTimeout(15000);
+                int responseCode = connection.getResponseCode();
+                log.info("Returned code {}", responseCode);
+                return responseCode;
+              } finally {
+                if (connection != null) {
+                  connection.disconnect();
+                }
+              }
+            }
+          });
+
   LoadingCache<HttpURLHeaderInfo, Integer> responseCodeForValidationWithoutFollowingRedirect =
       CacheBuilder.newBuilder()
           .maximumSize(1000)
@@ -258,6 +293,21 @@ public class Http {
     return false;
   }
 
+  public static boolean connectableHttpUrlWithProxy(
+      String url, String proxyHost, Integer proxyPort, boolean ignoreResponseCode) {
+    try (UrlLogContext ignore = new UrlLogContext(url, OVERRIDE_ERROR)) {
+      try {
+        return checkResponseCode(
+            responseCodeForValidationWithProxy.get(
+                HttpURLWithProxy.builder().url(url).proxyHost(proxyHost).proxyPort(proxyPort).build()),
+            ignoreResponseCode);
+      } catch (Exception e) {
+        log.info("Could not connect: {}", e.getMessage());
+      }
+    }
+    return false;
+  }
+
   public static boolean connectableHttpUrlWithoutFollowingRedirect(
       String url, List<KeyValuePair> headers, boolean ignoreResponseCode) {
     try (UrlLogContext ignore = new UrlLogContext(url, OVERRIDE_ERROR)) {
@@ -306,6 +356,20 @@ public class Http {
     HttpURLConnection connection;
     if (shouldUseNonProxy(url)) {
       connection = (HttpURLConnection) new URL(url).openConnection(Proxy.NO_PROXY);
+    } else {
+      connection = (HttpURLConnection) new URL(url).openConnection();
+    }
+    return connection;
+  }
+
+  private static HttpURLConnection getHttpsURLConnectionWithProxy(String url, String proxyHost, Integer proxyPort)
+      throws IOException {
+    HttpURLConnection connection;
+    if (shouldUseNonProxy(url)) {
+      connection = (HttpURLConnection) new URL(url).openConnection(Proxy.NO_PROXY);
+    } else if (isNotEmpty(proxyHost) && proxyPort != null) {
+      connection = (HttpURLConnection) new URL(url).openConnection(
+          new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort)));
     } else {
       connection = (HttpURLConnection) new URL(url).openConnection();
     }
@@ -386,6 +450,18 @@ public class Http {
 
   public OkHttpClient getOkHttpClient(String url, boolean isCertValidationRequired) {
     return getOkHttpClientBuilder(url, isCertValidationRequired).build();
+  }
+
+  public OkHttpClient getOkHttpClient(
+      String url, String proxyHost, Integer proxyPort, boolean isCertValidationRequired) {
+    OkHttpClient.Builder okHttpClientBuilder = getOkHttpClientBuilder(url, isCertValidationRequired);
+    Proxy proxy = Http.checkAndGetNonProxyIfApplicable(url);
+    if (proxy != null) {
+      okHttpClientBuilder.proxy(proxy);
+    } else if (isNotEmpty(proxyHost) && proxyPort != null) {
+      okHttpClientBuilder.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort)));
+    }
+    return okHttpClientBuilder.build();
   }
 
   public OkHttpClient.Builder getOkHttpClientBuilder(String url, boolean isCertValidationRequired) {

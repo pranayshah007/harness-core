@@ -613,7 +613,6 @@ public class BaseConnectorUtils {
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec()));
       }
       return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate())
-          .proxy(gitConfigDTO.getProxy())
           .encryptedDataDetails(encryptedDataDetails)
           .build();
     } else if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
@@ -652,7 +651,6 @@ public class BaseConnectorUtils {
       }
       return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate())
           .encryptedDataDetails(encryptedDataDetails)
-          .proxy(gitConfigDTO.getProxy())
           .build();
     } else if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
       BitbucketSshCredentialsDTO bitbucketSshCredentialsDTO =

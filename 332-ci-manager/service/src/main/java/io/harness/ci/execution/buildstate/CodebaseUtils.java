@@ -122,14 +122,10 @@ import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.git.GitClientHelper;
 import io.harness.ng.core.NGAccess;
-import io.harness.ng.core.dto.TunnelResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
-import io.harness.remote.client.NGRestUtils;
-import io.harness.tunnel.TunnelResourceClient;
 import io.harness.utils.ProxyUtils;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
@@ -149,15 +145,15 @@ public class CodebaseUtils {
   @Inject private ConnectorUtils connectorUtils;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private GitBuildStatusUtility gitBuildStatusUtility;
-  @Inject private TunnelResourceClient tunnelResourceClient;
   private final String PRMergeStatus = "merged";
 
   public Map<String, String> getCodebaseVars(
       Ambiance ambiance, CIExecutionArgs ciExecutionArgs, ConnectorDetails gitConnectorDetails) {
     Map<String, String> envVars = BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs);
     envVars.putAll(getRuntimeCodebaseVars(ambiance, gitConnectorDetails));
-    if (gitConnectorDetails.getProxy() != null && gitConnectorDetails.getProxy()) {
-      envVars.putAll(getDroneProxyEnvVars(ambiance));
+    if (gitConnectorDetails != null && gitConnectorDetails.getConnectorConfig() instanceof ScmConnector) {
+      ScmConnector scmConnector = (ScmConnector) gitConnectorDetails.getConnectorConfig();
+      envVars.putAll(getDroneProxyEnvVars(scmConnector));
     }
     return envVars;
   }
@@ -172,14 +168,11 @@ public class CodebaseUtils {
     return envVarMap;
   }
 
-  private Map<String, String> getDroneProxyEnvVars(Ambiance ambiance) {
+  private Map<String, String> getDroneProxyEnvVars(ScmConnector scmConnector) {
     Map<String, String> envVarMap = new HashMap<>();
-    TunnelResponseDTO tunnelResponseDTO =
-        NGRestUtils.getResponse(tunnelResourceClient.getTunnel(AmbianceUtils.getAccountId(ambiance)));
-    if (tunnelResponseDTO != null && isNotEmpty(tunnelResponseDTO.getServerUrl())
-        && isNotEmpty(tunnelResponseDTO.getPort())) {
-      envVarMap.put(DRONE_HTTP_PROXY_URL, ProxyUtils.getProxyHost(tunnelResponseDTO.getServerUrl()));
-      envVarMap.put(DRONE_HTTP_PROXY_PORT, String.valueOf(tunnelResponseDTO.getPort()));
+    if (scmConnector != null && isNotEmpty(scmConnector.getProxyUrl())) {
+      envVarMap.put(DRONE_HTTP_PROXY_URL, ProxyUtils.getProxyHost(scmConnector.getProxyUrl()));
+      envVarMap.put(DRONE_HTTP_PROXY_PORT, String.valueOf(ProxyUtils.getProxyPort(scmConnector.getProxyUrl())));
     }
     return envVarMap;
   }
@@ -334,7 +327,7 @@ public class CodebaseUtils {
   }
 
   public Map<String, String> getGitEnvVariables(
-      Ambiance ambiance, ConnectorDetails gitConnector, CodeBase ciCodebase, boolean skipGitClone) {
+      ConnectorDetails gitConnector, CodeBase ciCodebase, boolean skipGitClone) {
     if (skipGitClone) {
       return new HashMap<>();
     }
@@ -342,11 +335,7 @@ public class CodebaseUtils {
       throw new CIStageExecutionException("CI codebase spec is not set");
     }
     String repoName = ciCodebase.getRepoName().getValue();
-    Map<String, String> gitEnvVars = getGitEnvVariables(gitConnector, repoName);
-    if (gitConnector.getProxy() != null && gitConnector.getProxy()) {
-      gitEnvVars.putAll(getDroneProxyEnvVars(ambiance));
-    }
-    return gitEnvVars;
+    return getGitEnvVariables(gitConnector, repoName);
   }
 
   public Map<String, String> getGitEnvVariables(ConnectorDetails gitConnector, String repoName) {

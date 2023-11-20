@@ -223,7 +223,7 @@ public class VmInitializeTaskParamsBuilder {
         ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone(), ambiance);
     Map<String, String> codebaseEnvVars = codebaseUtils.getCodebaseVars(ambiance, ciExecutionArgs, gitConnector);
     Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(
-        ambiance, gitConnector, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
+        gitConnector, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
 
     Map<String, String> envVars = new HashMap<>();
     Map<String, String> stageEnvVars =

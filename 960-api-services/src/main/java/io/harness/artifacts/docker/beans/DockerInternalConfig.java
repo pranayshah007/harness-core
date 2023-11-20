@@ -32,6 +32,8 @@ public class DockerInternalConfig {
   String password;
   boolean isCertValidationRequired;
   DockerRegistryProviderType providerType;
+  String proxyHost;
+  Integer proxyPort;
 
   public boolean hasCredentials() {
     return isNotEmpty(username);

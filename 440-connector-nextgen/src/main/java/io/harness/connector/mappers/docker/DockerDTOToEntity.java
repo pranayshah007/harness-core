@@ -38,7 +38,7 @@ public class DockerDTOToEntity implements ConnectorDTOToEntityMapper<DockerConne
       dockerConnectorBuilder.dockerAuthentication(createDockerAuthentication(dockerUserNamePasswordDTO));
     }
 
-    DockerConnector dockerConnector = dockerConnectorBuilder.build();
+    DockerConnector dockerConnector = dockerConnectorBuilder.proxy(configDTO.getProxy()).build();
     dockerConnector.setType(ConnectorType.DOCKER);
     return dockerConnector;
   }

@@ -21,13 +21,12 @@ import io.harness.connector.ConnectorRegistryFactory;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
+import io.harness.connector.WithProxy;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsConnector;
 import io.harness.connector.entities.embedded.gcpkmsconnector.GcpKmsConnector;
 import io.harness.connector.entities.embedded.localconnector.LocalConnector;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
-import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
@@ -201,26 +200,14 @@ public class ConnectorMapper {
       ((ManagerExecutable) connectorDTO).setExecuteOnDelegate(executeOnDelegate);
     }
 
-    if (connectorDTO instanceof GithubConnectorDTO) {
-      GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO;
-      if (tunnelService != null && githubConnectorDTO.getProxy()) {
+    if (connectorDTO instanceof WithProxy) {
+      WithProxy withProxy = (WithProxy) connectorDTO;
+      if (tunnelService != null && withProxy.getProxy()) {
         TunnelResponseDTO tunnelResponseDTO = tunnelService.getTunnel(connector.getAccountIdentifier());
         if (tunnelResponseDTO.getServerUrl().isEmpty() || tunnelResponseDTO.getPort().isEmpty()) {
-          githubConnectorDTO.setProxyUrl("");
+          withProxy.setProxyUrl("");
         } else {
-          githubConnectorDTO.setProxyUrl(tunnelResponseDTO.getServerUrl() + ":" + tunnelResponseDTO.getPort());
-        }
-      }
-    }
-
-    if (connectorDTO instanceof BitbucketConnectorDTO) {
-      BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) connectorDTO;
-      if (tunnelService != null && bitbucketConnectorDTO.getProxy()) {
-        TunnelResponseDTO tunnelResponseDTO = tunnelService.getTunnel(connector.getAccountIdentifier());
-        if (tunnelResponseDTO.getServerUrl().isEmpty() || tunnelResponseDTO.getPort().isEmpty()) {
-          bitbucketConnectorDTO.setProxyUrl("");
-        } else {
-          bitbucketConnectorDTO.setProxyUrl(tunnelResponseDTO.getServerUrl() + ":" + tunnelResponseDTO.getPort());
+          withProxy.setProxyUrl(tunnelResponseDTO.getServerUrl() + ":" + tunnelResponseDTO.getPort());
         }
       }
     }

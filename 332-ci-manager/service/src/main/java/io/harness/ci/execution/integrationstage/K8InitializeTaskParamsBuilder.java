@@ -210,7 +210,7 @@ public class K8InitializeTaskParamsBuilder {
     Map<String, String> tiEnvVars = k8InitializeTaskUtils.getTIServiceEnvVariables(accountId);
     Map<String, String> stoEnvVars = k8InitializeTaskUtils.getSTOServiceEnvVariables(accountId);
     Map<String, String> gitEnvVars =
-        codebaseUtils.getGitEnvVariables(ambiance, gitConnector, ciCodebase, initializeStepInfo.isSkipGitClone());
+        codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase, initializeStepInfo.isSkipGitClone());
     SecretEnvVars secretEnvVars = getSecretEnvVars(ambiance);
     Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance, gitConnector);
     Map<String, String> commonEnvVars = k8InitializeTaskUtils.getCommonStepEnvVariables(k8PodDetails, gitEnvVars,

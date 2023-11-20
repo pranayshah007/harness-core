@@ -30,8 +30,8 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 public class DockerRestClientFactoryImpl implements DockerRestClientFactory {
   @Override
   public DockerRegistryRestClient getDockerRegistryRestClient(DockerInternalConfig dockerConfig) {
-    OkHttpClient okHttpClient =
-        Http.getOkHttpClient(dockerConfig.getDockerRegistryUrl(), dockerConfig.isCertValidationRequired());
+    OkHttpClient okHttpClient = Http.getOkHttpClient(dockerConfig.getDockerRegistryUrl(), dockerConfig.getProxyHost(),
+        dockerConfig.getProxyPort(), dockerConfig.isCertValidationRequired());
     Retrofit retrofit = new Retrofit.Builder()
                             .client(okHttpClient)
                             .baseUrl(dockerConfig.getDockerRegistryUrl())

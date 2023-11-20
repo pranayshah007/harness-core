@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
+import io.harness.connector.WithProxy;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -56,7 +57,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @OwnedBy(HarnessTeam.DX)
 @Schema(name = "GithubConnector", description = "This contains details of Github connectors")
 public class GithubConnectorDTO
-    extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
+    extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable, WithProxy {
   @NotNull
   @JsonProperty("type")
   @Schema(type = "string", allowableValues = {"Account", "Repo"})
@@ -170,10 +171,5 @@ public class GithubConnectorDTO
         .delegateSelectors(this.delegateSelectors)
         .executeOnDelegate(this.executeOnDelegate)
         .build();
-  }
-
-  @Override
-  public String getProxyUrl() {
-    return proxyUrl;
   }
 }
