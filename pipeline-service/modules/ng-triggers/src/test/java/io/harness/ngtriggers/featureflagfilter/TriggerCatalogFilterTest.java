@@ -7,6 +7,7 @@
 
 package io.harness.ngtriggers.featureflagfilter;
 
+import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,14 +51,30 @@ public class TriggerCatalogFilterTest extends CategoryTest {
   public void testFilterWithFFsDisabled() {
     when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CD_TRIGGER_V2)).thenReturn(false);
     when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(false);
-    List<TriggerCatalogType> triggerTypes =
-        Collections.arrayToList(new TriggerCatalogType[] {TriggerCatalogType.AZURE_ARTIFACTS, TriggerCatalogType.NEXUS2,
-            TriggerCatalogType.AMI, TriggerCatalogType.GOOGLE_CLOUD_STORAGE});
+    List<TriggerCatalogType> triggerTypes = Collections.arrayToList(new TriggerCatalogType[] {
+        TriggerCatalogType.AZURE_ARTIFACTS, TriggerCatalogType.AMI, TriggerCatalogType.GOOGLE_CLOUD_STORAGE});
     assertThat(triggerTypes.stream()
                    .filter(triggerCatalogFilter.filter(accountId, FeatureName.CD_TRIGGER_V2))
                    .filter(triggerCatalogFilter.filter(accountId, FeatureName.NG_SVC_ENV_REDESIGN))
                    .collect(Collectors.toList()))
         .isEmpty();
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testFilterWithFFsDisabledAndOtherTypes() {
+    when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CD_TRIGGER_V2)).thenReturn(false);
+    when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(false);
+    List<TriggerCatalogType> triggerTypes =
+        Collections.arrayToList(new TriggerCatalogType[] {TriggerCatalogType.AZURE_ARTIFACTS, TriggerCatalogType.AMI,
+            TriggerCatalogType.GOOGLE_CLOUD_STORAGE, TriggerCatalogType.GCR});
+    assertThat(triggerTypes.stream()
+                   .filter(triggerCatalogFilter.filter(accountId, FeatureName.CD_TRIGGER_V2))
+                   .filter(triggerCatalogFilter.filter(accountId, FeatureName.NG_SVC_ENV_REDESIGN))
+                   .collect(Collectors.toList())
+                   .size())
+        .isEqualTo(1);
   }
 
   @Test
@@ -67,8 +84,8 @@ public class TriggerCatalogFilterTest extends CategoryTest {
     when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CD_TRIGGER_V2)).thenReturn(true);
     when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
     List<TriggerCatalogType> triggerTypes =
-        Collections.arrayToList(new TriggerCatalogType[] {TriggerCatalogType.AZURE_ARTIFACTS, TriggerCatalogType.NEXUS2,
-            TriggerCatalogType.AMI, TriggerCatalogType.GOOGLE_CLOUD_STORAGE, TriggerCatalogType.BAMBOO});
+        Collections.arrayToList(new TriggerCatalogType[] {TriggerCatalogType.AZURE_ARTIFACTS, TriggerCatalogType.AMI,
+            TriggerCatalogType.GOOGLE_CLOUD_STORAGE, TriggerCatalogType.BAMBOO});
     assertThat(triggerTypes.stream()
                    .filter(triggerCatalogFilter.filter(accountId, FeatureName.CD_TRIGGER_V2))
                    .filter(triggerCatalogFilter.filter(accountId, FeatureName.NG_SVC_ENV_REDESIGN))
