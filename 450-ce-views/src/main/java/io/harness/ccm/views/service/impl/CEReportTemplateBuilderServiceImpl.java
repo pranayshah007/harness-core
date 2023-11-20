@@ -46,7 +46,6 @@ import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.exception.InvalidRequestException;
 
-import com.google.cloud.bigquery.BigQuery;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.awt.Color;
@@ -162,13 +161,13 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
 
   @Override
   public Map<String, String> getTemplatePlaceholders(
-      String accountId, String viewId, BigQuery bigQuery, String cloudProviderTableName, String baseUrl) {
-    return getTemplatePlaceholders(accountId, viewId, null, bigQuery, cloudProviderTableName, baseUrl);
+      String accountId, String viewId, String cloudProviderTableName, String baseUrl) {
+    return getTemplatePlaceholders(accountId, viewId, null, cloudProviderTableName, baseUrl);
   }
 
   @Override
-  public Map<String, String> getTemplatePlaceholders(String accountId, String viewId, String reportId,
-      BigQuery bigQuery, String cloudProviderTableName, String baseUrl) {
+  public Map<String, String> getTemplatePlaceholders(
+      String accountId, String viewId, String reportId, String cloudProviderTableName, String baseUrl) {
     Map<String, String> templatePlaceholders = new HashMap<>();
 
     // Get cloud provider table name here

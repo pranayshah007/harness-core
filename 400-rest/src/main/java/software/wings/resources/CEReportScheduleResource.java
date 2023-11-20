@@ -12,7 +12,6 @@ import static software.wings.security.PermissionAttribute.ResourceType.USER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEReportTemplateBuilderService;
@@ -61,7 +60,6 @@ public class CEReportScheduleResource {
   @Inject private CEReportTemplateBuilderService ceReportTemplateBuilderService;
   @Inject private EmailNotificationServiceImpl emailNotificationService;
   @Inject private CloudBillingHelper cloudBillingHelper;
-  @Inject private BigQueryService bigQueryService;
   @Inject private MainConfiguration mainConfiguration;
 
   @Inject
@@ -174,7 +172,7 @@ public class CEReportScheduleResource {
     log.info("Valid viewId and recipients list");
     String cloudProviderTableName = cloudBillingHelper.getCloudProviderTableName(accountId, unified);
     Map<String, String> templatePlaceholders = ceReportTemplateBuilderService.getTemplatePlaceholders(
-        accountId, viewId, bigQueryService.get(), cloudProviderTableName, mainConfiguration.getPortal().getUrl());
+        accountId, viewId, cloudProviderTableName, mainConfiguration.getPortal().getUrl());
 
     EmailData emailData = EmailData.builder()
                               .templateName("ce_scheduled_report")

@@ -14,7 +14,6 @@ import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.mail.CEMailNotificationService;
 import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.beans.EmbeddedUser;
-import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEReportTemplateBuilderServiceImpl;
@@ -46,7 +45,6 @@ public class ScheduledReportServiceImpl {
   @Autowired private BatchMainConfig config;
   @Autowired private CEMailNotificationService emailNotificationService;
   @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
-  @Autowired private BigQueryService bigQueryService;
   @Autowired private CloudBillingHelper cloudBillingHelper;
 
   // TODO: CE_VIEW_URL, MAIL_SUBJECT to be finalized
@@ -89,7 +87,7 @@ public class ScheduledReportServiceImpl {
     String cloudProviderTableName = cloudBillingHelper.getCloudProviderTableName(
         config.getBillingDataPipelineConfig().getGcpProjectId(), accountId, unified);
     Map<String, String> templateModel = ceReportTemplateBuilderService.getTemplatePlaceholders(
-        accountId, viewId, reportId, bigQueryService.get(), cloudProviderTableName, config.getBaseUrl());
+        accountId, viewId, reportId, cloudProviderTableName, config.getBaseUrl());
     EmailData emailData = EmailData.builder()
                               .to(Arrays.asList(recipients))
                               .templateName(config.getReportScheduleConfig().getTemplateName())
