@@ -3,3 +3,4 @@ identifier: batch_job_group
 labels:
   - accountId
   - batchJobType
+  - batchJobStatus
