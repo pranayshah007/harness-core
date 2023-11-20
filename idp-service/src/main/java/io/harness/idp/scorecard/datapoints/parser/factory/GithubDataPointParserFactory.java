@@ -24,23 +24,22 @@ import static io.harness.idp.scorecard.datapoints.constants.DataPoints.WORKFLOW_
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
-import io.harness.idp.scorecard.datapoints.parser.factory.DataPointParserFactory;
-import io.harness.idp.scorecard.datapoints.parser.github.GithubAlertsCountParser;
-import io.harness.idp.scorecard.datapoints.parser.github.GithubFileContainsParser;
-import io.harness.idp.scorecard.datapoints.parser.github.GithubFileContentsParser;
-import io.harness.idp.scorecard.datapoints.parser.github.GithubFileExistsParser;
-import io.harness.idp.scorecard.datapoints.parser.github.GithubIsBranchProtectedParser;
-import io.harness.idp.scorecard.datapoints.parser.github.GithubMeanTimeToCompleteWorkflowRunsParser;
-import io.harness.idp.scorecard.datapoints.parser.github.GithubMeanTimeToMergeParser;
-import io.harness.idp.scorecard.datapoints.parser.github.GithubPullRequestsCountParser;
-import io.harness.idp.scorecard.datapoints.parser.github.GithubWorkflowSuccessRateParser;
-import io.harness.idp.scorecard.datapoints.parser.github.GithubWorkflowsCountParser;
+import io.harness.idp.scorecard.datapoints.parser.scm.github.GithubAlertsCountParser;
+import io.harness.idp.scorecard.datapoints.parser.scm.github.GithubFileContainsParser;
+import io.harness.idp.scorecard.datapoints.parser.scm.github.GithubFileContentsParser;
+import io.harness.idp.scorecard.datapoints.parser.scm.github.GithubFileExistsParser;
+import io.harness.idp.scorecard.datapoints.parser.scm.github.GithubIsBranchProtectedParser;
+import io.harness.idp.scorecard.datapoints.parser.scm.github.GithubMeanTimeToCompleteWorkflowRunsParser;
+import io.harness.idp.scorecard.datapoints.parser.scm.github.GithubMeanTimeToMergeParser;
+import io.harness.idp.scorecard.datapoints.parser.scm.github.GithubPullRequestsCountParser;
+import io.harness.idp.scorecard.datapoints.parser.scm.github.GithubWorkflowSuccessRateParser;
+import io.harness.idp.scorecard.datapoints.parser.scm.github.GithubWorkflowsCountParser;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
 
-@OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@OwnedBy(HarnessTeam.IDP)
 public class GithubDataPointParserFactory implements DataPointParserFactory {
   private GithubMeanTimeToMergeParser githubMeanTimeToMergeParser;
   private GithubIsBranchProtectedParser githubIsBranchProtectedParser;
@@ -78,7 +77,6 @@ public class GithubDataPointParserFactory implements DataPointParserFactory {
         return githubAlertsCountParser;
       case OPEN_PULL_REQUESTS_BY_ACCOUNT:
         return githubPullRequestsCountParser;
-      // Add more cases for other parsers
       default:
         throw new UnsupportedOperationException(String.format("Could not find DataPoint parser for %s", identifier));
     }

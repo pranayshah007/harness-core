@@ -50,9 +50,12 @@ public class AccountDTO {
   @Schema(description = "Default experience of the Account.")
   @VariableExpression(skipVariableExpression = true)
   DefaultExperience defaultExperience;
-  @Schema(description = "Specifies weather access to other generation is allowed or not")
+  @Schema(description = "Specifies whether access to other generation is allowed or not")
   @VariableExpression(skipVariableExpression = true)
   boolean isCrossGenerationAccessEnabled;
+  @Schema(description = "Specifies whether CannyUsernameAbbreviation is enabled for this account")
+  @VariableExpression(skipVariableExpression = true)
+  boolean isCannyUsernameAbbreviationEnabled;
   @Schema(description = "Authentication mechanism associated with the account.")
   @VariableExpression(skipVariableExpression = true)
   AuthenticationMechanism authenticationMechanism;
@@ -91,15 +94,17 @@ public class AccountDTO {
   @Builder
   public AccountDTO(String identifier, String name, String companyName, String cluster,
       DefaultExperience defaultExperience, boolean isCrossGenerationAccessEnabled,
-      AuthenticationMechanism authenticationMechanism, ServiceAccountConfig serviceAccountConfig,
-      boolean isNextGenEnabled, boolean isProductLed, boolean isTwoFactorAdminEnforced, long createdAt, String ringName,
-      Integer sessionTimeoutInMinutes, boolean publicAccessEnabled) {
+      boolean isCannyUsernameAbbreviationEnabled, AuthenticationMechanism authenticationMechanism,
+      ServiceAccountConfig serviceAccountConfig, boolean isNextGenEnabled, boolean isProductLed,
+      boolean isTwoFactorAdminEnforced, long createdAt, String ringName, Integer sessionTimeoutInMinutes,
+      boolean publicAccessEnabled) {
     this.identifier = identifier;
     this.name = name;
     this.companyName = companyName;
     this.cluster = cluster;
     this.defaultExperience = defaultExperience;
     this.isCrossGenerationAccessEnabled = isCrossGenerationAccessEnabled;
+    this.isCannyUsernameAbbreviationEnabled = isCannyUsernameAbbreviationEnabled;
     this.authenticationMechanism = authenticationMechanism;
     this.isNextGenEnabled = isNextGenEnabled;
     this.serviceAccountConfig = serviceAccountConfig;

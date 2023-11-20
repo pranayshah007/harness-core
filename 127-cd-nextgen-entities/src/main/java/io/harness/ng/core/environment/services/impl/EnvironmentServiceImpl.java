@@ -51,6 +51,7 @@ import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -162,6 +163,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   private final ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
   private final EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper;
   private final EnvironmentFilterHelper environmentFilterHelper;
+  private final GitXSettingsHelper gitXSettingsHelper;
 
   @Inject
   public EnvironmentServiceImpl(EnvironmentRepository environmentRepository,
@@ -171,7 +173,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       ServiceOverrideService serviceOverrideService, ServiceOverridesServiceV2 serviceOverridesServiceV2,
       ServiceEntityService serviceEntityService, AccountClient accountClient, NGSettingsClient settingsClient,
       EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper,
-      ServiceOverrideV2ValidationHelper overrideV2ValidationHelper, EnvironmentFilterHelper environmentFilterHelper) {
+      ServiceOverrideV2ValidationHelper overrideV2ValidationHelper, EnvironmentFilterHelper environmentFilterHelper,
+      GitXSettingsHelper gitXSettingsHelper) {
     this.environmentRepository = environmentRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
@@ -187,6 +190,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     this.environmentEntitySetupUsageHelper = environmentEntitySetupUsageHelper;
     this.overrideV2ValidationHelper = overrideV2ValidationHelper;
     this.environmentFilterHelper = environmentFilterHelper;
+    this.gitXSettingsHelper = gitXSettingsHelper;
   }
 
   @Override
@@ -198,6 +202,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       modifyEnvironmentRequest(environment);
 
       Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(environment);
+      applyGitXSettingsIfApplicable(
+          environment.getAccountId(), environment.getOrgIdentifier(), environment.getProjectIdentifier());
       Environment createdEnvironment =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             Environment tempEnvironment = environmentRepository.saveGitAware(environment);
@@ -1206,5 +1212,13 @@ public class EnvironmentServiceImpl implements EnvironmentService {
           getDuplicateEnvironmentExistsErrorMessage(accountId, orgIdentifier, projectIdentifier, environmentIdentifier),
           USER_SRE);
     }
+  }
+
+  private void applyGitXSettingsIfApplicable(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    gitXSettingsHelper.enforceGitExperienceIfApplicable(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setDefaultStoreTypeForEntities(
+        accountIdentifier, orgIdentifier, projIdentifier, EntityType.ENVIRONMENT);
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setDefaultRepoForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
   }
 }

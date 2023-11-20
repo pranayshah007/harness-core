@@ -27,6 +27,7 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper;
 import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.pms.yaml.preprocess.YamlPreProcessor;
@@ -88,12 +89,13 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   }
 
   @Override
-  public boolean validateYamlSchema(String accountId, String orgId, String projectId, JsonNode jsonNode) {
+  public boolean validateYamlSchema(
+      String accountId, String orgId, String projectId, JsonNode jsonNode, String harnessVersion) {
     // Keeping pipeline yaml schema validation behind ff. If ff is disabled then schema validation will happen. Will
     // remove after finding the root cause of invalid schema generation and fixing it.
     if (!pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DISABLE_PIPELINE_SCHEMA_VALIDATION, accountId)) {
-      Future<Boolean> future =
-          yamlSchemaExecutor.submit(() -> validateYamlSchemaInternal(accountId, orgId, projectId, jsonNode));
+      Future<Boolean> future = yamlSchemaExecutor.submit(
+          () -> validateYamlSchemaInternal(accountId, orgId, projectId, jsonNode, harnessVersion));
       try (AutoLogContext accountLogContext =
                new AccountLogContext(accountId, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS)) {
         return future.get(SCHEMA_TIMEOUT, TimeUnit.SECONDS);
@@ -117,10 +119,17 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   }
 
   @VisibleForTesting
-  boolean validateYamlSchemaInternal(String accountIdentifier, String orgId, String projectId, JsonNode jsonNode) {
+  boolean validateYamlSchemaInternal(
+      String accountIdentifier, String orgId, String projectId, JsonNode jsonNode, String harnessVersion) {
     long start = System.currentTimeMillis();
     try {
-      JsonNode schema = schemaFetcher.fetchPipelineStaticYamlSchema(PIPELINE_VERSION_V0);
+      String schamaPath = null;
+      if (HarnessYamlVersion.V0.equals(harnessVersion)) {
+        schamaPath = PIPELINE_VERSION_V0;
+      } else {
+        schamaPath = PIPELINE_VERSION_V1;
+      }
+      JsonNode schema = schemaFetcher.fetchPipelineStaticYamlSchema(schamaPath);
 
       String schemaString = JsonPipelineUtils.writeJsonString(schema);
       yamlSchemaValidator.validate(jsonNode, schemaString);

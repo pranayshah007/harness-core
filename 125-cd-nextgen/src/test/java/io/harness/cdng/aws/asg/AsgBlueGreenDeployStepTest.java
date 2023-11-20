@@ -10,6 +10,9 @@ package io.harness.cdng.aws.asg;
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.VITALIE;
 
+import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG;
+import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V2;
+import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V3;
 import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG;
 import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V2;
 import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V3;
@@ -481,5 +484,38 @@ public class AsgBlueGreenDeployStepTest extends CategoryTest {
 
     ret = asgBlueGreenDeployStep.getPrepareRollbackTaskType(asgBlueGreenDeployStepParameters, asgInfraConfig);
     assertThat(ret).isEqualTo(AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V3);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getDeployTaskTypeTest() {
+    AsgBlueGreenDeployStepParameters asgBlueGreenDeployStepParameters =
+        AsgBlueGreenDeployStepParameters.infoBuilder()
+            .loadBalancers(ParameterField.createValueField(Collections.EMPTY_LIST))
+            .build();
+
+    AsgInfraConfig asgInfraConfig = AsgInfraConfig.builder().build();
+
+    doReturn(false)
+        .when(asgStepCommonHelper)
+        .isV2Feature(nullable(Map.class), nullable(AsgInstances.class), any(), any(), any());
+
+    TaskType ret = asgBlueGreenDeployStep.getDeployTaskType(asgBlueGreenDeployStepParameters, asgInfraConfig);
+    assertThat(ret).isEqualTo(AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG);
+
+    doReturn(true)
+        .when(asgStepCommonHelper)
+        .isV2Feature(nullable(Map.class), nullable(AsgInstances.class), any(), any(), any());
+
+    doReturn(false).when(asgStepCommonHelper).isShiftTrafficFeature(anyList());
+
+    ret = asgBlueGreenDeployStep.getDeployTaskType(asgBlueGreenDeployStepParameters, asgInfraConfig);
+    assertThat(ret).isEqualTo(AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V2);
+
+    doReturn(true).when(asgStepCommonHelper).isShiftTrafficFeature(anyList());
+
+    ret = asgBlueGreenDeployStep.getDeployTaskType(asgBlueGreenDeployStepParameters, asgInfraConfig);
+    assertThat(ret).isEqualTo(AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V3);
   }
 }

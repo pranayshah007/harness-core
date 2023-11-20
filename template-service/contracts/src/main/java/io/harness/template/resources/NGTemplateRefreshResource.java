@@ -31,6 +31,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -102,11 +103,19 @@ public interface NGTemplateRefreshResource {
 
   @POST
   @Path("refreshed-yaml")
-  @ApiOperation(value = "This refreshes and update template inputs in given yaml", nickname = "getRefreshedYaml")
-  @Hidden
-  ResponseDTO<RefreshResponseDTO> getRefreshedYaml(
-      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+  @ApiOperation(value = "This refreshes Template Inputs in given yaml", nickname = "getRefreshedYaml")
+  @Operation(operationId = "getRefreshedYaml",
+      description = "Returns YAML with updated Template Inputs for a given YAML",
+      summary = "Get YAML with updated Template Inputs",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description =
+                "Returns YAML with updated Template Inputs, when an underlying Template has been updated and a reconciliation is pending in a given YAML.")
+      })
+  ResponseDTO<RefreshResponseDTO>
+  getRefreshedYaml(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
@@ -118,8 +127,17 @@ public interface NGTemplateRefreshResource {
   @GET
   @Path("validate-template-inputs")
   @ApiOperation(value = "This validates whether yaml of template is valid or not", nickname = "validateTemplateInputs")
-  @Hidden
-  ResponseDTO<ValidateTemplateInputsResponseDTO> validateTemplateInputsForTemplate(
+  @Operation(operationId = "validateTemplateInputs",
+      description =
+          "Validates the Template Inputs in a pipeline's YAML specification. If the Template Inputs are invalid, the operation returns an error summary.",
+      summary = "Validate Template Inputs in a YAML",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Returns a validation result for Template Inputs present in a YAML specification.")
+      })
+  ResponseDTO<ValidateTemplateInputsResponseDTO>
+  validateTemplateInputsForTemplate(
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(

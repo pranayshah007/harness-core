@@ -7,6 +7,7 @@
 
 package io.harness.accesscontrol.commons.outbox;
 
+import static io.harness.accesscontrol.scopes.HarnessScopeLevel.ACCOUNT;
 import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromDTO;
 import static io.harness.aggregator.ACLEventProcessingConstants.UPDATE_ACTION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
@@ -31,6 +32,7 @@ import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
 import io.harness.accesscontrol.resources.resourcegroups.events.ResourceGroupUpdateEvent;
 import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.accesscontrol.scopes.core.Scope;
+import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.aggregator.consumers.ResourceGroupChangeConsumer;
 import io.harness.aggregator.models.ResourceGroupChangeEventData;
 import io.harness.annotations.dev.OwnedBy;
@@ -56,12 +58,14 @@ public class ResourceGroupEventHandlerTest extends CategoryTest {
   private InMemoryPermissionRepository inMemoryPermissionRepository;
   @Inject @Named("batchSizeForACLCreation") private int batchSizeForACLCreation;
   private ResourceGroupEventHandler resourceGroupEventHandler;
+  private ScopeService scopeService;
 
   @Before
   public void setup() {
     objectMapper = NG_DEFAULT_OBJECT_MAPPER;
     resourceGroupChangeConsumer = mock(ResourceGroupChangeConsumer.class);
-    resourceGroupEventHandler = spy(new ResourceGroupEventHandler(resourceGroupChangeConsumer, false));
+    scopeService = mock(ScopeService.class);
+    resourceGroupEventHandler = spy(new ResourceGroupEventHandler(resourceGroupChangeConsumer, false, scopeService));
   }
 
   @Test
@@ -114,7 +118,9 @@ public class ResourceGroupEventHandlerTest extends CategoryTest {
                                   .resource(resourceGroupUpdateEvent.getResource())
                                   .createdAt(Long.parseLong(randomNumeric(5)))
                                   .build();
-    resourceGroupEventHandler = spy(new ResourceGroupEventHandler(resourceGroupChangeConsumer, true));
+    when(scopeService.buildScopeFromScopeIdentifier(any()))
+        .thenReturn(Scope.builder().level(ACCOUNT).instanceId(accountIdentifier).build());
+    resourceGroupEventHandler = spy(new ResourceGroupEventHandler(resourceGroupChangeConsumer, true, scopeService));
     Set<ResourceSelector> resourceSelectorsAdded = ResourceGroup.getDiffOfResourceSelectors(
         resourceGroupUpdateEvent.getNewResourceGroup(), resourceGroupUpdateEvent.getOldResourceGroup());
     Set<ResourceSelector> resourceSelectorsDeleted = ResourceGroup.getDiffOfResourceSelectors(

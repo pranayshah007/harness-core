@@ -63,8 +63,9 @@ public class S3StoreServiceImpl implements S3StoreService {
       PutObjectRequest request = new PutObjectRequest(s3Config.getBucket(), s3FilePath, file);
       PutObjectResult result = s3Client.putObject(request);
       log.info("File uploaded successfully. ETag: " + result.getETag());
-    } catch (AmazonServiceException e) {
-      log.error("Error uploading file: " + e.getErrorMessage());
+    } catch (Exception e) {
+      log.error("Upload SBOM Failed with exception", e);
+      throw new RuntimeException("Upload SBOM to bucket failed");
     }
   }
 

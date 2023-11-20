@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.ecs;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -38,9 +39,9 @@ public class EcsBlueGreenCreateServiceStepParameters
       ParameterField<String> loadBalancer, ParameterField<String> prodListener,
       ParameterField<String> prodListenerRuleArn, ParameterField<String> stageListener,
       ParameterField<String> stageListenerRuleArn, ParameterField<Boolean> sameAsAlreadyRunningInstances,
-      ParameterField<Boolean> enableAutoScalingInSwapStep) {
+      ParameterField<Boolean> enableAutoScalingInSwapStep, ParameterField<Boolean> updateGreenService) {
     super(delegateSelectors, loadBalancer, prodListener, prodListenerRuleArn, stageListener, stageListenerRuleArn,
-        sameAsAlreadyRunningInstances, enableAutoScalingInSwapStep);
+        sameAsAlreadyRunningInstances, enableAutoScalingInSwapStep, updateGreenService);
   }
 
   public List<String> getCommandUnits() {

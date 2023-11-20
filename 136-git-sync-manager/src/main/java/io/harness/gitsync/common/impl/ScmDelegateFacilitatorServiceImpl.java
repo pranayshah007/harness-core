@@ -98,6 +98,7 @@ import io.harness.gitsync.common.helper.UserSourceCodeManagerHelper;
 import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.impl.ScmResponseStatusUtils;
+import io.harness.logging.ResponseTimeRecorder;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.BaseNGAccess;
@@ -1136,7 +1137,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   private DelegateResponseData executeDelegateSyncTaskV2(DelegateTaskRequest delegateTaskRequest) {
     final DelegateResponseData delegateResponseData;
     String defaultDelegateErrorMessage = "Faced issue while performing delegate task for the required git operation.";
-    try {
+    try (ResponseTimeRecorder ignore = new ResponseTimeRecorder("Gitx Delegate Task Execution")) {
       delegateResponseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
       log.error("Error occurred while executing delegate task.", ex);

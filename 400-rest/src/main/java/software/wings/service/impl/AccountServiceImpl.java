@@ -545,6 +545,7 @@ public class AccountServiceImpl implements AccountService {
       featureFlagService.enableAccount(FeatureName.CFNG_ENABLED, account.getUuid());
       featureFlagService.enableAccount(FeatureName.CVNG_ENABLED, account.getUuid());
     } else if (account.isCreatedFromNG()) {
+      featureFlagService.enableAccount(FeatureName.CDS_NAV_2_0, account.getUuid());
       updateNextGenEnabled(account.getUuid(), true, false);
     }
   }
@@ -720,6 +721,15 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public Account updateCannyUsernameAbbreviationEnabled(
+      String accountIdentifier, boolean isCannyUsernameAbbreviationEnabled) {
+    Account account = get(accountIdentifier);
+    account.isCannyUsernameAbbreviationEnabled(isCannyUsernameAbbreviationEnabled);
+
+    return update(account);
+  }
+
+  @Override
   public boolean getPublicAccessEnabled(String accountId) {
     Query<Account> getQuery = wingsPersistence.createQuery(Account.class).filter(ID_KEY2, accountId);
     return Optional.ofNullable(getQuery.get().isPublicAccessEnabled()).orElse(false);
@@ -773,6 +783,7 @@ public class AccountServiceImpl implements AccountService {
     accountDetails.setCeLicenseInfo(account.getCeLicenseInfo());
     accountDetails.setDefaultExperience(account.getDefaultExperience());
     accountDetails.setCrossGenerationAccessEnabled(account.isCrossGenerationAccessEnabled());
+    accountDetails.setCannyUsernameAbbreviationEnabled(account.isCannyUsernameAbbreviationEnabled());
     accountDetails.setCreatedFromNG(account.isCreatedFromNG());
     accountDetails.setSessionTimeOutInMinutes(account.getSessionTimeOutInMinutes());
     accountDetails.setActiveServiceCount(cgCdLicenseUsageService.getActiveServiceInTimePeriod(accountId, 60));
@@ -1149,6 +1160,11 @@ public class AccountServiceImpl implements AccountService {
 
     if (account.isCrossGenerationAccessEnabled() != null) {
       updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, account.isCrossGenerationAccessEnabled());
+    }
+
+    if (account.isCannyUsernameAbbreviationEnabled() != null) {
+      updateOperations.set(
+          AccountKeys.isCannyUsernameAbbreviationEnabled, account.isCannyUsernameAbbreviationEnabled());
     }
 
     wingsPersistence.update(account, updateOperations);

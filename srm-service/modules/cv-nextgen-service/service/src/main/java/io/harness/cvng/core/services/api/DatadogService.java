@@ -34,7 +34,7 @@ public interface DatadogService extends DataSourceConnectivityChecker {
       ProjectParams projectParams, String connectorIdentifier, String query, String tracingId);
 
   List<LinkedHashMap> getSampleLogData(
-      ProjectParams projectParams, String connectorIdentifier, String query, String tracingId);
+      ProjectParams projectParams, String connectorIdentifier, String query, List<String> indexes, String tracingId);
 
   List<String> getLogIndexes(ProjectParams projectParams, String connectorIdentifier, String tracingId);
 

@@ -7,6 +7,7 @@
 
 package io.harness.delegatetasks;
 
+import static io.harness.SecretConstants.EXPIRES_ON;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
@@ -30,11 +31,14 @@ import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.SecretManagerConfigDTOMapper;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
+import io.harness.security.encryption.AdditionalMetadata;
 
 import software.wings.beans.AzureVaultConfig;
 import software.wings.beans.VaultConfig;
 
 import com.google.inject.Inject;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,6 +46,8 @@ import java.util.List;
 public class UpsertSecretTaskValidationHandler implements ConnectorValidationHandler {
   @Inject VaultEncryptorsRegistry vaultEncryptorsRegistry;
   @Inject NGErrorHelper ngErrorHelper;
+
+  private static long SECRET_EXPIRY_DURATION_IN_MINUTES = 30;
 
   @Override
   public ConnectorValidationResult validate(
@@ -102,6 +108,11 @@ public class UpsertSecretTaskValidationHandler implements ConnectorValidationHan
           .taskType(UpsertSecretTaskType.CREATE)
           .name(AzureVaultConfig.AZURE_VAULT_VALIDATION_URL)
           .plaintext(Boolean.TRUE.toString())
+          .additionalMetadata(
+              AdditionalMetadata.builder()
+                  .value(EXPIRES_ON,
+                      Instant.now().plus(SECRET_EXPIRY_DURATION_IN_MINUTES, ChronoUnit.MINUTES).toEpochMilli())
+                  .build())
           .existingRecord(null)
           .build();
     }

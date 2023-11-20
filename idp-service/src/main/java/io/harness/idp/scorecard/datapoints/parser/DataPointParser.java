@@ -8,17 +8,13 @@
 package io.harness.idp.scorecard.datapoints.parser;
 
 import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
-import static io.harness.idp.common.Constants.DEFAULT_BRANCH_KEY;
-import static io.harness.idp.common.Constants.DEFAULT_BRANCH_KEY_ESCAPED;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
-import io.harness.spec.server.idp.v1.model.InputValue;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.IDP)

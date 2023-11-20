@@ -35,4 +35,9 @@ public class ScmErrorExplanations {
   public static final String WRONG_REPO_OR_BRANCH = "The provided branch<BRANCH> or the repo<REPO> are invalid.";
 
   public static final String RATE_LIMIT = "The number of api requests for your account is too high.";
+  public static final String EXPLANATION_REQUEST_TIMED_OUT =
+      "Request to the Bitbucket Server to fetch file<FILEPATH> from repo<REPO> and branch<BRANCH> timed out.\n"
+      + "This might have occurred due to the following reasons:\n"
+      + "1. Network connectivity issues from delegate to the Bitbucket server\n"
+      + "2. Bitbucket server experiencing higher traffic than usual, or a downtime at the moment.";
 }

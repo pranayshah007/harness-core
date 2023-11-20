@@ -1,0 +1,115 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1700204195.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proxy",
+    "opsgenie"
+  ],
+  "properties": {
+    "proxy": {
+      "$id": "#root/proxy",
+      "title": "Proxy",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "/opsgenie/api"
+      ],
+      "properties": {
+        "/opsgenie/api": {
+          "$id": "#root/proxy//opsgenie/api",
+          "title": "/opsgenie/api",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "target",
+            "pathRewrite",
+            "headers"
+          ],
+          "properties": {
+            "target": {
+              "$id": "#root/proxy//opsgenie/api/target",
+              "title": "Target",
+              "type": "string",
+              "default": "",
+              "examples": [
+                "https://api.eu.opsgenie.com"
+              ],
+              "pattern": "((http|https)://)(www.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)"
+            },
+            "pathRewrite": {
+              "$id": "#root/proxy//opsgenie/api/pathRewrite",
+              "title": "Pathrewrite",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "/api/proxy/opsgenie/api/?"
+              ],
+              "properties": {
+                "/api/proxy/opsgenie/api/?": {
+                  "$id": "#root/proxy//opsgenie/api/pathRewrite//api/proxy/opsgenie/api/?",
+                  "title": "/api/proxy/opsgenie/api/?",
+                  "type": "string",
+                  "default": "",
+                  "examples": [
+                    "/"
+                  ],
+                  "pattern": "^.*$"
+                }
+              }
+            }
+          ,
+            "headers": {
+              "$id": "#root/proxy//opsgenie/api/headers",
+              "title": "Headers",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "Authorization"
+              ],
+              "properties": {
+                "Authorization": {
+                  "$id": "#root/proxy//opsgenie/api/headers/Authorization",
+                  "title": "Authorization",
+                  "type": "string",
+                  "default": "",
+                  "examples": [
+                    "GenieKey ${OPSGENIE_TOKEN}"
+                  ],
+                  "pattern": "^.*$"
+                }
+              }
+            }
+
+          }
+        }
+
+      }
+    }
+  ,
+    "opsgenie": {
+      "$id": "#root/opsgenie",
+      "title": "Opsgenie",
+      "type": "object",
+      "required": [
+        "domain"
+      ],
+      "properties": {
+        "domain": {
+          "$id": "#root/opsgenie/domain",
+          "title": "Domain",
+          "type": "string",
+          "default": "",
+          "examples": [
+            "https://<your-organization>.app.opsgenie.com/"
+          ],
+          "pattern": "((http|https)://)(www.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)"
+        }
+      }
+    }
+
+  }
+}

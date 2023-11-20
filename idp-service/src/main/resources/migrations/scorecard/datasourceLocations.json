@@ -164,7 +164,7 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "GET",
-      "url": "/2.0/repositories/{WORKSPACE}/{REPOSITORY_NAME}/pullrequests?q=state=\"MERGED\"",
+      "url": "/2.0/repositories/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/pullrequests?q=state=\"MERGED\"",
       "headers": {
         "Content-Type": "application/json"
       }
@@ -178,7 +178,7 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "GET",
-      "url": "/2.0/repositories/{WORKSPACE}/{REPOSITORY_NAME}/branch-restrictions?pattern={BRANCH_NAME_REPLACER}",
+      "url": "/2.0/repositories/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/branch-restrictions?pattern={BRANCH_NAME_REPLACER}",
       "headers": {
         "Content-Type": "application/json"
       }
@@ -256,7 +256,7 @@
       "headers": {
         "Content-Type": "application/json"
       },
-      "requestBody": "{\"query\":\"{\\n  project(fullPath: \\\"{PROJECT_PATH}\\\") {\\n    mergeRequests(state: merged, last: 100{REPOSITORY_BRANCH_NAME_REPLACER}) {\\n      nodes {\\n        title\\n        createdAt\\n        mergedAt\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
+      "requestBody": "{\"query\":\"{\\n  project(fullPath: \\\"{REPOSITORY_OWNER}/{REPOSITORY_NAME}\\\") {\\n    mergeRequests(state: merged, last: 100{REPOSITORY_BRANCH_NAME_REPLACER}) {\\n      nodes {\\n        title\\n        createdAt\\n        mergedAt\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }
   },
   {
@@ -271,7 +271,7 @@
       "headers": {
         "Content-Type": "application/json"
       },
-      "requestBody": "{\"query\":\"{\\n  project(fullPath: \\\"{PROJECT_PATH}\\\") {\\n    branchRules {\\n      nodes {\\n        name\\n        branchProtection {\\n          allowForcePush\\n        }\\n        approvalRules {\\n          nodes {\\n            approvalsRequired\\n          }\\n        }\\n        isDefault\\n        isProtected\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{}}"
+      "requestBody": "{\"query\":\"{\\n  project(fullPath: \\\"{REPOSITORY_OWNER}/{REPOSITORY_NAME}\\\") {\\n    branchRules {\\n      nodes {\\n        name\\n        branchProtection {\\n          allowForcePush\\n        }\\n        approvalRules {\\n          nodes {\\n            approvalsRequired\\n          }\\n        }\\n        isDefault\\n        isProtected\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{}}"
     }
   },
   {
@@ -286,7 +286,7 @@
       "headers": {
         "Content-Type": "application/json"
       },
-      "requestBody": "{\"query\":\"{\\n  project(fullPath: \\\"{PROJECT_PATH}\\\") {\\n    repository {\\n      tree(ref: \\\"HEAD\\\", path: \\\"{FILE_PATH_REPLACER}\\\") {\\n        blobs {\\n          nodes {\\n            name\\n            path\\n          }\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
+      "requestBody": "{\"query\":\"{\\n  project(fullPath: \\\"{REPOSITORY_OWNER}/{REPOSITORY_NAME}\\\") {\\n    repository {\\n      tree(ref: \\\"HEAD\\\", path: \\\"{FILE_PATH_REPLACER}\\\") {\\n        blobs {\\n          nodes {\\n            name\\n            path\\n          }\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }
   },
   {

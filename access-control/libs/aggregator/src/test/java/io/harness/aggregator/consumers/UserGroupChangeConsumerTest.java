@@ -13,9 +13,12 @@ import static io.harness.accesscontrol.principals.usergroups.UserGroupTestUtils.
 import static io.harness.accesscontrol.principals.usergroups.persistence.UserGroupDBOMapper.fromDBO;
 import static io.harness.accesscontrol.resources.resourcegroups.ResourceGroupTestUtils.buildResourceGroup;
 import static io.harness.accesscontrol.roles.RoleTestUtils.buildRole;
+import static io.harness.aggregator.ACLEventProcessingConstants.UPDATE_ACTION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 
+import static java.util.Optional.of;
 import static java.util.concurrent.ThreadLocalRandom.current;
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,6 +47,7 @@ import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.scopes.TestScopeLevels;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
+import io.harness.aggregator.AccessControlAdminService;
 import io.harness.aggregator.AggregatorTestBase;
 import io.harness.aggregator.models.UserGroupUpdateEventData;
 import io.harness.annotations.dev.OwnedBy;
@@ -58,7 +62,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.junit.Before;
@@ -71,6 +74,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class UserGroupChangeConsumerTest extends AggregatorTestBase {
   private RoleAssignmentRepository roleAssignmentRepository;
   private ScopeService scopeService;
+  private AccessControlAdminService accessControlAdminService;
   private UserGroupService userGroupService;
   private String testScopeIdentifier;
   private String scopeIdentifier;
@@ -90,22 +94,24 @@ public class UserGroupChangeConsumerTest extends AggregatorTestBase {
     RoleService roleService = mock(RoleService.class);
     ResourceGroupService resourceGroupService = mock(ResourceGroupService.class);
     scopeService = mock(ScopeService.class);
+    accessControlAdminService = mock(AccessControlAdminService.class);
     inMemoryPermissionRepository = mock(InMemoryPermissionRepository.class);
     when(inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(any(), any())).thenReturn(true);
     aclGeneratorService = new ACLGeneratorServiceImpl(roleService, userGroupService, resourceGroupService, scopeService,
         new HashMap<>(), aclRepository, inMemoryPermissionRepository, batchSizeForACLCreation);
-    userGroupChangeConsumer =
-        new UserGroupChangeConsumer(aclRepository, roleAssignmentRepository, aclGeneratorService, scopeService);
+    userGroupChangeConsumer = new UserGroupChangeConsumer(
+        aclRepository, roleAssignmentRepository, aclGeneratorService, scopeService, accessControlAdminService);
     aclRepository.cleanCollection();
     testScopeIdentifier = getRandomString(20);
     scopeIdentifier = "/ACCOUNT/" + testScopeIdentifier;
     role = buildRole(scopeIdentifier);
     resourceGroup = buildResourceGroup(scopeIdentifier);
     when(roleService.get(role.getIdentifier(), role.getScopeIdentifier(), ManagedFilter.NO_FILTER))
-        .thenReturn(Optional.of(role));
+        .thenReturn(of(role));
     when(resourceGroupService.get(
              resourceGroup.getIdentifier(), resourceGroup.getScopeIdentifier(), ManagedFilter.NO_FILTER))
-        .thenReturn(Optional.of(resourceGroup));
+        .thenReturn(of(resourceGroup));
+    when(accessControlAdminService.isBlocked(any())).thenReturn(false);
   }
 
   private List<RoleAssignmentDBO> createACLsForRoleAssignments(int count, UserGroupDBO userGroupForRoleAssignment) {
@@ -121,7 +127,7 @@ public class UserGroupChangeConsumerTest extends AggregatorTestBase {
               .build());
       when(roleAssignmentRepository.findByIdentifierAndScopeIdentifier(
                roleAssignmentDBO.getIdentifier(), roleAssignmentDBO.getScopeIdentifier()))
-          .thenReturn(Optional.of(roleAssignmentDBO));
+          .thenReturn(of(roleAssignmentDBO));
       createACLs(roleAssignmentDBO);
       roleAssignmentDBOS.add(roleAssignmentDBO);
       remaining--;
@@ -147,7 +153,7 @@ public class UserGroupChangeConsumerTest extends AggregatorTestBase {
 
   private void mockUserGroupServices(UserGroupDBO userGroupForMocking) {
     when(userGroupService.get(userGroupForMocking.getIdentifier(), userGroupForMocking.getScopeIdentifier()))
-        .thenReturn(Optional.of(UserGroupDBOMapper.fromDBO(userGroupForMocking)));
+        .thenReturn(of(UserGroupDBOMapper.fromDBO(userGroupForMocking)));
   }
 
   @Test
@@ -178,7 +184,7 @@ public class UserGroupChangeConsumerTest extends AggregatorTestBase {
                         .instanceId(testScopeIdentifier)
                         .build());
 
-    userGroupChangeConsumer.consumeUpdateEvent(updatedUserGroup.getId(), userGroupUpdateEventData);
+    userGroupChangeConsumer.consumeEvent(UPDATE_ACTION, updatedUserGroup.getId(), userGroupUpdateEventData);
     verifyACLs(roleAssignments, role.getPermissions().size(), updatedUserGroup.getUsers().size(),
         resourceGroup.getResourceSelectors().size());
   }
@@ -208,7 +214,7 @@ public class UserGroupChangeConsumerTest extends AggregatorTestBase {
                         .parentScope(null)
                         .instanceId(testScopeIdentifier)
                         .build());
-    userGroupChangeConsumer.consumeUpdateEvent(updatedUserGroup.getId(), userGroupUpdateEventData);
+    userGroupChangeConsumer.consumeEvent(UPDATE_ACTION, updatedUserGroup.getId(), userGroupUpdateEventData);
     verifyACLs(roleAssignments, role.getPermissions().size(), updatedUserGroup.getUsers().size(),
         resourceGroup.getResourceSelectors().size());
   }
@@ -241,8 +247,37 @@ public class UserGroupChangeConsumerTest extends AggregatorTestBase {
                         .instanceId(testScopeIdentifier)
                         .build());
 
-    userGroupChangeConsumer.consumeUpdateEvent(updatedUserGroup.getId(), userGroupUpdateEventData);
+    userGroupChangeConsumer.consumeEvent(UPDATE_ACTION, updatedUserGroup.getId(), userGroupUpdateEventData);
     verifyACLs(roleAssignments, 0, 0, 0);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void userGroupUpdateShouldNotProcessACLIfAccountIsBlocked() {
+    UserGroupDBO newUserGroup = buildUserGroupDBO(scopeIdentifier, current().nextInt(1, 4));
+    mockUserGroupServices(newUserGroup);
+
+    int numRoleAssignments = current().nextInt(1, 10);
+    List<RoleAssignmentDBO> roleAssignments = createACLsForRoleAssignments(numRoleAssignments, newUserGroup);
+    verifyACLs(roleAssignments, role.getPermissions().size(), newUserGroup.getUsers().size(),
+        resourceGroup.getResourceSelectors().size());
+
+    UserGroupDBO updatedUserGroup = (UserGroupDBO) HObjectMapper.clone(newUserGroup);
+    Set<String> usersAdded = new HashSet<>(List.of(getRandomString(10), getRandomString(10)));
+
+    updatedUserGroup.getUsers().addAll(usersAdded);
+    UserGroup userGroup = fromDBO(updatedUserGroup);
+
+    Scope scope =
+        Scope.builder().level(TestScopeLevels.TEST_SCOPE).parentScope(null).instanceId(testScopeIdentifier).build();
+    UserGroupUpdateEventData userGroupUpdateEventData =
+        UserGroupUpdateEventData.builder().scope(of(scope)).updatedUserGroup(userGroup).usersAdded(usersAdded).build();
+    when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifier)).thenReturn(scope);
+    when(accessControlAdminService.isBlocked(any())).thenReturn(true);
+    userGroupChangeConsumer.consumeEvent(UPDATE_ACTION, updatedUserGroup.getId(), userGroupUpdateEventData);
+    verifyACLs(roleAssignments, role.getPermissions().size(), newUserGroup.getUsers().size(),
+        resourceGroup.getResourceSelectors().size());
   }
 
   private void verifyACLs(List<RoleAssignmentDBO> roleAssignments, int distinctPermissions, int distinctPrincipals,

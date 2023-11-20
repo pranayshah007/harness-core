@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.artifact.resources.nexus.service;
+
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
@@ -69,6 +70,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
@@ -123,10 +125,11 @@ public class NexusResourceServiceImpl implements NexusResourceService {
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(nexusConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
-    NexusArtifactDelegateRequest nexusRequest =
-        ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(repositoryName, repositoryPort, artifactPath,
-            repositoryFormat, artifactRepositoryUrl, null, null, null, connector, encryptionDetails,
-            ArtifactSourceType.NEXUS3_REGISTRY, groupId, artifactId, extension, classifier, packageName, group);
+
+    NexusArtifactDelegateRequest nexusRequest = ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(
+        repositoryName, repositoryPort, artifactPath, repositoryFormat, artifactRepositoryUrl, null, null, null,
+        connector, encryptionDetails, ArtifactSourceType.NEXUS3_REGISTRY, groupId, artifactId,
+        StringUtils.defaultIfBlank(extension, null), StringUtils.defaultIfBlank(classifier, null), packageName, group);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(nexusRequest,
           ArtifactTaskType.GET_BUILDS, baseNGAccess, "Nexus Artifact Get Builds task failure due to error");

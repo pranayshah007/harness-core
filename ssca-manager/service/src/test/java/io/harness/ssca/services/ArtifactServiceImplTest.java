@@ -8,8 +8,14 @@
 package io.harness.ssca.services;
 
 import static io.harness.rule.OwnerRule.ARPITJ;
+import static io.harness.rule.OwnerRule.REETIKA;
 
+import static junit.framework.TestCase.assertEquals;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.BuilderFactory;
 import io.harness.SSCAManagerTestBase;
@@ -30,6 +36,7 @@ import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse;
 import io.harness.ssca.api.ArtifactApiUtils;
 import io.harness.ssca.beans.EnvType;
 import io.harness.ssca.entities.ArtifactEntity;
+import io.harness.ssca.entities.ArtifactEntity.ArtifactEntityKeys;
 import io.harness.ssca.entities.CdInstanceSummary;
 import io.harness.ssca.entities.CdInstanceSummary.CdInstanceSummaryBuilder;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
@@ -44,6 +51,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -56,6 +64,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   @Inject ArtifactService artifactService;
@@ -127,9 +136,7 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetArtifact() {
-    Mockito
-        .when(artifactRepository.findByAccountIdAndOrgIdAndProjectIdAndOrchestrationId(
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+    Mockito.when(artifactRepository.findByAccountIdAndOrgIdAndProjectIdAndOrchestrationId(any(), any(), any(), any()))
         .thenReturn(Optional.ofNullable(builderFactory.getArtifactEntityBuilder().build()));
     ArtifactEntity artifact =
         artifactService
@@ -149,7 +156,7 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   public void testGetArtifact_byArtifactId() {
     Mockito
         .when(artifactRepository.findFirstByAccountIdAndOrgIdAndProjectIdAndArtifactIdLike(
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+            any(), any(), any(), any(), any()))
         .thenReturn(Optional.ofNullable(builderFactory.getArtifactEntityBuilder().build()));
     ArtifactEntity artifact =
         artifactService
@@ -167,8 +174,7 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetArtifactByCorrelationId() {
-    Mockito.when(artifactRepository.findOne(Mockito.any()))
-        .thenReturn(builderFactory.getArtifactEntityBuilder().build());
+    Mockito.when(artifactRepository.findOne(any())).thenReturn(builderFactory.getArtifactEntityBuilder().build());
     ArtifactEntity artifact = artifactService.getArtifactByCorrelationId(builderFactory.getContext().getAccountId(),
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
         "artifactCorrelationId");
@@ -183,8 +189,7 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetLatestArtifact() {
-    Mockito.when(artifactRepository.findOne(Mockito.any()))
-        .thenReturn(builderFactory.getArtifactEntityBuilder().build());
+    Mockito.when(artifactRepository.findOne(any())).thenReturn(builderFactory.getArtifactEntityBuilder().build());
     ArtifactEntity artifact = artifactService.getLatestArtifact(builderFactory.getContext().getAccountId(),
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
         "artifactId", "tag");
@@ -199,8 +204,7 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetArtifactDetails() {
-    Mockito.when(artifactRepository.findOne(Mockito.any()))
-        .thenReturn(builderFactory.getArtifactEntityBuilder().build());
+    Mockito.when(artifactRepository.findOne(any())).thenReturn(builderFactory.getArtifactEntityBuilder().build());
 
     ArtifactDetailResponse response = artifactService.getArtifactDetails(builderFactory.getContext().getAccountId(),
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
@@ -226,7 +230,16 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
-  public void testSaveArtifactAndInvalidateOldArtifact() {}
+  public void testSaveArtifactAndInvalidateOldArtifact() {
+    Mockito.when(artifactRepository.findOne(Mockito.any()))
+        .thenReturn(builderFactory.getArtifactEntityBuilder().build());
+    ArtifactEntity newArtifact = builderFactory.getArtifactEntityBuilder().nonProdEnvCount(0l).prodEnvCount(0l).build();
+    artifactService.saveArtifactAndInvalidateOldArtifact(newArtifact);
+    ArgumentCaptor<ArtifactEntity> argument = ArgumentCaptor.forClass(ArtifactEntity.class);
+    Mockito.verify(artifactRepository).save(argument.capture());
+    assertThat(argument.getValue().getNonProdEnvCount()).isEqualTo(1);
+    assertThat(argument.getValue().getProdEnvCount()).isEqualTo(2);
+  }
 
   @Test
   @Owner(developers = ARPITJ)
@@ -240,11 +253,11 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
             .artifactId("artifact2")
             .artifactCorrelationId("artifactCorrelation2")
             .build());
-    Mockito.when(artifactRepository.findAll(Mockito.any(Aggregation.class))).thenReturn(artifactEntities);
+    Mockito.when(artifactRepository.findAll(any(Aggregation.class))).thenReturn(artifactEntities);
 
-    Mockito.when(artifactRepository.getCount(Mockito.any())).thenReturn(3L);
+    Mockito.when(artifactRepository.getCount(any())).thenReturn(3L);
 
-    Mockito.when(enforcementSummaryRepo.findAll(Mockito.any(Aggregation.class)))
+    Mockito.when(enforcementSummaryRepo.findAll(any(Aggregation.class)))
         .thenReturn(List.of(builderFactory.getEnforcementSummaryBuilder().build()));
 
     Pageable pageable = PageResponseUtils.getPageable(0, 2, ArtifactApiUtils.getSortFieldMapping("name"), "ASC");
@@ -297,10 +310,10 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
             .prodEnvCount(0l)
             .nonProdEnvCount(1l)
             .build());
-    Mockito.when(artifactRepository.findAll(Mockito.any(), Mockito.any()))
+    Mockito.when(artifactRepository.findAll(any(), any()))
         .thenReturn(new PageImpl<>(artifactEntities, Pageable.ofSize(2).withPage(0), 3));
-    Mockito.when(sbomComponentRepo.findAll(Mockito.any(), Mockito.any())).thenReturn(Page.empty());
-    Mockito.when(enforcementSummaryRepo.findAll(Mockito.any(Aggregation.class)))
+    Mockito.when(sbomComponentRepo.findAll(any(), any())).thenReturn(Page.empty());
+    Mockito.when(enforcementSummaryRepo.findAll(any(Aggregation.class)))
         .thenReturn(List.of(builderFactory.getEnforcementSummaryBuilder().build()));
     ArtifactListingRequestBody filterBody = new ArtifactListingRequestBody()
                                                 .environmentType(EnvironmentTypeEnum.ALL)
@@ -341,16 +354,55 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   }
 
   @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void testSearchCriteriaForListArtifacts() {
+    String searchTerm = randomAlphabetic(10);
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    Mockito.when(artifactRepository.findAll(any(), any())).thenReturn(Page.empty());
+
+    ArtifactListingRequestBody filterBody = new ArtifactListingRequestBody().searchTerm(searchTerm);
+
+    artifactService.listArtifacts(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(), filterBody,
+        Pageable.ofSize(2).withPage(0));
+
+    verify(artifactRepository, times(1)).findAll(criteriaArgumentCaptor.capture(), any());
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    Document document = criteria.getCriteriaObject();
+    assertEquals(6, document.size());
+    assertThat(document.get(ArtifactEntityKeys.name).toString()).isEqualTo(searchTerm);
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void testNoSearchCriteriaForListArtifacts() {
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    Mockito.when(artifactRepository.findAll(any(), any())).thenReturn(Page.empty());
+    ArtifactListingRequestBody filterBody = new ArtifactListingRequestBody().searchTerm(null);
+
+    artifactService.listArtifacts(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(), filterBody,
+        Pageable.ofSize(2).withPage(0));
+
+    verify(artifactRepository, times(1)).findAll(criteriaArgumentCaptor.capture(), any());
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    Document document = criteria.getCriteriaObject();
+    assertEquals(5, document.size());
+    assertThat(document.get(ArtifactEntityKeys.name)).isEqualTo(null);
+  }
+
+  @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetArtifactComponentView_noFilter() {
-    Mockito.when(artifactRepository.findOne(Mockito.any()))
-        .thenReturn(builderFactory.getArtifactEntityBuilder().build());
+    Mockito.when(artifactRepository.findOne(any())).thenReturn(builderFactory.getArtifactEntityBuilder().build());
     NormalizedSBOMComponentEntityBuilder builder = builderFactory.getNormalizedSBOMComponentBuilder();
     Page<NormalizedSBOMComponentEntity> entities =
         new PageImpl<>(List.of(builder.build(), builder.build()), Pageable.ofSize(2).withPage(0), 5);
 
-    Mockito.when(sbomComponentRepo.findAll(Mockito.any(), Mockito.any())).thenReturn(entities);
+    Mockito.when(sbomComponentRepo.findAll(any(), any())).thenReturn(entities);
 
     Page<ArtifactComponentViewResponse> responses = artifactService.getArtifactComponentView(
         builderFactory.getContext().getAccountId(), builderFactory.getContext().getOrgIdentifier(),
@@ -371,14 +423,13 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetArtifactDeploymentView_noFilter() {
-    Mockito.when(artifactRepository.findOne(Mockito.any()))
-        .thenReturn(builderFactory.getArtifactEntityBuilder().build());
+    Mockito.when(artifactRepository.findOne(any())).thenReturn(builderFactory.getArtifactEntityBuilder().build());
     CdInstanceSummaryBuilder builder = builderFactory.getCdInstanceSummaryBuilder();
     Page<CdInstanceSummary> entities =
         new PageImpl<>(List.of(builder.envIdentifier("env1").build(), builder.envIdentifier("env2").build()),
             Pageable.ofSize(2).withPage(0), 5);
 
-    Mockito.when(cdInstanceSummaryRepo.findAll(Mockito.any(), Mockito.any())).thenReturn(entities);
+    Mockito.when(cdInstanceSummaryRepo.findAll(any(), any())).thenReturn(entities);
 
     Page<ArtifactDeploymentViewResponse> responses = artifactService.getArtifactDeploymentView(
         builderFactory.getContext().getAccountId(), builderFactory.getContext().getOrgIdentifier(),

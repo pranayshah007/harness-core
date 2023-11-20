@@ -40,6 +40,9 @@ data:
   CLUSTER_DATA_GCS_BACKUP_BUCKET: {{ .Values.cloudProviderConfig.CLUSTER_DATA_GCS_BACKUP_BUCKET  | quote}}
   GCP_USE_NEW_PIPELINE: "true"
   AWS_USE_NEW_PIPELINE: "true"
+  HARNESS_CE_AZURE_CONTAINER_NAME: {{.Values.azureConfig.HARNESS_CE_AZURE_CONTAINER_NAME}}
+  HARNESS_CE_AZURE_STORAGE_NAME: {{.Values.azureConfig.HARNESS_CE_AZURE_STORAGE_NAME}}
+  HARNESS_CE_AZURE_IS_SYNC_JOB_DISABLED: {{.Values.azureConfig.HARNESS_CE_AZURE_IS_SYNC_JOB_DISABLED | quote}}
   GCP_SYNC_ENABLED: "true"
   CONNECTOR_HEALTH_UPDATE_JOB_ENABLED: "true"
   DATA_PIPELINE_CONFIG_GCP_PROJECT_ID: {{ .Values.global.ccm.gcpProjectId  | quote}}
@@ -48,6 +51,7 @@ data:
   CLICKHOUSE_ENABLED: {{ .Values.global.database.clickhouse.enabled | quote }}
   {{- if .Values.global.database.clickhouse.enabled }}
   CLICKHOUSE_URL: "jdbc:ch://clickhouse.{{ .Release.Namespace }}.svc.cluster.local:8123"
+  CLICKHOUSE_SOCKET_TIMEOUT: '{{ .Values.clickhouse.socketTimeout }}'
   {{- end }}
   USE_WORKLOAD_IDENTITY: {{ .Values.workloadIdentity.enabled | quote }}
   AWS_ACCOUNT_TAGS_COLLECTION_JOB_ENABLED: {{ .Values.awsAccountTagsCollectionJobConfig.enabled | quote }}

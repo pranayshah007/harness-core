@@ -1,0 +1,991 @@
+{
+  "pipelineExecutionSummary": {
+    "pipelineIdentifier": "SLSA_attestation_and_verification",
+    "orgIdentifier": "default",
+    "projectIdentifier": "SSCA_Manual_Tests",
+    "planExecutionId": "jnz3-IB1Q_KlmLAaiS3Guw",
+    "name": "SLSA attestation and verification",
+    "yamlVersion": "0",
+    "status": "Success",
+    "tags": [],
+    "executionTriggerInfo": {
+      "triggerType": "MANUAL",
+      "triggeredBy": {
+        "uuid": "Yu5EkNITT9G4tXBMyjtipA",
+        "identifier": "inderpreet.chera@harness.io",
+        "extraInfo": {
+          "email": "inderpreet.chera@harness.io"
+        },
+        "triggerIdentifier": "",
+        "triggerName": ""
+      },
+      "isRerun": false
+    },
+    "governanceMetadata": {
+      "id": "",
+      "deny": false,
+      "details": [],
+      "message": "",
+      "timestamp": "0",
+      "status": "",
+      "accountId": "",
+      "orgId": "",
+      "projectId": "",
+      "entity": "",
+      "type": "",
+      "action": "",
+      "created": "0"
+    },
+    "moduleInfo": {
+      "ci": {
+        "__recast": "io.harness.ci.plan.creator.execution.CIPipelineModuleInfo",
+        "branch": "master",
+        "buildType": "branch",
+        "ciEditionType": "ENTERPRISE",
+        "ciExecutionInfoDTO": {
+          "__recast": "io.harness.ci.pipeline.executions.beans.CIWebhookInfoDTO",
+          "event": "branch",
+          "branch": {
+            "__recast": "io.harness.ci.pipeline.executions.beans.CIBuildBranchHook",
+            "commits": []
+          },
+          "userSource": "MANUAL"
+        },
+        "ciLicenseType": "PAID",
+        "imageDetailsList": [
+          {
+            "__recast": "io.harness.ci.pipeline.executions.beans.CIImageDetails",
+            "imageName": "harness/drone-git",
+            "imageTag": "1.3.4-rootless"
+          }
+        ],
+        "infraDetailsList": [
+          {
+            "__recast": "io.harness.ci.pipeline.executions.beans.CIInfraDetails",
+            "infraType": "KubernetesDirect",
+            "infraOSType": "Linux",
+            "infraHostType": "Self Hosted",
+            "infraArchType": "Amd64"
+          }
+        ],
+        "isPrivateRepo": false,
+        "repoName": "docker-nginx",
+        "scmDetailsList": [
+          {
+            "__recast": "io.harness.ci.pipeline.executions.beans.CIScmDetails",
+            "scmUrl": "https://github.com/nginxinc/docker-nginx.git",
+            "scmProvider": "Github",
+            "scmAuthType": "Http",
+            "scmHostType": "SaaS"
+          }
+        ],
+        "tiBuildDetailsList": []
+      },
+      "cd": {
+        "__recast": "io.harness.cdng.pipeline.executions.beans.CDPipelineModuleInfo",
+        "envGroupIdentifiers": [],
+        "envIdentifiers": [
+          "ssca_test"
+        ],
+        "environmentTypes": [
+          "PreProduction"
+        ],
+        "freezeIdentifiers": [],
+        "gitOpsAppIdentifiers": [],
+        "infrastructureIdentifiers": [
+          "ssca_test"
+        ],
+        "infrastructureNames": [
+          "ssca test"
+        ],
+        "infrastructureTypes": [
+          "KubernetesDirect"
+        ],
+        "serviceDefinitionTypes": [
+          "Kubernetes"
+        ],
+        "serviceIdentifiers": [
+          "ssca_test"
+        ]
+      }
+    },
+    "layoutNodeMap": {
+      "4PIRrE2vTAujv5JBOIh4nA": {
+        "nodeType": "CI",
+        "nodeGroup": "STAGE",
+        "nodeIdentifier": "build",
+        "name": "build",
+        "nodeUuid": "4PIRrE2vTAujv5JBOIh4nA",
+        "status": "Success",
+        "module": "ci",
+        "moduleInfo": {
+          "ci": {
+            "__recast": "io.harness.ci.execution.plan.creator.execution.CIStageModuleInfo"
+          }
+        },
+        "startTs": 1698305723349,
+        "endTs": 1698305835728,
+        "edgeLayoutList": {
+          "currentNodeChildren": [],
+          "nextIds": [
+            "XVPFOxEYRtuDfrjq_5R1Vg"
+          ]
+        },
+        "nodeRunInfo": {
+          "whenCondition": "\u003c+OnPipelineSuccess\u003e",
+          "evaluatedCondition": true,
+          "expressions": [
+            {
+              "expression": "OnPipelineSuccess",
+              "expressionValue": "true",
+              "count": 1
+            }
+          ]
+        },
+        "failureInfo": {
+          "message": ""
+        },
+        "failureInfoDTO": {
+          "message": "",
+          "failureTypeList": [],
+          "responseMessages": []
+        },
+        "nodeExecutionId": "MlaAmnF5QJCJ1b4ITGTquA",
+        "executionInputConfigured": false,
+        "isRollbackStageNode": false
+      },
+      "uvAJTXTDS2qLHtiaSdu88w": {
+        "nodeType": "PipelineRollback",
+        "nodeGroup": "STAGE",
+        "nodeIdentifier": "prb-9UID3IJWSRCraN9YsWciJA",
+        "name": "Pipeline Rollback",
+        "nodeUuid": "uvAJTXTDS2qLHtiaSdu88w",
+        "status": "NotStarted",
+        "module": "pms",
+        "moduleInfo": {
+          "pms": {}
+        },
+        "edgeLayoutList": {
+          "currentNodeChildren": [],
+          "nextIds": []
+        },
+        "isRollbackStageNode": false
+      },
+      "XVPFOxEYRtuDfrjq_5R1Vg": {
+        "nodeType": "Deployment",
+        "nodeGroup": "STAGE",
+        "nodeIdentifier": "deploy",
+        "name": "deploy",
+        "nodeUuid": "XVPFOxEYRtuDfrjq_5R1Vg",
+        "status": "Success",
+        "module": "cd",
+        "moduleInfo": {
+          "cd": {
+            "__recast": "io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo",
+            "rollbackDuration": 0,
+            "serviceInfo": {
+              "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary",
+              "identifier": "ssca_test",
+              "displayName": "ssca test",
+              "deploymentType": "Kubernetes",
+              "gitOpsEnabled": false,
+              "artifacts": {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary$ArtifactsSummary",
+                "sidecars": []
+              },
+              "manifestInfo": {
+                "__recast": "io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo"
+              }
+            },
+            "infraExecutionSummary": {
+              "__recast": "io.harness.cdng.pipeline.executions.beans.InfraExecutionSummary",
+              "identifier": "ssca_test",
+              "name": "ssca test",
+              "type": "PreProduction",
+              "infrastructureIdentifier": "ssca_test",
+              "infrastructureName": "ssca test"
+            }
+          }
+        },
+        "startTs": 1698305836296,
+        "endTs": 1698305884852,
+        "edgeLayoutList": {
+          "currentNodeChildren": [],
+          "nextIds": []
+        },
+        "nodeRunInfo": {
+          "whenCondition": "\u003c+OnPipelineSuccess\u003e",
+          "evaluatedCondition": true,
+          "expressions": [
+            {
+              "expression": "OnPipelineSuccess",
+              "expressionValue": "true",
+              "count": 1
+            }
+          ]
+        },
+        "failureInfo": {
+          "message": ""
+        },
+        "failureInfoDTO": {
+          "message": "",
+          "failureTypeList": [],
+          "responseMessages": []
+        },
+        "nodeExecutionId": "Gujoo0nDTTiDkfY-P41HQQ",
+        "executionInputConfigured": false,
+        "isRollbackStageNode": false
+      }
+    },
+    "modules": [
+      "cd",
+      "ci",
+      "pms"
+    ],
+    "startingNodeId": "4PIRrE2vTAujv5JBOIh4nA",
+    "startTs": 1698305721440,
+    "endTs": 1698305885497,
+    "createdAt": 1698305721776,
+    "canRetry": true,
+    "showRetryHistory": false,
+    "runSequence": 5,
+    "successfulStagesCount": 2,
+    "runningStagesCount": 0,
+    "failedStagesCount": 0,
+    "totalStagesCount": 2,
+    "storeType": "INLINE",
+    "executionInputConfigured": false,
+    "parentStageInfo": {
+      "hasparentpipeline": false,
+      "stagenodeid": "",
+      "executionid": "",
+      "identifier": "",
+      "projectid": "",
+      "orgid": "",
+      "runsequence": 0
+    },
+    "allowStageExecutions": false,
+    "executionMode": "NORMAL",
+    "notesExistForPlanExecutionId": false,
+    "shouldUseSimplifiedKey": false,
+    "stagesExecution": false
+  },
+  "executionGraph": {
+    "rootNodeId": "Gujoo0nDTTiDkfY-P41HQQ",
+    "nodeMap": {
+      "1uGbN0yOQom4JrkvsklpXg": {
+        "uuid": "1uGbN0yOQom4JrkvsklpXg",
+        "setupId": "skthEUNQQKuOJqBZ44dwHQ",
+        "name": "Execution",
+        "identifier": "execution",
+        "baseFqn": "pipeline.stages.deploy.spec.execution",
+        "outcomes": {},
+        "stepParameters": {
+          "childNodeId": "skthEUNQQKuOJqBZ44dwHQsteps",
+          "logMessage": "Execution Element"
+        },
+        "startTs": 1698305845384,
+        "endTs": 1698305884239,
+        "stepType": "NG_SECTION_WITH_ROLLBACK_INFO",
+        "status": "Success",
+        "failureInfo": {
+          "message": "",
+          "failureTypeList": [],
+          "responseMessages": []
+        },
+        "skipInfo": null,
+        "nodeRunInfo": null,
+        "executableResponses": [
+          {
+            "child": {
+              "childNodeId": "skthEUNQQKuOJqBZ44dwHQsteps",
+              "logKeys": [],
+              "units": []
+            }
+          }
+        ],
+        "unitProgresses": [],
+        "progressData": null,
+        "delegateInfoList": [],
+        "interruptHistories": [],
+        "stepDetails": null,
+        "strategyMetadata": null,
+        "executionInputConfigured": false,
+        "logBaseKey": "accountId:ppbLW9YpRharzPs_JtWT7g/orgId:default/projectId:SSCA_Manual_Tests/pipelineId:SLSA_attestation_and_verification/runSequence:5/level0:pipeline/level1:stages/level2:deploy/level3:spec/level4:execution"
+      },
+      "0A8H1wyMRiSaW4R4KrT3kw": {
+        "uuid": "0A8H1wyMRiSaW4R4KrT3kw",
+        "setupId": "init-e02_gdI_SRWIlh9NOX8Ciw",
+        "name": "Initialize",
+        "identifier": "Initialize",
+        "baseFqn": "pipeline.stages.deploy.spec.execution.steps.container.steps.Initialize",
+        "outcomes": {
+          "podDetailsOutcome": {
+            "ipAddress": "10.40.7.213",
+            "namespace": "ssca-at"
+          }
+        },
+        "stepParameters": {
+          "stepGroupIdentifier": "container",
+          "stepGroupName": "container",
+          "infrastructure": {
+            "type": "KUBERNETES_DIRECT",
+            "spec": {
+              "connectorRef": "kubernetes_connector_for_at",
+              "namespace": "ssca-at"
+            }
+          },
+          "stepsExecutionConfig": {
+            "steps": [
+              {
+                "uuid": "VpBE8HRHTdu5zYd7sf0I-Q",
+                "step": {
+                  "identifier": "SlsaVerification_1",
+                  "type": "SlsaVerification",
+                  "name": "SlsaVerification_1",
+                  "spec": {
+                    "source": {
+                      "type": "Docker",
+                      "spec": {
+                        "connector": "account.docker_connector_for_at",
+                        "image_path": "autosscauser/autosscauser-auto",
+                        "tag": "5",
+                        "__uuid": "3MNqtyTpRYaow8eHio98tg"
+                      },
+                      "__uuid": "IS2P_Km2TPutuxBChN6I7A"
+                    },
+                    "verify_attestation": {
+                      "type": "cosign",
+                      "spec": {
+                        "public_key": "account.cosign_public_key_for_at",
+                        "__uuid": "NBvBX5b7SXijxHfXwPlyxQ"
+                      },
+                      "__uuid": "xrsQJV6STfy_g9KJdnyOOw"
+                    },
+                    "__uuid": "HOXCvG39SE6nWc81RCLViw"
+                  },
+                  "enforce": {
+                    "policySets": [
+                      "new_policy_set_10_26_13_01"
+                    ],
+                    "__uuid": "ZEMxklnbTL2kWFI4mjbU3g"
+                  },
+                  "__uuid": "KJK0tYiRS1uUbPf23nfRLQ"
+                },
+                "parallel": {},
+                "stepGroup": {}
+              }
+            ]
+          }
+        },
+        "startTs": 1698305860119,
+        "endTs": 1698305867255,
+        "stepType": "InitializeContainer",
+        "status": "Success",
+        "failureInfo": {
+          "message": "",
+          "failureTypeList": [],
+          "responseMessages": []
+        },
+        "skipInfo": null,
+        "nodeRunInfo": null,
+        "executableResponses": [
+          {
+            "task": {
+              "taskId": "gZpMfRrOTbWfzQ2zEMBI8Q-DEL",
+              "taskCategory": "DELEGATE_TASK_V2",
+              "logKeys": [
+                "accountId:ppbLW9YpRharzPs_JtWT7g/orgId:default/projectId:SSCA_Manual_Tests/pipelineId:SLSA_attestation_and_verification/runSequence:5/level0:pipeline/level1:stages/level2:deploy/level3:spec/level4:execution/level5:steps/level6:container/level7:steps/level8:Initialize"
+              ],
+              "units": [],
+              "taskName": "Run task container initialization"
+            }
+          }
+        ],
+        "unitProgresses": [],
+        "progressData": null,
+        "delegateInfoList": [
+          {
+            "id": "71mCe6b2RMmAecRR9Mg6nw",
+            "name": "ssca-delegate-for-at-qa",
+            "taskId": "gZpMfRrOTbWfzQ2zEMBI8Q-DEL",
+            "taskName": "Run task container initialization"
+          }
+        ],
+        "interruptHistories": [],
+        "stepDetails": null,
+        "strategyMetadata": null,
+        "executionInputConfigured": false,
+        "logBaseKey": "accountId:ppbLW9YpRharzPs_JtWT7g/orgId:default/projectId:SSCA_Manual_Tests/pipelineId:SLSA_attestation_and_verification/runSequence:5/level0:pipeline/level1:stages/level2:deploy/level3:spec/level4:execution/level5:steps/level6:container/level7:steps/level8:Initialize"
+      },
+      "DrxipINsR0GWo5_RgpD2oA": {
+        "uuid": "DrxipINsR0GWo5_RgpD2oA",
+        "setupId": "A-Hkc5yHSgCfgv3NtJBsyg",
+        "name": "Resource Constraint",
+        "identifier": "rc-arEX3b0PRQGq3hqKpd2s5g",
+        "baseFqn": "pipeline.stages.deploy.spec.rc-arEX3b0PRQGq3hqKpd2s5g",
+        "outcomes": {
+          "output": {
+            "name": "Queuing",
+            "capacity": 1,
+            "resourceUnit": "b74da7585dddc3c508b354a1dd92d167bba3fe6b",
+            "usage": 1,
+            "alreadyAcquiredPermits": 1
+          }
+        },
+        "stepParameters": {
+          "identifier": "rc-arEX3b0PRQGq3hqKpd2s5g",
+          "name": "Resource Constraint",
+          "timeout": "1w",
+          "when": {
+            "stageStatus": "SUCCESS",
+            "condition": "true == \"true\""
+          },
+          "type": "ResourceConstraint",
+          "spec": {
+            "name": "Queuing",
+            "resourceUnit": "b74da7585dddc3c508b354a1dd92d167bba3fe6b",
+            "acquireMode": "ENSURE",
+            "permits": 1,
+            "holdingScope": "STAGE"
+          }
+        },
+        "startTs": 1698305844166,
+        "endTs": 1698305844896,
+        "stepType": "ResourceConstraint",
+        "status": "Success",
+        "failureInfo": {
+          "message": "",
+          "failureTypeList": [],
+          "responseMessages": []
+        },
+        "skipInfo": null,
+        "nodeRunInfo": {
+          "whenCondition": "\u003c+OnStageSuccess\u003e \u0026\u0026 (\u003c+InfrastructureStepOutput.addRcStep\u003e \u003d\u003d \"true\")",
+          "evaluatedCondition": true,
+          "expressions": [
+            {
+              "expression": "InfrastructureStepOutput.addRcStep",
+              "expressionValue": "true",
+              "count": 1
+            },
+            {
+              "expression": "OnStageSuccess",
+              "expressionValue": "true",
+              "count": 1
+            }
+          ]
+        },
+        "executableResponses": [
+          {
+            "sync": {
+              "logKeys": [
+                "accountId:ppbLW9YpRharzPs_JtWT7g/orgId:default/projectId:SSCA_Manual_Tests/pipelineId:SLSA_attestation_and_verification/runSequence:5/level0:pipeline/level1:stages/level2:deploy/level3:spec/level4:rc-arEX3b0PRQGq3hqKpd2s5g"
+              ],
+              "units": []
+            }
+          }
+        ],
+        "unitProgresses": [],
+        "progressData": null,
+        "delegateInfoList": [],
+        "interruptHistories": [],
+        "stepDetails": null,
+        "strategyMetadata": null,
+        "executionInputConfigured": false,
+        "logBaseKey": "accountId:ppbLW9YpRharzPs_JtWT7g/orgId:default/projectId:SSCA_Manual_Tests/pipelineId:SLSA_attestation_and_verification/runSequence:5/level0:pipeline/level1:stages/level2:deploy/level3:spec/level4:rc-arEX3b0PRQGq3hqKpd2s5g"
+      },
+      "OjrgG086TLet33qBZrFFQw": {
+        "uuid": "OjrgG086TLet33qBZrFFQw",
+        "setupId": "hpRi7HCDQbmUaa1v83JAtQ",
+        "name": "Infrastructure",
+        "identifier": "infrastructure",
+        "baseFqn": "pipeline.stages.deploy.spec.infrastructure",
+        "outcomes": {
+          "output": {
+            "connectorRef": "account.kubernetes_connector_for_at",
+            "namespace": "ssca-at",
+            "releaseName": "release-<+INFRA_KEY_SHORT_ID>",
+            "environment": {
+              "name": "ssca test",
+              "identifier": "ssca_test",
+              "description": "",
+              "type": "PreProduction",
+              "v1Type": "NON_PROD",
+              "tags": {},
+              "environmentRef": "ssca_test",
+              "variables": {}
+            },
+            "infrastructureKey": "",
+            "infrastructureKeyShort": "b74da7",
+            "infraIdentifier": "ssca_test",
+            "infraName": "ssca test",
+            "name": "ssca test",
+            "connector": {
+              "name": "kubernetes_connector_for_at"
+            }
+          }
+        },
+        "stepParameters": {
+          "envRef": "ssca_test",
+          "infraRef": "ssca_test",
+          "deploymentType": "KUBERNETES"
+        },
+        "startTs": 1698305840718,
+        "endTs": 1698305843427,
+        "stepType": "INFRASTRUCTURE_TASKSTEP_V2",
+        "status": "Success",
+        "failureInfo": {
+          "message": "",
+          "failureTypeList": [],
+          "responseMessages": []
+        },
+        "skipInfo": null,
+        "nodeRunInfo": null,
+        "executableResponses": [
+          {
+            "async": {
+              "callbackIds": [],
+              "logKeys": [
+                "accountId:ppbLW9YpRharzPs_JtWT7g/orgId:default/projectId:SSCA_Manual_Tests/pipelineId:SLSA_attestation_and_verification/runSequence:5/level0:pipeline/level1:stages/level2:deploy/level3:spec/level4:infrastructure-commandUnit:Execute"
+              ],
+              "units": [],
+              "timeout": "0",
+              "status": "NO_OP"
+            }
+          }
+        ],
+        "unitProgresses": [
+          {
+            "unitName": "Execute",
+            "status": "SUCCESS",
+            "startTime": "1698305842925",
+            "endTime": "1698305843165"
+          }
+        ],
+        "progressData": null,
+        "delegateInfoList": [],
+        "interruptHistories": [],
+        "stepDetails": null,
+        "strategyMetadata": null,
+        "executionInputConfigured": false,
+        "logBaseKey": "accountId:ppbLW9YpRharzPs_JtWT7g/orgId:default/projectId:SSCA_Manual_Tests/pipelineId:SLSA_attestation_and_verification/runSequence:5/level0:pipeline/level1:stages/level2:deploy/level3:spec/level4:infrastructure"
+      },
+      "uxnU8okLRZWiQtGhmpPCag": {
+        "uuid": "uxnU8okLRZWiQtGhmpPCag",
+        "setupId": "e02_gdI_SRWIlh9NOX8Ciw",
+        "name": "container",
+        "identifier": "container",
+        "baseFqn": "pipeline.stages.deploy.spec.execution.steps.container",
+        "outcomes": {},
+        "stepParameters": {
+          "identifier": "container",
+          "name": "container",
+          "childNodeID": "e02_gdI_SRWIlh9NOX8Ciwsteps",
+          "variables": {}
+        },
+        "startTs": 1698305846433,
+        "endTs": 1698305873637,
+        "stepType": "STEP_GROUP",
+        "status": "Success",
+        "failureInfo": {
+          "message": "",
+          "failureTypeList": [],
+          "responseMessages": []
+        },
+        "skipInfo": null,
+        "nodeRunInfo": {
+          "whenCondition": "\u003c+OnStageSuccess\u003e",
+          "evaluatedCondition": true,
+          "expressions": [
+            {
+              "expression": "OnStageSuccess",
+              "expressionValue": "true",
+              "count": 1
+            }
+          ]
+        },
+        "executableResponses": [
+          {
+            "child": {
+              "childNodeId": "e02_gdI_SRWIlh9NOX8Ciwsteps",
+              "logKeys": [],
+              "units": []
+            }
+          }
+        ],
+        "unitProgresses": [],
+        "progressData": null,
+        "delegateInfoList": [],
+        "interruptHistories": [],
+        "stepDetails": null,
+        "strategyMetadata": null,
+        "executionInputConfigured": false,
+        "logBaseKey": "accountId:ppbLW9YpRharzPs_JtWT7g/orgId:default/projectId:SSCA_Manual_Tests/pipelineId:SLSA_attestation_and_verification/runSequence:5/level0:pipeline/level1:stages/level2:deploy/level3:spec/level4:execution/level5:steps/level6:container"
+      },
+      "Gujoo0nDTTiDkfY-P41HQQ": {
+        "uuid": "Gujoo0nDTTiDkfY-P41HQQ",
+        "setupId": "XVPFOxEYRtuDfrjq_5R1Vg",
+        "name": "deploy",
+        "identifier": "deploy",
+        "baseFqn": "pipeline.stages.deploy",
+        "outcomes": {},
+        "stepParameters": {
+          "identifier": "deploy",
+          "name": "deploy",
+          "description": "",
+          "failureStrategies": [
+            {
+              "onFailure": {
+                "errors": [
+                  "ALL_ERRORS"
+                ],
+                "action": {
+                  "type": "STAGE_ROLLBACK"
+                }
+              }
+            }
+          ],
+          "variables": {},
+          "tags": {},
+          "type": "Deployment"
+        },
+        "startTs": 1698305836296,
+        "endTs": 1698305884852,
+        "stepType": "DEPLOYMENT_STAGE_STEP",
+        "status": "Success",
+        "failureInfo": {
+          "message": "",
+          "failureTypeList": [],
+          "responseMessages": []
+        },
+        "skipInfo": null,
+        "nodeRunInfo": {
+          "whenCondition": "\u003c+OnPipelineSuccess\u003e",
+          "evaluatedCondition": true,
+          "expressions": [
+            {
+              "expression": "OnPipelineSuccess",
+              "expressionValue": "true",
+              "count": 1
+            }
+          ]
+        },
+        "executableResponses": [
+          {
+            "child": {
+              "childNodeId": "HA0czdJARp64UJblheS10Q",
+              "logKeys": [],
+              "units": []
+            }
+          }
+        ],
+        "unitProgresses": [],
+        "progressData": null,
+        "delegateInfoList": [],
+        "interruptHistories": [],
+        "stepDetails": null,
+        "strategyMetadata": null,
+        "executionInputConfigured": false,
+        "logBaseKey": "accountId:ppbLW9YpRharzPs_JtWT7g/orgId:default/projectId:SSCA_Manual_Tests/pipelineId:SLSA_attestation_and_verification/runSequence:5/level0:pipeline/level1:stages/level2:deploy"
+      },
+      "AJ1_YlXwSsWiT4zDusE0fQ": {
+        "uuid": "AJ1_YlXwSsWiT4zDusE0fQ",
+        "setupId": "KJK0tYiRS1uUbPf23nfRLQ",
+        "name": "SlsaVerification_1",
+        "identifier": "SlsaVerification_1",
+        "baseFqn": "pipeline.stages.deploy.spec.execution.steps.container.steps.SlsaVerification_1",
+        "outcomes": {
+          "output": {
+            "outputVariables": {}
+          },
+          "artifact_container_SlsaVerification_1": {
+            "stepArtifacts": {
+              "publishedFileArtifacts": [],
+              "publishedImageArtifacts": [
+                {
+                  "imageName": "autosscauser/autosscauser-auto",
+                  "tag": "5"
+                }
+              ],
+              "publishedSbomArtifacts": [],
+              "provenanceArtifacts": [
+                {
+                  "predicateType": "https://slsa.dev/provenance/v1",
+                  "predicate": {
+                    "buildDefinition": {
+                      "buildType": "https://developer.harness.io/docs/continuous-integration",
+                      "externalParameters": {
+                        "codeMetadata": {
+                          "repositoryURL": "https://github.com/nginxinc/docker-nginx",
+                          "branch": "master"
+                        },
+                        "triggerMetadata": {
+                          "triggerType": "MANUAL",
+                          "triggeredBy": "inderpreet.chera@harness.io"
+                        },
+                        "buildMetadata": {
+                          "image": "autosscauser/autosscauser-auto",
+                          "dockerFile": "./stable/alpine/Dockerfile"
+                        }
+                      },
+                      "internalParameters": {
+                        "pipelineExecutionId": "jnz3-IB1Q_KlmLAaiS3Guw",
+                        "accountId": "ppbLW9YpRharzPs_JtWT7g",
+                        "pipelineIdentifier": "SLSA_attestation_and_verification"
+                      }
+                    },
+                    "runDetails": {
+                      "builder": {
+                        "id": "https://developer.harness.io/docs/continuous-integration",
+                        "version": {
+                          "ci-manager": "1.0.6402-000",
+                          "plugins/kaniko": "1.8.0"
+                        }
+                      },
+                      "runDetailsMetadata": {
+                        "invocationId": "TCfWZ3j8QSSvN3x3KnxZJA",
+                        "startedOn": "2023-10-26T07:35:21.438Z",
+                        "finishedOn": "2023-10-26T07:36:02.733Z"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "policyOutput": {
+            "evaluationId": "1058762",
+            "status": "warning",
+            "policySetDetails": {
+              "new_policy_set_10_26_13_01": {
+                "status": "warning",
+                "identifier": "new_policy_set_10_26_13_01",
+                "name": "New Policy Set - 10/26 - 13:01",
+                "policyDetails": {
+                  "new_policy_10_26_13_01": {
+                    "identifier": "new_policy_10_26_13_01",
+                    "name": "New Policy - 10/26 - 13:01",
+                    "status": "warning",
+                    "denyMessages": [
+                      "Branch verification failed in provenance"
+                    ],
+                    "error": ""
+                  }
+                }
+              }
+            }
+          }
+        },
+        "stepParameters": {
+          "identifier": "SlsaVerification_1",
+          "name": "SlsaVerification_1",
+          "timeout": "10h",
+          "type": "SlsaVerification",
+          "spec": {
+            "source": {
+              "type": "DOCKER",
+              "spec": {
+                "connector": "account.docker_connector_for_at",
+                "image_path": "autosscauser/autosscauser-auto",
+                "tag": "5"
+              }
+            },
+            "slsaVerifyAttestation": {
+              "type": "COSIGN",
+              "slsaVerifyAttestationSpec": {
+                "publicKey": "account.cosign_public_key_for_at"
+              }
+            }
+          },
+          "enforce": {
+            "policySets": [
+              "new_policy_set_10_26_13_01"
+            ]
+          }
+        },
+        "startTs": 1698305867958,
+        "endTs": 1698305873099,
+        "stepType": "SlsaVerification",
+        "status": "Success",
+        "failureInfo": {
+          "message": "",
+          "failureTypeList": [],
+          "responseMessages": []
+        },
+        "skipInfo": null,
+        "nodeRunInfo": {
+          "whenCondition": "\u003c+OnStageSuccess\u003e",
+          "evaluatedCondition": true,
+          "expressions": [
+            {
+              "expression": "OnStageSuccess",
+              "expressionValue": "true",
+              "count": 1
+            }
+          ]
+        },
+        "executableResponses": [
+          {
+            "async": {
+              "callbackIds": [
+                "Lvjyr3LYSeW9Bh6K3Kazow-DEL",
+                "yh5vKwRiTXiwRzZkyxJb-A-DEL"
+              ],
+              "logKeys": [
+                "accountId:ppbLW9YpRharzPs_JtWT7g/orgId:default/projectId:SSCA_Manual_Tests/pipelineId:SLSA_attestation_and_verification/runSequence:5/level0:pipeline/level1:stages/level2:deploy/level3:spec/level4:execution/level5:steps/level6:container/level7:steps/level8:SlsaVerification_1"
+              ],
+              "units": [],
+              "timeout": "0",
+              "status": "NO_OP"
+            }
+          }
+        ],
+        "unitProgresses": [],
+        "progressData": null,
+        "delegateInfoList": [],
+        "interruptHistories": [],
+        "stepDetails": null,
+        "strategyMetadata": null,
+        "executionInputConfigured": false,
+        "logBaseKey": "accountId:ppbLW9YpRharzPs_JtWT7g/orgId:default/projectId:SSCA_Manual_Tests/pipelineId:SLSA_attestation_and_verification/runSequence:5/level0:pipeline/level1:stages/level2:deploy/level3:spec/level4:execution/level5:steps/level6:container/level7:steps/level8:SlsaVerification_1"
+      },
+      "JRi9v1DYTQa09XSe24lzrw": {
+        "uuid": "JRi9v1DYTQa09XSe24lzrw",
+        "setupId": "UE0HzGj1Qq6DBRIQz85UmA",
+        "name": "Service",
+        "identifier": "service",
+        "baseFqn": "pipeline.stages.deploy.spec",
+        "outcomes": {
+          "service": {
+            "identifier": "ssca_test",
+            "name": "ssca test",
+            "type": "Kubernetes",
+            "gitOpsEnabled": false
+          }
+        },
+        "stepParameters": {
+          "serviceRef": "ssca_test"
+        },
+        "startTs": 1698305837321,
+        "endTs": 1698305840228,
+        "stepType": "SERVICE_V3",
+        "status": "Success",
+        "failureInfo": {
+          "message": "",
+          "failureTypeList": [],
+          "responseMessages": []
+        },
+        "skipInfo": null,
+        "nodeRunInfo": null,
+        "executableResponses": [
+          {
+            "children": {
+              "children": [
+                {
+                  "childNodeId": "artifacts-IT0U8HzPTHO8fOK1UT5Uxw"
+                },
+                {
+                  "childNodeId": "manifests-62QFYeA6TpC7CnLpNfTQ0Q"
+                },
+                {
+                  "childNodeId": "configFiles-3gEZ6kTxT_OaMtir0OyIIw"
+                },
+                {
+                  "childNodeId": "hooks-D9xlkbPaSku_xpbx3ZtBNA"
+                }
+              ],
+              "maxConcurrency": "0",
+              "logKeys": [
+                "accountId:ppbLW9YpRharzPs_JtWT7g/orgId:default/projectId:SSCA_Manual_Tests/pipelineId:SLSA_attestation_and_verification/runSequence:5/level0:pipeline/level1:stages/level2:deploy/level3:spec/level4:service-commandUnit:Service Step",
+                "accountId:ppbLW9YpRharzPs_JtWT7g/orgId:default/projectId:SSCA_Manual_Tests/pipelineId:SLSA_attestation_and_verification/runSequence:5/level0:pipeline/level1:stages/level2:deploy/level3:spec/level4:service-commandUnit:Service Overrides"
+              ],
+              "shouldProceedIfFailed": false,
+              "units": [
+                "Service Step",
+                "Service Overrides"
+              ]
+            }
+          }
+        ],
+        "unitProgresses": [
+          {
+            "unitName": "Service Overrides",
+            "status": "SUCCESS",
+            "startTime": "1698305837321",
+            "endTime": "1698305840031"
+          },
+          {
+            "unitName": "Service Step",
+            "status": "SUCCESS",
+            "startTime": "1698305837321",
+            "endTime": "1698305839941"
+          }
+        ],
+        "progressData": null,
+        "delegateInfoList": [],
+        "interruptHistories": [],
+        "stepDetails": null,
+        "strategyMetadata": null,
+        "executionInputConfigured": false,
+        "logBaseKey": "accountId:ppbLW9YpRharzPs_JtWT7g/orgId:default/projectId:SSCA_Manual_Tests/pipelineId:SLSA_attestation_and_verification/runSequence:5/level0:pipeline/level1:stages/level2:deploy/level3:spec/level4:service"
+      }
+    },
+    "nodeAdjacencyListMap": {
+      "1uGbN0yOQom4JrkvsklpXg": {
+        "children": [
+          "uxnU8okLRZWiQtGhmpPCag"
+        ],
+        "nextIds": []
+      },
+      "0A8H1wyMRiSaW4R4KrT3kw": {
+        "children": [],
+        "nextIds": [
+          "AJ1_YlXwSsWiT4zDusE0fQ"
+        ]
+      },
+      "DrxipINsR0GWo5_RgpD2oA": {
+        "children": [],
+        "nextIds": [
+          "1uGbN0yOQom4JrkvsklpXg"
+        ]
+      },
+      "OjrgG086TLet33qBZrFFQw": {
+        "children": [],
+        "nextIds": [
+          "DrxipINsR0GWo5_RgpD2oA"
+        ]
+      },
+      "uxnU8okLRZWiQtGhmpPCag": {
+        "children": [
+          "0A8H1wyMRiSaW4R4KrT3kw"
+        ],
+        "nextIds": []
+      },
+      "Gujoo0nDTTiDkfY-P41HQQ": {
+        "children": [
+          "JRi9v1DYTQa09XSe24lzrw"
+        ],
+        "nextIds": []
+      },
+      "AJ1_YlXwSsWiT4zDusE0fQ": {
+        "children": [],
+        "nextIds": []
+      },
+      "JRi9v1DYTQa09XSe24lzrw": {
+        "children": [],
+        "nextIds": [
+          "OjrgG086TLet33qBZrFFQw"
+        ]
+      }
+    },
+    "executionMetadata": {
+      "accountId": "ppbLW9YpRharzPs_JtWT7g",
+      "pipelineIdentifier": "SLSA_attestation_and_verification",
+      "orgIdentifier": "default",
+      "projectIdentifier": "SSCA_Manual_Tests",
+      "planExecutionId": "jnz3-IB1Q_KlmLAaiS3Guw"
+    },
+    "representationStrategy": "camelCase"
+  }
+}

@@ -1,6 +1,6 @@
 # batch-processing
 
-![Version: 0.12.0](https://img.shields.io/badge/Version-0.12.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.81101](https://img.shields.io/badge/AppVersion-0.0.81101-informational?style=flat-square)
+![Version: 0.12.0](https://img.shields.io/badge/Version-0.12.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.81103](https://img.shields.io/badge/AppVersion-0.0.81103-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -35,6 +35,7 @@ A Helm chart for Kubernetes
 | cliProxy.username | string | `""` |  |
 | clickhouse.password.key | string | `"admin-password"` |  |
 | clickhouse.password.name | string | `"clickhouse"` |  |
+| clickhouse.socketTimeout | string | `"86400000"` |  |
 | clickhouse.username | string | `"default"` |  |
 | cloudProviderConfig.CLUSTER_DATA_GCS_BACKUP_BUCKET | string | `"clusterdata-onprem-backup"` |  |
 | cloudProviderConfig.CLUSTER_DATA_GCS_BUCKET | string | `"clusterdata-onprem"` |  |
@@ -140,13 +141,13 @@ A Helm chart for Kubernetes
 | image.pullPolicy | string | `"Always"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/batch-processing-signed"` |  |
-| image.tag | string | `"81101-000"` |  |
+| image.tag | string | `"81103-000"` |  |
 | imageClickhouseEnabled.digest | string | `""` |  |
 | imageClickhouseEnabled.imagePullSecrets | list | `[]` |  |
 | imageClickhouseEnabled.pullPolicy | string | `"Always"` |  |
 | imageClickhouseEnabled.registry | string | `"docker.io"` |  |
 | imageClickhouseEnabled.repository | string | `"harness/batch-processing-signed"` |  |
-| imageClickhouseEnabled.tag | string | `"81101-000"` |  |
+| imageClickhouseEnabled.tag | string | `"81103-000"` |  |
 | isolatedReplica | int | `0` |  |
 | java.memory | string | `"7168"` |  |
 | java17flags | string | `""` |  |

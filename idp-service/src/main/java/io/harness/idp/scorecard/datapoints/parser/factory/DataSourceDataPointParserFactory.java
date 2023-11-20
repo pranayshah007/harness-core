@@ -4,9 +4,18 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
+
 package io.harness.idp.scorecard.datapoints.parser.factory;
 
-import static io.harness.idp.common.Constants.*;
+import static io.harness.idp.common.Constants.BITBUCKET_IDENTIFIER;
+import static io.harness.idp.common.Constants.CATALOG_IDENTIFIER;
+import static io.harness.idp.common.Constants.CUSTOM_IDENTIFIER;
+import static io.harness.idp.common.Constants.GITHUB_IDENTIFIER;
+import static io.harness.idp.common.Constants.GITLAB_IDENTIFIER;
+import static io.harness.idp.common.Constants.HARNESS_IDENTIFIER;
+import static io.harness.idp.common.Constants.JIRA_IDENTIFIER;
+import static io.harness.idp.common.Constants.KUBERNETES_IDENTIFIER;
+import static io.harness.idp.common.Constants.PAGERDUTY_IDENTIFIER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -14,8 +23,8 @@ import io.harness.annotations.dev.OwnedBy;
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
 
-@OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@OwnedBy(HarnessTeam.IDP)
 public class DataSourceDataPointParserFactory {
   GithubDataPointParserFactory githubDataPointParserFactory;
   BitbucketDataPointParserFactory bitbucketDataPointParserFactory;

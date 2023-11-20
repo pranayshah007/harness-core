@@ -269,15 +269,16 @@ public class MonitoredServiceResource {
       @NotNull @Valid @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("environmentIdentifier") String environmentIdentifier,
       @QueryParam("environmentIdentifiers") List<String> environmentIdentifiers,
-      @QueryParam("offset") @NotNull Integer offset, @QueryParam("pageSize") @NotNull Integer pageSize,
-      @QueryParam("filter") String filter,
+      @QueryParam("serviceIdentifier") String serviceIdentifier, @QueryParam("offset") @NotNull Integer offset,
+      @QueryParam("pageSize") @NotNull Integer pageSize, @QueryParam("filter") String filter,
       @QueryParam("monitoredServiceType") MonitoredServiceType monitoredServiceType,
       @NotNull @QueryParam("servicesAtRiskFilter") @ApiParam(defaultValue = "false") boolean servicesAtRiskFilter) {
     if (isNotEmpty(environmentIdentifier)) {
       environmentIdentifiers = Collections.singletonList(environmentIdentifier);
     }
-    return ResponseDTO.newResponse(monitoredServiceService.list(projectParams.getProjectParams(),
-        environmentIdentifiers, offset, pageSize, filter, monitoredServiceType, servicesAtRiskFilter));
+    return ResponseDTO.newResponse(
+        monitoredServiceService.list(projectParams.getProjectParams(), environmentIdentifiers, serviceIdentifier,
+            offset, pageSize, filter, monitoredServiceType, servicesAtRiskFilter));
   }
 
   @GET

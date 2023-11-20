@@ -2087,17 +2087,18 @@ public class NGTriggerServiceImplTest extends CategoryTest {
                                                      .errorMessage("")
                                                      .lastCollectedVersions(Collections.singletonList("1.0"))
                                                      .lastCollectedTime(123L)
+                                                     .errorStatusValidUntil(null)
                                                      .build();
     when(ngTriggerRepository.updateManyTriggerPollingSubscriptionStatusBySignatures("account",
              statusUpdate.getSignatures(), statusUpdate.isSuccess(), statusUpdate.getErrorMessage(),
-             statusUpdate.getLastCollectedVersions(), statusUpdate.getLastCollectedTime()))
+             statusUpdate.getLastCollectedVersions(), statusUpdate.getLastCollectedTime(), null))
         .thenReturn(true);
     boolean result = ngTriggerServiceImpl.updateTriggerPollingStatus("account", statusUpdate);
     assertThat(result).isTrue();
     verify(ngTriggerRepository, times(1))
         .updateManyTriggerPollingSubscriptionStatusBySignatures("account", statusUpdate.getSignatures(),
             statusUpdate.isSuccess(), statusUpdate.getErrorMessage(), statusUpdate.getLastCollectedVersions(),
-            statusUpdate.getLastCollectedTime());
+            statusUpdate.getLastCollectedTime(), null);
   }
 
   @Test
@@ -2110,10 +2111,12 @@ public class NGTriggerServiceImplTest extends CategoryTest {
                                                      .errorMessage("")
                                                      .lastCollectedVersions(Collections.singletonList("1.0"))
                                                      .lastCollectedTime(123L)
+                                                     .errorStatusValidUntil(100L)
                                                      .build();
     when(ngTriggerRepository.updateManyTriggerPollingSubscriptionStatusBySignatures("account",
              statusUpdate.getSignatures(), statusUpdate.isSuccess(), statusUpdate.getErrorMessage(),
-             statusUpdate.getLastCollectedVersions(), statusUpdate.getLastCollectedTime()))
+             statusUpdate.getLastCollectedVersions(), statusUpdate.getLastCollectedTime(),
+             statusUpdate.getErrorStatusValidUntil()))
         .thenReturn(true);
     assertThatThrownBy(() -> ngTriggerServiceImpl.updateTriggerPollingStatus("account", statusUpdate))
         .isInstanceOf(InvalidRequestException.class)

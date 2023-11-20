@@ -15,13 +15,13 @@ import io.harness.aggregator.consumers.AccessControlChangeEventData;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.Set;
-import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
+@SuperBuilder
 @OwnedBy(PL)
-public class ResourceGroupChangeEventData implements AccessControlChangeEventData {
+public class ResourceGroupChangeEventData extends AccessControlChangeEventData {
   Set<ResourceSelector> addedResourceSelectors;
   Set<ResourceSelector> removedResourceSelectors;
   ResourceGroup updatedResourceGroup;

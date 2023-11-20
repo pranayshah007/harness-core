@@ -33,4 +33,5 @@ public class GovernanceJobDetailsAWS {
   Boolean isOOTB;
   String accountId;
   RuleExecutionType executionType;
+  String cloudConnectorID;
 }

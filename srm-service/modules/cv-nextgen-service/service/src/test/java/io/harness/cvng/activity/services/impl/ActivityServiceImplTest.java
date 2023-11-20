@@ -191,7 +191,7 @@ public class ActivityServiceImplTest extends CvNextGenTestBase {
                         builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier())
                     .dependencyMetadata(KubernetesDependencyMetadata.builder()
                                             .namespace(clusterActivity.getNamespace())
-                                            .workload(clusterActivity.getWorkload())
+                                            .workloads(Collections.singletonList(clusterActivity.getWorkload()))
                                             .build())
                     .build()))
             .build();

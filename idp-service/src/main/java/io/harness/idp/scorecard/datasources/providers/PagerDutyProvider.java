@@ -4,6 +4,7 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
+
 package io.harness.idp.scorecard.datasources.providers;
 
 import static io.harness.idp.common.Constants.PAGERDUTY_IDENTIFIER;
@@ -20,19 +21,16 @@ import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocation
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
 import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
 import io.harness.idp.scorecard.datasources.utils.ConfigReader;
-;
 import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
-@Slf4j
 public class PagerDutyProvider extends HttpDataSourceProvider {
   private static final String PAGERDUTY_ANNOTATION = "pagerduty.com/service-id";
   private static final String TARGET_URL_EXPRESSION_KEY = "appConfig.proxy.\"/pagerduty\".target";
@@ -49,46 +47,26 @@ public class PagerDutyProvider extends HttpDataSourceProvider {
 
   @Override
   public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      List<DataFetchDTO> dataPointsAndInputValues, String configs)
-      throws NoSuchAlgorithmException, KeyManagementException {
+      List<DataFetchDTO> dataPointsAndInputValues, String configs) {
     Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, configs);
     Map<String, String> replaceableHeaders = new HashMap<>(authHeaders);
 
     String pagerDutyServiceId = entity.getMetadata().getAnnotations().get(PAGERDUTY_ANNOTATION);
-    log.info("Pager Duty Service Id fetched from catalog - {}", pagerDutyServiceId);
-
     String targetUrl = (String) configReader.getConfigValues(accountIdentifier, configs, TARGET_URL_EXPRESSION_KEY);
 
-    if (targetUrl == null) {
-      log.info(
-          "PagerDuty Provider  - targetUrl is not present in config hence we can assume PagerDuty Plugin is not enabled");
-    }
-
-    log.info("Pager duty target url fetched from configs - {}", targetUrl);
-
-    return processOut(accountIdentifier, PAGERDUTY_IDENTIFIER, entity, replaceableHeaders, Collections.emptyMap(),
-        prepareUrlReplaceablePairs(pagerDutyServiceId, targetUrl), dataPointsAndInputValues);
+    return processOut(accountIdentifier, PAGERDUTY_IDENTIFIER, entity, replaceableHeaders,
+        prepareUrlReplaceablePairs(PAGERDUTY_SERVICE_ID, pagerDutyServiceId, PAGERDUTY_TARGET_URL, targetUrl,
+            "{CURRENT_TIME_IN_UTC}",
+            LocalDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))),
+        prepareUrlReplaceablePairs(PAGERDUTY_SERVICE_ID, pagerDutyServiceId, PAGERDUTY_TARGET_URL, targetUrl,
+            "{CURRENT_TIME_IN_UTC}",
+            LocalDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))),
+        dataPointsAndInputValues);
   }
 
   @Override
   public Map<String, String> getAuthHeaders(String accountIdentifier, String configs) {
     String authToken = (String) configReader.getConfigValues(accountIdentifier, configs, AUTH_TOKEN_EXPRESSION_KEY);
-
-    if (authToken == null) {
-      log.info(
-          "PagerDuty Provider  - authToken is not present in config hence we can assume PagerDuty Plugin is not enabled");
-    }
-    HashMap<String, String> returnedMap = new HashMap<>();
-    returnedMap.put(AUTHORIZATION_HEADER, authToken);
-    return returnedMap;
-  }
-
-  private Map<String, String> prepareUrlReplaceablePairs(String pagerDutyServiceId, String targetUrl) {
-    Map<String, String> possibleReplaceableUrlPairs = new HashMap<>();
-
-    possibleReplaceableUrlPairs.put(PAGERDUTY_SERVICE_ID, pagerDutyServiceId);
-    possibleReplaceableUrlPairs.put(PAGERDUTY_TARGET_URL, targetUrl);
-
-    return possibleReplaceableUrlPairs;
+    return Map.of(AUTHORIZATION_HEADER, authToken);
   }
 }

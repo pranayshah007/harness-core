@@ -9,18 +9,22 @@ package io.harness.accesscontrol.commons.outbox;
 
 import static io.harness.accesscontrol.roles.RoleMapper.toDTO;
 import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromDTO;
+import static io.harness.aggregator.ACLEventProcessingConstants.UPDATE_ACTION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.KARAN;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
+import static java.util.Optional.ofNullable;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -322,7 +326,7 @@ public class RoleEventHandlerTest extends CategoryTest {
     when(auditClientService.publishAudit(any(), any())).thenReturn(true);
     roleEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any());
-    verify(roleChangeConsumer, never()).consumeUpdateEvent(any(), any());
+    verify(roleChangeConsumer, never()).consumeEvent(eq(UPDATE_ACTION), any(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
@@ -356,7 +360,7 @@ public class RoleEventHandlerTest extends CategoryTest {
     when(auditClientService.publishAudit(any(), any())).thenReturn(true);
     roleEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any());
-    verify(roleChangeConsumer, never()).consumeUpdateEvent(any(), any());
+    verify(roleChangeConsumer, never()).consumeEvent(eq(UPDATE_ACTION), any(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
@@ -387,7 +391,7 @@ public class RoleEventHandlerTest extends CategoryTest {
     roleEventHandler.handle(outboxEvent);
     verify(auditClientService, never()).publishAudit(any(), any());
     verify(scopeService, never()).buildScopeFromScopeIdentifier(any());
-    verify(roleChangeConsumer, never()).consumeUpdateEvent(any(), any());
+    verify(roleChangeConsumer, never()).consumeEvent(eq(UPDATE_ACTION), any(), any());
   }
 
   @Test
@@ -412,7 +416,7 @@ public class RoleEventHandlerTest extends CategoryTest {
     roleEventHandler.handle(outboxEvent);
     verify(auditClientService, never()).publishAudit(any(), any());
     verify(scopeService, never()).buildScopeFromScopeIdentifier(any());
-    verify(roleChangeConsumer, never()).consumeUpdateEvent(any(), any());
+    verify(roleChangeConsumer, never()).consumeEvent(eq(UPDATE_ACTION), any(), any());
   }
 
   @Test
@@ -443,6 +447,7 @@ public class RoleEventHandlerTest extends CategoryTest {
     Set<String> permissionsRemovedFromRole = Sets.difference(oldRole.getPermissions(), newRole.getPermissions());
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     RoleChangeEventData roleChangeEventData = RoleChangeEventData.builder()
+                                                  .scope(ofNullable(scope))
                                                   .updatedRole(newCoreRole)
                                                   .permissionsAdded(permissionsAddedToRole)
                                                   .permissionsRemoved(permissionsRemovedFromRole)
@@ -451,7 +456,7 @@ public class RoleEventHandlerTest extends CategoryTest {
     when(auditClientService.publishAudit(any(), any())).thenReturn(true);
     roleEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any());
-    verify(roleChangeConsumer, times(1)).consumeUpdateEvent(null, roleChangeEventData);
+    verify(roleChangeConsumer, times(1)).consumeEvent(eq(UPDATE_ACTION), isNull(), eq(roleChangeEventData));
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
@@ -486,6 +491,7 @@ public class RoleEventHandlerTest extends CategoryTest {
     Set<String> permissionsRemovedFromRole = Sets.difference(oldRole.getPermissions(), newRole.getPermissions());
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     RoleChangeEventData roleChangeEventData = RoleChangeEventData.builder()
+                                                  .scope(ofNullable(scope))
                                                   .updatedRole(newRole)
                                                   .permissionsAdded(permissionsAddedToRole)
                                                   .permissionsRemoved(permissionsRemovedFromRole)
@@ -494,7 +500,7 @@ public class RoleEventHandlerTest extends CategoryTest {
     when(auditClientService.publishAudit(any(), any())).thenReturn(true);
     roleEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any());
-    verify(roleChangeConsumer, times(1)).consumeUpdateEvent(null, roleChangeEventData);
+    verify(roleChangeConsumer, times(1)).consumeEvent(eq(UPDATE_ACTION), isNull(), eq(roleChangeEventData));
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
@@ -507,7 +513,12 @@ public class RoleEventHandlerTest extends CategoryTest {
   @Owner(developers = {KARAN, JIMIT_GANDHI})
   @Category(UnitTests.class)
   public void updateManagedRole_WithAclProcessingEnabledAnd_EventV1_DoesAclProcessing() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
     String identifier = randomAlphabetic(10);
+    ScopeDTO scopeDTO = getScopeDTO(accountIdentifier, orgIdentifier, null);
+    Scope scope = fromDTO(scopeDTO);
+
     roleEventHandler = spy(new RoleEventHandler(auditClientService, roleChangeConsumer, true, scopeService));
     RoleDTO oldRole = getRoleDTO(identifier);
     RoleDTO newRole = getRoleDTO(identifier);
@@ -528,20 +539,26 @@ public class RoleEventHandlerTest extends CategoryTest {
     Set<String> permissionsAddedToRole = Sets.difference(newRole.getPermissions(), oldRole.getPermissions());
     Set<String> permissionsRemovedFromRole = Sets.difference(oldRole.getPermissions(), newRole.getPermissions());
     RoleChangeEventData roleChangeEventData = RoleChangeEventData.builder()
+                                                  .scope(ofNullable(scope))
                                                   .updatedRole(newCoreRole)
                                                   .permissionsAdded(permissionsAddedToRole)
                                                   .permissionsRemoved(permissionsRemovedFromRole)
                                                   .build();
     roleEventHandler.handle(outboxEvent);
     verify(auditClientService, never()).publishAudit(any(), any());
-    verify(roleChangeConsumer, times(1)).consumeUpdateEvent(null, roleChangeEventData);
+    verify(roleChangeConsumer, times(1)).consumeEvent(eq(UPDATE_ACTION), isNull(), eq(roleChangeEventData));
   }
 
   @Test
   @Owner(developers = {KARAN, JIMIT_GANDHI})
   @Category(UnitTests.class)
   public void updateManagedRole_WithAclProcessingEnabledAnd_EventV2_DoesAclProcessing() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
     String identifier = randomAlphabetic(10);
+    ScopeDTO scopeDTO = getScopeDTO(accountIdentifier, orgIdentifier, null);
+    Scope scope = fromDTO(scopeDTO);
+
     Role oldRole = getRole(identifier, null);
     Role newRole = getRole(identifier, null);
     RoleUpdateEventV2 roleUpdateEvent = new RoleUpdateEventV2(null, oldRole, newRole);
@@ -560,13 +577,14 @@ public class RoleEventHandlerTest extends CategoryTest {
     Set<String> permissionsAddedToRole = Sets.difference(newRole.getPermissions(), oldRole.getPermissions());
     Set<String> permissionsRemovedFromRole = Sets.difference(oldRole.getPermissions(), newRole.getPermissions());
     RoleChangeEventData roleChangeEventData = RoleChangeEventData.builder()
+                                                  .scope(ofNullable(scope))
                                                   .updatedRole(newRole)
                                                   .permissionsAdded(permissionsAddedToRole)
                                                   .permissionsRemoved(permissionsRemovedFromRole)
                                                   .build();
     roleEventHandler.handle(outboxEvent);
     verify(auditClientService, never()).publishAudit(any(), any());
-    verify(roleChangeConsumer, times(1)).consumeUpdateEvent(null, roleChangeEventData);
+    verify(roleChangeConsumer, times(1)).consumeEvent(eq(UPDATE_ACTION), isNull(), eq(roleChangeEventData));
   }
 
   @Test

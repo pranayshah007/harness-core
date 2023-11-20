@@ -9,15 +9,34 @@ package io.harness.cvng.servicelevelobjective.beans;
 
 import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.commons.collections4.MapUtils;
 
 @Getter
 @AllArgsConstructor
 public enum SLIEvaluationType {
-  @JsonEnumDefaultValue @JsonProperty("Window") WINDOW("Window"),
-  @JsonProperty("Request") REQUEST("Request"),
-  @JsonProperty("MetricLess") METRIC_LESS("Window");
+  @JsonEnumDefaultValue @JsonProperty("Window") WINDOW("Window", "Window"),
+  @JsonProperty("Request") REQUEST("Request", "Request"),
+  @JsonProperty("MetricLess") METRIC_LESS("MetricLess", "Window");
 
+  private static Map<String, SLIEvaluationType> STRING_TO_TYPE_MAP;
+
+  private String identifier;
   private final String compositeSLOEvaluationType;
+
+  public static SLIEvaluationType fromString(String stringValue) {
+    if (MapUtils.isEmpty(STRING_TO_TYPE_MAP)) {
+      STRING_TO_TYPE_MAP = Arrays.stream(SLIEvaluationType.values())
+                               .collect(Collectors.toMap(SLIEvaluationType::getIdentifier, Function.identity()));
+    }
+    if (!STRING_TO_TYPE_MAP.containsKey(stringValue)) {
+      throw new IllegalArgumentException("SLIEvaluationType should be in : " + STRING_TO_TYPE_MAP.keySet());
+    }
+    return STRING_TO_TYPE_MAP.get(stringValue);
+  }
 }

@@ -4319,27 +4319,19 @@ components:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/ScorecardStatsResponse'
+            $ref: '#/components/schemas/ScorecardStatsResponse'
         application/yaml:
           schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/ScorecardStatsResponse'
+            $ref: '#/components/schemas/ScorecardStatsResponse'
     CheckStatsResponse:
       description: Response for check stats
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/CheckStatsResponse'
+            $ref: '#/components/schemas/CheckStatsResponse'
         application/yaml:
           schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/CheckStatsResponse'
+            $ref: '#/components/schemas/CheckStatsResponse'
     CheckGraphResponse:
       description: Response for check graph data
       content:

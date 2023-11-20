@@ -41,7 +41,6 @@ import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetService;
-import io.harness.ccm.graphql.core.perspectives.PerspectiveService;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveData;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveData.PerspectiveDataBuilder;
 import io.harness.ccm.rbac.CCMRbacHelper;
@@ -144,15 +143,13 @@ public class PerspectiveResource {
   private final TransactionTemplate transactionTemplate;
   private final OutboxService outboxService;
   private final CCMRbacHelper rbacHelper;
-  private final PerspectiveService perspectiveService;
 
   @Inject
   public PerspectiveResource(CEViewService ceViewService, CEReportScheduleService ceReportScheduleService,
       ViewCustomFieldService viewCustomFieldService, BudgetCostService budgetCostService, BudgetService budgetService,
       CCMNotificationService notificationService, AwsAccountFieldHelper awsAccountFieldHelper,
       TelemetryReporter telemetryReporter, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
-      OutboxService outboxService, CCMRbacHelper rbacHelper, CEViewFolderService ceViewFolderService,
-      PerspectiveService perspectiveService) {
+      OutboxService outboxService, CCMRbacHelper rbacHelper, CEViewFolderService ceViewFolderService) {
     this.ceViewService = ceViewService;
     this.ceReportScheduleService = ceReportScheduleService;
     this.viewCustomFieldService = viewCustomFieldService;
@@ -165,7 +162,6 @@ public class PerspectiveResource {
     this.outboxService = outboxService;
     this.rbacHelper = rbacHelper;
     this.ceViewFolderService = ceViewFolderService;
-    this.perspectiveService = perspectiveService;
   }
 
   @GET
@@ -450,19 +446,21 @@ public class PerspectiveResource {
       @NotNull @Valid @QueryParam("pageNo") @DefaultValue("0") @Parameter(
           required = true, description = "Number of records to be skipped") Integer pageNo,
       @Valid @QueryParam("searchKey") @Parameter(description = "Characters in search bar") String searchKey,
-      @Valid @QueryParam("sortType") @Parameter(description = " sorting filters in UI") QLCEViewSortType sortType,
-      @Valid @QueryParam("sortOrder") @Parameter(description = "sorting order") QLCESortOrder sortOrder,
+      @Valid @QueryParam("sortType") @DefaultValue("TIME") @Parameter(
+          description = " sorting filters in UI") QLCEViewSortType sortType,
+      @Valid @QueryParam("sortOrder") @DefaultValue("DESCENDING") @Parameter(
+          description = "sorting order") QLCESortOrder sortOrder,
       @Valid @QueryParam("cloudFilters") @Parameter(
           description = "filters for clouds and clusters") List<CloudFilter> cloudFilters) {
     PerspectiveDataBuilder perspectiveDataBuilder = PerspectiveData.builder();
-    QLCEViewSortCriteria sortCriteria = QLCEViewSortCriteria.builder().sortType(sortType).sortOrder(sortOrder).build();
     List<CEViewFolder> folders = ceViewFolderService.getFolders(accountId, "");
     Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
         folders.stream().map(CEViewFolder::getUuid).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
     perspectiveDataBuilder.totalCount(
-        ceViewService.countByAccountIdAndFolderId(accountId, allowedFolderIds, searchKey, cloudFilters));
-    perspectiveDataBuilder.views(perspectiveService.perspectives(
-        sortCriteria, accountId, pageSize, pageNo, searchKey, folders, allowedFolderIds, cloudFilters));
+        ceViewService.countByAccountIdAndFolderIds(accountId, allowedFolderIds, searchKey, cloudFilters));
+    QLCEViewSortCriteria sortCriteria = QLCEViewSortCriteria.builder().sortType(sortType).sortOrder(sortOrder).build();
+    perspectiveDataBuilder.views(ceViewService.getAllPerspectives(
+        accountId, true, sortCriteria, pageSize, pageNo, searchKey, folders, allowedFolderIds, cloudFilters));
     return ResponseDTO.newResponse(perspectiveDataBuilder.build());
   }
 
