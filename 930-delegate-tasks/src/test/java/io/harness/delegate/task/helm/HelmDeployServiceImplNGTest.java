@@ -272,7 +272,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     doNothing().when(helmTaskHelperBase).initHelm(anyString(), any(), anyLong());
     doNothing()
         .when(helmTaskHelperBase)
-        .downloadChartFilesFromHttpRepo(eq(helmChartManifestDelegateConfig.build()), anyString(), anyLong(), any());
+        .downloadChartFilesFromHttpRepo(eq(helmChartManifestDelegateConfig.build()), anyString(), anyLong());
     doReturn(logCallback).when(k8sTaskHelperBase).getLogCallback(any(), any(), anyBoolean(), any());
     doReturn(-1).when(helmTaskHelperBase).skipDefaultHelmValuesYaml(anyString(), any(), anyBoolean(), any());
   }
@@ -284,7 +284,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     // test chart repo -- No exception
     doNothing()
         .when(helmTaskHelperBase)
-        .downloadChartFilesFromHttpRepo(eq(helmChartManifestDelegateConfig.build()), anyString(), anyLong(), any());
+        .downloadChartFilesFromHttpRepo(eq(helmChartManifestDelegateConfig.build()), anyString(), anyLong());
     doReturn("abc").when(spyHelmDeployService).getManifestFileNamesInLogFormat(anyString());
 
     spyHelmDeployService.prepareRepoAndCharts(
@@ -293,13 +293,13 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
         ArgumentCaptor.forClass(HelmChartManifestDelegateConfig.class);
     verify(helmTaskHelperBase)
         .downloadChartFilesFromHttpRepo(
-            argumentCaptor.capture(), eq("tmp"), eq(helmInstallCommandRequestNG.getTimeoutInMillis()), any());
+            argumentCaptor.capture(), eq("tmp"), eq(helmInstallCommandRequestNG.getTimeoutInMillis()));
 
     // HelmClientRuntimeException
     HelmClientException helmClientException = new HelmClientException("failed", HelmCliCommandType.FETCH);
     doThrow(helmClientException)
         .when(helmTaskHelperBase)
-        .downloadChartFilesFromHttpRepo(eq(helmChartManifestDelegateConfig.build()), anyString(), anyLong(), any());
+        .downloadChartFilesFromHttpRepo(eq(helmChartManifestDelegateConfig.build()), anyString(), anyLong());
 
     assertThatThrownBy(()
                            -> spyHelmDeployService.prepareRepoAndCharts(helmInstallCommandRequestNG,
@@ -312,7 +312,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     helmInstallCommandRequestNG.setManifestDelegateConfig(helmChartManifestDelegateConfig.build());
     doThrow(ex)
         .when(helmTaskHelperBase)
-        .downloadChartFilesUsingChartMuseum(eq(helmChartManifestDelegateConfig.build()), anyString(), anyLong(), any());
+        .downloadChartFilesUsingChartMuseum(eq(helmChartManifestDelegateConfig.build()), anyString(), anyLong());
 
     assertThatThrownBy(()
                            -> spyHelmDeployService.prepareRepoAndCharts(helmInstallCommandRequestNG,

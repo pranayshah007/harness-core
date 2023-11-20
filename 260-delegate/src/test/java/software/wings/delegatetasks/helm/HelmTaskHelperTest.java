@@ -163,13 +163,13 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     doNothing()
         .when(helmTaskHelperBase)
         .addRepo("vault", "vault", "https://helm-server", "admin", "secret-text".toCharArray(), "/home", V3,
-            LONG_TIMEOUT_INTERVAL, "", null, null);
+            LONG_TIMEOUT_INTERVAL, "", null);
     helmTaskHelper.addRepo("vault", "vault", "https://helm-server", "admin", "secret-text".toCharArray(), "/home", V3,
         LONG_TIMEOUT_INTERVAL, null);
 
     verify(helmTaskHelperBase)
         .addRepo("vault", "vault", "https://helm-server", "admin", "secret-text".toCharArray(), "/home", V3,
-            LONG_TIMEOUT_INTERVAL, "", null, null);
+            LONG_TIMEOUT_INTERVAL, "", null);
   }
 
   @Test
@@ -282,7 +282,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .when(helmTaskHelperBase)
         .executeCommand(any(), any(), any(), any(), anyLong(), eq(HelmCliCommandType.REPO_ADD));
     helmTaskHelperBase.addRepo("vault", "vault", "https://helm-server", "admin", "secret-text".toCharArray(), "/home",
-        V3, 9000L, "xyz/cache", null, null);
+        V3, 9000L, "xyz/cache", null);
 
     verify(helmTaskHelperBase, times(1))
         .executeCommand(
@@ -382,8 +382,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .createClient(eq(gcsHelmRepoConfig), any(), any(), any(), eq(false));
     doReturn(successfulResult).when(processExecutor).execute();
     doReturn("dir/cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
-    helmTaskHelper.downloadChartFiles(
-        gcsConfigParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null, null);
+    helmTaskHelper.downloadChartFiles(gcsConfigParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
     verifyFetchChartFilesProcessExecutor(outputTemporaryDir.toString(), useCache);
     deleteDirectoryAndItsContentIfExists(outputTemporaryDir.toString());
   }
@@ -419,8 +418,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     doReturn("dir/cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
     doReturn("resource-dir").when(helmTaskHelper).createNewDirectoryAtPath(anyString());
 
-    helmTaskHelper.downloadChartFiles(
-        awsConfigParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null, null);
+    helmTaskHelper.downloadChartFiles(awsConfigParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
     verifyFetchChartFilesProcessExecutor(outputTemporaryDir.toString(), useCache);
     deleteDirectoryAndItsContentIfExists(outputTemporaryDir.toString());
   }
@@ -459,8 +457,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     doNothing().when(helmTaskHelper).initHelm(anyString(), any(), anyLong());
     doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
 
-    helmTaskHelper.downloadChartFiles(
-        httpHelmChartConfig, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null, null);
+    helmTaskHelper.downloadChartFiles(httpHelmChartConfig, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
 
     verify(helmTaskHelperBase, times(1))
         .createProcessExecutor(
@@ -499,7 +496,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
     doReturn(successfulResult).when(processExecutor).execute();
 
-    helmTaskHelper.downloadChartFiles(configParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null, null);
+    helmTaskHelper.downloadChartFiles(configParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
     verify(helmTaskHelperBase, times(1))
         .createProcessExecutor(
             eq("v3/helm pull oci://localhost:5005/test-charts/chartName  --untar --version 0.1.0 --registry-config reg-config.json --repository-config cache/repo-oci://localhost:5005/test-charts.yaml"),
@@ -530,16 +527,14 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     doReturn(successfulResult).when(processExecutor).execute();
 
     // With empty chart Url
-    helmTaskHelper.downloadChartFiles(
-        emptyHelmRepoConfig, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null, null);
+    helmTaskHelper.downloadChartFiles(emptyHelmRepoConfig, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
     verify(helmTaskHelperBase, times(1))
         .createProcessExecutor("v3/helm pull repoName/chartName  --untar ", outputTemporaryDir.toString(),
             LONG_TIMEOUT_INTERVAL, emptyMap());
 
     // With not empty chart Url
     emptyHelmRepoConfig.setChartUrl("http://127.0.0.1:1234/chart");
-    helmTaskHelper.downloadChartFiles(
-        emptyHelmRepoConfig, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null, null);
+    helmTaskHelper.downloadChartFiles(emptyHelmRepoConfig, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
     verify(helmTaskHelperBase, times(1))
         .createProcessExecutor("v3/helm repo add repoName http://127.0.0.1:1234/chart   ",
             outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, emptyMap());
@@ -613,8 +608,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     ProcessResult failedResult = new ProcessResult(1, null);
     doReturn(failedResult).when(processExecutor).execute();
 
-    helmTaskHelper.downloadChartFiles(
-        emptyHelmRepoConfig, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null, null);
+    helmTaskHelper.downloadChartFiles(emptyHelmRepoConfig, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
   }
 
   @Test
@@ -720,20 +714,20 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .when(helmTaskHelperBase)
         .executeCommand(any(), any(), any(), any(), anyLong(), eq(HelmCliCommandType.REPO_ADD));
 
-    helmTaskHelperBase.addRepo("repo", "repo", "http://null-password-url", "username", null, "chart", V3,
-        LONG_TIMEOUT_INTERVAL, "", null, null);
+    helmTaskHelperBase.addRepo(
+        "repo", "repo", "http://null-password-url", "username", null, "chart", V3, LONG_TIMEOUT_INTERVAL, "", null);
     verify(helmTaskHelperBase)
         .executeCommand(any(), eq("v3/helm repo add repo http://null-password-url --username username  "), any(), any(),
             anyLong(), eq(HelmCliCommandType.REPO_ADD));
 
-    helmTaskHelperBase.addRepo("repo", "repo", "http://repo-url", "username", emptyPassword, "chart", V3,
-        LONG_TIMEOUT_INTERVAL, "", null, null);
+    helmTaskHelperBase.addRepo(
+        "repo", "repo", "http://repo-url", "username", emptyPassword, "chart", V3, LONG_TIMEOUT_INTERVAL, "", null);
     verify(helmTaskHelperBase)
         .executeCommand(any(), eq("v3/helm repo add repo http://repo-url --username username  "), any(), any(),
             anyLong(), eq(HelmCliCommandType.REPO_ADD));
 
-    helmTaskHelperBase.addRepo("repo", "repo", "http://repo-url", " ", passwordWithWhitespaces, "chart", V3,
-        LONG_TIMEOUT_INTERVAL, "", null, null);
+    helmTaskHelperBase.addRepo(
+        "repo", "repo", "http://repo-url", " ", passwordWithWhitespaces, "chart", V3, LONG_TIMEOUT_INTERVAL, "", null);
     verify(helmTaskHelperBase)
         .executeCommand(any(), eq("v3/helm repo add repo http://repo-url   "), any(), any(), anyLong(),
             eq(HelmCliCommandType.REPO_ADD));
@@ -753,19 +747,19 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         "repo", "repo", "http://null-password-url", "username", null, "chart", V3, LONG_TIMEOUT_INTERVAL, null);
     verify(helmTaskHelperBase)
         .addRepo(eq("repo"), eq("repo"), eq("http://null-password-url"), eq("username"), any(), eq("chart"), any(),
-            anyLong(), eq(""), eq(null), any());
+            anyLong(), eq(""), eq(null));
 
     helmTaskHelper.addRepo(
         "repo", "repo", "http://repo-url", "username", emptyPassword, "chart", V3, LONG_TIMEOUT_INTERVAL, null);
     verify(helmTaskHelperBase)
         .addRepo(eq("repo"), eq("repo"), eq("http://repo-url"), eq("username"), eq(emptyPassword), eq("chart"), any(),
-            anyLong(), eq(""), eq(null), any());
+            anyLong(), eq(""), eq(null));
 
     helmTaskHelper.addRepo(
         "repo", "repo", "http://repo-url", " ", passwordWithWhitespaces, "chart", V3, LONG_TIMEOUT_INTERVAL, null);
     verify(helmTaskHelperBase)
         .addRepo(eq("repo"), eq("repo"), eq("http://repo-url"), eq(" "), eq(passwordWithWhitespaces), eq("chart"),
-            any(), anyLong(), eq(""), eq(null), any());
+            any(), anyLong(), eq(""), eq(null));
   }
 
   @Test
@@ -791,7 +785,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
 
     try {
       Map<String, List<String>> result = helmTaskHelper.getValuesYamlFromChart(
-          helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null, mapK8sValuesLocationToFilePaths, null);
+          helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null, mapK8sValuesLocationToFilePaths);
       assertThat(result.get(k8sValuesLocation.name()).get(0)).isEqualTo(valuesFileContent);
       assertThat(result.get(k8sValuesLocation.name()).size()).isEqualTo(1);
     } finally {
@@ -822,7 +816,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
 
     try {
       Map<String, List<String>> result = helmTaskHelper.getValuesYamlFromChart(
-          helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null, mapK8sValuesLocationToFilePaths, null);
+          helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null, mapK8sValuesLocationToFilePaths);
       assertThat(result).isNullOrEmpty();
     } catch (Exception ex) {
       assertThat(ex.getMessage()).isEqualTo("Required values yaml file with path values2.yaml not found");
@@ -864,7 +858,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
 
     try {
       Map<String, List<String>> result = helmTaskHelper.getValuesYamlFromChart(
-          helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null, mapK8sValuesLocationToFilePaths, null);
+          helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null, mapK8sValuesLocationToFilePaths);
       assertThat(result.get(k8sValuesLocation.name()).size()).isEqualTo(1);
       assertThat(result.get(k8sValuesLocationEnvOverride.name()).size()).isEqualTo(2);
       assertThat(result.get(k8sValuesLocation.name()).get(0)).isEqualTo(valuesFileContent);
@@ -905,7 +899,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
 
     try {
       Map<String, List<String>> result = helmTaskHelper.getValuesYamlFromChart(
-          helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null, mapK8sValuesLocationToFilePaths, null);
+          helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null, mapK8sValuesLocationToFilePaths);
       assertThat(result.get(k8sValuesLocation.name()).size()).isEqualTo(1);
       assertThat(result.get(k8sValuesLocationEnvOverride.name()).size()).isEqualTo(1);
       assertThat(result.get(k8sValuesLocation.name()).get(0)).isEqualTo(valuesFileContent);
@@ -936,7 +930,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
 
     try {
       Map<String, List<String>> result = helmTaskHelper.getValuesYamlFromChart(
-          helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null, mapK8sValuesLocationToFilePaths, null);
+          helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null, mapK8sValuesLocationToFilePaths);
       assertThat(result).isNullOrEmpty();
     } catch (Exception ex) {
       assertThat(ex.getMessage()).isEqualTo("Required values yaml file with path values1.yaml not found");
@@ -970,7 +964,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .getHelmChartInfoFromChartsYamlFile(anyString());
 
     helmTaskHelper.getValuesYamlFromChart(
-        helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null, mapK8sValuesLocationToFilePaths, null);
+        helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null, mapK8sValuesLocationToFilePaths);
     assertThat(helmChartConfigParams.getChartVersion()).isEqualTo(chartVersion);
   }
 
@@ -998,7 +992,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
 
     assertThatCode(()
                        -> helmTaskHelper.getValuesYamlFromChart(
-                           helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null, mapK8sValuesLocationToFilePaths, null))
+                           helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null, mapK8sValuesLocationToFilePaths))
         .doesNotThrowAnyException();
   }
 
@@ -1446,8 +1440,8 @@ public class HelmTaskHelperTest extends WingsBaseTest {
             eq("fetch chart chartName"), anyLong(), any());
 
     assertThatThrownBy(()
-                           -> helmTaskHelper.getValuesYamlFromChart(helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null,
-                               mapK8sValuesLocationToFilePaths, null))
+                           -> helmTaskHelper.getValuesYamlFromChart(
+                               helmChartConfigParams, LONG_TIMEOUT_INTERVAL, null, mapK8sValuesLocationToFilePaths))
         .isInstanceOf(HelmClientException.class)
         .hasMessageContaining("Failed to fetch chart")
         .hasMessageContaining("something went wrong executing command");

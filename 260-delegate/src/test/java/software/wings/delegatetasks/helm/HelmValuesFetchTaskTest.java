@@ -72,21 +72,19 @@ public class HelmValuesFetchTaskTest extends WingsBaseTest {
     doNothing().when(task).printHelmBinaryPathAndVersion(any(), any());
     doReturn(mapK8sValuesLocationToContent)
         .when(helmTaskHelper)
-        .getValuesYamlFromChart(any(HelmChartConfigParams.class), anyLong(), any(), any(), any());
+        .getValuesYamlFromChart(any(HelmChartConfigParams.class), anyLong(), any(), any());
 
     HelmValuesFetchTaskResponse response = task.run(parameters);
-    verify(helmTaskHelper, times(1))
-        .getValuesYamlFromChart(any(HelmChartConfigParams.class), anyLong(), any(), any(), any());
+    verify(helmTaskHelper, times(1)).getValuesYamlFromChart(any(HelmChartConfigParams.class), anyLong(), any(), any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(response.getMapK8sValuesLocationToContent()).isEqualTo(mapK8sValuesLocationToContent);
 
     doReturn(null)
         .when(helmTaskHelper)
-        .getValuesYamlFromChart(any(HelmChartConfigParams.class), anyLong(), any(), any(), any());
+        .getValuesYamlFromChart(any(HelmChartConfigParams.class), anyLong(), any(), any());
 
     HelmValuesFetchTaskResponse emptyResponse = task.run(parameters);
-    verify(helmTaskHelper, times(2))
-        .getValuesYamlFromChart(any(HelmChartConfigParams.class), anyLong(), any(), any(), any());
+    verify(helmTaskHelper, times(2)).getValuesYamlFromChart(any(HelmChartConfigParams.class), anyLong(), any(), any());
     assertThat(emptyResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
   }
 
@@ -103,11 +101,10 @@ public class HelmValuesFetchTaskTest extends WingsBaseTest {
     doNothing().when(task).printHelmBinaryPathAndVersion(any(), any());
     doThrow(new RuntimeException("Unable to fetch Values.yaml"))
         .when(helmTaskHelper)
-        .getValuesYamlFromChart(any(HelmChartConfigParams.class), anyLong(), any(), any(), any());
+        .getValuesYamlFromChart(any(HelmChartConfigParams.class), anyLong(), any(), any());
 
     HelmValuesFetchTaskResponse response = task.run(parameters);
-    verify(helmTaskHelper, times(1))
-        .getValuesYamlFromChart(any(HelmChartConfigParams.class), anyLong(), any(), any(), any());
+    verify(helmTaskHelper, times(1)).getValuesYamlFromChart(any(HelmChartConfigParams.class), anyLong(), any(), any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     assertThat(response.getErrorMessage()).isEqualTo("Execution failed with Exception: Unable to fetch Values.yaml");
   }

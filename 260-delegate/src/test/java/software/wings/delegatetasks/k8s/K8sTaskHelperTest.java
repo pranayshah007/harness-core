@@ -339,12 +339,11 @@ public class K8sTaskHelperTest extends CategoryTest {
         .isTrue();
 
     verify(mockHelmTaskHelper, times(1)).printHelmChartInfoInExecutionLogs(helmChartConfigParams, logCallback);
-    verify(mockHelmTaskHelper, times(1))
-        .downloadChartFiles(eq(helmChartConfigParams), eq("dir"), anyLong(), eq(null), eq(logCallback));
+    verify(mockHelmTaskHelper, times(1)).downloadChartFiles(eq(helmChartConfigParams), eq("dir"), anyLong(), eq(null));
 
     doThrow(new RuntimeException())
         .when(mockHelmTaskHelper)
-        .downloadChartFiles(any(HelmChartConfigParams.class), anyString(), anyLong(), eq(null), eq(logCallback));
+        .downloadChartFiles(any(HelmChartConfigParams.class), anyString(), anyLong(), eq(null));
     assertThat(helper.fetchManifestFilesAndWriteToDirectory(K8sDelegateManifestConfig.builder()
                                                                 .manifestStoreTypes(StoreType.HelmChartRepo)
                                                                 .helmChartConfigParams(helmChartConfigParams)
@@ -958,7 +957,7 @@ public class K8sTaskHelperTest extends CategoryTest {
     doThrow(new HelmClientException(exceptionMessage, WingsException.USER, HelmCliCommandType.FETCH))
         .when(mockHelmTaskHelper)
         .downloadChartFiles(manifestConfig.getHelmChartConfigParams(), manifestDirectory, LONG_TIMEOUT_INTERVAL,
-            manifestConfig.getHelmCommandFlag(), executionLogCallback);
+            manifestConfig.getHelmCommandFlag());
     helper.fetchManifestFilesAndWriteToDirectory(
         manifestConfig, manifestDirectory, executionLogCallback, LONG_TIMEOUT_INTERVAL);
 

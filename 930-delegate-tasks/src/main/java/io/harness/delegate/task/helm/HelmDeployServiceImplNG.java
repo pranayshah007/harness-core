@@ -1020,13 +1020,13 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       if (HTTP_HELM == manifestDelegateConfig.getStoreDelegateConfig().getType()) {
         helmTaskHelperBase.downloadChartFilesFromHttpRepo(
-            helmChartManifestConfig, destinationDirectory, timeoutInMillis, logCallback);
+            helmChartManifestConfig, destinationDirectory, timeoutInMillis);
       } else if (OCI_HELM == manifestDelegateConfig.getStoreDelegateConfig().getType()) {
         helmTaskHelperBase.downloadChartFilesFromOciRepo(
             helmChartManifestConfig, destinationDirectory, timeoutInMillis);
       } else {
         helmTaskHelperBase.downloadChartFilesUsingChartMuseum(
-            helmChartManifestConfig, destinationDirectory, timeoutInMillis, logCallback);
+            helmChartManifestConfig, destinationDirectory, timeoutInMillis);
       }
 
       helmTaskHelperBase.printHelmChartInfoWithVersionInExecutionLogs(
