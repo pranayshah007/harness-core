@@ -131,8 +131,8 @@ public class AsgShiftTrafficStep extends CdTaskExecutable<AsgCommandResponse> {
     AsgBlueGreenDeployOutcome asgBlueGreenDeployDataOutcome =
         (AsgBlueGreenDeployOutcome) asgBlueGreenDeployDataOptional.getOutput();
 
-    InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+    InfrastructureOutcome infrastructureOutcome =
+        asgStepCommonHelper.getInfrastructureOutcomeWithUpdatedExpressions(ambiance);
 
     List<AsgLoadBalancerConfig> loadBalancers = getLoadBalancers(asgBlueGreenPrepareRollbackDataOutcome, true);
 

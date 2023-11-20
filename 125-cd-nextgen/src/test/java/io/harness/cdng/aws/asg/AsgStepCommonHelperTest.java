@@ -21,6 +21,7 @@ import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.infra.beans.AsgInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -301,5 +302,21 @@ public class AsgStepCommonHelperTest extends CategoryTest {
         AwsAsgLoadBalancerConfigYaml.builder().stageListener(ParameterField.createValueField("stageListener")).build());
     assertThatThrownBy(() -> asgStepCommonHelper.isShiftTrafficFeature(loadBalancers2))
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getInfrastructureOutcomeWithUpdatedExpressions() {
+    AsgInfrastructureOutcome asgInfrastructureOutcome =
+        AsgInfrastructureOutcome.builder().infrastructureKey("infraKey").region("<+expression>").build();
+
+    doReturn(asgInfrastructureOutcome).when(outcomeService).resolve(any(), any());
+
+    Ambiance ambiance = Ambiance.newBuilder().build();
+
+    AsgInfrastructureOutcome result =
+        (AsgInfrastructureOutcome) asgStepCommonHelper.getInfrastructureOutcomeWithUpdatedExpressions(ambiance);
+    assertThat(result.getRegion()).isNotNull();
   }
 }

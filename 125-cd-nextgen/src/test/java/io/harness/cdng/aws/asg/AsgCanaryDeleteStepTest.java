@@ -16,6 +16,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 
 import io.harness.CategoryTest;
@@ -221,6 +222,9 @@ public class AsgCanaryDeleteStepTest extends CategoryTest {
     doReturn(AsgInfraConfig.builder().build())
         .when(asgStepCommonHelper)
         .getAsgInfraConfig(infrastructureOutcome, ambiance);
+    doReturn(mock(InfrastructureOutcome.class))
+        .when(asgStepCommonHelper)
+        .getInfrastructureOutcomeWithUpdatedExpressions(any());
 
     AsgExecutionPassThroughData asgExecutionPassThroughData =
         AsgExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build();

@@ -14,12 +14,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 import io.harness.CategoryTest;
 import io.harness.account.services.AccountService;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.infra.beans.AsgInfrastructureOutcome;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -128,6 +130,8 @@ public class AsgRollingRollbackStepTest extends CategoryTest {
     doReturn(List.of(asgServerInstanceInfo)).when(asgStepCommonHelper).getServerInstanceInfos(any(), any(), any());
 
     doReturn(asgInfrastructureOutcome).when(outcomeService).resolve(any(), any());
+    doReturn(asgInfrastructureOutcome).when(asgStepCommonHelper).getInfrastructureOutcomeWithUpdatedExpressions(any());
+
     StepResponse stepResponse =
         asgRollingRollbackStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> responseData);
 
@@ -235,6 +239,7 @@ public class AsgRollingRollbackStepTest extends CategoryTest {
     doReturn(taskChainResponse1)
         .when(asgStepCommonHelper)
         .queueAsgTask(any(), any(), any(), any(), anyBoolean(), any(TaskType.class));
+    doReturn(infrastructureOutcome).when(asgStepCommonHelper).getInfrastructureOutcomeWithUpdatedExpressions(any());
 
     TaskRequest taskRequest = asgRollingRollbackStep.obtainTaskAfterRbac(ambiance, stepElementParameters, inputPackage);
     assertThat(taskRequest).isEqualTo(TaskRequest.newBuilder().build());

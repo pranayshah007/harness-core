@@ -129,8 +129,8 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_BLUE_GREEN_SWAP_SERVICE_OUTCOME,
           asgBlueGreenSwapServiceOutcome, StepOutcomeGroup.STEP.name());
 
-      InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
-          ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+      InfrastructureOutcome infrastructureOutcome =
+          asgStepCommonHelper.getInfrastructureOutcomeWithUpdatedExpressions(ambiance);
 
       List<ServerInstanceInfo> serverInstanceInfos = asgStepCommonHelper.getServerInstanceInfos(
           asgBlueGreenSwapServiceResponse, infrastructureOutcome.getInfrastructureKey(),
@@ -190,8 +190,8 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
           .build();
     }
 
-    InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+    InfrastructureOutcome infrastructureOutcome =
+        asgStepCommonHelper.getInfrastructureOutcomeWithUpdatedExpressions(ambiance);
 
     AsgLoadBalancerConfig asgLoadBalancerConfig = getLoadBalancer(asgBlueGreenPrepareRollbackDataOutcome);
     List<AsgLoadBalancerConfig> loadBalancers = getLoadBalancers(asgBlueGreenPrepareRollbackDataOutcome, false);

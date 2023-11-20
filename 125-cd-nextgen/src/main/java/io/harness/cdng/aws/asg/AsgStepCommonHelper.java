@@ -140,8 +140,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
     LogCallback logCallback = getLogCallback(AsgCommandUnitConstants.fetchManifests.toString(), ambiance, true);
 
     // Get InfrastructureOutcome
-    InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+    InfrastructureOutcome infrastructureOutcome = getInfrastructureOutcomeWithUpdatedExpressions(ambiance);
 
     boolean isBaseAsg = isBaseAsgDeployment(ambiance, infrastructureOutcome, stepElementParameters);
 
@@ -877,5 +876,14 @@ public class AsgStepCommonHelper extends CDStepHelper {
     }
 
     return asgBlueGreenPrepareRollbackDataOutcome.getStageTargetGroupArnListForLoadBalancer().get(loadBalancer);
+  }
+
+  public InfrastructureOutcome getInfrastructureOutcomeWithUpdatedExpressions(Ambiance ambiance) {
+    InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+    cdExpressionResolver.updateExpressions(ambiance, infrastructureOutcome);
+
+    return infrastructureOutcome;
   }
 }

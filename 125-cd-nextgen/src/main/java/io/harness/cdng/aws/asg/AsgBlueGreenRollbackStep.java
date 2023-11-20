@@ -109,8 +109,8 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
                                  .build())
                 .build();
       } else {
-        InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
-            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+        InfrastructureOutcome infrastructureOutcome =
+            asgStepCommonHelper.getInfrastructureOutcomeWithUpdatedExpressions(ambiance);
 
         List<ServerInstanceInfo> serverInstanceInfos = asgStepCommonHelper.getServerInstanceInfos(
             asgBlueGreenRollbackResponse, infrastructureOutcome.getInfrastructureKey(),
@@ -180,8 +180,8 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
     AsgBlueGreenDeployOutcome asgBlueGreenDeployOutcome =
         (AsgBlueGreenDeployOutcome) asgBlueGreenDeployOptional.getOutput();
 
-    InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+    InfrastructureOutcome infrastructureOutcome =
+        asgStepCommonHelper.getInfrastructureOutcomeWithUpdatedExpressions(ambiance);
 
     UnitProgressData unitProgressData = cdStepHelper.getCommandUnitProgressData(
         AsgCommandUnitConstants.rollback.toString(), CommandExecutionStatus.RUNNING);
