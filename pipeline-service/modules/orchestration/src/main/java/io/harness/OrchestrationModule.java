@@ -305,7 +305,7 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
   public LoadingCache<String, Set<String>> metricsLoadingCache() {
     return Caffeine.newBuilder()
         .maximumSize(1000)
-        .expireAfterWrite(5, TimeUnit.DAYS)
+        .expireAfterWrite(7, TimeUnit.DAYS)
         .build(new CacheLoader<String, Set<String>>() {
           @NotNull
           @Override
