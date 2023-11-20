@@ -102,6 +102,7 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
 import io.harness.cvng.core.beans.sidekick.RetryChangeSourceHandleDeleteSideKickData;
+import io.harness.cvng.core.beans.template.TemplateDTO;
 import io.harness.cvng.core.entities.AnalysisInfo.SLI;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
@@ -130,6 +131,7 @@ import io.harness.cvng.core.services.api.monitoredService.ServiceDependencyServi
 import io.harness.cvng.core.services.impl.ChangeSourceUpdateHandler;
 import io.harness.cvng.core.services.impl.PagerdutyChangeSourceUpdateHandler;
 import io.harness.cvng.core.services.impl.sidekickexecutors.RetryChangeSourceHandleDeleteSideKickExecutor;
+import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapRisk;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
@@ -418,6 +420,66 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             String.format("Multiple Health Sources exists with the same identifier %s", healthSourceIdentifier));
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testCreateFromYaml_templateByReferenceTrue_validationFailed() {
+    String yaml = "monitoredService:\n"
+        + "  template:\n"
+        + "   templateRef: templateRef123\n"
+        + "   versionLabel: versionLabel123\n"
+        + "   templateVersionNumber: 4\n"
+        + "   isTemplateByReference: true\n"
+        + "  type: Application\n"
+        + "  description: description\n"
+        + "  identifier: <+monitoredService.serviceRef>\n"
+        + "  name: <+monitoredService.identifier>\n"
+        + "  serviceRef: service1\n"
+        + "  environmentRef: <+monitoredService.variables.environmentIdentifier>\n"
+        + "  sources:\n"
+        + "      healthSources:\n"
+        + "      changeSources: \n"
+        + "  tags: {}\n"
+        + "  variables:\n"
+        + "    -   name: environmentIdentifier\n"
+        + "        type: String\n"
+        + "        value: env3";
+    when(featureFlagService.isFeatureFlagEnabled(accountId, FeatureFlagNames.SRM_ENABLE_MS_TEMPLATE_RECONCILIATION))
+        .thenReturn(true);
+    assertThatThrownBy(() -> monitoredServiceService.createFromYaml(builderFactory.getProjectParams(), yaml))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testCreateFromYaml_templateByReferenceTrue_validationSuccess() {
+    String yaml = "monitoredService:\n"
+        + "  template:\n"
+        + "   templateRef: templateRef123\n"
+        + "   versionLabel: versionLabel123\n"
+        + "   templateVersionNumber: 4\n"
+        + "   isTemplateByReference: true\n"
+        + "  type: Application\n"
+        + "  description: description\n"
+        + "  identifier: <+monitoredService.serviceRef>\n"
+        + "  name: <+monitoredService.identifier>\n"
+        + "  serviceRef: service1\n"
+        + "  environmentRef: <+monitoredService.variables.environmentIdentifier>\n"
+        + "  sources:\n"
+        + "      healthSources:\n"
+        + "      changeSources: \n"
+        + "  tags: {}\n"
+        + "  variables:\n"
+        + "    -   name: environmentIdentifier\n"
+        + "        type: String\n"
+        + "        value: env3";
+    when(featureFlagService.isFeatureFlagEnabled(accountId, FeatureFlagNames.SRM_ENABLE_MS_TEMPLATE_RECONCILIATION))
+        .thenReturn(true);
+    assertThatThrownBy(() -> monitoredServiceService.createFromYaml(builderFactory.getProjectParams(), yaml))
+        .isInstanceOf(InvalidRequestException.class);
   }
 
   @Test
@@ -2971,6 +3033,10 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         .environmentRef(environmentIdentifier)
         .name(monitoredServiceName)
         .tags(tags);
+  }
+
+  private TemplateDTO getTestTemplateDTO() {
+    return TemplateDTO.builder().isTemplateByReference(true).build();
   }
 
   private MonitoredServiceDTO createEnabledMonitoredService() {

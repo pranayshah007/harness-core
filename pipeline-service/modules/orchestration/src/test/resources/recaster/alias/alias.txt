@@ -229,3 +229,4 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureCredentialOutcom
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata
 io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
 io.harness.delegate.beans.instancesync.K8sDeploymentOutcomeMetadata
+io.harness.plancreator.steps.common.v1.StageElementParametersV1

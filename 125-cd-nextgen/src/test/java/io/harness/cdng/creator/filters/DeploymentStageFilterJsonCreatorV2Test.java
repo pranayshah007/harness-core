@@ -82,6 +82,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 @RunWith(JUnitParamsRunner.class)
 public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
@@ -89,6 +90,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
   @Mock private EnvironmentService environmentService;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private InfrastructureEntityService infraService;
+  @Spy @InjectMocks private StageFilterCreatorHelper stageFilterCreatorHelper;
   @InjectMocks private DeploymentStageFilterJsonCreatorV2 filterCreator;
 
   private final ClassLoader classLoader = this.getClass().getClassLoader();

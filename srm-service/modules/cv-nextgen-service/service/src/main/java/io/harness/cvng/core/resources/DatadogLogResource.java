@@ -55,8 +55,8 @@ public class DatadogLogResource {
   public ResponseDTO<List<LinkedHashMap>> getDatadogSampleData(@BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @NotNull @QueryParam("tracingId") String tracingId, @Body LogSampleRequestDTO logSampleRequestDTO) {
-    return ResponseDTO.newResponse(datadogService.getSampleLogData(
-        projectParams.getProjectParams(), connectorIdentifier, logSampleRequestDTO.getQuery(), tracingId));
+    return ResponseDTO.newResponse(datadogService.getSampleLogData(projectParams.getProjectParams(),
+        connectorIdentifier, logSampleRequestDTO.getQuery(), logSampleRequestDTO.getIndexes(), tracingId));
   }
 
   @GET

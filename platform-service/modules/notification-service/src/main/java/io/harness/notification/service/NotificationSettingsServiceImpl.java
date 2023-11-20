@@ -217,6 +217,8 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
     SmtpConfigResponse smtpConfigResponse = null;
     try {
       smtpConfigResponse = CGRestUtils.getResponse(smtpConfigClient.getSmtpConfig(accountId));
+    } catch (InvalidRequestException ex) {
+      log.debug("Smtp config is not set for this accountId {}: ", accountId);
     } catch (Exception ex) {
       log.error("Rest call for getting smtp config failed: ", ex);
     }

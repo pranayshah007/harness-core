@@ -21,6 +21,7 @@ import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 import static io.harness.template.resources.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
@@ -176,7 +177,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock GitXSettingsHelper gitXSettingsHelper;
   @Mock TemplateRbacHelper templateRbacHelper;
 
-  @InjectMocks NGTemplateServiceImpl templateService;
+  @Spy @InjectMocks NGTemplateServiceImpl templateService;
 
   @Mock private NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
 
@@ -2359,5 +2360,29 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     TemplateEntity result =
         templateService.getAndValidateOldTemplateEntity(newTemplateEntity, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     assertThat(result).isEqualTo(oldTemplateEntity);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testStoreTypeCheckWithNullStoreType() {
+    TemplateMoveConfigRequestDTO requestDTO =
+        TemplateMoveConfigRequestDTO.builder()
+            .isNewBranch(false)
+            .moveConfigOperationType(TemplateMoveConfigOperationType.INLINE_TO_REMOTE)
+            .versionLabel(TEMPLATE_VERSION_LABEL)
+            .build();
+    // entity with null storeType.
+    doReturn(Optional.of(entity))
+        .when(templateService)
+        .get(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean());
+
+    doReturn(entity)
+        .when(templateService)
+        .moveTemplateEntity(anyString(), anyString(), anyString(), anyString(), anyString(), any(), any());
+    assertThatCode(()
+                       -> templateService.moveTemplateStoreTypeConfig(
+                           ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, requestDTO))
+        .doesNotThrowAnyException();
   }
 }

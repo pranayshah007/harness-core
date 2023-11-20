@@ -16,10 +16,12 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.ssca.beans.EnvType;
+import io.harness.ssca.beans.SLSAVerificationSummary;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import dev.morphia.annotations.Entity;
 import java.util.Set;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Setter;
@@ -47,18 +49,21 @@ public class CdInstanceSummary implements PersistentEntity, CreatedAtAware {
   @NotNull private String orgIdentifier;
   @NotNull private String projectIdentifier;
 
-  @NotNull private String lastPipelineExecutionId;
-  @NotNull private String lastPipelineExecutionName;
-
-  @NotNull private String lastDeployedById;
-  @NotNull private String lastDeployedByName;
-  @NotNull private Long lastDeployedAt;
-
   EnvType envType;
   @NotNull String envIdentifier;
   @NotNull String envName;
 
-  Set<String> instanceIds;
+  @Setter @NonFinal private String lastPipelineName;
+  @Setter @NonFinal @NotNull private String lastPipelineExecutionId;
+  @Setter @NonFinal @NotNull private String lastPipelineExecutionName;
+  @Setter @NonFinal private String sequenceId;
 
+  @Setter @NonFinal @NotNull private String lastDeployedById;
+  @Setter @NonFinal @NotNull private String lastDeployedByName;
+  @Setter @NonFinal @NotNull private Long lastDeployedAt;
+  @Setter @NonFinal private String triggerType;
+
+  @Setter @NonFinal @Valid SLSAVerificationSummary slsaVerificationSummary;
+  Set<String> instanceIds;
   @Setter @NonFinal long createdAt;
 }

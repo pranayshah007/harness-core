@@ -838,7 +838,11 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     if (((K8sDirectInfraYaml) infrastructure).getSpec() == null) {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
-    String infraConnectorRef = ((K8sDirectInfraYaml) infrastructure).getSpec().getConnectorRef().getValue();
+    K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) infrastructure;
+    String infraConnectorRef = k8sDirectInfraYaml.getSpec().getConnectorRef().getValue();
+    if (isEmpty(infraConnectorRef)) {
+      throw new CIStageExecutionException("Kubernetes connector identifier cannot be empty for the stage.");
+    }
     entityDetails.add(createEntityDetails(infraConnectorRef, accountIdentifier, projectIdentifier, orgIdentifier));
 
     entityDetails.addAll(connectorRefs.stream()

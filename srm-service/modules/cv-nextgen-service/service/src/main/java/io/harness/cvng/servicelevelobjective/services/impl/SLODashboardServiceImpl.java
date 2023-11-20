@@ -95,6 +95,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -161,8 +162,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         getScopedMonitoredServiceIdentifierToDTOMap(sloPageResponse.getContent(), projectParams);
     Map<String, SLOHealthIndicator> scopedSloIdentifierToHealthIndicatorMap =
         getScopedSloIdentifierToHealthIndicatorMap(
-            scopedIdentifierToAllSLOsIncUnderlyingSLOsMap.values().stream().collect(Collectors.toList()),
-            projectParams);
+            new ArrayList<>(scopedIdentifierToAllSLOsIncUnderlyingSLOsMap.values()), projectParams);
     Map<String, SLOError> scopedIdentifierToSLOErrorMap = getScopedIdentifierToSLOErrorMap(sloPageResponse.getContent(),
         scopedIdentifierToAllSLOsIncUnderlyingSLOsMap, scopedSloIdentifierToHealthIndicatorMap);
     List<UserJourney> userJourneyList = userJourneyService.get(projectParams);
@@ -331,7 +331,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   }
 
   private SLOError getErrorForSimpleSLO(Optional<SLOHealthIndicator> sloHealthIndicator) {
-    if (!sloHealthIndicator.isPresent()) {
+    if (sloHealthIndicator.isEmpty()) {
       return SLOError.getErrorForDeletionOfSimpleSLOInConfigurationListView();
     }
     if (sloHealthIndicator.get().getFailedState()) {
@@ -447,7 +447,9 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           .build();
     }
     SLODashboardWidget.SLOGraphData sloGraphData;
-    if (featureFlagService.isGlobalFlagEnabled(FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
+    if (featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
+      log.info("Fetching data from SLI record Buckets");
       sloGraphData = graphDataServiceV2.getGraphData(serviceLevelObjective, startTimeForCurrentRange,
           endTimeForCurrentRange, sloDetail.getTotalErrorBudget(), filter);
     } else {
@@ -510,14 +512,19 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         : roundUpTo5MinBoundary(Instant.ofEpochMilli(startTime));
 
     // Adjust start time based on the first SLIRecord
-    Instant firstSLIRecordStartTime;
-    if (featureFlagService.isGlobalFlagEnabled(FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
+    Instant firstSLIRecordStartTime = null;
+    if (featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
       SLIRecordBucket firstSLIRecord =
           sliRecordBucketService.getFirstSLIRecord(serviceLevelIndicator.getUuid(), startTimeInstant);
-      firstSLIRecordStartTime = firstSLIRecord.getBucketStartTime();
+      if (firstSLIRecord != null) {
+        firstSLIRecordStartTime = firstSLIRecord.getBucketStartTime();
+      }
     } else {
       SLIRecord firstSLIRecord = sliRecordService.getFirstSLIRecord(serviceLevelIndicator.getUuid(), startTimeInstant);
-      firstSLIRecordStartTime = roundUpTo5MinBoundary(firstSLIRecord.getTimestamp());
+      if (firstSLIRecord != null) {
+        firstSLIRecordStartTime = roundUpTo5MinBoundary(firstSLIRecord.getTimestamp());
+      }
     }
     if (firstSLIRecordStartTime != null) {
       startTimeInstant = firstSLIRecordStartTime.isAfter(startTimeInstant) ? firstSLIRecordStartTime : startTimeInstant;
@@ -625,7 +632,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
     int totalErrorBudgetMinutes =
         serviceLevelObjective.getActiveErrorBudgetMinutes(errorBudgetResetDTOS, currentLocalDate);
     SLODashboardWidget.SLOGraphData sloGraphData;
-    if (featureFlagService.isGlobalFlagEnabled(FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
+    if (featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
       sloGraphData = graphDataServiceV2.getGraphData(serviceLevelObjective,
           timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes,
           filter);
@@ -942,7 +950,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
     try {
       Optional<SLOHealthIndicator> sloHealthIndicator = Optional.ofNullable(
           scopedSloIdentifierToHealthIndicatorMap.get(serviceLevelObjectiveV2Service.getScopedIdentifier(slo)));
-      if (!sloHealthIndicator.isPresent()) {
+      if (sloHealthIndicator.isEmpty()) {
         if (slo.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
           return SLOHealthListView.getSLOHealthListViewBuilderForDeletedSimpleSLO(slo).build();
         }

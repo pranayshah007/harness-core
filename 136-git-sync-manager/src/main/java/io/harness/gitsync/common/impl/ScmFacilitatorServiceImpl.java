@@ -1086,22 +1086,16 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   //  TODO: Move this to GitXWebhookService to make it centralised when more use cases arises
   private boolean isBiDirectionalSyncApplicable(ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO) {
-    List<String> matchingFolderPaths = new ArrayList<>();
     if (ngFeatureFlagHelperService.isEnabled(
             scmGetFileByBranchRequestDTO.getScope().getAccountIdentifier(), FeatureName.PIE_GIT_BI_DIRECTIONAL_SYNC)) {
-      Optional<GitXWebhook> optionalGitXWebhook =
-          gitXWebhookService.getGitXWebhook(scmGetFileByBranchRequestDTO.getScope().getAccountIdentifier(), null,
-              scmGetFileByBranchRequestDTO.getRepoName());
-      if (optionalGitXWebhook.isPresent() && optionalGitXWebhook.get().getIsEnabled()) {
-        if (isEmpty(optionalGitXWebhook.get().getFolderPaths())) {
-          return true;
-        } else {
-          matchingFolderPaths = GitXWebhookUtils.compareFolderPaths(optionalGitXWebhook.get().getFolderPaths(),
-              Collections.singletonList(scmGetFileByBranchRequestDTO.getFilePath()));
-        }
+      List<GitXWebhook> gitXWebhookList = gitXWebhookService.getGitXWebhookForAllScopes(
+          scmGetFileByBranchRequestDTO.getScope(), scmGetFileByBranchRequestDTO.getRepoName());
+      if (isNotEmpty(gitXWebhookList)) {
+        return GitXWebhookUtils.isBiDirectionalSyncEnabled(
+            scmGetFileByBranchRequestDTO.getScope(), gitXWebhookList, scmGetFileByBranchRequestDTO.getFilePath());
       }
     }
-    return isNotEmpty(matchingFolderPaths);
+    return false;
   }
 
   private GitFileFetchRunnableParams getGitFileFetchRunnableParams(Scope scope, String repoName, String branchName,

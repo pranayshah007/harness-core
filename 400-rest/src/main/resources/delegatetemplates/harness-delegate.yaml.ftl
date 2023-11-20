@@ -1,5 +1,4 @@
 <#import "common/delegate-environment.ftl" as delegateEnvironment>
-<#import "common/delegate-service.ftl" as delegateService>
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -95,9 +94,3 @@ spec:
 <@delegateEnvironment.cgSpecific />
 <@delegateEnvironment.mutable />
       restartPolicy: Always
-
-<#if ciEnabled == "true">
----
-
-    <@delegateService.cg />
-</#if>

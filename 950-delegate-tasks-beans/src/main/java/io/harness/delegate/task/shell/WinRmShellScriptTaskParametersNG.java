@@ -53,6 +53,8 @@ public class WinRmShellScriptTaskParametersNG implements TaskParameters, Executi
   String host;
   Long sessionTimeout;
 
+  String commandUnit;
+
   // WinRm specific fields
   boolean disableCommandEncoding;
   boolean winrmScriptCommandSplit;

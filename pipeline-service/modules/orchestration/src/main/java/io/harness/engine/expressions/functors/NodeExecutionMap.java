@@ -280,7 +280,8 @@ public class NodeExecutionMap extends LateBindingMap {
 
   private Map<String, Object> extractStrategyMetadata(NodeExecution nodeExecution) {
     if (nodeExecution.getUuid() != null) {
-      return nodeExecutionInfoService.fetchStrategyObjectMap(nodeExecution.getUuid());
+      return nodeExecutionInfoService.fetchStrategyObjectMap(
+          nodeExecution.getUuid(), AmbianceUtils.shouldUseMatrixFieldName(ambiance));
     }
     return new HashMap<>();
   }

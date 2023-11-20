@@ -471,3 +471,4 @@ io.harness.steps.shellscript.v1.ShellScriptOutcome
 io.harness.steps.shellscript.v1.ExportScopeV1
 io.harness.steps.http.v1.HttpStepParameters
 io.harness.steps.http.v1.HttpOutcome
+io.harness.plancreator.steps.common.v1.StageElementParametersV1

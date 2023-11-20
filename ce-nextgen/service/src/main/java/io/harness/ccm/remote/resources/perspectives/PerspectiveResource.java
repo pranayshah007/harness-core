@@ -446,8 +446,10 @@ public class PerspectiveResource {
       @NotNull @Valid @QueryParam("pageNo") @DefaultValue("0") @Parameter(
           required = true, description = "Number of records to be skipped") Integer pageNo,
       @Valid @QueryParam("searchKey") @Parameter(description = "Characters in search bar") String searchKey,
-      @Valid @QueryParam("sortType") @Parameter(description = " sorting filters in UI") QLCEViewSortType sortType,
-      @Valid @QueryParam("sortOrder") @Parameter(description = "sorting order") QLCESortOrder sortOrder,
+      @Valid @QueryParam("sortType") @DefaultValue("TIME") @Parameter(
+          description = " sorting filters in UI") QLCEViewSortType sortType,
+      @Valid @QueryParam("sortOrder") @DefaultValue("DESCENDING") @Parameter(
+          description = "sorting order") QLCESortOrder sortOrder,
       @Valid @QueryParam("cloudFilters") @Parameter(
           description = "filters for clouds and clusters") List<CloudFilter> cloudFilters) {
     PerspectiveDataBuilder perspectiveDataBuilder = PerspectiveData.builder();

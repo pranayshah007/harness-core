@@ -80,7 +80,7 @@ public class GithubUpsertWebhookScmApiErrorHandlerTest extends CategoryTest {
       assertThat(exception).isNotNull();
       assertThat(exception.getMessage())
           .isEqualTo(
-              "Please check if the requested Github repository exists and if webhook read write permission is given to token/GithubApp. "
+              "Please check if the requested Github repository exists and if webhook read-write permissions are given both to the token/GithubApp used in the connector as well as to the user to whom the token belongs. "
               + errorMessage);
     }
   }

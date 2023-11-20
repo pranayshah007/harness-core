@@ -126,20 +126,6 @@ spec:
 
 ---
 
-apiVersion: v1
-kind: Service
-metadata:
-  name: delegate-service
-  namespace: harness-delegate
-spec:
-  type: ClusterIP
-  selector:
-    harness.io/name: harness-delegate
-  ports:
-    - port: 8080
-
----
-
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:

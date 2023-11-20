@@ -10,8 +10,11 @@ package io.harness.yaml.individualschema;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,6 +24,8 @@ import lombok.extern.slf4j.Slf4j;
 public class PipelineSchemaParserV0 extends BasePipelineSchemaParser {
   static final String PIPELINE_DEFINITION_PATH = "#/definitions/pipeline/pipeline";
   static final String PIPELINE_V0 = "v0";
+  static final String STAGES_NODE_ONE_OF_PATH = "#/definitions/pipeline/stages/stages/stage/oneOf";
+  static final String STEP_NODE_REF_SUFFIX_UNDER_EXECUTIONS_WRAPPER_CONFIG = "ExecutionWrapperConfig/step/oneOf";
 
   void parseAndIngestSchema() {
     traverseNodeAndExtractAllRefsRecursively(
@@ -38,6 +43,38 @@ public class PipelineSchemaParserV0 extends BasePipelineSchemaParser {
                 .build());
       }
     });
+  }
+
+  @Override
+  public ObjectNodeWithMetadata getRootStageNode(String currentFqn, ObjectNode objectNode) {
+    if (currentFqn.endsWith(STAGES_NODE_ONE_OF_PATH)) {
+      String stageType = getTypeFromObjectNode(objectNode);
+      if (EmptyPredicate.isNotEmpty(stageType)) {
+        return ObjectNodeWithMetadata.builder()
+            .isRootNode(true)
+            .nodeGroup(StepCategory.STAGE.name().toLowerCase())
+            .nodeType(stageType)
+            .objectNode(objectNode)
+            .build();
+      }
+    }
+    return null;
+  }
+
+  @Override
+  public ObjectNodeWithMetadata getRootStepNode(String currentFqn, ObjectNode objectNode) {
+    if (currentFqn.endsWith(STEP_NODE_REF_SUFFIX_UNDER_EXECUTIONS_WRAPPER_CONFIG)) {
+      String stepType = getTypeFromObjectNode(objectNode);
+      if (EmptyPredicate.isNotEmpty(stepType)) {
+        return ObjectNodeWithMetadata.builder()
+            .isRootNode(true)
+            .nodeGroup(StepCategory.STEP.name().toLowerCase())
+            .nodeType(stepType)
+            .objectNode(objectNode)
+            .build();
+      }
+    }
+    return null;
   }
 
   @Override

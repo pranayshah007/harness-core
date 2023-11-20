@@ -43,10 +43,12 @@ public class Constants {
   public static final String SONARQUBE_PLUGIN = "sonarqube";
   public static final String TODO_PLUGIN = "todo";
 
+  public static final String OPSGENIE_PLUGIN = "opsgenie";
+
   public static final List<String> pluginIds = List.of(CIRCLE_CI_PLUGIN, CONFLUENCE_PLUGIN, DATADOG_PLUGIN,
       FIRE_HYDRANT_PLUGIN, GITHUB_ACTIONS_PLUGIN, GITHUB_CATALOG_DISCOVERY_PLUGIN, GITHUB_INSIGHTS_PLUGIN,
       GITHUB_PULL_REQUESTS_PLUGIN, GRAFANA_PLUGIN, HARNESS_CI_CD_PLUGIN, HARNESS_FEATURE_FLAGS_PLUGIN, JENKINS_PLUGIN,
-      JIRA_PLUGIN, KUBERNETES_PLUGIN, PAGER_DUTY_PLUGIN, SONARQUBE_PLUGIN, TODO_PLUGIN);
+      JIRA_PLUGIN, KUBERNETES_PLUGIN, OPSGENIE_PLUGIN, PAGER_DUTY_PLUGIN, SONARQUBE_PLUGIN, TODO_PLUGIN);
   public static final String GITHUB_TOKEN = "HARNESS_GITHUB_TOKEN";
   public static final String GITHUB_APP_ID = "HARNESS_GITHUB_APP_APPLICATION_ID";
   public static final String GITHUB_APP_PRIVATE_KEY_REF = "HARNESS_GITHUB_APP_PRIVATE_KEY_REF";
@@ -101,11 +103,11 @@ public class Constants {
   public static final String ERRORS = "errors";
   public static final String MESSAGE_KEY = "message";
 
-  public static final String QA_HOST = "qa.harness.io";
-  public static final String PRE_QA_HOST = "stress.harness.io";
-  public static final String PROD_HOST = "app.harness.io";
+  public static final String QA_HOST = "https://qa.harness.io";
+  public static final String PRE_QA_HOST = "https://stress.harness.io";
+  public static final String PROD_HOST = "https://app.harness.io";
 
-  public static final String LOCAL_HOST = "localhost:8181";
+  public static final String LOCAL_HOST = "http://localhost:12003";
 
   public static final String QA_ENV = "qa";
   public static final String PRE_QA_ENV = "stress";

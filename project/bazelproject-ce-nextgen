@@ -17,7 +17,7 @@ directories:
   958-migration-sdk
   960-persistence
   960-persistence
-  965-api-key-filter
+  965-ng-filter
   970-ng-commons
   980-commons
 

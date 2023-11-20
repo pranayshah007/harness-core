@@ -1,6 +1,5 @@
 <#import "common/delegate-environment.ftl" as delegateEnvironment>
 <#import "common/delegate-role.ftl" as delegateRole>
-<#import "common/delegate-service.ftl" as delegateService>
 <#import "common/mtls.ftl" as mtls>
 <#import "common/upgrader.ftl" as upgrader>
 <#import "common/secret.ftl" as secret>
@@ -116,12 +115,6 @@ spec:
         <@mtls.delegateVolumeMount />
       volumes:
       <@mtls.delegateVolume />
-</#if>
-
-<#if ciEnabled == "true">
----
-
-    <@delegateService.ng />
 </#if>
 
 ---
