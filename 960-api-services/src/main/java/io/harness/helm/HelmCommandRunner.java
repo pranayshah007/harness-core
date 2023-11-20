@@ -35,7 +35,7 @@ public class HelmCommandRunner {
   public HelmCommandRunner(@Named("helmCliExecutor") ExecutorService cliExecutorService) {
     this.cliExecutorService = cliExecutorService;
     this.sharedProcessRunner = new SharedProcessRunner(cliExecutorService);
-    this.localProcessRunner = new LocalProcessRunner();
+    this.localProcessRunner = new LocalProcessRunner(cliExecutorService);
   }
 
   public ProcessResult execute(
