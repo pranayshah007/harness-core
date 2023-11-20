@@ -283,7 +283,6 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
         Object obj = planCreator.getFieldObject(field);
         if (obj == null) {
           Class<?> cls = planCreator.getFieldClass();
-          // ExecutionInput is supported for V0 YAML only. Not supported with YAML simplification.
           obj = YamlField.class.isAssignableFrom(cls) ? field : YamlUtils.read(field.getNode().toString(), cls);
         }
         String executionInputTemplate = "";
