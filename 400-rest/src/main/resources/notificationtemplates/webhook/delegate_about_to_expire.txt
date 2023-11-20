@@ -1,3 +1,3 @@
 {
-    "text": "Harness Delegate ${DELEGATE_ID} expires on ${EXPIRY_TIME}. Make sure auto upgrade is ON to get the latest image. More information at https://developer.harness.io/docs/platform/delegates/install-delegates/delegate-upgrades-and-expiration/."
+    "text": "Harness Delegate ${DELEGATE_ID} expires on ${EXPIRY_TIME}. Either set auto upgrade ON or upgrade to the latest version. More information at https://developer.harness.io/docs/platform/delegates/install-delegates/delegate-upgrades-and-expiration/."
 }
