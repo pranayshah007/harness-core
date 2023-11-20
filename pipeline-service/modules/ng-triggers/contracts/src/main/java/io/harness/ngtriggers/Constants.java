@@ -144,7 +144,6 @@ public interface Constants {
   String MANDATE_CUSTOM_WEBHOOK_TRUE_VALUE = "true";
   String ENABLE_NODE_EXECUTION_AUDIT_EVENTS = "enable_node_execution_audit_events";
   String ENABLE_NODE_EXECUTION_AUDIT_EVENTS_TRUE_VALUE = "true";
-  Integer MAX_MULTI_ARTIFACT_TRIGGER_SOURCES = 10;
   String API_SAMPLE_TRIGGER_YAML = "trigger:\n"
       + "  name: Trigger\n"
       + "  identifier: Trigger\n"

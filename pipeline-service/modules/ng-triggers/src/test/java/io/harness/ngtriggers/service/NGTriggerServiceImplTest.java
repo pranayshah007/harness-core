@@ -106,6 +106,7 @@ import io.harness.ngtriggers.helpers.TriggerCatalogHelper;
 import io.harness.ngtriggers.helpers.TriggerSetupUsageHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.impl.NGTriggerServiceImpl;
+import io.harness.ngtriggers.utils.MaxMultiArtifactTriggerSourcesProvider;
 import io.harness.ngtriggers.utils.PollingSubscriptionHelper;
 import io.harness.ngtriggers.utils.TriggerReferenceHelper;
 import io.harness.ngtriggers.validations.TriggerValidationHandler;
@@ -189,6 +190,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   @Mock TriggerSetupUsageHelper triggerSetupUsageHelper;
   @Mock TriggerWebhookEventRepository webhookEventQueueRepository;
   @Mock OutboxService outboxService;
+  @Mock MaxMultiArtifactTriggerSourcesProvider maxMultiArtifactTriggerSourcesProvider;
   @Mock ExecutorService executorService;
   @Mock PollingSubscriptionHelper pollingSubscriptionHelper;
 
@@ -474,6 +476,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   @Owner(developers = MEET)
   @Category(UnitTests.class)
   public void testValidateTriggerConfig() {
+    when(maxMultiArtifactTriggerSourcesProvider.get()).thenReturn(10);
     NGTriggerEntity ngTriggerEntity = NGTriggerEntity.builder()
                                           .accountId(ACCOUNT_ID)
                                           .orgIdentifier(ORG_IDENTIFIER)

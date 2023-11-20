@@ -7,14 +7,13 @@
 
 package io.harness.ngtriggers.utils;
 
-
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 public class MaxMultiArtifactTriggerSourcesProvider {
-    @Inject @Named("maxMultiArtifactTriggerSources") Integer maxMultiArtifactTriggerSources;
+  @Inject @Named("maxMultiArtifactTriggerSources") Integer maxMultiArtifactTriggerSources;
 
-    public Integer get() {
-        return maxMultiArtifactTriggerSources;
-    }
+  public Integer get() {
+    return maxMultiArtifactTriggerSources;
+  }
 }
