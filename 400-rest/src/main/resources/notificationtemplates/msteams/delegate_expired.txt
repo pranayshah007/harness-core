@@ -1,0 +1,10 @@
+{
+  "@type": "MessageCard",
+  "themeColor": "#FFFFFF",
+  "summary": " Harness Delegate ${DELEGATE_ID} Expired",
+  "sections": [
+    {
+      "activityTitle": "Harness Delegate ${DELEGATE_ID} expired on ${EXPIRY_TIME}. Upgrade the delegate. More information at https://developer.harness.io/docs/platform/delegates/install-delegates/delegate-upgrades-and-expiration/."
+    }
+  ]
+}

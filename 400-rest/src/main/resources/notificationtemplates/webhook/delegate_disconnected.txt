@@ -1,0 +1,3 @@
+{
+    "text": "Harness Delegate ${DELEGATE_ID} has been detected as disconnected. Check to ensure the delegate is in a healthy state."
+}
