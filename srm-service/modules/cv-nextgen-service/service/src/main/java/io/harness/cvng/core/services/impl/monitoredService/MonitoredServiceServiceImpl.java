@@ -384,6 +384,9 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
           monitoredServiceDTO.getIdentifier(), accountId, monitoredServiceDTO.getOrgIdentifier(),
           monitoredServiceDTO.getProjectIdentifier()));
     }
+    if (featureFlagService.isFeatureFlagEnabled(accountId, FeatureFlagNames.SRM_ENABLE_MS_TEMPLATE_RECONCILIATION)) {
+      validateTemplateMetadata(monitoredServiceDTO);
+    }
     Preconditions.checkArgument(monitoredService.getServiceIdentifier().equals(monitoredServiceDTO.getServiceRef()),
         "serviceRef update is not allowed");
     if (monitoredService.getType() == MonitoredServiceType.APPLICATION) {
@@ -420,6 +423,34 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             .build());
     setupUsageEventService.sendCreateEventsForMonitoredService(environmentParams, monitoredServiceDTO);
     return get(environmentParams, monitoredServiceDTO.getIdentifier());
+  }
+
+  private void validateTemplateMetadata(MonitoredServiceDTO monitoredServiceDTO) {
+    if (monitoredServiceDTO.getTemplate() != null && monitoredServiceDTO.getTemplate().isTemplateByReference()) {
+      if (monitoredServiceDTO.getSources().getChangeSources() != null
+          && monitoredServiceDTO.getSources().getChangeSources().size() > 0) {
+        throw new InvalidRequestException(
+            String.format("Update of Monitored Source Entity  with service identifier: %s and "
+                    + "environment identifier: %s is not allowed"
+                    + "with change source if it's created through template by reference.",
+                monitoredServiceDTO.getServiceRef(), monitoredServiceDTO.getEnvironmentRef()));
+      }
+      if (monitoredServiceDTO.getNotificationRuleRefs() != null
+          && monitoredServiceDTO.getNotificationRuleRefs().size() > 0) {
+        throw new InvalidRequestException(
+            String.format("Update of Monitored Source Entity  with service identifier: %s and "
+                    + "environment identifier: %s is not allowed"
+                    + "with notification rules if it's created through template by reference.",
+                monitoredServiceDTO.getServiceRef(), monitoredServiceDTO.getEnvironmentRef()));
+      }
+      if (monitoredServiceDTO.getDependencies() != null && monitoredServiceDTO.getDependencies().size() > 0) {
+        throw new InvalidRequestException(
+            String.format("Update of Monitored Source Entity  with service identifier: %s and "
+                    + "environment identifier: %s is not allowed"
+                    + "with notification rules if it's created through template by reference.",
+                monitoredServiceDTO.getServiceRef(), monitoredServiceDTO.getEnvironmentRef()));
+      }
+    }
   }
 
   private void updateMonitoredService(MonitoredService monitoredService, MonitoredServiceDTO monitoredServiceDTO) {
@@ -1073,6 +1104,11 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     if (monitoredServiceDTO.getTemplate() != null) {
       monitoredServiceEntity.setTemplateIdentifier(monitoredServiceDTO.getTemplate().getTemplateRef());
       monitoredServiceEntity.setTemplateVersionLabel(monitoredServiceDTO.getTemplate().getVersionLabel());
+    }
+    if (monitoredServiceDTO.getTemplate() != null
+        && featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureFlagNames.SRM_ENABLE_MS_TEMPLATE_RECONCILIATION)
+        && monitoredServiceDTO.getTemplate().isTemplateByReference()) {
       monitoredServiceEntity.setTemplateMetadata(TemplateMetadata.fromTemplateDTO(monitoredServiceDTO.getTemplate()));
     }
     if (monitoredServiceDTO.getSources() != null) {
@@ -1343,6 +1379,28 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       if (connectorRefs != null && connectorRefs.size() > 0) {
         nextGenService.validateConnectorIdList(accountId, monitoredServiceDTO.getOrgIdentifier(),
             monitoredServiceDTO.getProjectIdentifier(), connectorRefs);
+      }
+    }
+
+    if (featureFlagService.isFeatureFlagEnabled(accountId, FeatureName.SRM_ENABLE_MS_TEMPLATE_RECONCILIATION.name())
+        && monitoredServiceDTO.getTemplate() != null && monitoredServiceDTO.getTemplate().isTemplateByReference()) {
+      if (monitoredServiceDTO.getTemplate().getInputSetYaml() == null) {
+        throw new InvalidRequestException(
+            String.format("Input set yaml cannot be null if the template is used by reference for "
+                    + "monitored service with service identifier: %s and environment identifier: %s ",
+                monitoredServiceDTO.getServiceRef(), monitoredServiceDTO.getEnvironmentRef()));
+      }
+      if (monitoredServiceDTO.getTemplate().getVersionLabel() == null) {
+        throw new InvalidRequestException(
+            String.format("Template version label cannot be null if the template is used by reference for "
+                    + "monitored service with service identifier: %s and environment identifier: %s ",
+                monitoredServiceDTO.getServiceRef(), monitoredServiceDTO.getEnvironmentRef()));
+      }
+      if (monitoredServiceDTO.getTemplate().getTemplateVersionNumber() == null) {
+        throw new InvalidRequestException(
+            String.format("Template version number cannot be null if the template is used by reference for "
+                    + "monitored service with service identifier: %s and environment identifier: %s ",
+                monitoredServiceDTO.getServiceRef(), monitoredServiceDTO.getEnvironmentRef()));
       }
     }
 
