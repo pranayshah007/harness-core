@@ -25,6 +25,7 @@ import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.monitoring.ExecutionCountWithModuleResult;
 import io.harness.monitoring.ExecutionCountWithStepTypeResult;
 import io.harness.monitoring.ExecutionStatistics;
+import io.harness.pms.events.PmsEventMonitoringConstants;
 import io.harness.rule.Owner;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -59,9 +60,9 @@ public class NodeExecutionMonitorServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRegisterActiveExecutionMetrics() {
     doReturn(true).when(metricsCache).putIfAbsent(any(), any());
-    doReturn(new HashSet<>()).when(metricsLoadingCache).get("accountIds");
-    doReturn(new HashSet<>()).when(metricsLoadingCache).get("modules");
-    doReturn(new HashSet<>()).when(metricsLoadingCache).get("stepTypes");
+    doReturn(new HashSet<>()).when(metricsLoadingCache).get(PmsEventMonitoringConstants.ACCOUNT_ID);
+    doReturn(new HashSet<>()).when(metricsLoadingCache).get(PmsEventMonitoringConstants.MODULE);
+    doReturn(new HashSet<>()).when(metricsLoadingCache).get(PmsEventMonitoringConstants.STEP_TYPE);
 
     List<ExecutionCountWithAccountResult> accountResults = new LinkedList<>();
     accountResults.add(ExecutionCountWithAccountResult.builder().accountId("ABC").count(1).build());

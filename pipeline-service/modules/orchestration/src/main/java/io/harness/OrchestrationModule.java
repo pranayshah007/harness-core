@@ -93,7 +93,6 @@ import io.harness.waiter.WaiterConfiguration;
 import io.harness.waiter.WaiterConfiguration.PersistenceLayer;
 
 import com.codahale.metrics.MetricRegistry;
-import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.inject.AbstractModule;
@@ -116,8 +115,6 @@ import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.jetbrains.annotations.NotNull;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -303,16 +300,7 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
   @Singleton
   @Named("pmsMetricsLoadingCache")
   public LoadingCache<String, Set<String>> metricsLoadingCache() {
-    return Caffeine.newBuilder()
-        .maximumSize(1000)
-        .expireAfterWrite(7, TimeUnit.DAYS)
-        .build(new CacheLoader<String, Set<String>>() {
-          @NotNull
-          @Override
-          public Set<String> load(@NonNull String s) {
-            return new HashSet<>();
-          }
-        });
+    return Caffeine.newBuilder().build(s -> new HashSet<>());
   }
 
   @Provides

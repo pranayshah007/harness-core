@@ -22,6 +22,7 @@ import io.harness.pms.events.base.PmsMetricContextGuard;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -65,53 +66,56 @@ public class NodeExecutionMonitorServiceImpl implements NodeExecutionMonitorServ
     if (executionStatistics == null) {
       return;
     }
-    Set<String> cachedAccountIds = metricsLoadingCache.get("accountIds");
-    Set<String> currentAccountIds = new HashSet<>();
+
     for (ExecutionCountWithAccountResult accountResult : executionStatistics.getAccountStats()) {
-      cachedAccountIds.add(accountResult.getAccountId());
-      currentAccountIds.add(accountResult.getAccountId());
       populateMetric(PmsEventMonitoringConstants.ACCOUNT_ID, accountResult.getAccountId(),
           NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_METRIC_NAME, accountResult.getCount());
     }
 
-    for (String accountId : cachedAccountIds) {
-      if (!currentAccountIds.contains(accountId)) {
-        populateMetric(
-            PmsEventMonitoringConstants.ACCOUNT_ID, accountId, NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_METRIC_NAME, 0);
-      }
-    }
-
-    Set<String> cachedModules = metricsLoadingCache.get("modules");
-    Set<String> currentModules = new HashSet<>();
     for (ExecutionCountWithModuleResult moduleResult : executionStatistics.getModuleStats()) {
-      cachedModules.add(moduleResult.getModule());
-      currentModules.add(moduleResult.getModule());
       populateMetric(PmsEventMonitoringConstants.MODULE, moduleResult.getModule(),
           NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_PER_MODULE_METRIC_NAME, moduleResult.getCount());
     }
 
-    for (String module : cachedModules) {
-      if (!currentModules.contains(module)) {
-        populateMetric(PmsEventMonitoringConstants.MODULE, module,
-            NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_PER_MODULE_METRIC_NAME, 0);
-      }
-    }
-
-    Set<String> cachedStepTypes = metricsLoadingCache.get("stepTypes");
-    Set<String> currentStepTypes = new HashSet<>();
     for (ExecutionCountWithStepTypeResult stepTypeResult : executionStatistics.getStepTypeStats()) {
-      cachedStepTypes.add(stepTypeResult.getStepType());
-      currentStepTypes.add(stepTypeResult.getStepType());
       populateMetric(PmsEventMonitoringConstants.STEP_TYPE, stepTypeResult.getStepType(),
           NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_PER_STEP_TYPE_METRIC_NAME, stepTypeResult.getCount());
     }
 
-    for (String stepType : cachedStepTypes) {
-      if (!currentStepTypes.contains(stepType)) {
-        populateMetric(PmsEventMonitoringConstants.STEP_TYPE, stepType,
-            NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_PER_STEP_TYPE_METRIC_NAME, 0);
-      }
+    populateCountForMissingKeysInCurrentExecutionStats(executionStatistics);
+  }
+
+  private void populateCountForMissingKeysInCurrentExecutionStats(ExecutionStatistics executionStatistics) {
+    Set<String> currentAccountIds = new HashSet<>();
+    for (ExecutionCountWithAccountResult accountResult : executionStatistics.getAccountStats()) {
+      currentAccountIds.add(accountResult.getAccountId());
     }
+    populateZeroCount(
+        currentAccountIds, PmsEventMonitoringConstants.ACCOUNT_ID, NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_METRIC_NAME);
+
+    Set<String> currentModules = new HashSet<>();
+    for (ExecutionCountWithModuleResult moduleResult : executionStatistics.getModuleStats()) {
+      currentModules.add(moduleResult.getModule());
+    }
+    populateZeroCount(currentModules, PmsEventMonitoringConstants.MODULE,
+        NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_PER_MODULE_METRIC_NAME);
+
+    Set<String> currentStepTypes = new HashSet<>();
+    for (ExecutionCountWithStepTypeResult stepTypeResult : executionStatistics.getStepTypeStats()) {
+      currentStepTypes.add(stepTypeResult.getStepType());
+    }
+    populateZeroCount(currentStepTypes, PmsEventMonitoringConstants.STEP_TYPE,
+        NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_PER_STEP_TYPE_METRIC_NAME);
+  }
+
+  private void populateZeroCount(
+      Set<String> currentKeys, String metricKey, String nodeExecutionActiveExecutionCountMetricName) {
+    Set<String> cachedKeys = metricsLoadingCache.get(metricKey);
+    Set<String> zeroCountKeys = Sets.difference(cachedKeys, currentKeys);
+    for (String key : zeroCountKeys) {
+      populateMetric(metricKey, key, nodeExecutionActiveExecutionCountMetricName, 0);
+    }
+    cachedKeys.addAll(currentKeys);
   }
 
   private void populateMetric(String key, String keyValue, String metricName, Integer metricValue) {
