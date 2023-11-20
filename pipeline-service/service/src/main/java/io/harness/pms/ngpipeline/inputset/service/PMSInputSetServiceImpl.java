@@ -548,6 +548,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     Update update = PMSInputSetFilterHelper.getUpdateWithGitMetadata(updateGitDetailsParams);
 
     InputSetEntity inputSetAfterUpdate = inputSetRepository.updateEntity(criteria, update);
+    InputSetValidationHelper.validateInputSet(this, inputSetAfterUpdate, false);
     if (inputSetAfterUpdate == null) {
       throw new EntityNotFoundException(
           format("InputSet with id [%s] is not present or has been deleted", inputSetIdentifier));

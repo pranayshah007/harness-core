@@ -9,6 +9,7 @@ package io.harness.pms.ngpipeline.inputset.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.utils.PipelineExceptionsHelper.ERROR_PIPELINE_BRANCH_NOT_PROVIDED;
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -40,6 +41,7 @@ import io.harness.pms.yaml.HarnessYamlVersion;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Objects;
 import java.util.Optional;
+import io.harness.validator.NGRegexValidatorConstants;
 import lombok.experimental.UtilityClass;
 
 @CodePulse(
@@ -66,6 +68,10 @@ public class InputSetValidationHelper {
         break;
       default:
         throw new IllegalStateException("version not supported");
+    }
+    String inputSetIdentifier = inputSetEntity.getIdentifier();
+    if (!inputSetIdentifier.matches(NGRegexValidatorConstants.IDENTIFIER_PATTERN)) {
+      throw new InvalidRequestException(format("Identifier cannot contain special characters or spaces: [%s]", inputSetIdentifier));
     }
     String orgIdentifier = inputSetEntity.getOrgIdentifier();
     String projectIdentifier = inputSetEntity.getProjectIdentifier();
@@ -228,7 +234,7 @@ public class InputSetValidationHelper {
     }
     if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(
-          String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
+          format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
     }
     return optionalInputSetEntity.get();
   }
