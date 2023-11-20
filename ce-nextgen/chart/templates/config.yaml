@@ -11,9 +11,7 @@ metadata:
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
-  LOGGING_LEVEL: "INFO"
-  MANAGER_TARGET: "harness-manager:9879"
-  MANAGER_AUTHORITY: "harness-manager:9879"
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.configData "context" $) | nindent 2}}
   MANAGER_CLIENT_BASEURL: "http://harness-manager.{{ .Release.Namespace }}.svc.cluster.local:9090/api/"
   NG_MANAGER_CLIENT_BASEURL: "http://ng-manager.{{ .Release.Namespace }}.svc.cluster.local:7090/"
   MANAGER_URL: "http://harness-manager.{{ .Release.Namespace }}.svc.cluster.local:9090/api/"
@@ -21,13 +19,9 @@ data:
   CE_NEXTGEN_PORT: {{ .Values.service.port | quote}}
   EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: "harness-redis"
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  EVENTS_FRAMEWORK_ENV_NAMESPACE: ""
-  EVENTS_FRAMEWORK_REDIS_SSL_ENABLED: "false"
   LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
   LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   {{- if not .Values.workloadIdentity.enabled }}
   GOOGLE_CREDENTIALS_PATH: "/opt/harness/svc/ceng_gcp_credentials.json"
@@ -35,22 +29,15 @@ data:
   CE_GCP_CREDENTIALS_PATH: "/opt/harness/svc/ceng_gcp_credentials.json"
   {{- end }}
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled  | quote}}
-  EVENTS_MONGO_INDEX_MANAGER_MODE: "AUTO"
   GCP_PROJECT_ID: {{ .Values.global.ccm.gcpProjectId  | quote}}
   AZURE_APP_CLIENT_ID: {{ .Values.cloudProviderConfig.AZURE_APP_CLIENT_ID  | quote}}
-  AZURE_ENABLE_FILE_CHECK_AT_SOURCE: "true"
   AWS_GOV_CLOUD_ACCOUNT_ID: {{ .Values.cloudProviderConfig.AWS_GOV_CLOUD_ACCOUNT_ID  | quote}}
   AWS_GOV_CLOUD_TEMPLATE_LINK: {{ .Values.cloudProviderConfig.AWS_GOV_CLOUD_TEMPLATE_LINK  | quote}}
   AWS_GOV_CLOUD_REGION_NAME: {{ .Values.cloudProviderConfig.AWS_GOV_CLOUD_REGION_NAME  | quote}}
-  SEGMENT_ENABLED: "false"
-  AUDIT_ENABLED: "true"
   AUDIT_CLIENT_BASEURL: "http://platform-service.{{ .Release.Namespace }}.svc.cluster.local:9005/api/"
   NOTIFICATION_BASE_URL: "http://platform-service.{{ .Release.Namespace }}.svc.cluster.local:9005/api/"
   ACCESS_CONTROL_BASE_URL: "http://access-control.{{ .Release.Namespace }}.svc.cluster.local:9006/api/"
-  ACCESS_CONTROL_ENABLED: "true"
-  MOCK_ACCESS_CONTROL_SERVICE: "false"
   MEMORY: {{ .Values.java.memory | quote }}
-  ENABLE_APPDYNAMICS: "false"
   CLICKHOUSE_ENABLED: {{ .Values.global.database.clickhouse.enabled | quote }}
   DISTRIBUTED_LOCK_IMPLEMENTATION: {{ .Values.distributedLockImplementation | quote }}
   {{- if .Values.global.database.clickhouse.enabled }}
