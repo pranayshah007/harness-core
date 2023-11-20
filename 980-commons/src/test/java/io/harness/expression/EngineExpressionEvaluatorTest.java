@@ -703,6 +703,12 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
                    + "                          traverse(<+variableValues>)  >"))
         .isEqualTo("v1abcdefv2abcdefv3abcdef");
 
+    assertThat(evaluator.evaluateExpression("[<+f>] <+variables[<+i> + '5']> [<+g>] abc [<+h>]"))
+        .isEqualTo("[abc] archit-harness [def] abc [v2]");
+    assertThat(evaluator.evaluateExpression("<+f>, <+g>, abc, <+h>")).isEqualTo("abc, def, abc, v2");
+    assertThat(evaluator.evaluateExpression("<+ Harness [<+f> : <+g> ] DeployBy:, <+h> >"))
+        .isEqualTo(" Harness [abc : def ] DeployBy:, v2 ");
+
     // Functors having concatenation expressions should work
     assertThat(evaluator.resolve("<+secrets.getValue(\"<+f>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc\", 123)}");
