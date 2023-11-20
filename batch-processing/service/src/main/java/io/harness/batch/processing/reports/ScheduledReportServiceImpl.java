@@ -17,6 +17,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEReportTemplateBuilderServiceImpl;
+import io.harness.ccm.views.utils.ClickHouseConstants;
 
 import software.wings.beans.User;
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
@@ -84,8 +85,11 @@ public class ScheduledReportServiceImpl {
   }
 
   private void sendMail(String accountId, String[] recipients, String viewId, String reportId) {
-    String cloudProviderTableName = cloudBillingHelper.getCloudProviderTableName(
-        config.getBillingDataPipelineConfig().getGcpProjectId(), accountId, unified);
+    String cloudProviderTableName = ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE;
+    if (!config.isClickHouseEnabled()) {
+      cloudProviderTableName = cloudBillingHelper.getCloudProviderTableName(
+          config.getBillingDataPipelineConfig().getGcpProjectId(), accountId, unified);
+    }
     Map<String, String> templateModel = ceReportTemplateBuilderService.getTemplatePlaceholders(
         accountId, viewId, reportId, cloudProviderTableName, config.getBaseUrl());
     EmailData emailData = EmailData.builder()
