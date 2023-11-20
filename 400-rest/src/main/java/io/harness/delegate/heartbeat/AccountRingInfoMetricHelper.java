@@ -19,7 +19,6 @@ import io.harness.persistence.HPersistence;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
-import java.time.Clock;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,7 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 public class AccountRingInfoMetricHelper {
   @Inject private HPersistence persistence;
   @Inject private DelegateMetricsService delegateMetricsService;
-  @Inject protected Clock clock;
 
   private final Cache<String, DelegateRing> delegateRingCache =
       Caffeine.newBuilder().maximumSize(10).expireAfterWrite(30, TimeUnit.MINUTES).build();
@@ -44,9 +42,8 @@ public class AccountRingInfoMetricHelper {
     return ringFromDB;
   }
 
-  public void addAccountRingInfoMetric(String accountId, String accountName, String ringName) {
+  public void addAccountRingInfoMetric(String accountId, String accountName, String ringName, long time) {
     DelegateRing delegateRing = getDelegateRing(ringName);
-    delegateMetricsService.recordAccountRingInfoMetric(
-        accountId, accountName, delegateRing, clock.millis(), ACCOUNT_RING_INFO);
+    delegateMetricsService.recordAccountRingInfoMetric(accountId, accountName, delegateRing, time, ACCOUNT_RING_INFO);
   }
 }
