@@ -105,7 +105,7 @@ public class MetricServiceImpl implements MetricService {
   }
 
   private boolean isMetricPublicationEnabled() {
-    String disabled = System.getenv(ENV_METRICS_COLLECTION_DISABLED);
+    String disabled = "false";
     log.info("METRICS_COLLECTION_DISABLED: {}", disabled);
     // By default, metrics collection is enabled.
     disabled = isEmpty(disabled) ? "false" : disabled.trim().toLowerCase();
