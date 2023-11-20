@@ -36,7 +36,6 @@ import io.harness.encryptors.NgCgManagerKmsEncryptor;
 import io.harness.encryptors.NgCgManagerVaultEncryptor;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.VaultEncryptorsRegistry;
-import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
