@@ -47,6 +47,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PL)
 public class HashicorpVaultEncryptor implements VaultEncryptor {
+  private static final int DEFAULT_VAULT_TIMEOUT = 20;
+  private static final int DEFAULT_TIMEOUT_INCREMENT = 5;
   private final TimeLimiter timeLimiter;
   private final int NUM_OF_RETRIES = 3;
 
@@ -200,15 +202,23 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
     if (isEmpty(encryptedRecord.getEncryptionKey()) && isEmpty(encryptedRecord.getPath())) {
       return null;
     }
+    int fetchTimeLimit = DEFAULT_VAULT_TIMEOUT;
     VaultConfig vaultConfig = (VaultConfig) encryptionConfig;
     int failedAttempts = 0;
     while (true) {
       try {
         return HTimeLimiter.callInterruptible21(
-            timeLimiter, Duration.ofSeconds(15), () -> fetchSecretInternal(encryptedRecord, vaultConfig));
+            timeLimiter, Duration.ofSeconds(fetchTimeLimit), () -> fetchSecretInternal(encryptedRecord, vaultConfig));
       } catch (Exception e) {
         failedAttempts++;
         log.warn("decryption failed. trial num: {}", failedAttempts, e);
+
+        // If the execution was interrupted then increase the
+        // execution time limit by DEFAULT_TIMEOUT_INCREMENT.
+        if (e instanceof InterruptedException) {
+          fetchTimeLimit += DEFAULT_TIMEOUT_INCREMENT;
+        }
+
         if (failedAttempts == NUM_OF_RETRIES) {
           if (e instanceof UncheckedTimeoutException) {
             throw timeoutException(e);
