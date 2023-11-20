@@ -285,7 +285,6 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
       Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecordBucket>>
           serviceLevelObjectivesDetailCompositeSLORecordMap,
       int sloVersion, double runningGoodCount, double runningBadCount, String verificationTaskId) {
-    // TODO need condition here too
     List<CompositeSLORecordBucket> sloRecordList = new ArrayList<>();
     Map<Instant, Map<String, SLIRecordBucket>> timeStampToSLIRecordBucketMap =
         getTimeStampToSLIRecordBucketMap(serviceLevelObjectivesDetailCompositeSLORecordMap);
@@ -364,18 +363,14 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
         serviceLevelObjectivesDetailCompositeSLORecordMap.keySet()) { // iterate for each of simple SLO
       for (SLIRecordBucket sliRecordBucket :
           serviceLevelObjectivesDetailCompositeSLORecordMap.get(objectivesDetail)) { // iterate for each of the buckets
+        // TODO check if skip data handling is correct.
         Map<String, SLIRecordBucket> serviceLevelObjectivesDetailSLIRecordMap = timeStampToSLIRecordsMap.getOrDefault(
-            sliRecordBucket.getBucketStartTime().plus(4, ChronoUnit.MINUTES), new HashMap<>());
-        // fix with contains etc TODO
-        // TODO this needs fixing
-        /*        for (SLIState sliState : sliRecordBucket.getSliStates()) {
-                  if (sliState != SLIState.SKIP_DATA) {*/
+            sliRecordBucket.getBucketStartTime().plus(SLI_RECORD_BUCKET_SIZE - 1, ChronoUnit.MINUTES), new HashMap<>());
         serviceLevelObjectivesDetailSLIRecordMap.put(
             serviceLevelObjectiveV2Service.getScopedIdentifier(objectivesDetail), sliRecordBucket);
-        //          }
         timeStampToSLIRecordsMap.put(
-            sliRecordBucket.getBucketStartTime().plus(4, ChronoUnit.MINUTES), serviceLevelObjectivesDetailSLIRecordMap);
-        //        }
+            sliRecordBucket.getBucketStartTime().plus(SLI_RECORD_BUCKET_SIZE - 1, ChronoUnit.MINUTES),
+            serviceLevelObjectivesDetailSLIRecordMap);
       }
     }
     return timeStampToSLIRecordsMap;
