@@ -71,8 +71,6 @@ import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.gitaware.helper.GitAwareContextHelper;
-import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitx.EntityGitDetailsGuard;
 import io.harness.logging.CommandExecutionStatus;
@@ -86,7 +84,6 @@ import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
-import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
@@ -126,7 +123,6 @@ import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.walktree.visitor.entityreference.beans.VisitedSecretReference;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -139,7 +135,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
@@ -448,66 +443,6 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     }
 
     return getInfrastructureConfig(infrastructureEntity);
-  }
-
-  @VisibleForTesting
-  GitEntityInfo getGitContextForInfra(
-      Ambiance ambiance, InfrastructureTaskExecutableStepV2Params stepParameters, String envGitBranch) {
-    String environmentRef = stepParameters.getEnvRef().getValue();
-    String infraRef = stepParameters.getInfraRef().getValue();
-    GitEntityInfo defaultGitContext = GitEntityInfo.builder().build();
-
-    Optional<InfrastructureEntity> infrastructureEntityOpt =
-        infrastructureEntityService.getMetadata(AmbianceUtils.getAccountId(ambiance),
-            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
-            stepParameters.getEnvRef().getValue(), stepParameters.getInfraRef().getValue());
-    if (!infrastructureEntityOpt.isPresent()) {
-      throw new NotFoundException(String.format("Infrastructure with ref [%s] not found", infraRef));
-    }
-    InfrastructureEntity infrastructure = infrastructureEntityOpt.get();
-    if (!StoreType.REMOTE.equals(infrastructure.getStoreType())) {
-      return defaultGitContext;
-    }
-
-    Optional<Environment> environmentOpt = environmentService.getMetadata(AmbianceUtils.getAccountId(ambiance),
-        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), environmentRef, false);
-    if (!environmentOpt.isPresent()) {
-      throw new NotFoundException(
-          String.format("Environment with ref [%s] not found while executing infra [%s]", environmentRef, infraRef));
-    }
-    Environment environment = environmentOpt.get();
-    if (!StoreType.REMOTE.equals(environment.getStoreType())) {
-      // Default Branch of Infra-Repo will be used.
-      return defaultGitContext;
-    }
-
-    if (checkIfEnvAndPipelineAreInDifferentRepo(environment)) {
-      if (environment.getRepo().equals(infrastructure.getRepo())) {
-        defaultGitContext.setTransientBranch(envGitBranch);
-      }
-      return defaultGitContext;
-    }
-    if (!environment.getRepo().equals(infrastructure.getRepo())) {
-      return defaultGitContext;
-    }
-
-    // Transient Branch has priority over context branch in working logic at repo-layer,
-    // But required only when the repo of parent and child entity is same.
-    defaultGitContext.setParentEntityRepoName(environment.getRepo());
-    defaultGitContext.setBranch(GitAwareContextHelper.getBranchInRequest());
-    defaultGitContext.setTransientBranch(envGitBranch);
-
-    return defaultGitContext;
-  }
-
-  private boolean checkIfEnvAndPipelineAreInDifferentRepo(Environment environment) {
-    GitEntityInfo currentGitContext = GitAwareContextHelper.getGitRequestParamsInfo();
-    if (!StoreType.REMOTE.equals(currentGitContext.getStoreType())) {
-      // If pipeline is INLINE, then either the transient branch or the default branch of Infra will be picked.
-      return true;
-    }
-    return EmptyPredicate.isNotEmpty(currentGitContext.getParentEntityRepoName())
-        && !environment.getRepo().equals(currentGitContext.getParentEntityRepoName());
   }
 
   private InfrastructureConfig getInfrastructureConfig(InfrastructureEntity infrastructureEntity) {
