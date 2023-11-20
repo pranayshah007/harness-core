@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.artifacts.resources.util;
 
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
@@ -113,6 +114,9 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.Principal;
+import io.harness.security.dto.ServicePrincipal;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.resources.beans.NGTemplateConstants;
 import io.harness.template.yaml.TemplateRefHelper;
@@ -180,6 +184,12 @@ public class ArtifactResourceUtils {
 
     if (gitEntityBasicInfo == null) {
       gitEntityBasicInfo = new GitEntityFindInfoDTO();
+    }
+
+    Principal principal = SecurityContextBuilder.getPrincipal();
+    if (principal == null) {
+      principal = new ServicePrincipal(NG_MANAGER.getServiceId());
+      SecurityContextBuilder.setContext(principal);
     }
 
     MergeInputSetResponseDTOPMS response =
