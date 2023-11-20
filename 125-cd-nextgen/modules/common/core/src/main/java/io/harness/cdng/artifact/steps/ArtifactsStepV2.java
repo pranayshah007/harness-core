@@ -80,7 +80,6 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretusage.SecretRuntimeUsageService;
@@ -90,6 +89,7 @@ import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.tasks.ResponseData;
+import io.harness.telemetry.helpers.ArtifactDeploymentInstrumentationHelper;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
@@ -140,6 +140,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
   @Inject ServiceEntityService serviceEntityService;
 
   @Inject private NGFeatureFlagHelperService featureFlagHelperService;
+  @Inject private ArtifactDeploymentInstrumentationHelper artifactDeploymentInstrumentationHelper;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -233,6 +234,9 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
                                   .build());
         taskIds.add(primaryArtifactTaskId);
         artifactConfigMap.put(primaryArtifactTaskId, artifacts.getPrimary().getSpec());
+        artifactDeploymentInstrumentationHelper.sendArtifactDeploymentEvent(artifacts.getPrimary().getSpec(),
+            AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+            AmbianceUtils.getProjectIdentifier(ambiance), service.getServiceDefinition().getType().name());
       } else if (ACTION.RUN_SYNC.equals(actionForPrimaryArtifact)) {
         artifactConfigMapForNonDelegateTaskTypes.add(artifacts.getPrimary().getSpec());
       }

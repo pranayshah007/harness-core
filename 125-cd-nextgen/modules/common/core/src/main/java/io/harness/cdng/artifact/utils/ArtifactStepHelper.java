@@ -96,6 +96,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.telemetry.helpers.ArtifactDeploymentInstrumentationHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 
@@ -129,6 +130,7 @@ public class ArtifactStepHelper {
   @Inject private StageExecutionInfoService stageExecutionInfoService;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject ArtifactConfigToDelegateReqMapper artifactConfigToDelegateReqMapper;
+  @Inject private ArtifactDeploymentInstrumentationHelper artifactDeploymentInstrumentationHelper;
 
   public void saveArtifactExecutionDataToStageInfo(Ambiance ambiance, ArtifactsOutcome artifactsOutcome) {
     if (artifactsOutcome != null) {
@@ -170,7 +172,6 @@ public class ArtifactStepHelper {
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
     ConnectorInfoDTO connectorDTO;
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-
     switch (artifactConfig.getSourceType()) {
       case DOCKER_REGISTRY:
         DockerHubArtifactConfig dockerConfig = (DockerHubArtifactConfig) artifactConfig;
