@@ -60,6 +60,7 @@ public class YAMLFieldNameConstants {
   public final String OUTPUT_VARIABLES = "outputVariables";
   public final String HEADERS = "headers";
   public final String OUTPUT = "output";
+  public final String EXPORTS = "exports";
   public final String INPUT = "input";
   public final String INPUTS = "inputs";
   public final String ENVIRONMENT = "environment";

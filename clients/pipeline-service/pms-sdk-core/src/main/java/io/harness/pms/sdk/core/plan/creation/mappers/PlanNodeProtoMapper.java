@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.sdk.core.plan.creation.mappers;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 
@@ -61,6 +62,8 @@ public class PlanNodeProtoMapper {
             .putAllAdviserObtainmentsForExecutionMode(
                 buildAdvisorObtainmentsForExecutionMode(node.getAdvisorObtainmentsForExecutionMode()))
             .addAllFacilitatorObtainments(CollectionUtils.emptyIfNull(node.getFacilitatorObtainments()))
+            .setExports(
+                EmptyPredicate.isEmpty(node.getExports()) ? "" : RecastOrchestrationUtils.toJson(node.getExports()))
             .setSkipExpressionChain(node.isSkipExpressionChain())
             .setExpressionMode(node.getExpressionMode())
             .setSkipType(node.getSkipGraphType())

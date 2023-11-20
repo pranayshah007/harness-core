@@ -25,15 +25,20 @@ import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.plan.creation.PlanCreationBlobResponseUtils;
 import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
+import io.harness.pms.sdk.core.data.ExportsConfig;
 import io.harness.pms.sdk.core.pipeline.creators.CreatorResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.serializer.JsonUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -218,6 +223,23 @@ public class PlanCreatorServiceHelper {
 
     planForField.setDependencies(
         dependenciesInPlanForField.toBuilder().putAllDependencyMetadata(decoratedDependencyMetadataMap).build());
+  }
+
+  public void decorateNodeWithExports(PlanCreationResponse planForField, YamlField field) {
+    YamlField exportsNode = field.getNode().getField(YAMLFieldNameConstants.EXPORTS);
+    // We will decorate with exports only when the planCreators returns only one planNode and its present as
+    // planForField.getPlanNode().
+    if (exportsNode == null || planForField.getPlanNode() == null) {
+      return;
+    }
+    Map<String, ExportsConfig> exportsConfigMap = new HashMap<>();
+    for (Iterator<Map.Entry<String, JsonNode>> it = exportsNode.getNode().getCurrJsonNode().fields(); it.hasNext();) {
+      Map.Entry<String, JsonNode> exportEntry = it.next();
+      if (exportEntry.getValue().isObject()) {
+        exportsConfigMap.put(exportEntry.getKey(), JsonUtils.treeToValue(exportEntry.getValue(), ExportsConfig.class));
+      }
+    }
+    planForField.setPlanNode(planForField.getPlanNode().toBuilder().exports(exportsConfigMap).build());
   }
 
   public void decorateResponseWithParentInfo(Dependency initialDependencyDetails, PlanCreationResponse planForField) {

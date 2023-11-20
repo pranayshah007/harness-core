@@ -65,7 +65,8 @@ public class PlanNode implements Node {
   Map<ExecutionMode, List<AdviserObtainment>> advisorObtainmentsForExecutionMode;
   @Singular List<FacilitatorObtainment> facilitatorObtainments;
   @Singular List<TimeoutObtainment> timeoutObtainments;
-
+  // Json format string for the exports map.
+  String exports;
   @Deprecated String serviceName;
 
   String whenCondition;
@@ -109,6 +110,7 @@ public class PlanNode implements Node {
         .serviceName(planNodeProto.getServiceName())
         .excludedKeysFromStepInputs(planNodeProto.getStepInputsKeyExcludeList())
         .executionInputTemplate(planNodeProto.getExecutionInputTemplate())
+        .exports(planNodeProto.getExports())
         .build();
   }
 
