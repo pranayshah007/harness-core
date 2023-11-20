@@ -239,6 +239,9 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
             AmbianceUtils.getProjectIdentifier(ambiance), service.getServiceDefinition().getType().name());
       } else if (ACTION.RUN_SYNC.equals(actionForPrimaryArtifact)) {
         artifactConfigMapForNonDelegateTaskTypes.add(artifacts.getPrimary().getSpec());
+        artifactDeploymentInstrumentationHelper.sendArtifactDeploymentEvent(artifacts.getPrimary().getSpec(),
+            AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+            AmbianceUtils.getProjectIdentifier(ambiance), service.getServiceDefinition().getType().name());
       }
     }
 
@@ -262,10 +265,16 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
                                     .build());
           taskIds.add(taskId);
           artifactConfigMap.put(taskId, sidecar.getSidecar().getSpec());
+          artifactDeploymentInstrumentationHelper.sendArtifactDeploymentEvent(artifacts.getPrimary().getSpec(),
+              AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+              AmbianceUtils.getProjectIdentifier(ambiance), service.getServiceDefinition().getType().name());
         } else if (ACTION.RUN_SYNC.equals(actionForSidecar)) {
           checkAndWarnIfDoesNotFollowIdentifierRegex(
               sidecar.getSidecar().getSpec().getIdentifier(), "Sidecar", logCallback);
           artifactConfigMapForNonDelegateTaskTypes.add(sidecar.getSidecar().getSpec());
+          artifactDeploymentInstrumentationHelper.sendArtifactDeploymentEvent(artifacts.getPrimary().getSpec(),
+              AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+              AmbianceUtils.getProjectIdentifier(ambiance), service.getServiceDefinition().getType().name());
         }
       }
     }
