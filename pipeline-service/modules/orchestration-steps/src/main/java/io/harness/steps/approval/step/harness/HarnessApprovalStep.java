@@ -73,6 +73,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(CDC)
@@ -281,5 +282,23 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
   private void closeLogStream(Ambiance ambiance) {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.closeStream(ShellScriptTaskNG.COMMAND_UNIT);
+  }
+
+  @Override
+  public void handleExpire(Ambiance ambiance, StepBaseParameters stepParameters, AsyncExecutableResponse executableResponse){
+    if (executableResponse.getCallbackIdsCount() > 0) {
+      String instanceId = executableResponse.getCallbackIds(0);
+      if (StringUtils.isNotBlank(instanceId)) {
+        HarnessApprovalInstance instance =
+                (HarnessApprovalInstance) approvalInstanceService.get(instanceId);
+        if (instance != null) {
+          executorService.submit(() -> approvalNotificationHandler.sendNotification(instance, ambiance));
+        } else {
+          log.warn("Instance not found for expired approval with instanceId: {}", instanceId);
+        }
+      } else {
+        log.warn("Instance Id blank for an Expired Approval");
+      }
+    }
   }
 }
