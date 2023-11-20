@@ -101,6 +101,7 @@ import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
 import io.harness.ccm.views.service.impl.ViewsBillingServiceImpl;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.event.handler.segment.SegmentConfig;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ff.FeatureFlagServiceImpl;
 import io.harness.govern.ProviderMethodInterceptor;
@@ -141,6 +142,7 @@ import software.wings.service.intfc.security.EncryptedSettingAttributes;
 import software.wings.service.intfc.security.SecretManager;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.Resources;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
@@ -148,6 +150,9 @@ import com.google.inject.Singleton;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.OptionalBinder;
 import com.google.inject.name.Named;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
@@ -197,6 +202,22 @@ public class BatchProcessingModule extends AbstractModule {
   @Named("governanceConfig")
   io.harness.remote.GovernanceConfig governanceConfig() {
     return batchMainConfig.getGovernanceConfig();
+  }
+
+  @Provides
+  @Named("governance-schema")
+  @Singleton
+  public String getGovernanceSchema() {
+    try {
+      URL url = getClass().getClassLoader().getResource("governance_rule/rule_schema.json");
+      if (url == null) {
+        throw new InvalidRequestException("Rule schema doesn't exist");
+      }
+      byte[] bytes = Resources.toByteArray(url);
+      return new String(bytes, StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Failed to generate schema file", e);
+    }
   }
 
   @Override
