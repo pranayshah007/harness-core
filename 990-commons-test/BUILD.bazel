@@ -30,6 +30,8 @@ java_library(
         ":abstract-module",
         "//:lombok",
         "//999-annotations:module",
+        "@maven//:ch_qos_logback_contrib_logback_json_classic",
+        "@maven//:ch_qos_logback_contrib_logback_json_core",
         "@maven//:com_bettercloud_vault_java_driver",
         "@maven//:com_google_code_findbugs_annotations",
         "@maven//:com_google_guava_guava",

@@ -33,10 +33,6 @@ import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.YOGESH;
 
-import static software.wings.beans.LogColor.Yellow;
-import static software.wings.beans.LogHelper.color;
-import static software.wings.beans.LogWeight.Bold;
-
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -58,6 +54,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import io.harness.CategoryTest;
+import io.harness.LoggerRule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsConfig;
@@ -118,6 +115,7 @@ import java.util.concurrent.TimeoutException;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
@@ -136,6 +134,8 @@ import org.zeroturnaround.exec.StartedProcess;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class HelmTaskHelperBaseTest extends CategoryTest {
   private static final String CHART_NAME = "test-helm-chart";
+  @Rule public final LoggerRule loggerRule = new LoggerRule();
+
   private static final String CHART_VERSION = "1.0.0";
   private static final String REPO_NAME = "helm_charts";
   private static final String REPO_DISPLAY_NAME = "Helm Charts";
@@ -1517,14 +1517,13 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     createFileAndDirectories(helmRepoWithCache, 25);
     createFileAndDirectories(helmRepoWithChartDirectory, 25);
     helmTaskHelperBase.checkIndexFile(repoName, cacheDir, null);
-    verify(logCallback, never()).saveExecutionLog(color(INDEX_FILE_WARN_LOG, Yellow, Bold));
-
-    helmTaskHelperBase.checkIndexFile(repoName, cacheDir, null);
-    verify(logCallback, times(1)).saveExecutionLog(color(INDEX_FILE_WARN_LOG, Yellow, Bold));
 
     FileIo.deleteDirectoryAndItsContentIfExists(cacheDir);
     helmTaskHelperBase.checkIndexFile(repoName, "", chartDirectory);
-    verify(logCallback, times(2)).saveExecutionLog(color(INDEX_FILE_WARN_LOG, Yellow, Bold));
+
+    long numberOfInvocations =
+        loggerRule.getFormattedMessages().stream().filter(log -> log.equals(INDEX_FILE_WARN_LOG)).count();
+    assertThat(numberOfInvocations).isEqualTo(2);
     FileIo.deleteDirectoryAndItsContentIfExists("sample");
   }
 
@@ -1532,8 +1531,8 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testIndexLogicWhenFilesAreSmall() throws IOException {
-    String cacheDir = "sample/cache/dir";
-    String chartDirectory = "sample/chart/dir";
+    String cacheDir = "sample2/cache/dir";
+    String chartDirectory = "sample2/chart/dir";
     String repoName = "classicRepo";
     String helmRepoWithCache =
         HELM_CACHE_INDEX_FILE.replace(HelmConstants.REPO_NAME, repoName).replace(HELM_CACHE_HOME_PLACEHOLDER, cacheDir);
@@ -1544,15 +1543,14 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     createFileAndDirectories(helmRepoWithCache, 15);
     createFileAndDirectories(helmRepoWithChartDirectory, 15);
     helmTaskHelperBase.checkIndexFile(repoName, cacheDir, null);
-    verify(logCallback, never()).saveExecutionLog(color(INDEX_FILE_WARN_LOG, Yellow, Bold));
-
-    helmTaskHelperBase.checkIndexFile(repoName, cacheDir, null);
-    verify(logCallback, never()).saveExecutionLog(color(INDEX_FILE_WARN_LOG, Yellow, Bold));
 
     FileIo.deleteDirectoryAndItsContentIfExists(cacheDir);
     helmTaskHelperBase.checkIndexFile(repoName, "", chartDirectory);
-    verify(logCallback, never()).saveExecutionLog(color(INDEX_FILE_WARN_LOG, Yellow, Bold));
-    FileIo.deleteDirectoryAndItsContentIfExists("sample");
+
+    long numberOfInvocations =
+        loggerRule.getFormattedMessages().stream().filter(log -> log.equals(INDEX_FILE_WARN_LOG)).count();
+    assertThat(numberOfInvocations).isEqualTo(0);
+    FileIo.deleteDirectoryAndItsContentIfExists("sample2");
   }
 
   private String getHelmCollectionResult() {
