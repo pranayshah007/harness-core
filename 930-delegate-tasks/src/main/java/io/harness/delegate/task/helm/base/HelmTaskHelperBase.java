@@ -28,6 +28,7 @@ import static io.harness.helm.HelmConstants.HELM_CACHE_HOME_PLACEHOLDER;
 import static io.harness.helm.HelmConstants.HELM_FETCH_OLD_WORKING_DIR_BASE;
 import static io.harness.helm.HelmConstants.HELM_HOME_PATH_FLAG;
 import static io.harness.helm.HelmConstants.HELM_PATH_PLACEHOLDER;
+import static io.harness.helm.HelmConstants.INDEX_FILE_WARN_LOG;
 import static io.harness.helm.HelmConstants.PASSWORD;
 import static io.harness.helm.HelmConstants.REPO_NAME;
 import static io.harness.helm.HelmConstants.REPO_URL;
@@ -1817,8 +1818,8 @@ public class HelmTaskHelperBase {
     return "";
   }
 
-  private void checkIndexFile(
-      String repoName, String cacheDir, LogCallback executionLogCallBack, String chartDirectory) {
+  @VisibleForTesting
+  void checkIndexFile(String repoName, String cacheDir, LogCallback executionLogCallBack, String chartDirectory) {
     File indexFile;
     if (repoName.isEmpty()) {
       return;
@@ -1834,11 +1835,9 @@ public class HelmTaskHelperBase {
     }
     if (indexFile.exists() && (indexFile.length() > SAFE_LIMIT_OF_INDEX_FILE)) {
       if (executionLogCallBack != null) {
-        executionLogCallBack.saveExecutionLog(
-            color("Size of index.yaml is greater than 20Mb for the given repo. This can lead to slowness of delegate",
-                Yellow, Bold));
+        executionLogCallBack.saveExecutionLog(color(INDEX_FILE_WARN_LOG, Yellow, Bold));
       } else {
-        log.warn("Size of index.yaml is greater than 20Mb for the given repo. This can lead to slowness of delegate");
+        log.warn(INDEX_FILE_WARN_LOG);
       }
     }
   }
