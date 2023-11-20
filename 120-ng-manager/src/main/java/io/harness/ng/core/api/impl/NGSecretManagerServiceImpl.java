@@ -9,6 +9,9 @@ package io.harness.ng.core.api.impl;
 
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
+import static io.harness.exception.NestedExceptionUtils.hintWithExplanationException;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.helpers.GlobalSecretManagerUtils.GLOBAL_ACCOUNT_ID;
 import static io.harness.remote.client.CGRestUtils.getResponse;
 import static io.harness.security.encryption.AccessType.APP_ROLE;
@@ -33,6 +36,9 @@ import io.harness.encryptors.NgCgManagerKmsEncryptor;
 import io.harness.encryptors.NgCgManagerVaultEncryptor;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.VaultEncryptorsRegistry;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.api.NGSecretManagerService;
@@ -132,14 +138,27 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
               if (APP_ROLE.equals(vaultConfig.getAccessType())) {
                 vaultConfig.setRenewAppRoleToken(false);
               }
-              VaultEncryptor vaultEncryptor = vaultEncryptorsRegistry.getVaultEncryptor(VAULT);
-              if (vaultEncryptor instanceof NgCgManagerVaultEncryptor) {
-                validationResultWithTaskId =
-                    ((NgCgManagerVaultEncryptor) vaultEncryptor)
-                        .validateSecretManagerConfigurationWithTaskId(accountIdentifier, vaultConfig);
-              } else {
-                validationResultWithTaskId = Pair.of(
-                    NO_TASK_ID, vaultEncryptor.validateSecretManagerConfiguration(accountIdentifier, encryptionConfig));
+              try {
+                VaultEncryptor vaultEncryptor = vaultEncryptorsRegistry.getVaultEncryptor(VAULT);
+                if (vaultEncryptor instanceof NgCgManagerVaultEncryptor) {
+                  validationResultWithTaskId =
+                      ((NgCgManagerVaultEncryptor) vaultEncryptor)
+                          .validateSecretManagerConfigurationWithTaskId(accountIdentifier, vaultConfig);
+                } else {
+                  validationResultWithTaskId = Pair.of(NO_TASK_ID,
+                      vaultEncryptor.validateSecretManagerConfiguration(accountIdentifier, encryptionConfig));
+                }
+              } catch (HintException ex) {
+                if (vaultConfig.isReadOnly()) {
+                  Throwable cause = ex.getCause();
+                  throw hintWithExplanationException(HintException.HINT_HASHICORP_VAULT_SM_ACCESS_DENIED + "\n"
+                          + "- If you have ensured that credentials are correct and still facing issue with test connection then consider upgrading delegate to version 814xxx and above",
+                      cause.getMessage() + "\n"
+                          + "- Delegate is on older version.",
+                      new InvalidRequestException(
+                          cause.getMessage() + " or delegate is on older version.", VAULT_OPERATION_ERROR, USER));
+                }
+                throw ex;
               }
             }
             break;
