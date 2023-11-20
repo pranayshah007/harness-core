@@ -1277,9 +1277,6 @@ public class UserServiceImpl implements UserService {
     if (user != null && isNotEmpty(user.getPendingAccounts()) && user.getPendingAccounts().contains(account)) {
       removeRelatedUserInvite(accountId, email);
       user.getPendingAccounts().remove(account);
-      if (user.getDisabled()) {
-        user.setDisabled(false);
-      }
       wingsPersistence.save(user);
     }
     return getUserByEmail(email, accountId);
