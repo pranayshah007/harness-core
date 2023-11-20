@@ -1331,7 +1331,7 @@ paths:
         id: 7bibsplzghpox
       description: API for triggering score recalibration for a scorecard
       tags:
-        - Scores
+        - ScoresV2
       security:
         - x-api-key: []
       parameters:
@@ -4456,5 +4456,7 @@ tags:
     description: Provision
   - name: Scores
     description: Scores Information
+  - name: ScoresV2
+    description: Scores Information V2
   - name: StatusInfo
     description: Status Information

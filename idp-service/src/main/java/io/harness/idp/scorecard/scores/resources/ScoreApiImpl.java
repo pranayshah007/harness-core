@@ -7,11 +7,9 @@
 
 package io.harness.idp.scorecard.scores.resources;
 
-import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
-import io.harness.idp.scorecard.scores.service.ScoreComputerService;
 import io.harness.idp.scorecard.scores.service.ScoreService;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.ScoresApi;
@@ -20,10 +18,8 @@ import io.harness.spec.server.idp.v1.model.EntityScoresResponse;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
 import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfo;
 import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfoResponse;
-import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateInfo;
 import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateRequest;
 import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateResponse;
-import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateResponseV2;
 import io.harness.spec.server.idp.v1.model.ScorecardScore;
 import io.harness.spec.server.idp.v1.model.ScorecardScoreResponse;
 import io.harness.spec.server.idp.v1.model.ScorecardSummaryInfo;
@@ -42,7 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ScoreApiImpl implements ScoresApi {
   private ScoreService scoreService;
-  private ScoreComputerService scoreComputerService;
   @Override
   public Response getAllScorecardSummary(String entityIdentifier, String harnessAccount) {
     try {
@@ -73,26 +68,6 @@ public class ScoreApiImpl implements ScoresApi {
     } catch (Exception e) {
       log.error(
           "Error in getting recalibrated score for scorecards details for account - {},  entity - {} and scorecard - {}, error = {}",
-          harnessAccount, scorecardRecalibrateRequest.getIdentifiers().getEntityIdentifier(),
-          scorecardRecalibrateRequest.getIdentifiers().getScorecardIdentifier(), e.getMessage(), e);
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(ResponseMessage.builder().message(e.getMessage()).build())
-          .build();
-    }
-  }
-
-  @Override
-  public Response scorecardRecalibrateV2(
-      @Valid ScorecardRecalibrateRequest scorecardRecalibrateRequest, @AccountIdentifier String harnessAccount) {
-    try {
-      ScorecardRecalibrateInfo scorecardRecalibrateInfo = scoreComputerService.computeScoresAsync(harnessAccount,
-          scorecardRecalibrateRequest.getIdentifiers().getScorecardIdentifier(),
-          scorecardRecalibrateRequest.getIdentifiers().getEntityIdentifier());
-      ScorecardRecalibrateResponseV2 responseV2 = new ScorecardRecalibrateResponseV2();
-      responseV2.setInfo(scorecardRecalibrateInfo);
-      return Response.status(Response.Status.CREATED).entity(responseV2).build();
-    } catch (Exception e) {
-      log.error("Error in triggering score computation for account - {},  entity - {} and scorecard - {}, error = {}",
           harnessAccount, scorecardRecalibrateRequest.getIdentifiers().getEntityIdentifier(),
           scorecardRecalibrateRequest.getIdentifiers().getScorecardIdentifier(), e.getMessage(), e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
