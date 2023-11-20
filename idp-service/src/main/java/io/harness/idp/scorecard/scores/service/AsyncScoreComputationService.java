@@ -10,13 +10,14 @@ package io.harness.idp.scorecard.scores.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateInfo;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface AsyncScoreComputationService {
-  long getStartTimeOfInProgressScoreComputation(
+  ScorecardRecalibrateInfo getStartTimeOfInProgressScoreComputation(
       String harnessAccount, String scorecardIdentifier, String entityIdentifier);
 
-  long logScoreComputationRequestAndPublishEvent(
+  ScorecardRecalibrateInfo logScoreComputationRequestAndPublishEvent(
       String harnessAccount, String scorecardIdentifier, String entityIdentifier);
 
   void deleteScoreComputationRequest(String harnessAccount, String scorecardIdentifier, String entityIdentifier);

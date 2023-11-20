@@ -19,6 +19,7 @@ import io.harness.spec.server.idp.v1.model.EntityScoresResponse;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
 import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfo;
 import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfoResponse;
+import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateInfo;
 import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateRequest;
 import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateResponse;
 import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateResponseV2;
@@ -36,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @com.google.inject.Inject }))
-@NextGenManagerAuth
+//@NextGenManagerAuth
 @Slf4j
 public class ScoreApiImpl implements ScoresApi {
   private ScoreService scoreService;
@@ -83,11 +84,11 @@ public class ScoreApiImpl implements ScoresApi {
   public Response scorecardRecalibrateV2(
       @Valid ScorecardRecalibrateRequest scorecardRecalibrateRequest, String harnessAccount) {
     try {
-      long startTime = scoreComputerService.computeScoresAsync(harnessAccount,
+      ScorecardRecalibrateInfo scorecardRecalibrateInfo = scoreComputerService.computeScoresAsync(harnessAccount,
           scorecardRecalibrateRequest.getIdentifiers().getScorecardIdentifier(),
           scorecardRecalibrateRequest.getIdentifiers().getEntityIdentifier());
       ScorecardRecalibrateResponseV2 responseV2 = new ScorecardRecalibrateResponseV2();
-      responseV2.setStartTime(startTime);
+      responseV2.setInfo(scorecardRecalibrateInfo);
       return Response.status(Response.Status.CREATED).entity(responseV2).build();
     } catch (Exception e) {
       log.error("Error in triggering score computation for account - {},  entity - {} and scorecard - {}, error = {}",

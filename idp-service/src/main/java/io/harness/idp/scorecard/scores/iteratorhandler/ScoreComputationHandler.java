@@ -7,6 +7,7 @@
 
 package io.harness.idp.scorecard.scores.iteratorhandler;
 
+import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
 import static java.time.Duration.ofSeconds;
@@ -23,6 +24,9 @@ import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 import io.harness.mongo.iterator.provider.SpringPersistenceProvider;
 import io.harness.remote.client.CGRestUtils;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 
 import java.util.Collections;
 import lombok.AllArgsConstructor;
@@ -49,7 +53,14 @@ public class ScoreComputationHandler implements MongoPersistenceIterator.Handler
     log.info(
         "IDP_ASYNC_SCORE_COMPUTATION FF enabled: {} for account {}", asyncScoreComputationEnabled, accountIdentifier);
     if (asyncScoreComputationEnabled) {
-      scoreComputerService.computeScoresAsync(accountIdentifier, null, null);
+      try {
+        ServicePrincipal servicePrincipal = new ServicePrincipal("System");
+        SecurityContextBuilder.setContext(servicePrincipal);
+        SourcePrincipalContextBuilder.setSourcePrincipal(servicePrincipal);
+        scoreComputerService.computeScoresAsync(accountIdentifier, null, null);
+      } finally {
+        SecurityContextBuilder.unsetCompleteContext();
+      }
     } else {
       scoreComputerService.computeScores(
           namespaceEntity.getAccountIdentifier(), Collections.emptyList(), Collections.emptyList());

@@ -3205,11 +3205,8 @@ components:
         id: 6ooyo1l1t3jkn
       type: object
       properties:
-        startTime:
-          type: integer
-          x-stoplight:
-            id: gdhozz697n836
-          format: int64
+        info:
+          $ref: '#/components/schemas/ScorecardRecalibrateInfo'
     DataSourceDataPointInfo:
       title: DataSourceDataPointInfo
       x-stoplight:
@@ -3620,6 +3617,38 @@ components:
           type: integer
           x-stoplight:
             id: irv1t5g39uexj
+    ScorecardRecalibrateInfo:
+      title: ScorecardRecalibrateInfo
+      x-stoplight:
+        id: a5yovd00yo89y
+      type: object
+      properties:
+        startTime:
+          type: integer
+          x-stoplight:
+            id: dsc57yz269flx
+          format: int64
+        startedBy:
+          $ref: '#/components/schemas/User'
+    User:
+      title: User
+      x-stoplight:
+        id: p693c8e19hig1
+      type: object
+      properties:
+        uuid:
+          type: string
+          x-stoplight:
+            id: akz3uywxq3fcy
+        name:
+          type: string
+          x-stoplight:
+            id: j5y9u9hxapibd
+        email:
+          type: string
+          x-stoplight:
+            id: zrikcrbyjl7pk
+      description: ''
   parameters:
     AccountHeader:
       name: Harness-Account

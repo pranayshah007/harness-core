@@ -43,6 +43,7 @@ import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.CheckStatus;
 import io.harness.spec.server.idp.v1.model.Rule;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
+import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateInfo;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -130,13 +131,15 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
   }
 
   @Override
-  public long computeScoresAsync(String accountIdentifier, String scorecardIdentifier, String entityIdentifier) {
-    long startTime = asyncScoreComputationService.getStartTimeOfInProgressScoreComputation(
-        accountIdentifier, scorecardIdentifier, entityIdentifier);
-    if (startTime != -1) {
+  public ScorecardRecalibrateInfo computeScoresAsync(
+      String accountIdentifier, String scorecardIdentifier, String entityIdentifier) {
+    ScorecardRecalibrateInfo scorecardRecalibrateInfo =
+        asyncScoreComputationService.getStartTimeOfInProgressScoreComputation(
+            accountIdentifier, scorecardIdentifier, entityIdentifier);
+    if (scorecardRecalibrateInfo != null) {
       log.info("Score computation is already in progress for scorecard {}, entity {} and account {}",
           scorecardIdentifier, entityIdentifier, accountIdentifier);
-      return startTime;
+      return scorecardRecalibrateInfo;
     }
     return asyncScoreComputationService.logScoreComputationRequestAndPublishEvent(
         accountIdentifier, scorecardIdentifier, entityIdentifier);

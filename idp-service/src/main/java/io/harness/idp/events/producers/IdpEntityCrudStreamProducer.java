@@ -19,7 +19,6 @@ import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
-import io.harness.idp.scorecard.scores.entity.AsyncScoreComputationEntity.AsyncScoreComputationKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -82,9 +81,8 @@ public class IdpEntityCrudStreamProducer {
       String accountIdentifier, String scorecardIdentifier, String entityIdentifier) {
     return EntityChangeDTO.newBuilder()
         .setAccountIdentifier(StringValue.of(accountIdentifier))
-        .putMetadata(
-            AsyncScoreComputationKeys.scorecardIdentifier, scorecardIdentifier != null ? scorecardIdentifier : "")
-        .putMetadata(AsyncScoreComputationKeys.entityIdentifier, entityIdentifier != null ? entityIdentifier : "")
+        .putMetadata("scorecardIdentifier", scorecardIdentifier != null ? scorecardIdentifier : "")
+        .putMetadata("entityIdentifier", entityIdentifier != null ? entityIdentifier : "")
         .build()
         .toByteString();
   }

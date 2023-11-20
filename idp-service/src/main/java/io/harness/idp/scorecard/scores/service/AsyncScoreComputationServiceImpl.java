@@ -14,7 +14,9 @@ import io.harness.exception.UnexpectedException;
 import io.harness.idp.events.producers.IdpEntityCrudStreamProducer;
 import io.harness.idp.scorecard.scores.entity.AsyncScoreComputationEntity;
 import io.harness.idp.scorecard.scores.entity.AsyncScoreComputationEntity.AsyncScoreComputationKeys;
+import io.harness.idp.scorecard.scores.mappers.AsyncScoreComputationMapper;
 import io.harness.idp.scorecard.scores.repositories.AsyncAsyncScoreComputationRepository;
+import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateInfo;
 
 import java.util.Collections;
 import java.util.Optional;
@@ -30,7 +32,7 @@ public class AsyncScoreComputationServiceImpl implements AsyncScoreComputationSe
   private ScoreComputerService scoreComputerService;
 
   @Override
-  public long getStartTimeOfInProgressScoreComputation(
+  public ScorecardRecalibrateInfo getStartTimeOfInProgressScoreComputation(
       String harnessAccount, String scorecardIdentifier, String entityIdentifier) {
     // Check if score computation was started due to a re-run request
     Optional<AsyncScoreComputationEntity> scoreComputationEntityOpt =
@@ -51,11 +53,11 @@ public class AsyncScoreComputationServiceImpl implements AsyncScoreComputationSe
               harnessAccount, null, null);
     }
 
-    return scoreComputationEntityOpt.map(AsyncScoreComputationEntity::getStartTime).orElse(-1L);
+    return scoreComputationEntityOpt.map(AsyncScoreComputationMapper::toDTO).orElse(null);
   }
 
   @Override
-  public long logScoreComputationRequestAndPublishEvent(
+  public ScorecardRecalibrateInfo logScoreComputationRequestAndPublishEvent(
       String harnessAccount, String scorecardIdentifier, String entityIdentifier) {
     AsyncScoreComputationEntity entity = AsyncScoreComputationEntity.builder()
                                              .accountIdentifier(harnessAccount)
@@ -68,7 +70,7 @@ public class AsyncScoreComputationServiceImpl implements AsyncScoreComputationSe
     if (!producerResult) {
       throw new UnexpectedException("Error in producing event for async score computation.");
     }
-    return createdOrUpdatedEntity.getStartTime();
+    return AsyncScoreComputationMapper.toDTO(createdOrUpdatedEntity);
   }
 
   @Override
