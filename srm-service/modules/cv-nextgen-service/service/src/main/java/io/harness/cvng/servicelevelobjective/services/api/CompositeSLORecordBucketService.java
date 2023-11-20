@@ -17,11 +17,7 @@ public interface CompositeSLORecordBucketService {
   void create(CompositeServiceLevelObjective compositeServiceLevelObjective, Instant startTime, Instant endTime,
       String verificationTaskId);
   CompositeSLORecordBucket getLatestCompositeSLORecordBucket(String sloId);
-  CompositeSLORecordBucket getLatestCompositeSLORecordBucketWithVersion(
-      String sloId, Instant startTimeForCurrentRange, int sloVersion);
-  CompositeSLORecordBucket getFirstCompositeSLORecordBucket(String sloId, Instant startTimeStamp);
   CompositeSLORecordBucket getLastCompositeSLORecordBucket(String sloId, Instant startTimeStamp);
   List<CompositeSLORecordBucket> getSLORecordBuckets(String sloId, Instant startTimeStamp, Instant endTimeStamp);
   List<CompositeSLORecordBucket> getLatestCountSLORecords(String sloId, int count);
-  List<CompositeSLORecordBucket> getSLORecordsOfMinutes(String sloId, List<Instant> minutes);
 }

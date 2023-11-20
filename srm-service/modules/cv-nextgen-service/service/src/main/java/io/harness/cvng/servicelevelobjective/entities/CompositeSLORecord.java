@@ -79,5 +79,5 @@ public class CompositeSLORecord extends VerificationTaskBase implements Persiste
   private Map<String, SLIRecord> scopedIdentifierSLIRecordMap;
 
   private int sloVersion;
-  @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusDays(180).toInstant());
+  @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusDays(92).toInstant());
 }

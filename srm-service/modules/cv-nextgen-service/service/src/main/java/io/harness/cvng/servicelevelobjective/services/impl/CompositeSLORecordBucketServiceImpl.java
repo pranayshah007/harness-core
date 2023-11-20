@@ -18,6 +18,7 @@ import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeSLOEvaluator;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecordBucket;
+import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecordBucket.CompositeSLORecordBucketKeys;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket;
 import io.harness.cvng.servicelevelobjective.entities.SLIState;
@@ -109,40 +110,18 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
   @Override
   public CompositeSLORecordBucket getLatestCompositeSLORecordBucket(String sloId) {
     return hPersistence.createQuery(CompositeSLORecordBucket.class, excludeAuthorityCount)
-        .filter(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.sloId, sloId)
-        .order(Sort.descending(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.startTimestamp))
-        .get();
-  }
-
-  @Override
-  public CompositeSLORecordBucket getLatestCompositeSLORecordBucketWithVersion(
-      String sloId, Instant startTimeForCurrentRange, int sloVersion) {
-    return hPersistence.createQuery(CompositeSLORecordBucket.class, excludeAuthorityCount)
-        .filter(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.sloId, sloId)
-        .field(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.startTimestamp)
-        .greaterThanOrEq(startTimeForCurrentRange)
-        .filter(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.sloVersion, sloVersion)
-        .order(Sort.descending(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.startTimestamp))
-        .get();
-  }
-
-  @Override
-  public CompositeSLORecordBucket getFirstCompositeSLORecordBucket(String sloId, Instant startTimeStamp) {
-    return hPersistence.createQuery(CompositeSLORecordBucket.class, excludeAuthorityCount)
-        .filter(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.sloId, sloId)
-        .field(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.startTimestamp)
-        .greaterThanOrEq(startTimeStamp)
-        .order(Sort.ascending(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.startTimestamp))
+        .filter(CompositeSLORecordBucketKeys.sloId, sloId)
+        .order(Sort.descending(CompositeSLORecordBucketKeys.startTimestamp))
         .get();
   }
 
   @Override
   public CompositeSLORecordBucket getLastCompositeSLORecordBucket(String sloId, Instant startTimeStamp) {
     return hPersistence.createQuery(CompositeSLORecordBucket.class, excludeAuthorityCount)
-        .filter(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.sloId, sloId)
-        .field(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.startTimestamp)
+        .filter(CompositeSLORecordBucketKeys.sloId, sloId)
+        .field(CompositeSLORecordBucketKeys.startTimestamp)
         .lessThan(startTimeStamp)
-        .order(Sort.descending(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.startTimestamp))
+        .order(Sort.descending(CompositeSLORecordBucketKeys.startTimestamp))
         .get();
   }
 
@@ -150,31 +129,21 @@ public class CompositeSLORecordBucketServiceImpl implements CompositeSLORecordBu
   public List<CompositeSLORecordBucket> getSLORecordBuckets(
       String sloId, Instant startTimeStamp, Instant endTimeStamp) {
     return hPersistence.createQuery(CompositeSLORecordBucket.class, excludeAuthorityCount)
-        .filter(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.sloId, sloId)
-        .field(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.startTimestamp)
+        .filter(CompositeSLORecordBucketKeys.sloId, sloId)
+        .field(CompositeSLORecordBucketKeys.startTimestamp)
         .greaterThanOrEq(startTimeStamp)
-        .field(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.startTimestamp)
+        .field(CompositeSLORecordBucketKeys.startTimestamp)
         .lessThan(endTimeStamp)
-        .order(Sort.ascending(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.startTimestamp))
+        .order(Sort.ascending(CompositeSLORecordBucketKeys.startTimestamp))
         .asList();
   }
 
   @Override
   public List<CompositeSLORecordBucket> getLatestCountSLORecords(String sloId, int count) {
     return hPersistence.createQuery(CompositeSLORecordBucket.class, excludeAuthorityCount)
-        .filter(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.sloId, sloId)
-        .order(Sort.descending(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.startTimestamp))
+        .filter(CompositeSLORecordBucketKeys.sloId, sloId)
+        .order(Sort.descending(CompositeSLORecordBucketKeys.startTimestamp))
         .asList(new FindOptions().limit(count));
-  }
-
-  @Override
-  public List<CompositeSLORecordBucket> getSLORecordsOfMinutes(String sloId, List<Instant> minutes) {
-    return hPersistence.createQuery(CompositeSLORecordBucket.class, excludeAuthorityCount)
-        .filter(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.sloId, sloId)
-        .field(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.startTimestamp)
-        .in(minutes)
-        .order(Sort.ascending(CompositeSLORecordBucket.CompositeSLORecordBucketKeys.startTimestamp))
-        .asList();
   }
 
   @RetryOnException(retryCount = RETRY_COUNT, retryOn = ConcurrentModificationException.class)

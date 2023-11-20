@@ -87,7 +87,7 @@ public class SLIRecordBucket extends VerificationTaskBase implements PersistentE
 
   private int sliVersion;
 
-  @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusDays(90).toInstant());
+  @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusDays(92).toInstant());
 
   public static SLIRecordBucket getSLIRecordBucketFromSLIRecords(List<SLIRecord> sliRecords) {
     Preconditions.checkArgument(sliRecords.size() == 5);
