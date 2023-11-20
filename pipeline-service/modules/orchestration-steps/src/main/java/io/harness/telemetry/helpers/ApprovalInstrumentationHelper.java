@@ -8,15 +8,9 @@
 package io.harness.telemetry.helpers;
 
 import static io.harness.telemetry.helpers.InstrumentationConstants.ACCOUNT;
-import static io.harness.telemetry.helpers.InstrumentationConstants.APPROVAL_CRITERIA_SPEC_TYPE;
-import static io.harness.telemetry.helpers.InstrumentationConstants.APPROVAL_STEP;
-import static io.harness.telemetry.helpers.InstrumentationConstants.APPROVAL_TYPE;
-import static io.harness.telemetry.helpers.InstrumentationConstants.AUTO_APPROVAL;
 import static io.harness.telemetry.helpers.InstrumentationConstants.ORG;
 import static io.harness.telemetry.helpers.InstrumentationConstants.PIPELINE_ID;
 import static io.harness.telemetry.helpers.InstrumentationConstants.PROJECT;
-import static io.harness.telemetry.helpers.InstrumentationConstants.REJECTION_CRITERIA_SPEC_TYPE;
-import static io.harness.telemetry.helpers.InstrumentationConstants.RETRY_INTERNAL;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -35,7 +29,17 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
 public class ApprovalInstrumentationHelper extends InstrumentationHelper {
+  public static final String APPROVAL_TYPE = "approval_type";
+  public static final String RETRY_INTERNAL = "retry_interval";
+  public static final String REJECTION_CRITERIA_SPEC_TYPE = "rejection_criteria_spec_type";
+  public static final String APPROVAL_CRITERIA_SPEC_TYPE = "approval_criteria_spec_type";
+  public static final String AUTO_APPROVAL = "auto_approval";
+  public static final String APPROVAL_STEP = "approval_step";
+
   public CompletableFuture<Void> sendApprovalEvent(ApprovalInstance approvalInstance) {
+    if (approvalInstance == null) {
+      return null;
+    }
     HashMap<String, Object> eventPropertiesMap = new HashMap<>();
     eventPropertiesMap.put(ACCOUNT, approvalInstance.getAccountId());
     eventPropertiesMap.put(ORG, approvalInstance.getProjectIdentifier());

@@ -7,13 +7,6 @@
 
 package io.harness.telemetry.helpers;
 
-import static io.harness.telemetry.helpers.InstrumentationConstants.ARTIFACT_ACCOUNT;
-import static io.harness.telemetry.helpers.InstrumentationConstants.ARTIFACT_IDENTIFIER;
-import static io.harness.telemetry.helpers.InstrumentationConstants.ARTIFACT_ORG;
-import static io.harness.telemetry.helpers.InstrumentationConstants.ARTIFACT_PROJECT;
-import static io.harness.telemetry.helpers.InstrumentationConstants.ARTIFACT_TYPE;
-import static io.harness.telemetry.helpers.InstrumentationConstants.IS_ARTIFACT_PRIMARY;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
@@ -27,6 +20,13 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactSourceInstrumentationHelper extends InstrumentationHelper {
+  public static final String ARTIFACT_TYPE = "artifact_type";
+  public static final String ARTIFACT_IDENTIFIER = "artifact_identifier";
+  public static final String ARTIFACT_ACCOUNT = "artifact_account";
+  public static final String ARTIFACT_ORG = "artifact_org";
+  public static final String ARTIFACT_PROJECT = "artifact_project";
+  public static final String IS_ARTIFACT_PRIMARY = "is_artifact_primary";
+
   private CompletableFuture<Void> publishArtifactInfo(
       ArtifactConfig artifactConfig, String accountId, String orgId, String projectId, String eventName) {
     HashMap<String, Object> eventPropertiesMap = new HashMap<>();
