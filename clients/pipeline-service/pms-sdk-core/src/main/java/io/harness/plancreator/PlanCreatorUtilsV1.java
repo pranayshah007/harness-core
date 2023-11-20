@@ -43,7 +43,6 @@ import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviser;
 import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviserParameters;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviser;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameters;
-import io.harness.pms.sdk.core.data.ExportsConfig;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -457,7 +456,7 @@ public class PlanCreatorUtilsV1 {
     AdviserObtainment getAdviserForActionType(KryoSerializer kryoSerializer, FailureStrategyActionConfigV1 action,
         Set<FailureType> failureTypes, NGFailureActionTypeV1 actionType, String nextNodeUuid);
   }
-  public Map<String, ExportsConfig> getExportsFromYamlField(YamlField field, String yamlVersion) {
+  public Map<String, Object> getExportsFromYamlField(YamlField field, String yamlVersion) {
     if (!HarnessYamlVersion.isV1(yamlVersion)) {
       return null;
     }
@@ -465,13 +464,15 @@ public class PlanCreatorUtilsV1 {
     if (exportsNode == null) {
       return null;
     }
-    Map<String, ExportsConfig> exportsConfigMap = new HashMap<>();
+    Map<String, Object> exportsMap = new HashMap<>();
     for (Iterator<Map.Entry<String, JsonNode>> it = exportsNode.getNode().getCurrJsonNode().fields(); it.hasNext();) {
       Map.Entry<String, JsonNode> exportEntry = it.next();
       if (exportEntry.getValue().isObject()) {
-        exportsConfigMap.put(exportEntry.getKey(), JsonUtils.treeToValue(exportEntry.getValue(), ExportsConfig.class));
+        Map<String, Object> export = JsonUtils.treeToValue(exportEntry.getValue(), Map.class);
+        if (export.containsKey(YAMLFieldNameConstants.VALUE))
+          exportsMap.put(exportEntry.getKey(), export.get(YAMLFieldNameConstants.VALUE));
       }
     }
-    return exportsConfigMap;
+    return exportsMap;
   }
 }

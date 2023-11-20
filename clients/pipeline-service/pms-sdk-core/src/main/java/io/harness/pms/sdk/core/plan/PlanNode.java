@@ -19,7 +19,6 @@ import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.sdk.core.data.ExportsConfig;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 
@@ -48,7 +47,7 @@ public class PlanNode {
   String stepInputs;
   @NonFinal @lombok.Setter String executionInputTemplate;
   @Singular List<RefObject> refObjects;
-  Map<String, ExportsConfig> exports;
+  Map<String, Object> exports;
 
   // todo: deprecate adviserObtainments and slowly move plan creators to fill advisorObtainmentsForExecutionMode
   // Hooks
