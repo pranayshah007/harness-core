@@ -1,4 +1,4 @@
-summary: "Harness Delegate ${DELEGATE_ID} expires on ${EXPIRY_TIME}. Either set auto upgrade ON or upgrade to the latest version. More information at https://developer.harness.io/docs/platform/delegates/install-delegates/delegate-upgrades-and-expiration/."
+summary: "Harness Delegate ${DELEGATE_ID} expires on ${EXPIRY_TIME}. Either set auto upgrade to ON or upgrade to the latest version. More information at https://developer.harness.io/docs/platform/delegates/install-delegates/delegate-upgrades-and-expiration/."
 link:
     href: harness.io
     text: Harness
