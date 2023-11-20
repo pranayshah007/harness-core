@@ -15,7 +15,6 @@ import io.harness.ng.core.variable.entity.Variable;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
-import java.util.Optional;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

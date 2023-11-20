@@ -307,10 +307,10 @@ public class VariableServiceImplTest extends CategoryTest {
     List<Variable> varList = new ArrayList<>();
     varList.add(varA);
     VariableResponseDTO variableResponseDTO = getVariableResponseDTO(varID, null, null, varID);
-    when(variableRepository.findAll(any(), any())).thenReturn(getPage(varList, 1));
+    when(variableRepository.findAllWithCollation(any(), any())).thenReturn(getPage(varList, 1));
     when(variableMapper.toResponseWrapper(varA)).thenReturn(variableResponseDTO);
     PageResponse<VariableResponseDTO> list = variableService.list(accountIdentifier, null, null, null, false, pageable);
-    verify(variableRepository, times(1)).findAll(any(), any());
+    verify(variableRepository, times(1)).findAllWithCollation(any(), any());
     assertThat(list.getContent().size()).isEqualTo(varList.size());
   }
 
@@ -326,10 +326,10 @@ public class VariableServiceImplTest extends CategoryTest {
     varList.add(varA);
     VariableResponseDTO variableResponseDTO = getVariableResponseDTO(varID, orgIdentifier, null, varID);
     when(variableMapper.toResponseWrapper(varA)).thenReturn(variableResponseDTO);
-    when(variableRepository.findAll(any(), any())).thenReturn(getPage(varList, 1));
+    when(variableRepository.findAllWithCollation(any(), any())).thenReturn(getPage(varList, 1));
     PageResponse<VariableResponseDTO> list =
         variableService.list(accountIdentifier, orgIdentifier, null, null, false, pageable);
-    verify(variableRepository, times(1)).findAll(any(), any());
+    verify(variableRepository, times(1)).findAllWithCollation(any(), any());
     System.out.println(list.getContent().get(0));
     assertThat(list.getContent().size()).isEqualTo(varList.size());
     assertThat(list.getContent().get(0).getVariable().getOrgIdentifier()).isEqualTo(orgIdentifier);
@@ -349,10 +349,10 @@ public class VariableServiceImplTest extends CategoryTest {
     varList.add(varA);
     VariableResponseDTO variableResponseDTO = getVariableResponseDTO(varID, orgIdentifier, projectIdentifier, varID);
     when(variableMapper.toResponseWrapper(varA)).thenReturn(variableResponseDTO);
-    when(variableRepository.findAll(any(), any())).thenReturn(getPage(varList, 1));
+    when(variableRepository.findAllWithCollation(any(), any())).thenReturn(getPage(varList, 1));
     PageResponse<VariableResponseDTO> list =
         variableService.list(accountIdentifier, orgIdentifier, projectIdentifier, null, false, pageable);
-    verify(variableRepository, times(1)).findAll(any(), any());
+    verify(variableRepository, times(1)).findAllWithCollation(any(), any());
     assertThat(list.getContent().size()).isEqualTo(varList.size());
     assertThat(list.getContent().get(0).getVariable().getOrgIdentifier()).isEqualTo(orgIdentifier);
     assertThat(list.getContent().get(0).getVariable().getProjectIdentifier()).isEqualTo(projectIdentifier);
@@ -371,10 +371,10 @@ public class VariableServiceImplTest extends CategoryTest {
     varList.add(varA);
     VariableResponseDTO variableResponseDTO = getVariableResponseDTO(varID, orgIdentifier, projectIdentifier, varID);
     when(variableMapper.toResponseWrapper(varA)).thenReturn(variableResponseDTO);
-    when(variableRepository.findAll(any(), any())).thenReturn(getPage(varList, 1));
+    when(variableRepository.findAllWithCollation(any(), any())).thenReturn(getPage(varList, 1));
     PageResponse<VariableResponseDTO> list =
         variableService.list(accountIdentifier, orgIdentifier, projectIdentifier, varID, false, pageable);
-    verify(variableRepository, times(1)).findAll(any(), any());
+    verify(variableRepository, times(1)).findAllWithCollation(any(), any());
     assertThat(list.getContent().size()).isEqualTo(varList.size());
     assertThat(list.getContent().get(0).getVariable().getOrgIdentifier()).isEqualTo(orgIdentifier);
     assertThat(list.getContent().get(0).getVariable().getProjectIdentifier()).isEqualTo(projectIdentifier);
