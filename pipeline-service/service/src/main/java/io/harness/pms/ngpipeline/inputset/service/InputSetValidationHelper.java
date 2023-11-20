@@ -9,6 +9,7 @@ package io.harness.pms.ngpipeline.inputset.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.utils.PipelineExceptionsHelper.ERROR_PIPELINE_BRANCH_NOT_PROVIDED;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.CodePulse;
@@ -37,11 +38,11 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.yaml.HarnessYamlVersion;
+import io.harness.validator.NGRegexValidatorConstants;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Objects;
 import java.util.Optional;
-import io.harness.validator.NGRegexValidatorConstants;
 import lombok.experimental.UtilityClass;
 
 @CodePulse(
@@ -71,7 +72,8 @@ public class InputSetValidationHelper {
     }
     String inputSetIdentifier = inputSetEntity.getIdentifier();
     if (!inputSetIdentifier.matches(NGRegexValidatorConstants.IDENTIFIER_PATTERN)) {
-      throw new InvalidRequestException(format("Identifier cannot contain special characters or spaces: [%s]", inputSetIdentifier));
+      throw new InvalidRequestException(
+          format("Identifier cannot contain special characters or spaces: [%s]", inputSetIdentifier));
     }
     String orgIdentifier = inputSetEntity.getOrgIdentifier();
     String projectIdentifier = inputSetEntity.getProjectIdentifier();
