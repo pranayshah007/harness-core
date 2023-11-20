@@ -7,6 +7,9 @@
 
 package io.harness.pms.sdk.core.plan.creation.creators;
 
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.plancreator.PlanCreatorUtilsV1;
+import io.harness.pms.sdk.core.data.ExportsConfig;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.HarnessYamlVersion;
@@ -18,6 +21,16 @@ import java.util.Set;
 public interface PartialPlanCreator<T> {
   Class<T> getFieldClass();
   Map<String, Set<String>> getSupportedTypes();
+
+  default void setExportsInNode(PlanCreationResponse response, YamlField yamlField, String yamlVersion) {
+    if (response.getPlanNode() == null) {
+      return;
+    }
+    Map<String, ExportsConfig> exportsConfigMap = PlanCreatorUtilsV1.getExportsFromYamlField(yamlField, yamlVersion);
+    if (EmptyPredicate.isNotEmpty(exportsConfigMap)) {
+      response.setPlanNode(response.getPlanNode().toBuilder().exports(exportsConfigMap).build());
+    }
+  }
 
   PlanCreationResponse createPlanForField(PlanCreationContext ctx, T field);
 

@@ -43,10 +43,14 @@ import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviser;
 import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviserParameters;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviser;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameters;
+import io.harness.pms.sdk.core.data.ExportsConfig;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.failurestrategy.manualintervention.v1.ManualInterventionFailureActionConfigV1;
@@ -57,12 +61,15 @@ import io.harness.yaml.core.failurestrategy.v1.FailureStrategyActionConfigV1;
 import io.harness.yaml.core.failurestrategy.v1.NGFailureActionTypeV1;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -449,5 +456,22 @@ public class PlanCreatorUtilsV1 {
   public interface GetAdviserForActionType {
     AdviserObtainment getAdviserForActionType(KryoSerializer kryoSerializer, FailureStrategyActionConfigV1 action,
         Set<FailureType> failureTypes, NGFailureActionTypeV1 actionType, String nextNodeUuid);
+  }
+  public Map<String, ExportsConfig> getExportsFromYamlField(YamlField field, String yamlVersion) {
+    if (!HarnessYamlVersion.isV1(yamlVersion)) {
+      return null;
+    }
+    YamlField exportsNode = field.getNode().getField(YAMLFieldNameConstants.EXPORTS);
+    if (exportsNode == null) {
+      return null;
+    }
+    Map<String, ExportsConfig> exportsConfigMap = new HashMap<>();
+    for (Iterator<Map.Entry<String, JsonNode>> it = exportsNode.getNode().getCurrJsonNode().fields(); it.hasNext();) {
+      Map.Entry<String, JsonNode> exportEntry = it.next();
+      if (exportEntry.getValue().isObject()) {
+        exportsConfigMap.put(exportEntry.getKey(), JsonUtils.treeToValue(exportEntry.getValue(), ExportsConfig.class));
+      }
+    }
+    return exportsConfigMap;
   }
 }

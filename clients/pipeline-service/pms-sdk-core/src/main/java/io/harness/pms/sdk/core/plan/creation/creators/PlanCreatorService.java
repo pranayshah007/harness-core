@@ -292,6 +292,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
           PlanCreationResponse planForField = planCreator.createPlanForField(
               PlanCreationContext.cloneWithCurrentField(ctx, field, currentYaml, dependency, executionInputTemplate),
               obj);
+          planCreator.setExportsInNode(planForField, field, yamlVersion);
           if (!EmptyPredicate.isEmpty(executionInputTemplate)) {
             planForField.setExecutionInputTemplateInPlanNode(executionInputTemplate);
           }
@@ -300,7 +301,6 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
           PlanCreatorServiceHelper.decorateCreationResponseWithServiceAffinity(
               planForField, serviceName, field, currentNodeServiceAffinity);
           PlanCreatorServiceHelper.decorateResponseWithParentInfo(dependency, planForField);
-          PlanCreatorServiceHelper.decorateNodeWithExports(planForField, field);
           return planForField;
         } catch (Exception ex) {
           log.error(format("Error creating plan for node: %s", fullyQualifiedName), ex);
