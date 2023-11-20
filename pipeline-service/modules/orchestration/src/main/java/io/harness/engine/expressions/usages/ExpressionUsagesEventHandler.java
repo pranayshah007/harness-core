@@ -9,7 +9,6 @@ package io.harness.engine.expressions.usages;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.expressions.usages.beans.ExpressionCategory;
 import io.harness.engine.expressions.usages.beans.ExpressionMetadata;
@@ -47,9 +46,6 @@ public class ExpressionUsagesEventHandler implements OrchestrationEventHandler {
   public void handleEvent(OrchestrationEvent event) {
     // TODO: Do sampling of the requests.
     Ambiance ambiance = event.getAmbiance();
-    if (!pmsFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_STORE_USED_EXPRESSIONS)) {
-      return;
-    }
     // If an entity already exists for the then don't process it until sampling is implemented.
     if (expressionUsageService.doesExpressionUsagesEntityExists(AmbianceUtils.getPipelineIdentifier(ambiance),
             AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),

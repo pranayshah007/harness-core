@@ -28,6 +28,7 @@ import io.harness.beans.steps.outcome.StepArtifacts;
 import io.harness.beans.sweepingoutputs.UniqueStepIdentifiersSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.metrics.CIManagerMetricsService;
 import io.harness.persistence.HPersistence;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -67,6 +68,7 @@ public class IntegrationStageStepPMSTest extends CIExecutionTestBase {
   @Mock HPersistence hPersistence;
   @Mock UpdateOperations<CIResourceCleanup> mockUpdateOperations;
   @Mock Query<CIResourceCleanup> mockQuery;
+  @Mock private CIManagerMetricsService ciManagerMetricsService;
   @InjectMocks private IntegrationStageStepPMS integrationStageStepPMS;
   private Ambiance ambiance;
   private IntegrationStageStepParametersPMS integrationStageStepParametersPMS;
