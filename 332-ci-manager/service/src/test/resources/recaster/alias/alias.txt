@@ -552,3 +552,4 @@ io.harness.beans.steps.stepinfo.security.AnchoreStepInfo
 io.harness.beans.steps.nodes.security.AquaSecurityScanNode
 io.harness.beans.steps.stepinfo.security.AquaSecurityStepInfo
 io.harness.plancreator.steps.common.v1.StageElementParametersV1
+io.harness.idp.pipeline.steps.beans.stepinfo.IdpCookieCutterStepInfo

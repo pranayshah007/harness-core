@@ -39,6 +39,7 @@ shared_dependencies = [
     "//960-continuous-features:module",
     "//960-yaml-sdk:module",
     "//965-ng-filter:module",
+    "//idp-service/src/main/java/io/harness/idp/steps:module",
     "//product/ci/scm/proto:ciscm_java_proto",
     "//952-remote-observers/src/main/proto:952_remote_observers_java_proto",
     "@maven//:de_skuzzle_semantic_version",

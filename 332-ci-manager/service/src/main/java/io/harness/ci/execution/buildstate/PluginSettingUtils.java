@@ -73,6 +73,8 @@ import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.iacm.execution.IACMStepsUtils;
+import io.harness.idp.steps.Constants;
+import io.harness.idp.steps.beans.stepinfo.IdpCookieCutterStepInfo;
 import io.harness.ng.core.NGAccess;
 import io.harness.plugin.service.PluginServiceImpl;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -153,6 +155,11 @@ public class PluginSettingUtils extends PluginServiceImpl {
   public static final String DOCKER_BUILDKIT_IMAGE = "harness/buildkit:1.0.1";
   public static final String PLUGIN_METADATA_FILE = "PLUGIN_METADATA_FILE";
   public static final String PLUGIN_METADATA_FILE_NAME = "buildx-metadata.json";
+  public static final String IS_PUBLIC_TEMPLATE = "IS_PUBLIC_TEMPLATE";
+  public static final String PUBLIC_TEMPLATE_URL = "PUBLIC_TEMPLATE_URL";
+  public static final String PATH_FOR_TEMPLATE = "PATH_FOR_TEMPLATE";
+  public static final String PREFIX_FOR_COOKIECUTTER_ENV_VARIABLES = "IDP_COOKIECUTTER_";
+  public static final String OUTPUT_DIRECTORY_COOKIE_CUTTER = "OUTPUT_DIRECTORY";
   @Inject private CodebaseUtils codebaseUtils;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
@@ -215,6 +222,8 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case PROVENANCE:
         return provenancePluginHelper.getProvenanceStepEnvVariables(
             (ProvenanceStepInfo) stepInfo, identifier, ambiance);
+      case IDP_COOKIECUTTER:
+        return getIDPCookieCuterStepInfoEnvVariables((IdpCookieCutterStepInfo) stepInfo, identifier);
       default:
         throw new IllegalStateException(
             "Unexpected value in getPluginCompatibleEnvVariables: " + stepInfo.getNonYamlInfo().getStepInfoType());
@@ -828,6 +837,41 @@ public class PluginSettingUtils extends PluginServiceImpl {
         map.put(getSTOKey(entry.getKey()), SerializerUtils.convertJsonNodeToString(entry.getKey(), entry.getValue()));
       }
     }
+
+    PluginServiceImpl.setMandatoryEnvironmentVariable(map, PLUGIN_STEP_ID, identifier);
+    map.values().removeAll(Collections.singleton(null));
+    return map;
+  }
+
+  private static Map<String, String> getIDPCookieCuterStepInfoEnvVariables(
+      IdpCookieCutterStepInfo stepInfo, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    Map<String, JsonNode> cookieCutterVariables = resolveJsonNodeMapParameter(
+        "cookieCutterVariables", Constants.IDP_COOKIECUTTER, identifier, stepInfo.getCookieCutterVariables(), false);
+
+    if (!isEmpty(cookieCutterVariables)) {
+      for (Map.Entry<String, JsonNode> entry : cookieCutterVariables.entrySet()) {
+        map.put(PREFIX_FOR_COOKIECUTTER_ENV_VARIABLES + entry.getKey(),
+            SerializerUtils.convertJsonNodeToString(entry.getKey(), entry.getValue()));
+      }
+    }
+
+    PluginServiceImpl.setMandatoryEnvironmentVariable(map, IS_PUBLIC_TEMPLATE,
+        resolveStringParameter(
+            "isPublicTemplate", Constants.IDP_COOKIECUTTER, identifier, stepInfo.getIsPublicTemplate(), true));
+
+    PluginServiceImpl.setOptionalEnvironmentVariable(map, PUBLIC_TEMPLATE_URL,
+        resolveStringParameter(
+            "publicTemplateUrl", Constants.IDP_COOKIECUTTER, identifier, stepInfo.getPublicTemplateUrl(), false));
+
+    PluginServiceImpl.setOptionalEnvironmentVariable(map, PATH_FOR_TEMPLATE,
+        resolveStringParameter(
+            "pathForTemplate", Constants.IDP_COOKIECUTTER, identifier, stepInfo.getPathForTemplate(), false));
+
+    PluginServiceImpl.setOptionalEnvironmentVariable(map, OUTPUT_DIRECTORY_COOKIE_CUTTER,
+        resolveStringParameter(
+            "outputDirectory", Constants.IDP_COOKIECUTTER, identifier, stepInfo.getOutputDirectory(), false));
 
     PluginServiceImpl.setMandatoryEnvironmentVariable(map, PLUGIN_STEP_ID, identifier);
     map.values().removeAll(Collections.singleton(null));

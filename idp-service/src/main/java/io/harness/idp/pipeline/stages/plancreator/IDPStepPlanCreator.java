@@ -7,7 +7,7 @@
 
 package io.harness.idp.pipeline.stages.plancreator;
 
-import io.harness.idp.pipeline.stages.utils.IDPCreatorUtils;
+import io.harness.idp.steps.utils.IDPCreatorUtils;
 import io.harness.plancreator.steps.GenericStepPMSPlanCreator;
 
 import java.util.Set;

@@ -5,10 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.pipeline.stages.utils;
+package io.harness.idp.steps.utils;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.steps.Constants;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
@@ -17,7 +18,8 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.IDP)
 public class IDPCreatorUtils {
-  Set<String> supportedSteps = Sets.newHashSet("Run", "Plugin", "GitClone", "liteEngineTask");
+  Set<String> supportedSteps =
+      Sets.newHashSet("Run", "Plugin", "GitClone", "liteEngineTask", Constants.IDP_COOKIECUTTER);
   public Set<String> getSupportedSteps() {
     return supportedSteps;
   }

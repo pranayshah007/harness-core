@@ -399,6 +399,8 @@ ciExecutionServiceConfig:
         - /bin/harness-terraform
       windowsEntrypoint:
         - "C:\\harness-terraform.exe"
+    idpCookieCutter:
+      image: deveshharness2306/cookiecutter:latest
     vmImageConfig:
       # Use root image for VM git clone
       gitClone: harness/drone-git:1.2.7
@@ -413,6 +415,7 @@ ciExecutionServiceConfig:
       cacheGCS: plugins/cache:1.4.6
       cacheS3: plugins/cache:1.4.6
       iacmTerraform: plugins/harness_terraform:dev
+      idpCookieCutter: deveshharness2306/cookiecutter:latest
 
 
 iacmServiceConfig:

@@ -281,4 +281,5 @@ public interface EntityTypeConstants {
 
   String IDP_STAGE = "IDPStage";
   String IDP = "IDP";
+  String IDP_COOKIECUTTER = "IdpCookieCutter";
 }

@@ -20,6 +20,7 @@ import io.harness.ci.states.V1.InitializeTaskStepV2;
 import io.harness.ci.states.codebase.CodeBaseStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.idp.pipeline.stages.step.IDPStageStepPMS;
+import io.harness.idp.pipeline.steps.IDPCookieCutterStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
@@ -42,6 +43,7 @@ public class IdpStepRegistrar {
     engineSteps.put(GitCloneStep.STEP_TYPE, GitCloneStep.class);
     engineSteps.put(BackgroundStep.STEP_TYPE, BackgroundStep.class);
     engineSteps.put(RunTestsStep.STEP_TYPE, RunTestsStep.class);
+    engineSteps.put(IDPCookieCutterStep.STEP_TYPE, IDPCookieCutterStep.class);
 
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     return engineSteps;

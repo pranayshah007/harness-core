@@ -30,6 +30,7 @@ public enum PluginField {
   PROVENANCE_GCR("provenanceGcrTag"),
   SLSA_VERIFICATION("slsaVerificationTag"),
   SLSA_VERIFICATION_GCR("slsaVerificationGcrTag"),
+  IDP_COOKIECUTTER("IdpCookieCutter"),
   UNKNOWN("unknown");
 
   public final String label;

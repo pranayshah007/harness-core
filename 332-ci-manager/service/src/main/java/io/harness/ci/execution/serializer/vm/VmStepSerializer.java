@@ -84,6 +84,7 @@ public class VmStepSerializer {
       case GIT_CLONE:
       case SSCA_ORCHESTRATION:
       case SSCA_ENFORCEMENT:
+      case IDP_COOKIECUTTER:
         return vmPluginCompatibleStepSerializer.serialize(
             ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier, parameterFieldTimeout, stepName);
       case IACM_TERRAFORM_PLUGIN:

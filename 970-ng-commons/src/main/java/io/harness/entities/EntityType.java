@@ -683,7 +683,10 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.IDP_STAGE)
   IDP_STAGE(ModuleType.IDP, EntityTypeConstants.IDP_STAGE, IdentifierRef.class, EntityYamlRootNames.IDP_STAGE),
   @JsonProperty(EntityTypeConstants.CHAOS_HUB)
-  CHAOS_HUB(ModuleType.CHAOS, EntityTypeConstants.CHAOS_HUB, IdentifierRef.class, EntityYamlRootNames.CHAOS_HUB);
+  CHAOS_HUB(ModuleType.CHAOS, EntityTypeConstants.CHAOS_HUB, IdentifierRef.class, EntityYamlRootNames.CHAOS_HUB),
+  @JsonProperty(EntityTypeConstants.IDP_COOKIECUTTER)
+  IDP_COOKIECUTTER(
+      ModuleType.IDP, EntityTypeConstants.IDP_COOKIECUTTER, IdentifierRef.class, EntityYamlRootNames.IDP_COOKIECUTTER);
 
   private final ModuleType moduleType;
   String yamlName;
