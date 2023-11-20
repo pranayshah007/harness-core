@@ -207,8 +207,7 @@ public class GARApiServiceImpl implements GarApiService {
     // process rest of pages
     do {
       Response<GARPackageResponse> response =
-          garRestClient
-              .getPackage(garinternalConfig.getBearerToken(), project, region, repositoryName, PAGESIZE, nextPage)
+          garRestClient.getPackage(garinternalConfig.getBearerToken(), project, region, repositoryName, 1000, nextPage)
               .execute();
 
       if (response == null) {

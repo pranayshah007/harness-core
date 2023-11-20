@@ -2103,10 +2103,7 @@ public class ArtifactResourceUtils {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(gcpConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
-    GARPackageDTOList builddetails =
-        getPackagesGAR(connectorRef, region, repositoryName, project, orgIdentifier, projectIdentifier);
-
-    return builddetails;
+    return getPackagesGAR(connectorRef, region, repositoryName, project, orgIdentifier, projectIdentifier);
   }
 
   public GARPackageDTOList getPackagesGAR(IdentifierRef connectorRef, String region, String repositoryName,
