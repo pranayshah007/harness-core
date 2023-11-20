@@ -104,8 +104,6 @@ public class EcrArtifactResource {
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
     YamlExpressionEvaluatorWithContext baseEvaluatorWithContext = null;
 
-    // remote services can be linked with a specific branch, so we parse the YAML in one go and store the context data
-    //  has env git branch and service git branch
     if (isNotEmpty(serviceRef)
         && artifactResourceUtils.isRemoteService(accountId, orgIdentifier, projectIdentifier, serviceRef)) {
       baseEvaluatorWithContext = artifactResourceUtils.getYamlExpressionEvaluatorWithContext(accountId, orgIdentifier,
