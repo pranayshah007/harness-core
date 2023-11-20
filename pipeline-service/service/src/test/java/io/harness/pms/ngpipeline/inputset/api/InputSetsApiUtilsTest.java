@@ -15,8 +15,8 @@ import static io.harness.rule.OwnerRule.SANDESH_SALUNKHE;
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -34,7 +34,6 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncConstants;
 import io.harness.gitsync.sdk.EntityGitDetails;
-import io.harness.gitx.USER_FLOW;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
@@ -248,21 +247,19 @@ public class InputSetsApiUtilsTest extends CategoryTest {
   @Owner(developers = SANDESH_SALUNKHE)
   @Category(UnitTests.class)
   public void testGetInputSetErrorWrapper() {
-    InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS = mock(InputSetErrorWrapperDTOPMS.class);
-    InputSetErrorResponseDTOPMS inputSetErrorResponseDTOPMS = mock(InputSetErrorResponseDTOPMS.class);
-
+    InputSetErrorResponseDTOPMS inputSetErrorResponseDTOPMS = InputSetErrorResponseDTOPMS.builder().build();
     Map<String, InputSetErrorResponseDTOPMS> uuidToErrorResponseMap =
         Collections.singletonMap(UUID, inputSetErrorResponseDTOPMS);
     List<String> invalidInputSetReferences = Collections.singletonList(INVALID_INPUT_SET_REFERENCE);
-
+    InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS = InputSetErrorWrapperDTOPMS.builder()
+                                                                .errorPipelineYaml(ERROR_PIPELINE_YAML)
+                                                                .uuidToErrorResponseMap(uuidToErrorResponseMap)
+                                                                .invalidInputSetReferences(invalidInputSetReferences)
+                                                                .build();
     InputSetErrorWrapperDTO inputSetErrorWrapperDTO = new InputSetErrorWrapperDTO();
     inputSetErrorWrapperDTO.setErrorPipelineYaml(ERROR_PIPELINE_YAML);
     inputSetErrorWrapperDTO.setUuidToErrorResponseMap(uuidToErrorResponseMap);
     inputSetErrorWrapperDTO.setInvalidInputsetReferences(invalidInputSetReferences);
-
-    doReturn(ERROR_PIPELINE_YAML).when(inputSetErrorWrapperDTOPMS).getErrorPipelineYaml();
-    doReturn(uuidToErrorResponseMap).when(inputSetErrorWrapperDTOPMS).getUuidToErrorResponseMap();
-    doReturn(invalidInputSetReferences).when(inputSetErrorWrapperDTOPMS).getInvalidInputSetReferences();
 
     InputSetErrorWrapperDTO result = inputSetsApiUtils.getInputSetErrorWrapper(inputSetErrorWrapperDTOPMS);
     assertThat(inputSetErrorWrapperDTO).isEqualTo(result);
@@ -272,26 +269,47 @@ public class InputSetsApiUtilsTest extends CategoryTest {
   @Owner(developers = SANDESH_SALUNKHE)
   @Category(UnitTests.class)
   public void testGetInputSetResponseWithError() {
-    InputSetEntity inputSetEntity = mock(InputSetEntity.class);
-    InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS = mock(InputSetErrorWrapperDTOPMS.class);
-    InputSetResponseBody inputSetResponseBody = new InputSetResponseBody();
+    InputSetEntity inputSetEntity = InputSetEntity.builder()
+                                        .yaml(ERROR_PIPELINE_YAML)
+                                        .identifier(identifier)
+                                        .name(name)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .description(DESCRIPTION)
+                                        .build();
+    InputSetErrorResponseDTOPMS inputSetErrorResponseDTOPMS = InputSetErrorResponseDTOPMS.builder().build();
+    Map<String, InputSetErrorResponseDTOPMS> uuidToErrorResponseMap =
+        Collections.singletonMap(UUID, inputSetErrorResponseDTOPMS);
+    List<String> invalidInputSetReferences = Collections.emptyList();
+    InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS = InputSetErrorWrapperDTOPMS.builder()
+                                                                .errorPipelineYaml(ERROR_PIPELINE_YAML)
+                                                                .uuidToErrorResponseMap(uuidToErrorResponseMap)
+                                                                .invalidInputSetReferences(invalidInputSetReferences)
+                                                                .build();
 
-    doReturn(ERROR_PIPELINE_YAML).when(inputSetEntity).getYaml();
-    doReturn(identifier).when(inputSetEntity).getIdentifier();
-    doReturn(name).when(inputSetEntity).getName();
-    doReturn(ORG_IDENTIFIER).when(inputSetEntity).getOrgIdentifier();
-    doReturn(PROJ_IDENTIFIER).when(inputSetEntity).getProjectIdentifier();
-    doReturn(DESCRIPTION).when(inputSetEntity).getDescription();
-    doReturn(ERROR_PIPELINE_YAML).when(inputSetErrorWrapperDTOPMS).getErrorPipelineYaml();
-
+    List<FQNtoError> fqNtoErrors = new ArrayList<>();
+    FQNtoError fqNtoError = new FQNtoError();
+    fqNtoError.fqn(UUID);
+    fqNtoError.errors(Collections.emptyList());
+    fqNtoErrors.add(fqNtoError);
     InputSetErrorDetails errorDetails = new InputSetErrorDetails();
     errorDetails.setValid(false);
     errorDetails.setOutdated(false);
     errorDetails.setMessage("Some fields in the Input Set are invalid.");
     errorDetails.setErrorPipelineYaml(ERROR_PIPELINE_YAML);
     errorDetails.setInvalidRefs(Collections.emptyList());
-    errorDetails.setFqnErrors(Collections.emptyList());
+    errorDetails.setFqnErrors(fqNtoErrors);
 
+    InputSetResponseBody inputSetResponseBody = getInputSetResponseWithError(inputSetEntity, errorDetails);
+
+    InputSetResponseBody result =
+        inputSetsApiUtils.getInputSetResponseWithError(inputSetEntity, inputSetErrorWrapperDTOPMS);
+    assertThat(result).isEqualTo(inputSetResponseBody);
+  }
+
+  private InputSetResponseBody getInputSetResponseWithError(
+      InputSetEntity inputSetEntity, InputSetErrorDetails errorDetails) {
+    InputSetResponseBody inputSetResponseBody = new InputSetResponseBody();
     inputSetResponseBody.setInputSetYaml(inputSetEntity.getYaml());
     inputSetResponseBody.setIdentifier(inputSetEntity.getIdentifier());
     inputSetResponseBody.setName(inputSetEntity.getName());
@@ -303,26 +321,37 @@ public class InputSetsApiUtilsTest extends CategoryTest {
     inputSetResponseBody.setGitDetails(gitDetails);
     inputSetResponseBody.setCreated(0L);
     inputSetResponseBody.setUpdated(0L);
-
-    InputSetResponseBody result =
-        inputSetsApiUtils.getInputSetResponseWithError(inputSetEntity, inputSetErrorWrapperDTOPMS);
-    assertThat(result).isEqualTo(inputSetResponseBody);
+    return inputSetResponseBody;
   }
 
   @Test
   @Owner(developers = SANDESH_SALUNKHE)
   @Category(UnitTests.class)
-  public void testGetFQNErrors() {
-    InputSetErrorResponseDTOPMS inputSetErrorResponseDTOPMS = InputSetErrorResponseDTOPMS.builder().build();
+  public void testGetFQNErrorsGetsOneInputSetError() {
+    InputSetErrorDTOPMS inputSetErrorDTOPMS = InputSetErrorDTOPMS.builder()
+                                                  .message("Testing GetFQNErrors method.")
+                                                  .identifierOfErrorSource(identifier)
+                                                  .fieldName("error_field")
+                                                  .build();
+
+    InputSetErrorResponseDTOPMS inputSetErrorResponseDTOPMS =
+        InputSetErrorResponseDTOPMS.builder().errors(Collections.singletonList(inputSetErrorDTOPMS)).build();
     Map<String, InputSetErrorResponseDTOPMS> uuidToErrorResponseMap =
         Collections.singletonMap(UUID, inputSetErrorResponseDTOPMS);
     InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS =
         InputSetErrorWrapperDTOPMS.builder().uuidToErrorResponseMap(uuidToErrorResponseMap).build();
+
+    InputSetError inputSetError = new InputSetError();
+    inputSetError.setMessage("Testing GetFQNErrors method.");
+    inputSetError.setIdentifierOfErrorSource(identifier);
+    inputSetError.setFieldName("error_field");
+
     List<FQNtoError> fqNtoErrors = new ArrayList<>();
     FQNtoError fqNtoError = new FQNtoError();
     fqNtoError.fqn(UUID);
-    fqNtoError.errors(Collections.emptyList());
+    fqNtoError.errors(Collections.singletonList(inputSetError));
     fqNtoErrors.add(fqNtoError);
+
     List<FQNtoError> result = inputSetsApiUtils.getFQNErrors(inputSetErrorWrapperDTOPMS);
     assertThat(result).isEqualTo(fqNtoErrors);
   }
@@ -330,7 +359,7 @@ public class InputSetsApiUtilsTest extends CategoryTest {
   @Test
   @Owner(developers = SANDESH_SALUNKHE)
   @Category(UnitTests.class)
-  public void testGetErrors() {
+  public void testGetErrorsGetsOneInputSetError() {
     InputSetErrorDTOPMS inputSetErrorDTOPMS = InputSetErrorDTOPMS.builder()
                                                   .message("message")
                                                   .identifierOfErrorSource("identifierOfErrorSource")
@@ -638,11 +667,9 @@ public class InputSetsApiUtilsTest extends CategoryTest {
   @Owner(developers = SANDESH_SALUNKHE)
   @Category(UnitTests.class)
   public void testMapCreateToRequestInfoDTONullRequestBody() {
-    try {
-      InputSetsApiUtils.mapCreateToRequestInfoDTO(null);
-    } catch (InvalidRequestException ex) {
-      assertThat(ex.getMessage()).isEqualTo("Create Request Body cannot be null.");
-    }
+    assertThatThrownBy(() -> InputSetsApiUtils.mapCreateToRequestInfoDTO(null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Create Request Body cannot be null.");
   }
 
   @Test
@@ -676,11 +703,9 @@ public class InputSetsApiUtilsTest extends CategoryTest {
   @Owner(developers = SANDESH_SALUNKHE)
   @Category(UnitTests.class)
   public void testMapUpdateToRequestInfoDTONullRequestBody() {
-    try {
-      InputSetsApiUtils.mapUpdateToRequestInfoDTO(null);
-    } catch (InvalidRequestException ex) {
-      assertThat(ex.getMessage()).isEqualTo("Update Request Body cannot be null.");
-    }
+    assertThatThrownBy(() -> InputSetsApiUtils.mapUpdateToRequestInfoDTO(null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Update Request Body cannot be null.");
   }
 
   @Test
@@ -867,7 +892,6 @@ public class InputSetsApiUtilsTest extends CategoryTest {
     doReturn(true).when(pmsFeatureFlagHelper).isEnabled(account, FeatureName.PIE_GET_FILE_CONTENT_ONLY);
     inputSetsApiUtils.checkAndSetContextIfGetOnlyFileContentEnabled(account, getOnlyFileContent);
     verifyStatic(ThreadOperationContextHelper.class, times(1));
-    ThreadOperationContextHelper.setUserFlow(USER_FLOW.EXECUTION);
   }
 
   @Test
