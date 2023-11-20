@@ -48,7 +48,6 @@ import io.harness.rule.Owner;
 
 import com.mongodb.client.result.DeleteResult;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Test;
@@ -150,8 +149,7 @@ public class GitXWebhookServiceImplTest extends GitSyncTestBase {
                                   .repoName(REPO_NAME)
                                   .connectorRef(CONNECTOR_REF)
                                   .build();
-    when(gitXWebhookRepository.findByAccountIdentifierAndIdentifier(any(), any()))
-        .thenReturn(Arrays.asList(gitXWebhook));
+    when(gitXWebhookRepository.find(any())).thenReturn(gitXWebhook);
     Optional<GetGitXWebhookResponseDTO> getGitXWebhookResponseDTO =
         gitXWebhookService.getGitXWebhook(getGitXWebhookRequestDTO);
     assertTrue(getGitXWebhookResponseDTO.isPresent());
@@ -263,6 +261,10 @@ public class GitXWebhookServiceImplTest extends GitSyncTestBase {
                                                                   .build();
     Criteria criteria = Criteria.where(GitXWebhookKeys.accountIdentifier)
                             .is(ACCOUNT_IDENTIFIER)
+                            .and(GitXWebhookKeys.orgIdentifier)
+                            .is(null)
+                            .and(GitXWebhookKeys.projectIdentifier)
+                            .is(null)
                             .and(GitXWebhookKeys.identifier)
                             .is(WEBHOOK_IDENTIFIER);
     when(gitXWebhookRepository.delete(criteria)).thenReturn(DeleteResult.acknowledged(1));

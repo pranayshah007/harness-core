@@ -10,6 +10,7 @@ package io.harness.ci.execution.integrationstage;
 import static io.harness.ci.execution.integrationstage.K8InitializeTaskUtilsHelper.STAGE_ID;
 import static io.harness.ci.execution.integrationstage.K8InitializeTaskUtilsHelper.getAddonContainer;
 import static io.harness.ci.execution.integrationstage.K8InitializeTaskUtilsHelper.getLiteEngineContainer;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,6 +26,7 @@ import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.K8PodDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.SecretUtils;
@@ -36,10 +38,12 @@ import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;
 import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.ssca.client.SSCAServiceUtils;
 
@@ -131,5 +135,21 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     assertThat(response.getCik8PodParams().getName()).isEqualTo(podName);
     verify(k8InitializeStepUtils, times(1))
         .createStepContainerDefinitions(any(), any(), any(), any(), any(), any(), any(), anyInt());
+  }
+
+  @Test(expected = CIStageExecutionException.class)
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetK8InitializeTaskParamsWithEmptyInfraConnector() {
+    InitializeStepInfo initializeStepInfo = K8InitializeTaskUtilsHelper.getDirectK8Step();
+    K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) initializeStepInfo.getInfrastructure();
+    k8sDirectInfraYaml.getSpec().setConnectorRef(ParameterField.ofNull());
+    K8PodDetails k8PodDetails = K8PodDetails.builder().accountId(accountId).stageID(STAGE_ID).build();
+    when(executionSweepingOutputResolver.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
+    when(executionSweepingOutputResolver.resolve(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.podDetails)))
+        .thenReturn(k8PodDetails);
+    k8InitializeTaskParamsBuilder.getK8InitializeTaskParams(initializeStepInfo, ambiance, "");
   }
 }

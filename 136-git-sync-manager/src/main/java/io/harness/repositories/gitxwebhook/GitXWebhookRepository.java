@@ -25,4 +25,7 @@ public interface GitXWebhookRepository extends CrudRepository<GitXWebhook, Strin
   List<GitXWebhook> findByAccountIdentifierAndIdentifier(String accountIdentifier, String identifier);
 
   List<GitXWebhook> findByAccountIdentifierAndRepoName(String accountIdentifier, String repoName);
+
+  List<GitXWebhook> findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndRepoName(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String repoName);
 }
