@@ -286,7 +286,7 @@ public class InviteServiceImpl implements InviteService {
   @Override
   public PageResponse<Invite> getInvites(Criteria criteria, PageRequest pageRequest) {
     Pageable pageable = PageUtils.getPageRequest(pageRequest);
-    return PageUtils.getNGPageResponse(inviteRepository.findAll(criteria, pageable));
+    return PageUtils.getNGPageResponse(inviteRepository.findAllWithCollation(criteria, pageable));
   }
 
   @Override
