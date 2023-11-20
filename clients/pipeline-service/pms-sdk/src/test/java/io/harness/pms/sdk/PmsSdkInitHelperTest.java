@@ -10,14 +10,17 @@ package io.harness.pms.sdk;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.plan.ExpansionRequestType.KEY;
 import static io.harness.pms.contracts.plan.ExpansionRequestType.LOCAL_FQN;
+import static io.harness.rule.OwnerRule.AYUSHI_TIWARI;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.NAMAN;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
+
 
 import io.harness.CategoryTest;
 import io.harness.ModuleType;
@@ -26,6 +29,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
+import io.harness.pms.contracts.steps.SdkStep;
+import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.execution.expression.SdkFunctor;
 import io.harness.pms.sdk.core.governance.ExpansionResponse;
@@ -33,11 +38,13 @@ import io.harness.pms.sdk.core.governance.JsonExpansionHandler;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandlerInfo;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
+
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -108,6 +115,47 @@ public class PmsSdkInitHelperTest extends CategoryTest {
     List<String> expandableFields = PmsSdkInitHelper.getSupportedSdkFunctorsList(sdkConfiguration);
     assertThat(expandableFields).hasSize(4);
     assertThat(expandableFields).contains("f1", "f2", "f3", "f4");
+  }
+
+  @Test
+  @Owner(developers = AYUSHI_TIWARI)
+  @Category(UnitTests.class)
+  public void testMapToSdkStep() {
+    List<StepType> stepTypeList = new ArrayList<>();
+    List<StepInfo> stepInfoList = new ArrayList<>();
+
+    List<SdkStep> result1 = PmsSdkInitHelper.mapToSdkStep(stepTypeList, stepInfoList);
+
+    assertThat(result1).isEmpty();
+
+    StepType stepType1 = StepType.newBuilder().setType("abc").build();
+
+    StepType stepType2 = StepType.newBuilder().setType("abcd").build();
+
+    StepInfo stepInfo1 = StepInfo.newBuilder().setType("abc").build();
+    //StepInfo stepInfo2 = StepInfo.newBuilder().setType("ab").build();
+    stepTypeList.add(stepType1);
+
+    stepInfoList.add(stepInfo1);
+    List<SdkStep> sdkStepListForMock = new ArrayList<>();
+    sdkStepListForMock.add(SdkStep.newBuilder().setStepType(stepType1).setStepInfo(stepInfo1).setIsPartOfStepPallete(true).build());
+    List<SdkStep> result2 = PmsSdkInitHelper.mapToSdkStep(stepTypeList, stepInfoList);
+    assertThat(result2).isEqualTo(sdkStepListForMock);
+
+    sdkStepListForMock.clear();
+    sdkStepListForMock.add(SdkStep.newBuilder().setStepType(stepType1).setStepInfo(stepInfo1).setIsPartOfStepPallete(true).build());
+    sdkStepListForMock.add(SdkStep.newBuilder().setStepType(stepType2).build());
+
+    stepTypeList.add(stepType2);
+
+
+    List<SdkStep> result3 = PmsSdkInitHelper.mapToSdkStep(stepTypeList, stepInfoList);
+
+    assertThat(result3).isEqualTo(sdkStepListForMock);
+
+    sdkStepListForMock.clear();
+
+
   }
 
   @Test

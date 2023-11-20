@@ -184,7 +184,8 @@ public class PmsSdkInitHelper {
     return new ArrayList<>(sdkConfiguration.getSdkFunctors().keySet());
   }
 
-  private static List<SdkStep> mapToSdkStep(List<StepType> stepTypeList, List<StepInfo> stepInfos) {
+  @VisibleForTesting
+  protected static List<SdkStep> mapToSdkStep(List<StepType> stepTypeList, List<StepInfo> stepInfos) {
     Map<String, StepType> stepTypeStringToStepType = stepTypeList.stream().collect(Collectors.toMap(
         StepType::getType, stepType -> stepType, (stepType1, stepType2) -> stepType1, LinkedHashMap::new));
     Map<String, StepInfo> stepTypeStringToStepInfo = new LinkedHashMap<>();
