@@ -1013,6 +1013,7 @@ azureVMInventoryCPUSchema = [
 
 # These column names should not be altered without updating the `azure_column_mapping`
 # in pubsub msg sent to azure_cost_bq_main CF
+# Also update the schema in case of clickhouse
 azure_cost_table_schema = [
     {"mode": "NULLABLE", "name": "azureSubscriptionGuid", "type": "STRING"},
     {"mode": "NULLABLE", "name": "azureResourceGroup", "type": "STRING"},
