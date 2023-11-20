@@ -74,6 +74,7 @@ public class AsgRollingDeployStepMapperImpl extends AsgBaseStepMapper {
     AsgBlueGreenDeployStepNode node = new AsgBlueGreenDeployStepNode();
     baseSetup(state, node, identifierCaseFormat);
     node.setAsgBlueGreenDeployStepInfo(AsgBlueGreenDeployStepInfo.infoBuilder()
+                                           .asgName(ParameterField.createValueField(state.getAutoScalingGroupName()))
                                            .instances(getAsgInstancesNode(state))
                                            .loadBalancers(ParameterField.createValueField(Collections.emptyList()))
                                            .loadBalancer(RUNTIME_FIELD)
@@ -91,6 +92,7 @@ public class AsgRollingDeployStepMapperImpl extends AsgBaseStepMapper {
     baseSetup(state, node, identifierCaseFormat);
     node.setAsgRollingDeployStepInfo(
         AsgRollingDeployStepInfo.infoBuilder()
+            .asgName(ParameterField.createValueField(state.getAutoScalingGroupName()))
             .useAlreadyRunningInstances(ParameterField.createValueField(state.isUseCurrentRunningCount()))
             .instances(getAsgInstancesNode(state))
             .skipMatching(ParameterField.createValueField(true))

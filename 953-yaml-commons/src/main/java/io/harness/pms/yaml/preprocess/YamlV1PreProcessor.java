@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -41,17 +40,10 @@ public class YamlV1PreProcessor implements YamlPreProcessor {
     Set<String> idsValuesSet = new HashSet<>();
     collectExistingIdsFromYamlRecursively(jsonNode, idsValuesSet);
 
-    // Map of id->Integer. Here the Integer denote that this index has been used as suffix for a given key. So next time
-    // use the next index suffix.
-    Map<String, Integer> idsSufixMap = new HashMap<>();
     // Adding ids wherever required.
-    addGeneratedIdInJsonNodeRecursively(jsonNode, idsSufixMap, idsValuesSet);
+    addGeneratedIdInJsonNodeRecursively(jsonNode, idsValuesSet);
 
-    return YamlPreprocessorResponseDTO.builder()
-        .idsSuffixMap(idsSufixMap)
-        .idsValuesSet(idsValuesSet)
-        .preprocessedJsonNode(jsonNode)
-        .build();
+    return YamlPreprocessorResponseDTO.builder().idsValuesSet(idsValuesSet).preprocessedJsonNode(jsonNode).build();
   }
   @Override
   public YamlPreprocessorResponseDTO preProcess(String yaml) {
@@ -86,24 +78,22 @@ public class YamlV1PreProcessor implements YamlPreProcessor {
     }
   }
 
-  private void addGeneratedIdInJsonNodeRecursively(
-      JsonNode jsonNode, Map<String, Integer> idsSufixMap, Set<String> idsValuesSet) {
+  private void addGeneratedIdInJsonNodeRecursively(JsonNode jsonNode, Set<String> idsValuesSet) {
     if (jsonNode == null) {
       return;
     }
     if (jsonNode.isArray()) {
-      addGeneratedIdInArrayNodeElements((ArrayNode) jsonNode, idsSufixMap, idsValuesSet);
+      addGeneratedIdInArrayNodeElements((ArrayNode) jsonNode, idsValuesSet);
     } else if (jsonNode.isObject()) {
       for (Iterator<Map.Entry<String, JsonNode>> it = jsonNode.fields(); it.hasNext();) {
         Map.Entry<String, JsonNode> entryIterator = it.next();
         JsonNode childNode = entryIterator.getValue();
-        addGeneratedIdInJsonNodeRecursively(childNode, idsSufixMap, idsValuesSet);
+        addGeneratedIdInJsonNodeRecursively(childNode, idsValuesSet);
       }
     }
   }
 
-  private void addGeneratedIdInArrayNodeElements(
-      ArrayNode arrayNode, Map<String, Integer> idsSufixMap, Set<String> idsValuesSet) {
+  private void addGeneratedIdInArrayNodeElements(ArrayNode arrayNode, Set<String> idsValuesSet) {
     for (JsonNode arrayElement : arrayNode) {
       if (arrayElement.get(YAMLFieldNameConstants.ID) == null) {
         String id = getIdFromNameOrType(arrayElement);
@@ -116,11 +106,11 @@ public class YamlV1PreProcessor implements YamlPreProcessor {
             continue;
           }
         }
-        String idWithSuffix = getMaxSuffixForAnId(idsValuesSet, idsSufixMap, id);
+        String idWithSuffix = getIdWithSuffix(idsValuesSet, id);
         // Set the generated unique id in the arrayElement.
         ((ObjectNode) arrayElement).set(YAMLFieldNameConstants.ID, TextNode.valueOf(idWithSuffix));
       }
-      addGeneratedIdInJsonNodeRecursively(arrayElement, idsSufixMap, idsValuesSet);
+      addGeneratedIdInJsonNodeRecursively(arrayElement, idsValuesSet);
     }
   }
 }

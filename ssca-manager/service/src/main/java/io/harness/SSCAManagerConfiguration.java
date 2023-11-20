@@ -77,6 +77,8 @@ public class SSCAManagerConfiguration extends Configuration {
   @JsonProperty("cacheConfig") CacheConfig cacheConfig;
   @JsonProperty("hostname") String hostname = "localhost";
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
+  @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceConfiguration;
+  @JsonProperty("pipelineServiceSecret") private String pipelineServiceSecret;
 
   @JsonProperty("s3Config") S3Config s3Config;
 

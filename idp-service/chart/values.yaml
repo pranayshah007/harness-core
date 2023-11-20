@@ -32,7 +32,7 @@ global:
     tls:
       enabled: false
       secretName: harness-cert
-  stackDriverLoggingEnabled: true
+  stackDriverLoggingEnabled: "true"
   database:
     postgres:
       ## - installed = true if installed within cluster
@@ -60,7 +60,7 @@ global:
       passwordKey: ""
       extraArgs: ""
     redis:
-      installed: true
+      installed: "true"
       protocol: "redis"
       # --  provide default values if redis.installed is set to false
       hosts:
@@ -251,7 +251,7 @@ name: idp-service
 
 internalAccounts: kmpySmUISimoRrJL6NL73w
 
-segmentEnabled: false
+segmentEnabled: "false"
 segmentUrl: "segment_url_place_holder"
 segmentApikey: "segment_api_key"
-segmentVerifyCert: false
+segmentVerifyCert: "false"

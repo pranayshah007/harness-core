@@ -13,7 +13,7 @@ import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.core.beans.ScopeInfo;
+import io.harness.beans.ScopeInfo;
 import io.harness.ng.core.dto.ResponseDTO;
 
 import java.util.Optional;

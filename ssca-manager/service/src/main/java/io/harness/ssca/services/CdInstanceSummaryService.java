@@ -12,6 +12,7 @@ import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewRequestBody;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.CdInstanceSummary;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -25,4 +26,6 @@ public interface CdInstanceSummaryService {
 
   CdInstanceSummary getCdInstanceSummary(String accountId, String orgIdentifier, String projectIdentifier,
       String artifactCorrelationId, String envIdentifier);
+
+  @VisibleForTesting CdInstanceSummary createInstanceSummary(Instance instance, ArtifactEntity artifact);
 }

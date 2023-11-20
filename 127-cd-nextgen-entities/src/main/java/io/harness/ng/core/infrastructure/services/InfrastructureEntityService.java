@@ -10,6 +10,7 @@ package io.harness.ng.core.infrastructure.services;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.ng.core.infrastructure.dto.InfrastructureInputsMergedResponseDto;
 import io.harness.ng.core.infrastructure.dto.InfrastructureYamlMetadata;
 import io.harness.ng.core.infrastructure.dto.NoInputMergeInputAction;
@@ -95,7 +96,8 @@ public interface InfrastructureEntityService {
       String projectIdentifier, String environmentIdentifier, List<String> infraIds);
 
   List<InfrastructureYamlMetadata> createInfrastructureYamlMetadata(String accountId, String orgIdentifier,
-      String projectIdentifier, String environmentIdentifier, List<String> infraIds, boolean loadFromCache);
+      String projectIdentifier, String environmentIdentifier, String environmentBranch, List<String> infraIds,
+      boolean loadFromCache);
 
   String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
       String environmentIdentifier, String infraIdentifier);
@@ -114,4 +116,7 @@ public interface InfrastructureEntityService {
 
   void checkIfInfraIsScopedToService(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<String> serviceRefs, Map<String, List<String>> envRefInfraRefsMapping);
+
+  GitEntityInfo getGitDetailsForInfrastructure(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String environmentRef, String environmentBranch);
 }

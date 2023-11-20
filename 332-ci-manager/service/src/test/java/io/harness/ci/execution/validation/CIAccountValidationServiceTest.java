@@ -12,17 +12,20 @@ import static io.harness.rule.OwnerRule.HEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.account.AccountClient;
+import io.harness.beans.FeatureName;
 import io.harness.beans.execution.license.CILicenseService;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.ExecutionLimitSpec;
 import io.harness.ci.config.ExecutionLimits;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.creditcard.remote.CreditCardClient;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseType;
@@ -56,6 +59,7 @@ public class CIAccountValidationServiceTest extends CIExecutionTestBase {
   @Mock CIExecutionServiceConfig ciExecutionServiceConfig;
   @Mock CIMiningPatternJob ciMiningPatternJob;
   @Mock ExecutionLimits executionLimits;
+  @Mock CIFeatureFlagService ciFeatureFlagService;
   static final String accountId = "ACCOUNT_ID";
   @Before
   public void setup() {
@@ -211,6 +215,7 @@ public class CIAccountValidationServiceTest extends CIExecutionTestBase {
     when(accountClient.getAccountDTO(any(String.class))).thenReturn(accountDTOCall);
     when(userClient.listUsersEmails(any(String.class))).thenReturn(userEmailsCall);
     when(creditCardClient.validateCreditCard(any(String.class))).thenReturn(creditCardCall);
+    when(ciFeatureFlagService.isEnabled(eq(FeatureName.CI_CREDIT_CARD_ONBOARDING), any())).thenReturn(true);
 
     long buildsCount = accountValidationService.getMaxBuildPerDay(accountId);
 
@@ -244,6 +249,7 @@ public class CIAccountValidationServiceTest extends CIExecutionTestBase {
     when(accountClient.getAccountDTO(any(String.class))).thenReturn(accountDTOCall);
     when(userClient.listUsersEmails(any(String.class))).thenReturn(userEmailsCall);
     when(creditCardClient.validateCreditCard(any(String.class))).thenReturn(creditCardCall);
+    when(ciFeatureFlagService.isEnabled(eq(FeatureName.CI_CREDIT_CARD_ONBOARDING), any())).thenReturn(true);
 
     long creditsCount = accountValidationService.getMaxCreditsPerMonth(accountId);
 

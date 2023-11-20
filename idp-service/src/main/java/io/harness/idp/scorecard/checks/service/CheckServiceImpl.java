@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.idp.common.CommonUtils.addGlobalAccountIdentifierAlong;
 import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
+import static io.harness.idp.common.DateUtils.ZONE_ID_IST;
 import static io.harness.idp.common.DateUtils.getPreviousDay24HourTimeFrame;
 import static io.harness.idp.common.DateUtils.yesterdayInMilliseconds;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
@@ -206,6 +207,11 @@ public class CheckServiceImpl implements CheckService {
 
   @Override
   public List<CheckGraph> getCheckGraph(String accountIdentifier, String identifier, Boolean custom) {
+    CheckEntity checkEntity = checkRepository.findByAccountIdentifierAndIdentifier(
+        custom ? accountIdentifier : GLOBAL_ACCOUNT_ID, identifier);
+    if (checkEntity == null) {
+      throw new InvalidRequestException(String.format("Check graph not found for checkId [%s]", identifier));
+    }
     return CheckStatsMapper.toDTO(
         checkStatusRepository.findByAccountIdentifierAndIdentifierAndIsCustom(accountIdentifier, identifier, custom));
   }
@@ -262,7 +268,7 @@ public class CheckServiceImpl implements CheckService {
         .isCustom(checkEntity.isCustom())
         .passCount(totalPassed)
         .total(total)
-        .timestamp(yesterdayInMilliseconds())
+        .timestamp(yesterdayInMilliseconds(ZONE_ID_IST))
         .build();
   }
 

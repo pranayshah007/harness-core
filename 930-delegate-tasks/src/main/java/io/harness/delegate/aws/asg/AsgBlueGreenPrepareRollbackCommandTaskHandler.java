@@ -10,6 +10,7 @@ package io.harness.delegate.aws.asg;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
+import static io.harness.aws.asg.manifest.AsgShiftTrafficHandler.MAX_TRAFFIC_SHIFT_WEIGHT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.ERROR;
@@ -57,6 +58,7 @@ import software.wings.service.impl.AwsUtils;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.TagDescription;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.List;
@@ -65,7 +67,10 @@ import java.util.Optional;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.Action;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.ActionTypeEnum;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Rule;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetGroupTuple;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(HarnessTeam.CDP)
@@ -73,6 +78,7 @@ import software.amazon.awssdk.services.elasticloadbalancingv2.model.Rule;
 @Slf4j
 public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTaskNGHandler {
   static final String VERSION_DELIMITER = "__";
+  private static final int NR_OF_TGS_FOR_SHIFT_TRAFFIC = 2;
   @Inject private AsgTaskHelper asgTaskHelper;
   @Inject private ElbV2Client elbV2Client;
   @Inject private AwsUtils awsUtils;
@@ -244,12 +250,19 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
     for (AsgLoadBalancerConfig lbCfg : lbConfigs) {
       asgSdkManager.info(format(
           "Checking ListenerArn and ListenerRuleArn for Prod are valid for loadBalancer: %s", lbCfg.getLoadBalancer()));
-      checkListenerRuleIsValid(
+      Rule rule = checkListenerRuleIsValid(
           asgSdkManager, lbCfg.getProdListenerArn(), lbCfg.getProdListenerRuleArn(), region, awsInternalConfig);
 
       asgSdkManager.info(format("Fetching TargetGroupArns for Prod for loadBalancer: %s", lbCfg.getLoadBalancer()));
       List<String> prodTargetGroupArns = asgSdkManager.getTargetGroupArnsFromLoadBalancer(region,
           lbCfg.getProdListenerArn(), lbCfg.getProdListenerRuleArn(), lbCfg.getLoadBalancer(), awsInternalConfig);
+
+      if (asgTaskHelper.isShiftTrafficFeature(lbCfg)) {
+        validateTargetGroupsForShiftTraffic(lbCfg, asgSdkManager, rule);
+
+        // ignore stage listener
+        continue;
+      }
 
       asgSdkManager.info(format("Checking ListenerArn and ListenerRuleArn for Stage are valid for loadBalancer: %s",
           lbCfg.getLoadBalancer()));
@@ -274,13 +287,64 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
         .build();
   }
 
-  private void checkListenerRuleIsValid(AsgSdkManager asgSdkManager, String listenerArn, String listenerRuleArn,
-      String region, AwsInternalConfig awsInternalConfig) {
+  @VisibleForTesting
+  void validateTargetGroupsForShiftTraffic(AsgLoadBalancerConfig lbCfg, AsgSdkManager asgSdkManager, Rule rule) {
+    List<Action> actions = rule.actions();
+    if (isEmpty(actions)) {
+      throw new InvalidRequestException(
+          format("Listener rule '%s' does not have any action", lbCfg.getProdListenerRuleArn()));
+    }
+
+    Action action = actions.get(0);
+    if (action.type() != ActionTypeEnum.FORWARD) {
+      throw new InvalidRequestException(
+          format("Listener rule '%s' does not have forward action", lbCfg.getProdListenerRuleArn()));
+    }
+
+    List<TargetGroupTuple> targetGroups = action.forwardConfig().targetGroups();
+    if (targetGroups.size() != NR_OF_TGS_FOR_SHIFT_TRAFFIC) {
+      throw new InvalidRequestException(format(
+          "Listener rule '%s' defined for shift traffic must have 2 target groups", lbCfg.getProdListenerRuleArn()));
+    }
+
+    TargetGroupTuple targetGroupTuple0 = targetGroups.get(0);
+    TargetGroupTuple targetGroupTuple1 = targetGroups.get(1);
+
+    String prodTargetGroupArn;
+    String stageTargetGroupArn;
+    if (MAX_TRAFFIC_SHIFT_WEIGHT == targetGroupTuple0.weight()) {
+      prodTargetGroupArn = targetGroupTuple0.targetGroupArn();
+      stageTargetGroupArn = targetGroupTuple1.targetGroupArn();
+    } else if (MAX_TRAFFIC_SHIFT_WEIGHT == targetGroupTuple1.weight()) {
+      prodTargetGroupArn = targetGroupTuple1.targetGroupArn();
+      stageTargetGroupArn = targetGroupTuple0.targetGroupArn();
+    } else {
+      String errorMessage =
+          format("Did not find any Target group tuple getting: [%d] traffic", MAX_TRAFFIC_SHIFT_WEIGHT);
+      asgSdkManager.error(errorMessage);
+      throw new InvalidRequestException(errorMessage);
+    }
+
+    if (isEmpty(prodTargetGroupArn) || isEmpty(stageTargetGroupArn)) {
+      throw new InvalidRequestException(
+          format("Found empty Target Group Arn for Listener rule %s", lbCfg.getProdListenerRuleArn()));
+    }
+
+    asgSdkManager.info("Target group: [%s] is Prod, and [%s] is Stage", prodTargetGroupArn, stageTargetGroupArn);
+    lbCfg.setProdTargetGroupArnsList(Arrays.asList(prodTargetGroupArn));
+    lbCfg.setStageTargetGroupArnsList(Arrays.asList(stageTargetGroupArn));
+  }
+
+  @VisibleForTesting
+  Rule checkListenerRuleIsValid(AsgSdkManager asgSdkManager, String listenerArn, String listenerRuleArn, String region,
+      AwsInternalConfig awsInternalConfig) {
     List<Rule> rules = asgSdkManager.getListenerRulesForListener(awsInternalConfig, region, listenerArn);
     Optional<Rule> rule = rules.stream().filter(r -> r.ruleArn().equalsIgnoreCase(listenerRuleArn)).findFirst();
 
     if (rule.isEmpty()) {
       throw new InvalidRequestException(format("Invalid Listener Rule %s", listenerArn));
     }
+
+    return rule.get();
   }
 }

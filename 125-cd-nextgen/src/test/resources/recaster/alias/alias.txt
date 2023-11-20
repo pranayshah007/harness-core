@@ -434,7 +434,6 @@ io.harness.cdng.gitops.steps.EnvClusterRefs
 io.harness.beans.steps.stepinfo.GitCloneStepInfo
 io.harness.cdng.manifest.yaml.kinds.OpenshiftManifest
 io.harness.cdng.creator.plan.stage.DeploymentStageNode
-io.harness.cdng.creator.plan.stage.v1.DeploymentStageNodeV1
 io.harness.beans.steps.stepinfo.V1.ScriptStepInfo
 io.harness.cdng.artifact.bean.yaml.GithubPackageArtifactConfig
 io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData
@@ -1315,6 +1314,7 @@ io.harness.cdng.ecs.EcsBasicPrepareRollbackDataOutcome
 io.harness.cdng.ecs.beans.EcsServiceSetupOutcome
 io.harness.cdng.ecs.beans.EcsBasicRollbackOutcome
 io.harness.cdng.manifest.yaml.ManifestSourceWrapper
-io.harness.cdng.creator.plan.stage.v1.CustomStageNodeV1
 io.harness.cdng.manifest.yaml.ArtifactBundleStore
 io.harness.cdng.gitops.steps.ClusterAgentRef
+io.harness.cdng.tas.beans.ArtifactBundleFetchResponsePassThroughData
+io.harness.plancreator.steps.common.v1.StageElementParametersV1

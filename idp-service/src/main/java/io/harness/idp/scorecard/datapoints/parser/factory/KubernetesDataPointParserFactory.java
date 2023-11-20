@@ -4,6 +4,7 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
+
 package io.harness.idp.scorecard.datapoints.parser.factory;
 
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.DAYS_SINCE_LAST_DEPLOYED;
@@ -12,15 +13,14 @@ import static io.harness.idp.scorecard.datapoints.constants.DataPoints.REPLICAS;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
-import io.harness.idp.scorecard.datapoints.parser.factory.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.parser.kubernetes.KubernetesLastDeployedParser;
 import io.harness.idp.scorecard.datapoints.parser.kubernetes.KubernetesReplicasParser;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
 
-@OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@OwnedBy(HarnessTeam.IDP)
 public class KubernetesDataPointParserFactory implements DataPointParserFactory {
   private KubernetesReplicasParser kubernetesReplicasParser;
   private KubernetesLastDeployedParser kubernetesLastDeployedParser;

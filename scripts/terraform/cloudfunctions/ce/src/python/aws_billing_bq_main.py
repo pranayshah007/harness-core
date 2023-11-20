@@ -759,7 +759,7 @@ def ingest_data_to_awscur(jsonData):
     desirable_columns = ["resourceid", "usagestartdate", "productname", "productfamily", "servicecode", "servicename", "blendedrate", "blendedcost",
                          "unblendedrate", "unblendedcost", "region", "availabilityzone", "usageaccountid", "instancetype",
                          "usagetype", "lineitemtype", "effectivecost", "billingentity", "instancefamily", "marketoption", "usageamount",
-                         "billingperiodstartdate", "billingperiodenddate"]
+                         "billingperiodstartdate", "billingperiodenddate", "edpdiscount", "bundleddiscount", "privateratediscount", "totaldiscount"]
 
     if jsonData.get('accountId') in ACCOUNTS_ENABLED_WITH_ADDITIONAL_AWS_FIELDS_IN_UNIFIED_TABLE:
         print_("Flag is enabled for account. Looking for available additional-fields in billing-table for ingestion.")
@@ -1007,7 +1007,8 @@ def ingest_data_to_unified(jsonData):
                     "AWS" AS cloudProvider, billingentity as awsBillingEntity, tags AS labels"""
 
     # Amend query as per columns availability
-    for additionalColumn in ["instancetype", "usagetype", "billingperiodstartdate", "billingperiodenddate"]:
+    for additionalColumn in ["instancetype", "usagetype", "billingperiodstartdate", "billingperiodenddate",  "edpdiscount", "bundleddiscount",
+                             "privateratediscount", "totaldiscount" ]:
         if additionalColumn.lower() in jsonData["available_columns"]:
             insert_columns = insert_columns + ", aws%s" % additionalColumn
             select_columns = select_columns + ", %s as aws%s" % (additionalColumn, additionalColumn)
@@ -1131,6 +1132,10 @@ def alter_unified_table(jsonData):
         ADD COLUMN IF NOT EXISTS awsdatatransferout STRING, \
         ADD COLUMN IF NOT EXISTS awsbillingperiodstartdate TIMESTAMP, \
         ADD COLUMN IF NOT EXISTS awsbillingperiodenddate TIMESTAMP, \
+        ADD COLUMN IF NOT EXISTS awsedpdiscount FLOAT64, \
+        ADD COLUMN IF NOT EXISTS awsbundleddiscount FLOAT64, \
+        ADD COLUMN IF NOT EXISTS awsprivateratediscount FLOAT64, \
+        ADD COLUMN IF NOT EXISTS awstotaldiscount FLOAT64, \
         ADD COLUMN IF NOT EXISTS awsusageamount float64;" % ds
 
     try:
@@ -1169,6 +1174,10 @@ def alter_awscur_table(jsonData):
         ADD COLUMN IF NOT EXISTS gpu STRING, \
         ADD COLUMN IF NOT EXISTS datatransferout STRING, \
         ADD COLUMN IF NOT EXISTS billingperiodstartdate TIMESTAMP, \
+        ADD COLUMN IF NOT EXISTS edpdiscount FLOAT64, \
+        ADD COLUMN IF NOT EXISTS bundleddiscount FLOAT64, \
+        ADD COLUMN IF NOT EXISTS privateratediscount FLOAT64, \
+        ADD COLUMN IF NOT EXISTS totaldiscount FLOAT64, \
         ADD COLUMN IF NOT EXISTS billingperiodenddate TIMESTAMP ;" % (ds, jsonData["awsCurTableSuffix"])
 
     try:

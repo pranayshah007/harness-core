@@ -17,4 +17,6 @@ import lombok.experimental.UtilityClass;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 @OwnedBy(PIPELINE)
-public class MatrixConstants {}
+public class MatrixConstants {
+  public final String MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES = "matrixIdentifierPostfixForDuplicates";
+}
