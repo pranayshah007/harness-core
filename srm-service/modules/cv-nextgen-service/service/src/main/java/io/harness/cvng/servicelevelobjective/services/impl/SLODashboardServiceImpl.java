@@ -447,7 +447,9 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           .build();
     }
     SLODashboardWidget.SLOGraphData sloGraphData;
-    if (featureFlagService.isGlobalFlagEnabled(FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
+    if (featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
+      log.debug("Fetching data from SLI record Buckets");
       sloGraphData = graphDataServiceV2.getGraphData(serviceLevelObjective, startTimeForCurrentRange,
           endTimeForCurrentRange, sloDetail.getTotalErrorBudget(), filter);
     } else {
@@ -511,7 +513,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
 
     // Adjust start time based on the first SLIRecord
     Instant firstSLIRecordStartTime = null;
-    if (featureFlagService.isGlobalFlagEnabled(FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
+    if (featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
       SLIRecordBucket firstSLIRecord =
           sliRecordBucketService.getFirstSLIRecord(serviceLevelIndicator.getUuid(), startTimeInstant);
       if (firstSLIRecord != null) {
