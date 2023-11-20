@@ -114,13 +114,16 @@ public class GARApiServiceImpl implements GarApiService {
     }
   }
 
-  public List<BuildDetailsInternal> getPackages(GarInternalConfig garinternalConfig, String region, String repository) {
+  @Override
+  public List<BuildDetailsInternal> getPackages(
+      GarInternalConfig garinternalConfig, String region, String repositoryName) {
     try {
       GarRestClient garRestClient = getGarRestClient(garinternalConfig);
-      return getPackage(garinternalConfig, garRestClient, region, repository);
+      return getPackage(garinternalConfig, garRestClient, region, repositoryName);
     } catch (IOException e) {
-      throw NestedExceptionUtils.hintWithExplanationException("Could not fetch versions for the package",
-          "Please check if the package exists and if the permissions are scoped for the authenticated user",
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Could not fetch versions for the repositoryName:" + repositoryName,
+          "Please check if the repositoryName exists and if the permissions are scoped for the authenticated user",
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
     }
   }
@@ -376,7 +379,7 @@ public class GARApiServiceImpl implements GarApiService {
 
     } else {
       if (RepositoryPage == null) {
-        log.warn("Google Artifact Registry Package version response was null.");
+        log.warn("Failed to fetch Packages for the repository:" + repository, "and region:" + region);
       } else {
         log.warn("Google Artifact Registry Package version response had an empty or missing tag list.");
       }

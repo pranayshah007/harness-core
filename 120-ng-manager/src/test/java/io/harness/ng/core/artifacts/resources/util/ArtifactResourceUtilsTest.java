@@ -72,6 +72,8 @@ import io.harness.cdng.artifact.resources.gcr.dtos.GcrRequestDTO;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrResponseDTO;
 import io.harness.cdng.artifact.resources.gcr.service.GcrResourceService;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARPackageDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARPackageDTOList;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
@@ -880,6 +882,56 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     assertThat(spyartifactResourceUtils.getBuildDetailsV2GAR(null, null, null, null, null, "accountId", "orgId",
                    "projectId", "pipeId", "version", "versionRegex", "", "", "serviceref", null))
         .isEqualTo(buildDetails);
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testGetPackagesV2GAR() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    // Creating GoogleArtifactRegistryConfig for mock
+    GoogleArtifactRegistryConfig googleArtifactRegistryConfig =
+        GoogleArtifactRegistryConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("connectorref").build())
+            .project(ParameterField.<String>builder().value("project").build())
+            .repositoryName(ParameterField.<String>builder().value("reponame").build())
+            .region(ParameterField.<String>builder().value("region").build())
+            .build();
+
+    // Creating GARPackageDTOList for mock
+    GARPackageDTOList packageDetails = GARPackageDTOList.builder().garPackagesDTO(null).build();
+
+    Map<String, String> contextMap = new HashMap<>();
+    contextMap.put("serviceGitBranch", "main-patch");
+
+    YamlExpressionEvaluatorWithContext yamlExpressionEvaluatorWithContext =
+        YamlExpressionEvaluatorWithContext.builder()
+            .yamlExpressionEvaluator(cdYamlExpressionEvaluator)
+            .contextMap(contextMap)
+            .build();
+
+    doReturn(yamlExpressionEvaluatorWithContext)
+        .when(spyartifactResourceUtils)
+        .getYamlExpressionEvaluatorWithContext(any(), any(), any(), any(), any(), any(), any(), any());
+
+    // Creating IdentifierRef for mock
+    IdentifierRef identifierRef =
+        IdentifierRefHelper.getIdentifierRef("connectorref", "accountId", "orgId", "projectId");
+
+    doReturn(googleArtifactRegistryConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(any(), any(), any(), any(), any(), eq("main-patch"));
+
+    doReturn(true).when(spyartifactResourceUtils).isRemoteService(any(), any(), any(), any());
+
+    doReturn(packageDetails)
+        .when(garResourceService)
+        .getPackages(identifierRef, "region", "reponame", "project", "orgId", "projectId");
+
+    assertThat(spyartifactResourceUtils.getPackagesV2GAR(
+                   null, null, null, null, "accountId", "orgId", "pipeId", "", "serviceref", "", "projectId", null))
+        .isEqualTo(packageDetails);
   }
 
   @Test
@@ -3383,6 +3435,33 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     for (BucketResponseDTO bucketResponseDTO : buildList) {
       assertThat(bucketResponseDTO.getBucketName()).isEqualTo("test-bucket");
     }
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetPackagesGAR() {
+    GARPackageDTO packageDTO = GARPackageDTO.builder()
+                                   .packageName("myRepo/package1")
+                                   .createTime("2023-01-01T12:00:00Z")
+                                   .updateTime("2023-01-02T12:00:00Z")
+                                   .build();
+    GARPackageDTOList buildDetails = GARPackageDTOList.builder().garPackagesDTO(List.of(packageDTO)).build();
+    doReturn(buildDetails)
+        .when(garResourceService)
+        .getPackages(eq(IDENTIFIER_REF), eq(REGION), eq(REPO_NAME), eq(PROJECT), eq(ORG_ID), eq(PROJECT_ID));
+
+    GARPackageDTOList modifiedBuildDetails =
+        garResourceService.getPackages(IDENTIFIER_REF, REGION, REPO_NAME, PROJECT, ORG_ID, PROJECT_ID);
+
+    int index = modifiedBuildDetails.getGarPackagesDTO().get(0).getPackageName().lastIndexOf("/");
+    assertThat(modifiedBuildDetails).isNotNull();
+    assertThat(modifiedBuildDetails.getGarPackagesDTO()).hasSize(1);
+
+    GARPackageDTO modifiedRepo = modifiedBuildDetails.getGarPackagesDTO().get(0);
+    assertThat(modifiedRepo.getPackageName().substring(index + 1)).isEqualTo("package1");
+    assertThat(modifiedRepo.getCreateTime()).isEqualTo("2023-01-01T12:00:00Z");
+    assertThat(modifiedRepo.getUpdateTime()).isEqualTo("2023-01-02T12:00:00Z");
   }
 
   @Test
