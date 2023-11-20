@@ -217,7 +217,7 @@ public class CIExecutionConfigService {
         vmImageConfig.setSscaEnforcement(value);
         break;
       case IDP_COOKIECUTTER:
-        vmImageConfig.setIdpCookiecutter(value);
+        vmImageConfig.setIdpCookieCutter(value);
       default:
         throw new BadRequestException(format("Field %s does not exist for infra type: VM", field));
     }
@@ -718,7 +718,7 @@ public class CIExecutionConfigService {
             stepInfoType, accountLevelImageConfig.getSscaEnforcement(), globalImageConfig.getSscaEnforcement());
       case IDP_COOKIECUTTER:
         return getApplicableImage(
-            stepInfoType, accountLevelImageConfig.getIdpCookiecutter(), globalImageConfig.getIdpCookiecutter());
+            stepInfoType, accountLevelImageConfig.getIdpCookieCutter(), globalImageConfig.getIdpCookieCutter());
       default:
         throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
@@ -824,7 +824,7 @@ public class CIExecutionConfigService {
       case SSCA_ENFORCEMENT:
         return vmImageConfig.getSscaEnforcement();
       case IDP_COOKIECUTTER:
-        return vmImageConfig.getIdpCookiecutter();
+        return vmImageConfig.getIdpCookieCutter();
       default:
         throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
