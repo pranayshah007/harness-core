@@ -9,6 +9,7 @@ package io.harness.pms.approval.notification;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.SANDESH_SALUNKHE;
 import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.vivekveman;
 
@@ -20,6 +21,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -81,6 +83,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -568,6 +571,51 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
       verify(ngLogCallback.constructed().get(0), times(2)).saveExecutionLog(anyString());
       verify(ngLogCallback.constructed().get(0), times(1)).saveExecutionLog(anyString(), eq(LogLevel.WARN));
     }
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testSendNotificationException() {
+    HarnessApprovalInstance approvalInstance = mock(HarnessApprovalInstance.class);
+    Ambiance ambiance = mock(Ambiance.class);
+    ILogStreamingStepClient iLogStreamingStepClient = mock(ILogStreamingStepClient.class);
+    when(logStreamingStepClientFactory.getLogStreamingStepClient(ambiance)).thenReturn(iLogStreamingStepClient);
+    doReturn(ApprovalStatus.APPROVED).when(approvalInstance).getStatus();
+    approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
+    verify(iLogStreamingStepClient, times(1)).writeLogLine(any(), any());
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testSendNotificationInternalException() {
+    HarnessApprovalInstance approvalInstance = mock(HarnessApprovalInstance.class);
+    Ambiance ambiance = mock(Ambiance.class);
+    NGLogCallback ngLogCallback = mock(NGLogCallback.class);
+    approvalNotificationHandler.sendNotificationInternal(approvalInstance, ambiance, ngLogCallback);
+    verify(ngLogCallback, times(3)).saveExecutionLog(any());
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testFindInvalidInputUserGroupsEmptyInputUserGroups() {
+    UserGroupDTO userGroupDTO = UserGroupDTO.builder().build();
+    List<UserGroupDTO> validatedUserGroups = Collections.singletonList(userGroupDTO);
+    List<String> inputUserGroups = Collections.emptyList();
+    assertThat(approvalNotificationHandler.findInvalidInputUserGroups(validatedUserGroups, inputUserGroups)).isNull();
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testFindInvalidInputUserGroupsEmptyValidatedUserGroups() {
+    List<UserGroupDTO> validatedUserGroups = Collections.emptyList();
+    List<String> inputUserGroups = Collections.singletonList("UserGroup1");
+    List<String> userGroups =
+        approvalNotificationHandler.findInvalidInputUserGroups(validatedUserGroups, inputUserGroups);
+    assertThat(userGroups).isNotEmpty().containsExactly("UserGroup1");
   }
 
   @Test

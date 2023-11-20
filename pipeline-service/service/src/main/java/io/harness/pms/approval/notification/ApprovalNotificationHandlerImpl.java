@@ -17,7 +17,6 @@ import static io.harness.utils.IdentifierRefHelper.IDENTIFIER_REF_DELIMITER;
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
@@ -63,6 +62,8 @@ import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.usergroups.UserGroupClient;
 import io.harness.utils.IdentifierRefHelper;
 
+import com.google.common.annotations.VisibleForTesting;
+import io.harness.annotations.dev.OwnedBy;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -136,7 +137,8 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
     }
   }
 
-  private void sendNotificationInternal(
+  @VisibleForTesting
+  protected void sendNotificationInternal(
       HarnessApprovalInstance approvalInstance, Ambiance ambiance, NGLogCallback logCallback) {
     try {
       log.info("Sending notification to user groups for harness approval");
@@ -191,7 +193,8 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
     return approvalSummary;
   }
 
-  private List<String> findInvalidInputUserGroups(
+  @VisibleForTesting
+  protected List<String> findInvalidInputUserGroups(
       List<UserGroupDTO> validatedUserGroups, List<String> inputUserGroups) {
     if (isEmpty(inputUserGroups)) {
       return null;
