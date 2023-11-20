@@ -4404,9 +4404,12 @@ components:
             items:
               $ref: '#/components/schemas/CheckGraph'
     ScorecardRecalibrateResponseV2:
-      description: Example response
+      description: Response for async scorecard recalibrate request
       content:
         application/json:
+          schema:
+            $ref: '#/components/schemas/ScorecardRecalibrateResponseV2'
+        application/yaml:
           schema:
             $ref: '#/components/schemas/ScorecardRecalibrateResponseV2'
   securitySchemes:
