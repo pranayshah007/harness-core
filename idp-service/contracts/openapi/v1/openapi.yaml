@@ -3628,7 +3628,7 @@ components:
           x-stoplight:
             id: dsc57yz269flx
           format: int64
-        startedBy:
+        started_by:
           $ref: '#/components/schemas/User'
     User:
       title: User
