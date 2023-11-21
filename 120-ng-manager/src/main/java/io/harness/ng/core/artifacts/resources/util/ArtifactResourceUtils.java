@@ -1101,10 +1101,8 @@ public class ArtifactResourceUtils {
       modifiedBuilds.add(modifiedRepo);
     });
     modifiedBuilds.sort(Comparator.comparing(GarRepositoryDTO::getRepository));
-    GARRepositoryDTOList modifiedBuildDetails =
-        GARRepositoryDTOList.builder().garRepositoryDTOS(modifiedBuilds).build();
 
-    return modifiedBuildDetails;
+    return GARRepositoryDTOList.builder().garRepositoryDTOS(modifiedBuilds).build();
   }
 
   public GARBuildDetailsDTO getLastSuccessfulBuildV2GAR(String gcpConnectorIdentifier, String region,
