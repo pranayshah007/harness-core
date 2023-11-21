@@ -7,8 +7,10 @@
 
 package io.harness.ng;
 
+import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.BOOPESH;
+import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.PHOENIKX;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
@@ -19,8 +21,10 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,6 +34,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.entities.embedded.vaultconnector.VaultConnector;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.services.NGVaultService;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -40,6 +45,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.git.model.ChangeType;
 import io.harness.ng.core.api.NGSecretManagerService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.remote.client.NGRestUtils;
@@ -63,6 +69,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 import retrofit2.Call;
 
 @OwnedBy(PL)
@@ -465,5 +473,89 @@ public class SecretManagerConnectorServiceImplTest extends CategoryTest {
     when(defaultConnectorService.delete(any(), any(), any(), any(), any(), eq(false))).thenReturn(true);
     boolean success = secretManagerConnectorService.delete(ACCOUNT, null, null, "identifier", false);
     assertThat(success).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testDeleteResetsDefaultSecretManager() {
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                            .connectorType(ConnectorType.VAULT)
+                                            .connectorConfig(VaultConnectorDTO.builder().isDefault(true).build())
+                                            .build();
+    ConnectorResponseDTO connectorResponseDTO = ConnectorResponseDTO.builder().connector(connectorInfoDTO).build();
+    when(defaultConnectorService.get(any(), any(), any(), any())).thenReturn(Optional.ofNullable(connectorResponseDTO));
+    when(defaultConnectorService.delete(any(), any(), any(), any(), any(), eq(false))).thenReturn(true);
+    boolean success = secretManagerConnectorService.delete(ACCOUNT, null, null, "identifier", false);
+    assertThat(success).isTrue();
+    validateDefaultResetCall();
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testDeleteShouldNotResetsDefaultSecretManager() {
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                            .connectorType(ConnectorType.VAULT)
+                                            .connectorConfig(VaultConnectorDTO.builder().isDefault(false).build())
+                                            .build();
+    ConnectorResponseDTO connectorResponseDTO = ConnectorResponseDTO.builder().connector(connectorInfoDTO).build();
+    when(defaultConnectorService.get(any(), any(), any(), any())).thenReturn(Optional.ofNullable(connectorResponseDTO));
+    when(defaultConnectorService.delete(any(), any(), any(), any(), any(), eq(false))).thenReturn(true);
+    boolean success = secretManagerConnectorService.delete(ACCOUNT, null, null, "identifier", false);
+    assertThat(success).isTrue();
+    verify(connectorRepository, times(0)).update(any(), any(), any(), any(), any(), eq(ACCOUNT));
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testDeleteWithChangeTypeResetsDefaultSecretManager() {
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                            .connectorType(ConnectorType.VAULT)
+                                            .connectorConfig(VaultConnectorDTO.builder().isDefault(true).build())
+                                            .build();
+    ConnectorResponseDTO connectorResponseDTO = ConnectorResponseDTO.builder().connector(connectorInfoDTO).build();
+    when(defaultConnectorService.get(any(), any(), any(), any())).thenReturn(Optional.ofNullable(connectorResponseDTO));
+    when(defaultConnectorService.delete(any(), any(), any(), any(), any(), eq(false))).thenReturn(true);
+    boolean success = secretManagerConnectorService.delete(ACCOUNT, null, null, "identifier", ChangeType.DELETE, false);
+    assertThat(success).isTrue();
+    validateDefaultResetCall();
+  }
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testDeleteWithChangeTypeShouldNotResetsDefaultSecretManager() {
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                            .connectorType(ConnectorType.VAULT)
+                                            .connectorConfig(VaultConnectorDTO.builder().isDefault(false).build())
+                                            .build();
+    ConnectorResponseDTO connectorResponseDTO = ConnectorResponseDTO.builder().connector(connectorInfoDTO).build();
+    when(defaultConnectorService.get(any(), any(), any(), any())).thenReturn(Optional.ofNullable(connectorResponseDTO));
+    when(defaultConnectorService.delete(any(), any(), any(), any(), any(), eq(false))).thenReturn(true);
+    boolean success = secretManagerConnectorService.delete(ACCOUNT, null, null, "identifier", ChangeType.DELETE, false);
+    assertThat(success).isTrue();
+    verify(connectorRepository, times(0)).update(any(), any(), any(), any(), any(), eq(ACCOUNT));
+  }
+
+  private void validateDefaultResetCall() {
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    ArgumentCaptor<Update> updateArgumentCaptor = ArgumentCaptor.forClass(Update.class);
+    verify(connectorRepository, times(1))
+        .update(criteriaArgumentCaptor.capture(), updateArgumentCaptor.capture(), eq(ChangeType.NONE), isNull(),
+            isNull(), eq(ACCOUNT));
+    assertThat(criteriaArgumentCaptor.getValue())
+        .isEqualTo(Criteria.where("accountIdentifier")
+                       .is(ACCOUNT)
+                       .and("orgIdentifier")
+                       .is(null)
+                       .and("projectIdentifier")
+                       .is(null)
+                       .and("deleted")
+                       .ne(Boolean.TRUE)
+                       .and("identifier")
+                       .is(HARNESS_SECRET_MANAGER_IDENTIFIER));
+    assertThat(updateArgumentCaptor.getValue())
+        .isEqualTo(new Update().set(VaultConnector.VaultConnectorKeys.isDefault, Boolean.TRUE));
   }
 }

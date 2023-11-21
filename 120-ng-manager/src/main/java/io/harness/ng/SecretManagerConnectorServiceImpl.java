@@ -362,15 +362,33 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   @Override
   public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String connectorIdentifier, boolean forceDelete) {
-    return defaultConnectorService.delete(
+    Optional<ConnectorResponseDTO> existingConnectorDTO =
+        get(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
+    boolean alreadyDefaultSM =
+        existingConnectorDTO.filter(connectorResponseDTO -> isDefaultSecretManager(connectorResponseDTO.getConnector()))
+            .isPresent();
+    boolean isDeleted = defaultConnectorService.delete(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, NONE, forceDelete);
+    if (isDeleted && alreadyDefaultSM) {
+      setHarnessSecretManagerAsDefault(accountIdentifier, orgIdentifier, projectIdentifier);
+    }
+    return isDeleted;
   }
 
   @Override
   public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String connectorIdentifier, ChangeType changeType, boolean forceDelete) {
-    return defaultConnectorService.delete(
+    Optional<ConnectorResponseDTO> existingConnectorDTO =
+        get(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
+    boolean alreadyDefaultSM =
+        existingConnectorDTO.filter(connectorResponseDTO -> isDefaultSecretManager(connectorResponseDTO.getConnector()))
+            .isPresent();
+    boolean isDeleted = defaultConnectorService.delete(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, changeType, forceDelete);
+    if (isDeleted && alreadyDefaultSM) {
+      setHarnessSecretManagerAsDefault(accountIdentifier, orgIdentifier, projectIdentifier);
+    }
+    return isDeleted;
   }
 
   @Override
