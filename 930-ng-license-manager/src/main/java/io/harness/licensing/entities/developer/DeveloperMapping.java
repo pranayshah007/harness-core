@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.util.List;
+import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -37,6 +38,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @OwnedBy(HarnessTeam.GTM)
 @Data
+@Builder
 @FieldNameConstants(innerTypeName = "DeveloperMappingKeys")
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "developerMappings", noClassnameStored = true)
@@ -58,7 +60,7 @@ public class DeveloperMapping implements PersistentEntity, NGAccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("accountIdentifier_developerMapping_query_index")
+                 .name("accountIdentifier_moduleType_secondaryEntitlement_query_index")
                  .field(DeveloperMappingKeys.accountIdentifier)
                  .field(DeveloperMappingKeys.moduleType)
                  .field(DeveloperMappingKeys.secondaryEntitlement)

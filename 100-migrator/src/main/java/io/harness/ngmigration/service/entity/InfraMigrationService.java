@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.service.entity;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.beans.MigrationInputSettingsType.SIMULTANEOUS_DEPLOYMENT_ON_SAME_INFRA;
 
@@ -51,6 +52,7 @@ import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.service.MigrationHelperService;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.infra.InfraDefMapper;
@@ -94,6 +96,7 @@ public class InfraMigrationService extends NgMigrationService {
   @Inject private ElastigroupConfigurationMigrationService elastigroupConfigurationMigrationService;
   @Inject InfrastructureResourceClient infrastructureResourceClient;
   @Inject private WorkflowService workflowService;
+  @Inject private MigrationHelperService migrationHelperService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -267,7 +270,7 @@ public class InfraMigrationService extends NgMigrationService {
         elastigroupConfigurationMigrationService.getElastigroupConfigurations(migrationContext, infraSpecIds);
 
     Infrastructure infraSpec = infraDefMapper.getSpec(migrationContext, infra, elastigroupConfigurations);
-    Map<String, Object> custom = MigratorUtility.updateContextVariables(migrationContext, entities, infra);
+    Map<String, Object> custom = migrationHelperService.updateContextVariables(migrationContext, entities, infra);
     MigratorExpressionUtils.render(migrationContext, infraSpec, custom);
 
     if (infraSpec == null) {
