@@ -55,6 +55,8 @@ import io.harness.ssca.services.NormalisedSbomComponentService;
 import io.harness.ssca.services.NormalisedSbomComponentServiceImpl;
 import io.harness.ssca.services.OrchestrationStepService;
 import io.harness.ssca.services.OrchestrationStepServiceImpl;
+import io.harness.ssca.services.PipelineService;
+import io.harness.ssca.services.PipelineServiceImpl;
 import io.harness.ssca.services.RuleEngineService;
 import io.harness.ssca.services.RuleEngineServiceImpl;
 import io.harness.ssca.services.S3StoreService;
@@ -125,6 +127,7 @@ public class SSCAManagerModule extends AbstractModule {
     install(TimeModule.getInstance());
     install(new PipelineRemoteClientModule(configuration.getPipelineServiceConfiguration(),
         configuration.getPipelineServiceSecret(), SSCA_SERVICE.getServiceId()));
+    bind(PipelineService.class).to(PipelineServiceImpl.class);
   }
 
   @Provides
