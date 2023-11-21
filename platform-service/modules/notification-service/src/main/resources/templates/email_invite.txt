@@ -116,8 +116,8 @@ body: >-
             </tr>
             <tr>
               <td align="center" valign="top" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; margin: 0; padding: 0; padding-left: 6.25%; padding-right: 6.25%; width: 87.5%; font-size: 13px; font-weight: 400; line-height: 150%; padding-top: 20px; padding-bottom: 20px; color: #999999; font-family: 'Inter', sans-serif; border-collapse: collapse;" class="footer" width="87.5%">
-                <a href="https://www.google.com/maps/place/116+New+Montgomery+St+%23200,+San+Francisco,+CA+94105/@37.7857739,-122.4006368#if,16.55z/data=!4m5!3m4!1s0x8085807d496517f3:0x6b10cbd0d6af2855!8m2!3d37.7870722!4d-122.4004509" target="_blank" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; text-decoration: none; color: #999999; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 400; line-height: 150%;">
-                  Harness.io 116 New Montgomery Street, Suite 200 San Francisco, CA 94105
+                <a href="https://www.google.com/maps/place/Harness/@37.7861509,-122.4070329,21z/data=!4m14!1m7!3m6!1s0x8085807d4eea1869:0x6c22b97e86b23e04!2sHarness!8m2!3d37.7863267!4d-122.4066852!16s%2Fg%2F11fzzbrf5h!3m5!1s0x8085807d4eea1869:0x6c22b97e86b23e04!8m2!3d37.7863267!4d-122.4066852!16s%2Fg%2F11fzzbrf5h" target="_blank" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; text-decoration: none; color: #999999; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 400; line-height: 150%;">
+                  Harness.io 55 Stockton St., 8th Floor, San Francisco, CA 94108
                 </a>
                 <br>
                 copyright &copy; 2021 Harness Inc.
