@@ -28,6 +28,7 @@ import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.connector.services.ConnectorService;
 import io.harness.eventsframework.api.Producer;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitx.GitXSettingsHelper;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
@@ -110,6 +111,7 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
   @Mock @Named(DEFAULT_CONNECTOR_SERVICE) private ConnectorService connectorService;
   @Mock EnvironmentFilterHelper environmentFilterHelper;
   @Mock CDGitXService cdGitXService;
+  @Mock GitAwareEntityHelper gitAwareEntityHelper;
 
   @Before
   public void setup() throws IOException {
@@ -118,7 +120,7 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
         ngFeatureFlagHelperService, connectorService, cdGitXService, gitXSettingsHelper));
     infrastructureEntityService = spy(new InfrastructureEntityServiceImpl(infrastructureRepository, transactionTemplate,
         outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper, hPersistence,
-        serviceOverridesServiceV2, overrideV2ValidationHelper, null));
+        serviceOverridesServiceV2, overrideV2ValidationHelper, null, environmentService, gitAwareEntityHelper));
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService,
         serviceOverridesServiceV2, serviceEntityService, accountClient, settingsClient,

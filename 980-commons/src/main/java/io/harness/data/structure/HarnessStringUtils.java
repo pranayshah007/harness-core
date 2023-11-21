@@ -58,4 +58,8 @@ public class HarnessStringUtils {
   public static String defaultIfEmpty(String value, String defaultValue) {
     return isNotEmpty(value) ? value : defaultValue;
   }
+
+  public static boolean isStringValueMatching(String value1, String value2) {
+    return isNotEmpty(value1) && isNotEmpty(value2) && value1.equals(value2);
+  }
 }

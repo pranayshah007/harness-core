@@ -266,11 +266,12 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
           if (fqnSlsaStepIdentifier != null && isCorrelated(fqnSlsaStepIdentifier, node, artifact)) {
             JsonNode provenanceArtifactList =
                 parseField(node, OUTCOMES, fqnSlsaStepIdentifier, STEP_ARTIFACTS, PROVENANCE_ARTIFACTS);
-            JsonNode provenanceArtifact =
-                Objects.nonNull(provenanceArtifactList) ? provenanceArtifactList.get(0) : null;
+            String provenanceArtifactData = Objects.nonNull(provenanceArtifactList) && provenanceArtifactList.size() > 0
+                ? provenanceArtifactList.get(0).toString()
+                : null;
             slsaVerificationSummaryBuilder
                 .slsaPolicyOutcomeStatus(getNodeValue(parseField(node, OUTCOMES, POLICY_OUTPUT, STATUS)))
-                .provenanceArtifact(provenanceArtifact);
+                .provenanceArtifact(provenanceArtifactData);
             break;
           }
         }

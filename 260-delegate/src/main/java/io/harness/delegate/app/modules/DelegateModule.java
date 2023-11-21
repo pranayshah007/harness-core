@@ -2248,8 +2248,10 @@ public class DelegateModule extends AbstractModule {
         .toInstance(AsgBlueGreenPrepareRollbackDataTaskNG.class);
     mapBinder.addBinding(TaskType.AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG).toInstance(AsgBlueGreenDeployTaskNG.class);
     mapBinder.addBinding(TaskType.AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V2).toInstance(AsgBlueGreenDeployTaskNG.class);
+    mapBinder.addBinding(TaskType.AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V3).toInstance(AsgBlueGreenDeployTaskNG.class);
     mapBinder.addBinding(TaskType.AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG).toInstance(AsgBlueGreenRollbackTaskNG.class);
     mapBinder.addBinding(TaskType.AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V2).toInstance(AsgBlueGreenRollbackTaskNG.class);
+    mapBinder.addBinding(TaskType.AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V3).toInstance(AsgBlueGreenRollbackTaskNG.class);
     mapBinder.addBinding(TaskType.AWS_ASG_SHIFT_TRAFFIC_TASK_NG).toInstance(AsgShiftTrafficTaskNG.class);
 
     bind(EcsV2Client.class).to(EcsV2ClientImpl.class);

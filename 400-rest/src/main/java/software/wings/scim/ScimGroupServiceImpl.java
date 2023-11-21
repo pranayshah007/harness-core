@@ -173,9 +173,14 @@ public class ScimGroupServiceImpl implements ScimGroupService {
 
   @Override
   public void deleteGroup(String groupId, String accountId) {
+    UserGroup userGroup = userGroupService.get(accountId, groupId, false);
     log.info("SCIM: Deleting from account {}, group {}", accountId, groupId);
     wingsPersistence.delete(accountId, UserGroup.class, groupId);
     log.info("SCIM: Deleted from account {}, group {}", accountId, groupId);
+    if (null != userGroup) {
+      log.info("SCIM_AUDITS_DELETE: auditing user group delete for group: {} in account: {}", groupId, accountId);
+      auditServiceHelper.reportDeleteForAuditingUsingAccountId(accountId, userGroup);
+    }
   }
 
   private String processReplaceOperationOnGroup(String groupId, String accountId, PatchOperation patchOperation) {

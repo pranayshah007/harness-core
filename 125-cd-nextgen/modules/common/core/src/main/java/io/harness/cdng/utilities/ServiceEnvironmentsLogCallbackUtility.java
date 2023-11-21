@@ -51,6 +51,7 @@ public class ServiceEnvironmentsLogCallbackUtility {
           || ServiceStepV3Constants.STEP_TYPE.equals(level.getStepType())) {
         commandUnit = SERVICE_STEP_COMMAND_UNIT;
         newAmbiance = AmbianceUtils.clone(ambiance, i + 1);
+        break;
       }
     }
 
@@ -59,6 +60,6 @@ public class ServiceEnvironmentsLogCallbackUtility {
           "Not inside deployment stage service step or custom stage environment step or one of their children");
     }
 
-    return new NGLogCallback(logStreamingStepClientFactory, ambiance, commandUnit, shouldOpenStream);
+    return new NGLogCallback(logStreamingStepClientFactory, newAmbiance, commandUnit, shouldOpenStream);
   }
 }

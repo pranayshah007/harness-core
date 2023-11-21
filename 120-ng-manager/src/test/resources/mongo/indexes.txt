@@ -3,7 +3,6 @@
 !!!custom_delegateSyncTaskResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 !!!custom_delegateTaskProgressResponses {"name": "processAfter_1", "background": true} {"processAfter": 1}
 !!!custom_delegateTaskProgressResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-StageExecutionInstanceInfo {"name": "unique_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineExecutionId": 1, "stageExecutionId": 1}
 accountSettings {"name": "accountId_orgId_projectId_type_unique_Index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "type": 1}
 artifactSourceNG {"name": "createdAt_1", "background": true} {"createdAt": 1}
 artifactSourceNG {"name": "uniqueHash", "unique": true} {"uniqueHash": 1}
@@ -42,7 +41,7 @@ deploymentStagePlanCreationInfo {"name": "deployment_stage_plan_creation_info_us
 deploymentStagePlanCreationInfo {"name": "unique_deployment_stage_plan_creation_info_using_plan_execution_id_stage_id_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "planExecutionId": 1, "stageIdentifier": 1}
 deploymentSummaryNG {"name": "idx_accountIdentifier_orgIdentifier_projectIdentifier", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 deploymentSummaryNG {"name": "idx_instanceSyncKey_createdAt", "background": true} {"instanceSyncKey": 1, "createdAt": -1}
-developerMappings {"name": "accountIdentifier_developerMapping_query_index", "background": true} {"accountIdentifier": 1, "moduleType": 1, "secondaryEntitlement": 1}
+developerMappings {"name": "accountIdentifier_moduleType_secondaryEntitlement_query_index", "background": true} {"accountIdentifier": 1, "moduleType": 1, "secondaryEntitlement": 1}
 entityActivity {"name": "accountIdentifier_1", "background": true} {"accountIdentifier": 1}
 entityActivity {"name": "referredFqn_type_referredByType", "background": true} {"referredEntityFQN": 1, "referredEntityType": 1, "referredByEntityType": 1}
 entityActivity {"name": "referredFqn_type_time_referredByType_scope", "background": true} {"referredEntityFQN": 1, "referredEntityType": 1, "activityTime": 1, "referredByEntityType": 1, "referredByEntity.entityRef.scope": 1}
@@ -200,6 +199,7 @@ stageExecutionInfo {"name": "sorted_stage_execution_info_idx", "background": tru
 stageExecutionInfo {"name": "unique_stage_execution_info_deployment_identifier_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "deploymentIdentifier": 1, "stageExecutionId": 1}
 stageExecutionInfo {"name": "unique_stage_execution_info_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "stageExecutionId": 1}
 stageExecutionInfo {"name": "unique_stage_execution_info_using_stage_execution_id_idx", "background": true} {"accountIdentifier": 1, "stageExecutionId": 1, "orgIdentifier": 1, "projectIdentifier": 1}
+stageExecutionInstanceInfo {"name": "unique_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineExecutionId": 1, "stageExecutionId": 1}
 terraformApplyExecutionDetails {"name": "accountId_organizationId_projectId_pipelineExecutionId_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineExecutionId": 1}
 terraformCloudConfig {"name": "accountId_orgId_projectId_entityId_createdAt", "background": true} {"accountId": 1, "orgId": 1, "projectId": 1, "provisionerIdentifier": 1, "createdAt": -1}
 terraformCloudPlanExecutionDetails {"name": "accountId_organizationId_projectId_pipelineExecutionId_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineExecutionId": 1}

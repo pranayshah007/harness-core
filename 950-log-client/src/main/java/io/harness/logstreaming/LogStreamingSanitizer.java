@@ -67,7 +67,7 @@ public class LogStreamingSanitizer {
     }
 
     // JWT mask
-    sanitizedLogMessage = LogSanitizerHelper.sanitizeJWT(sanitizedLogMessage);
+    sanitizedLogMessage = LogSanitizerHelper.sanitizeTokens(sanitizedLogMessage);
     logLine.setMessage(sanitizedLogMessage);
   }
 

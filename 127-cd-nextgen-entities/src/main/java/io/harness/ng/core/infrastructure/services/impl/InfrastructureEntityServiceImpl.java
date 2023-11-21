@@ -42,9 +42,14 @@ import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.gitx.EntityGitDetailsGuard;
 import io.harness.ng.DuplicateKeyExceptionParser;
+import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.dto.InfrastructureInputsMergedResponseDto;
@@ -132,6 +137,8 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   @Inject private ServiceOverridesServiceV2 serviceOverridesServiceV2;
   @Inject private ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
   @Inject @Named("environment-gitx-executor") private ExecutorService executorService;
+  @Inject private EnvironmentService environmentService;
+  private final GitAwareEntityHelper gitAwareEntityHelper;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Infrastructure [%s] under Environment [%s] Project[%s], Organization [%s] in Account [%s] already exists";
@@ -862,6 +869,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
         .is(projectIdentifier);
   }
 
+  @Override
   public List<InfrastructureYamlMetadata> createInfrastructureYamlMetadata(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, List<String> infraIds) {
     List<InfrastructureEntity> infrastructureEntities = new ArrayList<>();
@@ -875,17 +883,47 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     return infrastructureYamlMetadataList;
   }
 
+  @Override
+  public GitEntityInfo getGitDetailsForInfrastructure(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String environmentRef, String environmentBranch) {
+    GitEntityInfo defaultGitContext = GitEntityInfo.builder().build();
+
+    Optional<Environment> environmentOptional =
+        environmentService.getMetadata(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, false);
+
+    if (environmentOptional.isEmpty()) {
+      return defaultGitContext;
+    }
+
+    Environment environment = environmentOptional.get();
+    // inline environment will always use infra from default repo
+    if (!StoreType.REMOTE.equals(environment.getStoreType())) {
+      return defaultGitContext;
+    }
+
+    // find the working branch of env when dynamically linked
+    String branch = gitAwareEntityHelper.getWorkingBranch(environment.getRepo());
+
+    // set branch to environment branch when statically linked, otherwise working branch of env
+    // there is no concept of transient branch for infra since we do not allow branch selection for infra
+    defaultGitContext.setBranch(isNotEmpty(environmentBranch) ? environmentBranch : branch);
+    defaultGitContext.setParentEntityRepoName(environment.getRepo());
+
+    return defaultGitContext;
+  }
+
+  @Override
   public List<InfrastructureYamlMetadata> createInfrastructureYamlMetadata(String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, String environmentRef, List<String> infraIds,
-      boolean loadFromCache) {
+      String orgIdentifier, String projectIdentifier, String environmentRef, String environmentBranch,
+      List<String> infraIds, boolean loadFromCache) {
     if (isEmpty(infraIds)) {
       return Collections.EMPTY_LIST;
     }
 
     List<InfrastructureYamlMetadata> infrastructureYamlMetadataList = new ArrayList<>();
     try {
-      infrastructureYamlMetadataList = createInfrastructureYamlMetadataInternalV2(
-          accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, infraIds, loadFromCache);
+      infrastructureYamlMetadataList = createInfrastructureYamlMetadataInternalV2(accountIdentifier, orgIdentifier,
+          projectIdentifier, environmentRef, environmentBranch, infraIds, loadFromCache);
     } catch (CompletionException ex) {
       // internal method always wraps the CompletionException, so we will have a cause
       log.error(String.format("Error while getting infrastructure inputs: %s", infraIds), ex);
@@ -902,15 +940,18 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   }
 
   private List<InfrastructureYamlMetadata> createInfrastructureYamlMetadataInternalV2(String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, String environmentRef, List<String> infraIds,
-      boolean loadFromCache) {
+      String orgIdentifier, String projectIdentifier, String environmentRef, String environmentBranch,
+      List<String> infraIds, boolean loadFromCache) {
     if (EngineExpressionEvaluator.hasExpressions(environmentRef)) {
       return Collections.EMPTY_LIST;
     }
 
-    return getInfrastructuresYamlInBatches(getAllInfrastructureFromIdentifierList(accountIdentifier, orgIdentifier,
-                                               projectIdentifier, environmentRef, infraIds),
-        loadFromCache);
+    try (EntityGitDetailsGuard ignore = new EntityGitDetailsGuard(getGitDetailsForInfrastructure(
+             accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, environmentBranch))) {
+      return getInfrastructuresYamlInBatches(getAllInfrastructureFromIdentifierList(accountIdentifier, orgIdentifier,
+                                                 projectIdentifier, environmentRef, infraIds),
+          loadFromCache);
+    }
   }
 
   private List<InfrastructureYamlMetadata> getInfrastructuresYamlInBatches(
@@ -1003,9 +1044,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
           .build();
     }
 
-    final String infrastructureInputSetYaml = createInfrastructureInputsFromYaml(infrastructureEntity.getAccountId(),
-        infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier(),
-        infrastructureEntity.getEnvIdentifier(), infrastructureEntity.getIdentifier());
+    final String infrastructureInputSetYaml = createInfrastructureInputsYamlInternal(infrastructureEntity);
     return InfrastructureYamlMetadata.builder()
         .infrastructureIdentifier(infrastructureEntity.getIdentifier())
         .infrastructureYaml(infrastructureEntity.getYaml())
@@ -1215,6 +1254,15 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       yamlInputs.put("infrastructureInputs", infraDefinition);
     }
     return yamlInputs;
+  }
+
+  private String createInfrastructureInputsYamlInternal(InfrastructureEntity infrastructureEntity) {
+    Map<String, Object> yamlInputs = new HashMap<>();
+    ObjectNode infraDefinition = createInfraDefinitionNodeWithInputs(infrastructureEntity);
+    if (infraDefinition != null) {
+      yamlInputs.put("infrastructureInputs", infraDefinition);
+    }
+    return YamlPipelineUtils.writeYamlString(yamlInputs);
   }
 
   private ObjectNode createInfraDefinitionNodeWithInputs(InfrastructureEntity infraEntity) {

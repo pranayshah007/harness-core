@@ -51,6 +51,8 @@ public abstract class ScmBaseProvider extends HttpDataSourceProvider {
       possibleReplaceableRequestBodyPairs = prepareRequestBodyReplaceablePairs(catalogLocation);
     }
 
+    possibleReplaceableUrlBodyPairs.putAll(possibleReplaceableRequestBodyPairs);
+
     return processOut(accountIdentifier, this.getIdentifier(), entity, replaceableHeaders,
         possibleReplaceableRequestBodyPairs, possibleReplaceableUrlBodyPairs, dataPointsAndInputValues);
   }

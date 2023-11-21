@@ -6,6 +6,7 @@
  */
 
 package io.harness.gitsync.scm.errorhandling;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.CodePulse;
@@ -38,21 +39,7 @@ public class ScmErrorHandler {
   }
 
   public final void processAndThrowException(int statusCode, ScmErrorDetails errorDetails) {
-    handleError(statusCode, errorDetails);
-  }
-
-  void handleError(int statusCode, ScmErrorDetails errorDetails) {
-    switch (statusCode) {
-      case 400:
-      case 401:
-        throw prepareException(new ScmBadRequestException(errorDetails.getErrorMessage()), errorDetails);
-      case 409:
-        throw prepareException(new ScmConflictException(errorDetails.getErrorMessage()), errorDetails);
-      case 500:
-        throw prepareException(new ScmInternalServerErrorException(errorDetails.getErrorMessage()), errorDetails);
-      default:
-        throw prepareException(new ScmUnexpectedException(errorDetails.getErrorMessage()), errorDetails);
-    }
+    handleError(statusCode, errorDetails, null);
   }
 
   void handleError(int statusCode, ScmErrorDetails errorDetails, ScmGitMetaData errorMetadata) {
@@ -90,8 +77,12 @@ public class ScmErrorHandler {
   }
 
   private WingsException addMetadata(WingsException wingsException, ScmGitMetaData errorMetadata) {
-    wingsException.setMetadata(
-        GitErrorMetadataDTO.builder().branch(errorMetadata.getBranchName()).repo(errorMetadata.getRepoName()).build());
+    if (errorMetadata != null) {
+      wingsException.setMetadata(GitErrorMetadataDTO.builder()
+                                     .branch(errorMetadata.getBranchName())
+                                     .repo(errorMetadata.getRepoName())
+                                     .build());
+    }
 
     return wingsException;
   }

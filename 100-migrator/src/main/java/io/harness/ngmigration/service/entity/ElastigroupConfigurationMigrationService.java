@@ -30,6 +30,7 @@ import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.service.MigrationHelperService;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.config.ElastigroupConfigurationFileHandlerImpl;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -64,6 +65,7 @@ import org.apache.commons.lang3.StringUtils;
 public class ElastigroupConfigurationMigrationService extends NgMigrationService {
   @Inject InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject private SecretRefUtils secretRefUtils;
+  @Inject private MigrationHelperService migrationHelperService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -110,7 +112,7 @@ public class ElastigroupConfigurationMigrationService extends NgMigrationService
     MigrationInputDTO inputDTO = migrationContext.getInputDTO();
     InfrastructureDefinition infrastructureDefinition = (InfrastructureDefinition) entities.get(entityId).getEntity();
     Map<String, Object> custom =
-        MigratorUtility.updateContextVariables(migrationContext, entities, infrastructureDefinition);
+        migrationHelperService.updateContextVariables(migrationContext, entities, infrastructureDefinition);
     MigratorExpressionUtils.render(migrationContext, infrastructureDefinition, custom);
     NGYamlFile yamlFile = getYamlFile(infrastructureDefinition, inputDTO, migrationContext);
     if (yamlFile == null) {

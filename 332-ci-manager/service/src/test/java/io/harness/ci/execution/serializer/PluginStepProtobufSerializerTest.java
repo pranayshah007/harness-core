@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.ManualExecutionSource;
+import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.yaml.extended.reports.UnitTestReport;
 import io.harness.callback.DelegateCallbackToken;
@@ -122,6 +123,60 @@ public class PluginStepProtobufSerializerTest {
         ACCOUNT_ID, CLONE_CODEBASE_STEP, ManualExecutionSource.builder().branch("main").build(), "podname",
         Ambiance.newBuilder().build());
     assertThat(unitStep.getPlugin().getEnvironmentMap().get(PLUGIN_DEPTH)).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void testFullCloneCodebaseDeptWebhook() {
+    PluginStepInfo pluginStepInfo = preparePluginStepInfo();
+
+    Map<String, JsonNode> settings = new HashMap<>();
+    settings.put(GIT_CLONE_DEPTH_ATTRIBUTE, JsonNodeFactory.instance.textNode("0"));
+    pluginStepInfo.setSettings(ParameterField.createValueField(settings));
+
+    when(delegateCallbackTokenSupplier.get()).thenReturn(DelegateCallbackToken.newBuilder().setToken(TOKEN).build());
+
+    UnitStep unitStep = pluginStepProtobufSerializer.serializeStepWithStepParameters(pluginStepInfo, PORT, CALLBACK,
+        LOG_KEY, GIT_CLONE_STEP_ID, ParameterField.createValueField(Timeout.builder().timeoutInMillis(TIMEOUT).build()),
+        ACCOUNT_ID, CLONE_CODEBASE_STEP, WebhookExecutionSource.builder().triggerName("testtrigger").build(), "podname",
+        Ambiance.newBuilder().build());
+    assertThat(unitStep.getPlugin().getEnvironmentMap().get(PLUGIN_DEPTH)).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void testCloneCodebaseNoDeptWebhook() {
+    PluginStepInfo pluginStepInfo = preparePluginStepInfo();
+
+    pluginStepInfo.setSettings(null);
+
+    when(delegateCallbackTokenSupplier.get()).thenReturn(DelegateCallbackToken.newBuilder().setToken(TOKEN).build());
+
+    UnitStep unitStep = pluginStepProtobufSerializer.serializeStepWithStepParameters(pluginStepInfo, PORT, CALLBACK,
+        LOG_KEY, GIT_CLONE_STEP_ID, ParameterField.createValueField(Timeout.builder().timeoutInMillis(TIMEOUT).build()),
+        ACCOUNT_ID, CLONE_CODEBASE_STEP, WebhookExecutionSource.builder().triggerName("testtrigger").build(), "podname",
+        Ambiance.newBuilder().build());
+    assertThat(unitStep.getPlugin().getEnvironmentMap().get(PLUGIN_DEPTH)).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void testCloneCodebaseFixDeptWebhook() {
+    PluginStepInfo pluginStepInfo = preparePluginStepInfo();
+
+    Map<String, JsonNode> settings = new HashMap<>();
+    settings.put(GIT_CLONE_DEPTH_ATTRIBUTE, JsonNodeFactory.instance.textNode("4"));
+    pluginStepInfo.setSettings(ParameterField.createValueField(settings));
+    when(delegateCallbackTokenSupplier.get()).thenReturn(DelegateCallbackToken.newBuilder().setToken(TOKEN).build());
+
+    UnitStep unitStep = pluginStepProtobufSerializer.serializeStepWithStepParameters(pluginStepInfo, PORT, CALLBACK,
+        LOG_KEY, GIT_CLONE_STEP_ID, ParameterField.createValueField(Timeout.builder().timeoutInMillis(TIMEOUT).build()),
+        ACCOUNT_ID, CLONE_CODEBASE_STEP, WebhookExecutionSource.builder().triggerName("testtrigger").build(), "podname",
+        Ambiance.newBuilder().build());
+    assertThat(unitStep.getPlugin().getEnvironmentMap().get(PLUGIN_DEPTH)).isEqualTo("4");
   }
 
   @Test

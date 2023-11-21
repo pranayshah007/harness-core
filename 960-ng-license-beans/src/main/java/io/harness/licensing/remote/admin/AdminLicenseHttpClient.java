@@ -8,12 +8,14 @@
 package io.harness.licensing.remote.admin;
 
 import io.harness.licensing.beans.modules.AccountLicenseDTO;
+import io.harness.licensing.beans.modules.DeveloperMappingDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
 import io.harness.licensing.beans.modules.SMPLicenseRequestDTO;
 import io.harness.licensing.beans.modules.SMPValidationResultDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 
+import java.util.List;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
@@ -26,6 +28,8 @@ import retrofit2.http.Query;
 public interface AdminLicenseHttpClient {
   String ADMIN_LICENSE_API = "admin/licenses";
   String SMP_LICENSE_API = "smp/licenses";
+
+  String ADMIN_DEVELOPER_MAPPING = "admin/developer-license-mapping";
 
   @GET(ADMIN_LICENSE_API + "/{accountIdentifier}")
   Call<ResponseDTO<AccountLicenseDTO>> getAccountLicense(@Path("accountIdentifier") String accountIdentifier);
@@ -48,4 +52,12 @@ public interface AdminLicenseHttpClient {
 
   @POST(SMP_LICENSE_API + "/validate")
   Call<ResponseDTO<SMPValidationResultDTO>> validateSMPLicense(@Body SMPEncLicenseDTO licenseDTO);
+
+  @POST(ADMIN_DEVELOPER_MAPPING + "/{accountIdentifier}")
+  Call<ResponseDTO<DeveloperMappingDTO>> createAccountLevelDeveloperMapping(
+      @Path("accountIdentifier") String accountIdentifier, @Body DeveloperMappingDTO developerMappingDTO);
+
+  @GET(ADMIN_DEVELOPER_MAPPING + "/{accountIdentifier}")
+  Call<ResponseDTO<List<DeveloperMappingDTO>>> getAccountLevelDeveloperMapping(
+      @Path("accountIdentifier") String accountIdentifier);
 }

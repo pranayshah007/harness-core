@@ -31,6 +31,7 @@ import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.connector.services.ConnectorService;
 import io.harness.eventsframework.api.Producer;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitx.GitXSettingsHelper;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
@@ -117,7 +118,7 @@ public class CDInputsValidationHelperTest extends NgManagerTestBase {
   @Mock EnvironmentFilterHelper environmentFilterHelper;
   @Mock GitXSettingsHelper gitXSettingsHelper;
   @Mock CDGitXService cdGitXService;
-
+  @Mock GitAwareEntityHelper gitAwareEntityHelper;
   @Before
   public void setup() throws IOException {
     serviceEntityService = spy(new ServiceEntityServiceImpl(serviceRepository, entitySetupUsageService, eventProducer,
@@ -125,7 +126,7 @@ public class CDInputsValidationHelperTest extends NgManagerTestBase {
         ngFeatureFlagHelperService, connectorService, cdGitXService, gitXSettingsHelper));
     infrastructureEntityService = spy(new InfrastructureEntityServiceImpl(infrastructureRepository, transactionTemplate,
         outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper, hPersistence,
-        serviceOverridesServiceV2, overrideV2ValidationHelper, null));
+        serviceOverridesServiceV2, overrideV2ValidationHelper, null, environmentService, gitAwareEntityHelper));
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService,
         serviceOverridesServiceV2, serviceEntityService, accountClient, settingsClient,

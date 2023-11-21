@@ -150,9 +150,7 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
   }
 
   private NGLogCallback getLogCallback(Ambiance ambiance, CustomApprovalInstance instance) {
-    final String unit = ShellType.Bash.equals(instance.getShellType()) ? ShellScriptTaskNG.COMMAND_UNIT
-                                                                       : WinRmShellScriptTaskNG.INIT_UNIT;
-    return new NGLogCallback(logStreamingStepClientFactory, ambiance, unit, false);
+    return new NGLogCallback(logStreamingStepClientFactory, ambiance, ShellScriptTaskNG.COMMAND_UNIT, false);
   }
 
   private TaskParameters buildShellScriptTaskParametersNG(
@@ -209,8 +207,8 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
     List<TaskSelector> selectors = TaskSelectorYaml.toTaskSelector(instance.getDelegateSelectors());
 
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Arrays.asList(WinRmShellScriptTaskNG.INIT_UNIT, WinRmShellScriptTaskNG.COMMAND_UNIT),
-        getCustomApprovalTaskName(instance), selectors, stepHelper.getEnvironmentType(ambiance));
+        Arrays.asList(WinRmShellScriptTaskNG.COMMAND_UNIT), getCustomApprovalTaskName(instance), selectors,
+        stepHelper.getEnvironmentType(ambiance));
   }
 
   private void validateField(String name, String value) {

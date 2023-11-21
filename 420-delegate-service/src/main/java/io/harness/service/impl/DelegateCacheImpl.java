@@ -49,6 +49,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -361,6 +362,11 @@ public class DelegateCacheImpl implements DelegateCache {
       supportedTaskTypes = new HashSet<>(delegateList.get(0).getSupportedTaskTypes());
     }
     for (Delegate delegate : delegateList) {
+      if (Objects.isNull(delegate.getSupportedTaskTypes())) {
+        log.warn(
+            "Supported task types of delegate {}, account {} is null.", delegate.getUuid(), delegate.getAccountId());
+        return Set.of();
+      }
       supportedTaskTypes = Sets.intersection(supportedTaskTypes, new HashSet<>(delegate.getSupportedTaskTypes()));
     }
     return supportedTaskTypes;

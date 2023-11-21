@@ -281,6 +281,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 import javax.validation.ConstraintViolation;
@@ -4159,6 +4160,9 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public File generateKubernetesYaml(String accountId, DelegateSetupDetails delegateSetupDetails, String managerHost,
       String verificationServiceUrl, MediaType fileFormat) throws IOException {
+    // check uniqueness and k8 name validation
+    checkUniquenessOfDelegateName(accountId, delegateSetupDetails.getName(), true);
+    checkK8NamingValidation(delegateSetupDetails.getName());
     // If token name is not provided, use default token
     if (StringUtils.isBlank(delegateSetupDetails.getTokenName())) {
       DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(
@@ -4540,5 +4544,17 @@ public class DelegateServiceImpl implements DelegateService {
           : Optional.empty();
     }
     return Optional.empty();
+  }
+
+  private void checkK8NamingValidation(String delegateName) {
+    Pattern k8NameMatching = Pattern.compile("^[a-z][a-z0-9-]*[a-z]$");
+    if (!k8NameMatching.matcher(delegateName).matches()) {
+      throw new InvalidRequestException(
+          "Delegate name should be lowercase and can include only dash(-) between letters and cannot start or end with a number",
+          USER);
+    }
+    if (delegateName.length() > 63) {
+      throw new InvalidRequestException("Delegate name must be at most 63 characters", USER);
+    }
   }
 }
