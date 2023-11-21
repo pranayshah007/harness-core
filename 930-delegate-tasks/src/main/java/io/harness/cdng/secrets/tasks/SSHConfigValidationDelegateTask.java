@@ -21,6 +21,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.exception.ExceptionUtils;
 import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
 import io.harness.ng.core.dto.secrets.SSHAuthDTO;
 import io.harness.ng.core.dto.secrets.SSHConfigDTO;
@@ -29,6 +30,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.SshClientManager;
+import io.harness.shell.ssh.exception.JschClientException;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -88,7 +90,22 @@ public class SSHConfigValidationDelegateTask extends AbstractDelegateRunnableTas
       SshClientManager.test(sshSessionConfig);
       return SSHConfigValidationTaskResponse.builder().connectionSuccessful(true).build();
     } catch (Exception e) {
-      return SSHConfigValidationTaskResponse.builder().connectionSuccessful(false).errorMessage(e.getMessage()).build();
+      String errMsg = processErrorMsg(e);
+      return SSHConfigValidationTaskResponse.builder().connectionSuccessful(false).errorMessage(errMsg).build();
     }
+  }
+
+  private String processErrorMsg(Exception e) {
+    String errMsg = e.getMessage();
+
+    JschClientException jschClientException = ExceptionUtils.cause(JschClientException.class, e);
+    if (jschClientException != null) {
+      Throwable jschClientExceptionCause = jschClientException.getCause();
+      if (jschClientExceptionCause != null) {
+        errMsg = jschClientExceptionCause.getMessage();
+      }
+    }
+
+    return errMsg;
   }
 }

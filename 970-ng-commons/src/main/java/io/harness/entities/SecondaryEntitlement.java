@@ -9,4 +9,7 @@ package io.harness;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(HarnessTeam.GTM) public enum SecondaryEntitlement {}
+@OwnedBy(HarnessTeam.GTM)
+public enum SecondaryEntitlement {
+  WORK_LOADS,
+}

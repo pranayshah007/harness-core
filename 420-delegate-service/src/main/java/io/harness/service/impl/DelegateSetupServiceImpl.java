@@ -798,7 +798,17 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
       }
 
       if (isNotEmpty(filterProperties.getDelegateTags())) {
-        delegateGroupQuery.field(DelegateGroupKeys.tags).hasAllOf(filterProperties.getDelegateTags());
+        List<DelegateGroup> delegateGroups =
+            delegateGroupQuery.field(DelegateGroupKeys.status).notEqual(DelegateGroupStatus.DELETED).asList();
+
+        // Add implicit selector/tag of group-name then filter by tag. This is because tag we store in database doesn't
+        // contain implicit tag of delegate-name
+        delegateGroups.forEach(delegateGroup -> delegateGroup.getTags().add(delegateGroup.getName().toLowerCase()));
+
+        return delegateGroups.stream()
+            .filter(delegateGroup -> delegateGroup.getTags().containsAll(filterProperties.getDelegateTags()))
+            .map(DelegateGroup::getUuid)
+            .collect(toList());
       }
     }
     return delegateGroupQuery.field(DelegateGroupKeys.status)

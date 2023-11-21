@@ -77,8 +77,9 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
       Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     io.harness.steps.shellscript.ShellScriptStepParameters shellScriptStepParameters =
         ShellScriptHelperService.getShellScriptStepParameters(stepParameters);
-    TaskParameters taskParameters = shellScriptHelperService.buildShellScriptTaskParametersNG(ambiance,
-        shellScriptStepParameters, stepParameters.getTimeout() != null ? stepParameters.getTimeout().getValue() : null);
+    TaskParameters taskParameters =
+        shellScriptHelperService.buildShellScriptTaskParametersNG(ambiance, shellScriptStepParameters,
+            stepParameters.getTimeout() != null ? stepParameters.getTimeout().getValue() : null, null);
 
     switch (shellScriptStepParameters.getShell()) {
       case Bash:

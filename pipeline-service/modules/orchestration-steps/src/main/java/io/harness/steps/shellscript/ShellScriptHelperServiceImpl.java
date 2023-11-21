@@ -31,6 +31,7 @@ import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
 import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG;
@@ -351,8 +352,8 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
   }
 
   @Override
-  public TaskParameters buildShellScriptTaskParametersNG(
-      @Nonnull Ambiance ambiance, @Nonnull ShellScriptStepParameters shellScriptStepParameters, String sessionTimeout) {
+  public TaskParameters buildShellScriptTaskParametersNG(@Nonnull Ambiance ambiance,
+      @Nonnull ShellScriptStepParameters shellScriptStepParameters, String sessionTimeout, String commandUnit) {
     SecurityContextBuilder.setContext(new ServicePrincipal(NG_MANAGER.getServiceId()));
     ScriptType scriptType = shellScriptStepParameters.getShell().getScriptType();
     String shellScript = shellScriptHelperService.getShellScript(shellScriptStepParameters, ambiance);
@@ -368,7 +369,7 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
       return buildBashTaskParametersNG(ambiance, shellScriptStepParameters, scriptType, shellScript, workingDirectory);
     } else {
       return getWinRmTaskParametersNG(
-          ambiance, shellScriptStepParameters, scriptType, shellScript, workingDirectory, sessionTimeout);
+          ambiance, shellScriptStepParameters, scriptType, shellScript, workingDirectory, sessionTimeout, commandUnit);
     }
   }
 
@@ -389,12 +390,12 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
   @Override
   public TaskParameters buildShellScriptTaskParametersNG(
       @NotNull Ambiance ambiance, @NotNull ShellScriptStepParameters shellScriptStepParameters) {
-    return buildShellScriptTaskParametersNG(ambiance, shellScriptStepParameters, null);
+    return buildShellScriptTaskParametersNG(ambiance, shellScriptStepParameters, null, ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   private WinRmShellScriptTaskParametersNG getWinRmTaskParametersNG(@NotNull Ambiance ambiance,
       @NotNull ShellScriptStepParameters shellScriptStepParameters, ScriptType scriptType, String shellScript,
-      ParameterField<String> workingDirectory, String sessionTimeout) {
+      ParameterField<String> workingDirectory, String sessionTimeout, String commandUnit) {
     WinRmShellScriptTaskParametersNGBuilder taskParametersNGBuilder = WinRmShellScriptTaskParametersNG.builder();
 
     Boolean includeInfraSelectors = shellScriptStepParameters.includeInfraSelectors != null
@@ -441,6 +442,7 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
         .sessionTimeout(EmptyPredicate.isNotEmpty(sessionTimeout)
                 ? Math.max(NGTimeConversionHelper.convertTimeStringToMilliseconds(sessionTimeout), SESSION_TIMEOUT)
                 : SESSION_TIMEOUT)
+        .commandUnit(commandUnit)
         .build();
   }
 
