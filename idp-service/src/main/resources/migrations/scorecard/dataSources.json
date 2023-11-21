@@ -73,7 +73,7 @@
     "description": "Kubernetes",
     "type": "Http",
     "httpConfig": {
-      "target": "https://{HOST}",
+      "target": "{HOST}",
       "headers": {
         "Authorization": "{SERVICE_TO_SERVICE_AUTH}",
         "Harness-Account": "{ACCOUNT_IDENTIFIER}",

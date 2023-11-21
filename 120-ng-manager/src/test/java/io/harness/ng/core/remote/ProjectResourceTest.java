@@ -36,6 +36,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.favorites.ResourceType;
 import io.harness.favorites.entities.Favorite;
 import io.harness.favorites.services.FavoritesService;
@@ -137,7 +138,7 @@ public class ProjectResourceTest extends CategoryTest {
     boolean exceptionThrown = false;
     try {
       projectResource.get(identifier, accountIdentifier, orgIdentifier);
-    } catch (NotFoundException exception) {
+    } catch (EntityNotFoundException exception) {
       exceptionThrown = true;
     }
 

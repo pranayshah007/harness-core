@@ -30,7 +30,9 @@ public class KubernetesDataPointsApiImpl implements KubernetesDataPointsApi {
   @Override
   public Response getK8sDataPointValues(@Valid KubernetesRequest body, String harnessAccount) {
     try {
-      log.info("Kubernetes API called - request body - {}, account - {}", body, harnessAccount);
+      log.info(
+          "Kubernetes API called - request body label_selector {}, request body data_source_location {} account - {}",
+          body.getRequest().getLabelSelector(), body.getRequest().getDataSourceLocation(), harnessAccount);
       Map<String, Object> returnData =
           kubernetesDataPointsService.getDataPointDataValues(harnessAccount, body.getRequest());
       return Response.status(Response.Status.OK).entity(returnData).build();

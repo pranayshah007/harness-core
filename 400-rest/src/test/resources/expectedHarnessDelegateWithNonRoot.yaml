@@ -123,7 +123,6 @@ spec:
         - name: DYNAMIC_REQUEST_HANDLING
           value: "false"
 
-
 ---
 
 kind: Role

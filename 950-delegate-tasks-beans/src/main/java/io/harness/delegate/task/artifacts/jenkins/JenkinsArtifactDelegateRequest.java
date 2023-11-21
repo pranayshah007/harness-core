@@ -8,6 +8,7 @@
 package io.harness.delegate.task.artifacts.jenkins;
 import static io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.JENKINS;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -20,7 +21,9 @@ import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
+import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.helpers.ext.jenkins.JobDetails;
@@ -42,7 +45,8 @@ import lombok.Value;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @OwnedBy(HarnessTeam.PIPELINE)
-public class JenkinsArtifactDelegateRequest implements ArtifactSourceDelegateRequest {
+public class JenkinsArtifactDelegateRequest
+    implements ArtifactSourceDelegateRequest, ExpressionReflectionUtils.NestedAnnotationResolver {
   String buildRegex;
   /** List of buildNumbers/artifactPaths */
   List<String> artifactPaths;
@@ -56,7 +60,7 @@ public class JenkinsArtifactDelegateRequest implements ArtifactSourceDelegateReq
   List<EncryptedDataDetail> encryptedDataDetails;
   /** Artifact Source type.*/
   ArtifactSourceType sourceType;
-  Map<String, String> jobParameter;
+  @Expression(ALLOW_SECRETS) Map<String, String> jobParameter;
   boolean unstableStatusAsSuccess;
   boolean captureEnvironmentVariable;
   boolean useConnectorUrlForJobExecution;

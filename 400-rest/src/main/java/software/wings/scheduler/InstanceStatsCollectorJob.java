@@ -24,6 +24,7 @@ import software.wings.beans.LicenseInfo;
 import software.wings.beans.account.AccountStatus;
 import software.wings.beans.datatretention.LongerDataRetentionState;
 import software.wings.beans.instance.dashboard.InstanceStatsUtils;
+import software.wings.exception.AccountNotFoundException;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.instance.licensing.InstanceUsageLimitExcessHandler;
 import software.wings.service.intfc.instance.stats.InstanceStatService;
@@ -141,6 +142,8 @@ public class InstanceStatsCollectorJob implements Job {
           instanceLimitHandler.handle(accountId, ninety_five_percentile_usage);
         });
       }
+    } catch (AccountNotFoundException ex) {
+      log.warn("Skipping instance stats since the account is not found, accountId: {}", accountId);
     }
 
     try (AcquiredLock lock =
