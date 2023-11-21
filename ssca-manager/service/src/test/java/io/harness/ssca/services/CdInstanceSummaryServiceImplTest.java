@@ -162,8 +162,9 @@ public class CdInstanceSummaryServiceImplTest extends SSCAManagerTestBase {
     assertThat(cdInstanceSummary.getSequenceId()).isEqualTo("5");
     assertThat(cdInstanceSummary.getSlsaVerificationSummary().getSlsaPolicyOutcomeStatus()).isEqualTo("warning");
     assertThat(cdInstanceSummary.getSlsaVerificationSummary().getProvenanceArtifact()).isNotNull();
-    assertThat(cdInstanceSummary.getSlsaVerificationSummary().getProvenanceArtifact().get("predicateType").asText())
-        .isEqualTo("https://slsa.dev/provenance/v1");
+    assertThat(cdInstanceSummary.getSlsaVerificationSummary().getProvenanceArtifact())
+        .isEqualTo(
+            "{\"predicateType\":\"https://slsa.dev/provenance/v1\",\"predicate\":{\"buildDefinition\":{\"buildType\":\"https://developer.harness.io/docs/continuous-integration\",\"externalParameters\":{\"codeMetadata\":{\"repositoryURL\":\"https://github.com/nginxinc/docker-nginx\",\"branch\":\"master\"},\"triggerMetadata\":{\"triggerType\":\"MANUAL\",\"triggeredBy\":\"inderpreet.chera@harness.io\"},\"buildMetadata\":{\"image\":\"autosscauser/autosscauser-auto\",\"dockerFile\":\"./stable/alpine/Dockerfile\"}},\"internalParameters\":{\"pipelineExecutionId\":\"jnz3-IB1Q_KlmLAaiS3Guw\",\"accountId\":\"ppbLW9YpRharzPs_JtWT7g\",\"pipelineIdentifier\":\"SLSA_attestation_and_verification\"}},\"runDetails\":{\"builder\":{\"id\":\"https://developer.harness.io/docs/continuous-integration\",\"version\":{\"ci-manager\":\"1.0.6402-000\",\"plugins/kaniko\":\"1.8.0\"}},\"runDetailsMetadata\":{\"invocationId\":\"TCfWZ3j8QSSvN3x3KnxZJA\",\"startedOn\":\"2023-10-26T07:35:21.438Z\",\"finishedOn\":\"2023-10-26T07:36:02.733Z\"}}}}");
   }
 
   @Test
