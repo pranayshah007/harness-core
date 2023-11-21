@@ -14,13 +14,11 @@ import static io.harness.rule.OwnerRule.AYUSHI_TIWARI;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.NAMAN;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
-
 
 import io.harness.CategoryTest;
 import io.harness.ModuleType;
@@ -38,13 +36,11 @@ import io.harness.pms.sdk.core.governance.JsonExpansionHandler;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandlerInfo;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
-
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -138,24 +134,23 @@ public class PmsSdkInitHelperTest extends CategoryTest {
 
     stepInfoList.add(stepInfo1);
     List<SdkStep> sdkStepListForMock = new ArrayList<>();
-    sdkStepListForMock.add(SdkStep.newBuilder().setStepType(stepType1).setStepInfo(stepInfo1).setIsPartOfStepPallete(true).build());
+    sdkStepListForMock.add(
+        SdkStep.newBuilder().setStepType(stepType1).setStepInfo(stepInfo1).setIsPartOfStepPallete(true).build());
     List<SdkStep> result2 = PmsSdkInitHelper.mapToSdkStep(stepTypeList, stepInfoList);
     assertThat(result2).isEqualTo(sdkStepListForMock);
 
     sdkStepListForMock.clear();
-    sdkStepListForMock.add(SdkStep.newBuilder().setStepType(stepType1).setStepInfo(stepInfo1).setIsPartOfStepPallete(true).build());
+    sdkStepListForMock.add(
+        SdkStep.newBuilder().setStepType(stepType1).setStepInfo(stepInfo1).setIsPartOfStepPallete(true).build());
     sdkStepListForMock.add(SdkStep.newBuilder().setStepType(stepType2).build());
 
     stepTypeList.add(stepType2);
-
 
     List<SdkStep> result3 = PmsSdkInitHelper.mapToSdkStep(stepTypeList, stepInfoList);
 
     assertThat(result3).isEqualTo(sdkStepListForMock);
 
     sdkStepListForMock.clear();
-
-
   }
 
   @Test
