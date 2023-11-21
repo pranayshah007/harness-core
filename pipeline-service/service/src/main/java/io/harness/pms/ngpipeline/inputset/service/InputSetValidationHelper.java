@@ -62,8 +62,8 @@ public class InputSetValidationHelper {
   }
 
   // this method is not for old git sync
-  public void validateInputSet(
-      PMSInputSetService inputSetService, InputSetEntity inputSetEntity, boolean hasNewYamlStructure) {
+  public void validateInputSet(PMSInputSetService inputSetService, InputSetEntity inputSetEntity,
+      boolean hasNewYamlStructure, boolean validateInputSetIdentifier) {
     switch (inputSetEntity.getHarnessVersion()) {
       case HarnessYamlVersion.V1:
         return;
@@ -85,9 +85,14 @@ public class InputSetValidationHelper {
       OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity);
     }
     String inputSetIdentifier = inputSetEntity.getIdentifier();
-    if (EmptyPredicate.isEmpty(inputSetIdentifier)) {
-      throw new InvalidRequestException("InputSet Identifier cannot contain be null.");
-    } else if (!inputSetIdentifier.matches(NGRegexValidatorConstants.IDENTIFIER_PATTERN)) {
+    if (validateInputSetIdentifier) {
+      if (EmptyPredicate.isEmpty(inputSetIdentifier)) {
+        throw new InvalidRequestException("InputSet Identifier cannot contain be empty.");
+      } else if (!inputSetIdentifier.matches(NGRegexValidatorConstants.IDENTIFIER_PATTERN)) {
+        throw new InvalidRequestException(
+            format("InputSet Identifier cannot contain special characters or spaces: [%s]", inputSetIdentifier));
+      }
+    } else {
       log.warn(format("InputSet Identifier cannot contain special characters or spaces: [%s]", inputSetIdentifier));
     }
   }
