@@ -184,35 +184,18 @@ public class GARApiServiceTest extends CategoryTest {
         WireMock
             .get(WireMock.urlPathEqualTo("/v1/projects/cd-play/locations/us-south1/repositories/vivek-repo/packages"))
             .withHeader("Authorization", equalTo("bearerToken"))
-            .willReturn(aResponse().withStatus(200).withBody("{\n"
-                + "  \"packages\": [\n"
-                + "    {\n"
-                + "      \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/hellowithlabels\",\n"
-                + "      \"createTime\": \"2023-03-28T05:10:26.395887Z\",\n"
-                + "      \"updateTime\": \"2023-03-28T05:10:26.395887Z\"\n"
-                + "    },\n"
-                + "    {\n"
-                + "      \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo\",\n"
-                + "      \"createTime\": \"2022-07-26T10:01:04.563871Z\",\n"
-                + "      \"updateTime\": \"2023-03-07T11:49:41.438649Z\"\n"
-                + "    },\n"
-                + "    {\n"
-                + "      \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/ngnix\",\n"
-                + "      \"createTime\": \"2022-07-26T09:55:41.056751Z\",\n"
-                + "      \"updateTime\": \"2022-10-18T06:53:18.839471Z\"\n"
-                + "    },\n"
-                + "  ]\n"
-                + "}\n")));
-    //    wireMockRule.stubFor(WireMock.get(WireMock.urlPathEqualTo("/v1/projects/cd-play/locations/us-south1/repositories"))
-    //            .withHeader("Authorization", notMatching("bearerToken"))
-    //            .willReturn(aResponse().withStatus(401).withBody("Wrong bearer Token")));
-    //    wireMockRule.stubFor(
-    //            WireMock.get(WireMock.urlPathEqualTo("/v1/projects/cd-play/locations/wrong-region/repositories"))
-    //                    .withHeader("Authorization", equalTo("bearerToken"))
-    //                    .willReturn(aResponse().withStatus(404).withBody("Test Body")));
-    //    wireMockRule.stubFor(WireMock.get(WireMock.urlPathEqualTo("/v2/cd-play1"))
-    //            .withHeader("Authorization", equalTo("bearerToken"))
-    //            .willReturn(aResponse().withStatus(403).withBody("Response 403")));
+            .willReturn(aResponse().withStatus(200).withBody(
+                "{\"packages\":[{\"name\":\"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/hellowithlabels\",\"createTime\":\"2022-09-14T03:10:05.836970Z\",\"updateTime\":\"2022-09-14T03:10:05.836970Z\"},{\"name\":\"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo\",\"createTime\":\"2022-08-17T09:49:15.509927Z\",\"updateTime\":\"2022-09-14T03:49:07.951039Z\"}]}\n")));
+    wireMockRule.stubFor(
+        WireMock
+            .get(WireMock.urlPathEqualTo("/v1/projects/cd-play/locations/us-south1/repositories/vivek-repo/packages"))
+            .withHeader("Authorization", notMatching("bearerToken"))
+            .willReturn(aResponse().withStatus(401).withBody("Wrong bearer Token")));
+    wireMockRule.stubFor(WireMock
+                             .get(WireMock.urlPathEqualTo(
+                                 "/v1/projects/cd-play/locations/wrong-region/repositories/wrong-repo/packages"))
+                             .withHeader("Authorization", equalTo("bearerToken"))
+                             .willReturn(aResponse().withStatus(404).withBody("Test Body")));
     wireMockRule.stubFor(
         WireMock.get(WireMock.urlPathEqualTo("/v2/cd-play/vivek-repo/mongo/manifests/sha1:2323242"))
             .withHeader("Authorization", equalTo("bearerToken"))
@@ -291,15 +274,30 @@ public class GARApiServiceTest extends CategoryTest {
   @Test
   @Owner(developers = RAKSHIT_AGARWAL)
   @Category(UnitTests.class)
-  public void getRepositoryTest() {
+  public void getPackagesTest() {
     List<BuildDetailsInternal> actual = garApiServiceImpl.getPackages(gcpInternalConfig, "us-south1", "vivek-repo");
-    assertThat(actual).hasSize(3);
+    assertThat(actual).hasSize(2);
 
     assertThat(actual.stream().map(BuildDetailsInternal::getUiDisplayName).collect(Collectors.toList()))
         .isEqualTo(
             Lists.newArrayList("projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/hellowithlabels",
-                "projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo",
-                "projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/ngnix"));
+                "projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo"));
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void getPackagesTest_HintException() {
+    GarInternalConfig modifiedInternalConfig =
+        GarInternalConfig.builder().project("cd-play").bearerToken("wrongbearerToken").maxBuilds(10000).build();
+    assertThatThrownBy(() -> garApiServiceImpl.getPackages(modifiedInternalConfig, "us-south1", "vivek-repo"))
+        .extracting(ex -> ((WingsException) ex).getParams().get("message"))
+        .isEqualTo(
+            "The connector provided does not have sufficient privileges to access Google artifact registry"); // 401
+    modifiedInternalConfig.setBearerToken("bearerToken");
+    assertThatThrownBy(() -> garApiServiceImpl.getPackages(modifiedInternalConfig, "wrong-region", "wrong-repo"))
+        .extracting(ex -> ((WingsException) ex).getParams().get("message"))
+        .isEqualTo("Please provide valid values for region, project and repository fields."); // 404
   }
 
   @Test

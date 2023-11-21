@@ -122,8 +122,8 @@ public class GARApiServiceImpl implements GarApiService {
       return getPackage(garinternalConfig, garRestClient, region, repositoryName);
     } catch (IOException e) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          "Could not fetch versions for the repositoryName:" + repositoryName,
-          "Please check if the repositoryName exists and if the permissions are scoped for the authenticated user",
+          "Could not fetch Packages for the repositoryName:" + repositoryName,
+          "Please check if the package exists and if the permissions are scoped for the authenticated user",
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
     }
   }
@@ -212,14 +212,15 @@ public class GARApiServiceImpl implements GarApiService {
 
       if (response == null) {
         throw NestedExceptionUtils.hintWithExplanationException("Response Is Null",
-            "Please Check Whether Artifact exists or not",
+            "Please Check Whether package exists for the given region:" + region + " and repository:" + repositoryName,
             new InvalidArtifactServerException(response.errorBody().toString(), USER));
       }
       if (!response.isSuccessful()) {
         log.error("Request not successful. Reason: {}", response);
-        if (!isSuccessful(response.code(), response.errorBody().toString())) {
-          throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the versions for the package",
-              "Please check region field", new InvalidArtifactServerException(response.message(), USER));
+        if (!isSuccessful_repo(response.code(), response.errorBody().toString())) {
+          throw NestedExceptionUtils.hintWithExplanationException(
+              "Unable to fetch packages for the region:" + region + "and repository:" + repositoryName,
+              "Please check region and repository field", new InvalidArtifactServerException(response.message(), USER));
         }
       }
 
@@ -288,6 +289,30 @@ public class GARApiServiceImpl implements GarApiService {
       case 404:
         throw new HintException(
             "Please provide valid values for region, project, repository, package and version fields.");
+      case 400:
+        return false;
+      case 401:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "The connector provided does not have sufficient privileges to access Google artifact registry",
+            "Please check connector's permission and credentials",
+            new InvalidArtifactServerException(errormessage, USER));
+      case 403:
+        throw new HintException("Connector provided does not have access to project. Please check the project field.");
+      default:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "The server could have failed authenticate ,Please check your credentials",
+            " Server responded with the following error code",
+            new InvalidArtifactServerException(StringUtils.isNotBlank(errormessage)
+                    ? errormessage
+                    : String.format("Server responded with the following error code - %d", code),
+                USER));
+    }
+  }
+
+  private boolean isSuccessful_repo(int code, String errormessage) {
+    switch (code) {
+      case 404:
+        throw new HintException("Please provide valid values for region, project and repository fields.");
       case 400:
         return false;
       case 401:
