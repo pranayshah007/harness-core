@@ -205,7 +205,7 @@ public class MonitoredServiceResource {
     Preconditions.checkArgument(identifier.equals(monitoredServiceDTO.getIdentifier()),
         String.format(
             "Identifier %s does not match with path identifier %s", monitoredServiceDTO.getIdentifier(), identifier));
-    return new RestResponse<>(monitoredServiceService.update(accountId, monitoredServiceDTO));
+    return new RestResponse<>(monitoredServiceService.update(accountId, monitoredServiceDTO, false));
   }
 
   @PUT
@@ -439,8 +439,7 @@ public class MonitoredServiceResource {
         ApiResponse(responseCode = "default", description = "Delete monitored service data")
       })
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = DELETE_PERMISSION)
-  public RestResponse<Boolean>
-  delete(@NotNull @Valid @BeanParam ProjectScopedProjectParams projectParams,
+  public RestResponse<Boolean> delete(@NotNull @Valid @BeanParam ProjectScopedProjectParams projectParams,
       @Parameter(description = NGCommonEntityConstants.IDENTIFIER_PARAM_MESSAGE) @ApiParam(
           required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(monitoredServiceService.delete(projectParams.getProjectParams(), identifier));

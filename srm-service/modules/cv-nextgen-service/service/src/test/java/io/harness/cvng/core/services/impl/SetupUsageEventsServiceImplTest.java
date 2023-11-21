@@ -141,7 +141,7 @@ public class SetupUsageEventsServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = SOWMYA)
+  @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
   public void testSendDeleteEventsForTemplateReferencedMonitoredService() throws InvalidProtocolBufferException {
     ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);

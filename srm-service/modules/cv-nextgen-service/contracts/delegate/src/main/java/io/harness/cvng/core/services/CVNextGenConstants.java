@@ -51,7 +51,9 @@ public interface CVNextGenConstants {
   String PROJECT_IDENTIFIER_KEY = "projectIdentifier";
   String RESOURCE_IDENTIFIER_KEY = "identifier";
   String ACCOUNT_IDENTIFIER_KEY_PATH = "account/";
+  String ACCOUNT_IDENTIFIER_PREFIX = "account.";
   String ORG_IDENTIFIER_KEY_PATH = "org/";
+  String ORG_IDENTIFIER_PREFIX = "org.";
   String PROJECT_IDENTIFIER_KEY_PATH = "project/";
   String RESOURCE_IDENTIFIER_KEY_PATH = "identifier/";
   String ACCOUNT_PATH = ACCOUNT_IDENTIFIER_KEY_PATH + "{" + ACCOUNT_IDENTIFIER_KEY + "}";

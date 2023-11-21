@@ -9,6 +9,8 @@ package io.harness.cvng.core.services.impl;
 
 import static io.harness.NGConstants.ENTITY_REFERENCE_LOG_PREFIX;
 import static io.harness.annotations.dev.HarnessTeam.CV;
+import static io.harness.cvng.core.services.CVNextGenConstants.ACCOUNT_IDENTIFIER_PREFIX;
+import static io.harness.cvng.core.services.CVNextGenConstants.ORG_IDENTIFIER_PREFIX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CONNECTORS;
@@ -58,8 +60,6 @@ import lombok.extern.slf4j.Slf4j;
 public class SetupUsageEventServiceImpl implements SetupUsageEventService {
   @Inject @Named(SETUP_USAGE) private Producer eventProducer;
   @Inject private IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
-  private static final String ACCOUNT_IDENTIFIER_PREFIX = "account.";
-  private static final String ORG_IDENTIFIER_PREFIX = "org.";
   public static final String STABLE_VERSION = "__STABLE__";
 
   @Override

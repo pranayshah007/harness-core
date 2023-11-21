@@ -53,8 +53,11 @@ public class MonitoredServiceExpressionResolver {
     YamlField rootYamlNode = YamlUtils.readTree(templateResolvedYaml);
     JsonNode rootNode = rootYamlNode.getNode().getCurrJsonNode();
     ObjectNode monitoredService = (ObjectNode) rootNode.get("monitoredService");
+    ObjectNode template = (ObjectNode) monitoredService.get("template");
     monitoredService.put("identifier", REGULAR_EXPRESSION);
     monitoredService.put("name", REGULAR_EXPRESSION);
+    // TODO: we can add check for isTemplateByReference to figure out if we want to store templateInputs or not
+    template.put("templateInputs", YamlUtils.writeYamlString(template.get("templateInputs")));
     return YamlUtils.writeYamlString(rootYamlNode);
   }
 }

@@ -7,9 +7,12 @@
 
 package io.harness.cvng.core.utils.template;
 
+import static io.harness.cvng.core.services.CVNextGenConstants.ACCOUNT_IDENTIFIER_PREFIX;
+import static io.harness.cvng.core.services.CVNextGenConstants.ORG_IDENTIFIER_PREFIX;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.template.TemplateDTO;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
@@ -49,5 +52,17 @@ public class TemplateFacade {
       monitoredServiceData.put(TEMPLATE_KEY, inputMonitoredServiceData.get(TEMPLATE_KEY));
     }
     return yamlObject.dump(data);
+  }
+
+  public String getTemplateInputs(ProjectParams projectParams, TemplateDTO templateDTO) {
+    String templateIdentifier = templateDTO.getTemplateRef();
+    if (templateIdentifier.contains(ACCOUNT_IDENTIFIER_PREFIX)) {
+      templateIdentifier = templateIdentifier.replace(ACCOUNT_IDENTIFIER_PREFIX, "");
+    } else if (templateIdentifier.contains(ORG_IDENTIFIER_PREFIX)) {
+      templateIdentifier = templateIdentifier.replace(ORG_IDENTIFIER_PREFIX, "");
+    }
+    return NGRestUtils.getResponse(templateResourceClient.getTemplateInputsYaml(templateIdentifier,
+        projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(),
+        templateDTO.getVersionLabel(), false));
   }
 }
