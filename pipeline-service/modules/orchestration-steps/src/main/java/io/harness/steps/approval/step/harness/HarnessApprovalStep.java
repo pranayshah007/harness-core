@@ -96,6 +96,7 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
       Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
+    handleExpire()
 
     HarnessApprovalInstance approvalInstance = HarnessApprovalInstance.fromStepParameters(ambiance, stepParameters);
     final List<String> userGroups = approvalInstance.getApprovers().getUserGroups();

@@ -7,8 +7,8 @@
 
 package io.harness.steps.matrix.v1;
 
-import static io.harness.rule.OwnerRule.BRIJESH;
-import static io.harness.rule.OwnerRule.YUVRAJ;
+import static io.harness.beans.FeatureName.CDS_NG_STRATEGY_IDENTIFIER_POSTFIX_TRUNCATION_REFACTOR;
+import static io.harness.rule.OwnerRule.*;
 import static io.harness.yaml.core.MatrixConstants.MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -117,4 +117,89 @@ public class MatrixConfigServiceV1Test extends CategoryTest {
                    MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES))
         .isTrue();
   }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testFetchChildrenHavingFewSameCombinationsWithNodeNames() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("matrix-with-repeating-combinations.yaml");
+    assertThat(testFile).isNotNull();
+    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
+    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid);
+    assertThat(pipelineYamlField).isNotNull();
+    YamlField stagesYamlField = pipelineYamlField.getNode().getField("stages");
+    assertThat(stagesYamlField).isNotNull();
+
+    List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
+
+    YamlField StageYamlField = new YamlField(stageYamlNodes.get(0));
+
+    YamlField strategyField = StageYamlField.getNode().getField("strategy");
+    StrategyConfigV1 strategyConfig = YamlUtils.read(strategyField.getNode().toString(), StrategyConfigV1.class);
+
+    Ambiance ambiance =
+            Ambiance.newBuilder()
+                    .setMetadata(
+                            ExecutionMetadata.newBuilder()
+                                    .putSettingToValueMap(NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName(), "true")
+                                    .putFeatureFlagToValueMap(CDS_NG_STRATEGY_IDENTIFIER_POSTFIX_TRUNCATION_REFACTOR.name(), Boolean.TRUE)
+                                    .build())
+                    .build();
+    List<ChildrenExecutableResponse.Child> children =
+            matrixConfigService.fetchChildren(strategyConfig, "childNodeId", ambiance);
+    assertThat(children.size()).isEqualTo(4);
+    assertThat(children.get(0).getStrategyMetadata().getIdentifierPostFix()).isEqualTo("_true_echo_Hi");
+    assertThat(children.get(1).getStrategyMetadata().getIdentifierPostFix()).isEqualTo("_true_echo_Hi_0");
+    assertThat(children.get(2).getStrategyMetadata().getIdentifierPostFix()).isEqualTo("_false_echo_Hi");
+    assertThat(children.get(3).getStrategyMetadata().getIdentifierPostFix()).isEqualTo("_false_echo_Hi_0");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testFetchChildrenHavingFewSameCombinationsWithLargeNodeNames() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("matrix-with-large-repeating-combinations.yaml");
+    assertThat(testFile).isNotNull();
+    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
+    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid);
+    assertThat(pipelineYamlField).isNotNull();
+    YamlField stagesYamlField = pipelineYamlField.getNode().getField("stages");
+    assertThat(stagesYamlField).isNotNull();
+
+    List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
+
+    YamlField StageYamlField = new YamlField(stageYamlNodes.get(0));
+
+    YamlField strategyField = StageYamlField.getNode().getField("strategy");
+    StrategyConfigV1 strategyConfig = YamlUtils.read(strategyField.getNode().toString(), StrategyConfigV1.class);
+
+    Ambiance ambiance =
+            Ambiance.newBuilder()
+                    .setMetadata(
+                            ExecutionMetadata.newBuilder()
+                                    .putSettingToValueMap(NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName(), "true")
+                                    .putFeatureFlagToValueMap(CDS_NG_STRATEGY_IDENTIFIER_POSTFIX_TRUNCATION_REFACTOR.name(), Boolean.TRUE)
+                                    .build())
+                    .build();
+    List<ChildrenExecutableResponse.Child> children =
+            matrixConfigService.fetchChildren(strategyConfig, "childNodeId", ambiance);
+    assertThat(children.size()).isEqualTo(4);
+    assertThat(children.get(0).getStrategyMetadata().getIdentifierPostFix())
+            .isEqualTo("_true"
+                    + "e".repeat(122));
+    assertThat(children.get(1).getStrategyMetadata().getIdentifierPostFix())
+            .isEqualTo("_true"
+                    + "e".repeat(120) + "_0");
+    assertThat(children.get(2).getStrategyMetadata().getIdentifierPostFix())
+            .isEqualTo("_true"
+                    + "e".repeat(120) + "_1");
+    assertThat(children.get(3).getStrategyMetadata().getIdentifierPostFix())
+            .isEqualTo("_true"
+                    + "e".repeat(120) + "_2");
+  }
+}
 }

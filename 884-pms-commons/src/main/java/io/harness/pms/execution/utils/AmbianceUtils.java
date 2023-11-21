@@ -64,6 +64,7 @@ public class AmbianceUtils {
   public static final String SPECIAL_CHARACTER_REGEX = "[^a-zA-Z0-9]";
   public static final String PIE_SIMPLIFY_LOG_BASE_KEY = "PIE_SIMPLIFY_LOG_BASE_KEY";
   public static final String PIE_SECRETS_OBSERVER = "PIE_SECRETS_OBSERVER";
+  public static final int MAX_CHARACTERS_FOR_IDENTIFIER_POSTFIX = 127;
 
   public static Ambiance cloneForFinish(@NonNull Ambiance ambiance) {
     return clone(ambiance, ambiance.getLevelsList().size() - 1);
