@@ -461,7 +461,7 @@ paths:
       - $ref: '#/components/parameters/ProjectParam'
     post:
       summary: Save Scorecard
-      operationId: processSbomScorecard
+      operationId: saveSbomScorecard
       responses:
         '200':
           description: OK
@@ -1546,10 +1546,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/SbomScorecardRequestBody'
-        application/xml:
-          schema:
-            type: object
-            properties: {}
   securitySchemes:
     x-api-key:
       name: x-api-key
