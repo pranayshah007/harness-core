@@ -103,11 +103,11 @@ public class Constants {
   public static final String ERRORS = "errors";
   public static final String MESSAGE_KEY = "message";
 
-  public static final String QA_HOST = "qa.harness.io";
-  public static final String PRE_QA_HOST = "stress.harness.io";
-  public static final String PROD_HOST = "app.harness.io";
+  public static final String QA_HOST = "https://qa.harness.io";
+  public static final String PRE_QA_HOST = "https://stress.harness.io";
+  public static final String PROD_HOST = "https://app.harness.io";
 
-  public static final String LOCAL_HOST = "localhost:8181";
+  public static final String LOCAL_HOST = "http://localhost:12003";
 
   public static final String QA_ENV = "qa";
   public static final String PRE_QA_ENV = "stress";
