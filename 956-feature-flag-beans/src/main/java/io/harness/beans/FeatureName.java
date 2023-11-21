@@ -937,7 +937,8 @@ public enum FeatureName {
   CDS_APPROVAL_AND_STAGE_NOTIFICATIONS_WITH_CD_METADATA(
       "Improves approval and stage notifications with cd metadata", HarnessTeam.CDC),
   GTM_DEVELOPER_LICENSING("Enable new developer licensing changes", GTM),
-  CDS_ASG_SHIFT_TRAFFIC_STEP_NG("Enable Shift Traffic step for Asg Blue-Green deployments", CDC);
+  CDS_ASG_SHIFT_TRAFFIC_STEP_NG("Enable Shift Traffic step for Asg Blue-Green deployments", CDC),
+  SRM_METRIC_LESS_SLO_ENABLE("Enbale metric less slo creation", CV);
 
   // keep-sorted end
 
