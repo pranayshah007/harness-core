@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.ngpipeline.inputset.service;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -112,7 +113,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   private static final int MAX_LIST_SIZE = 1000;
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
   private static final String EXPLANATION_INPUT_SET_ACCOUNT_SETTING =
-      "As per the account level setting: [Enforce same repo for Pipeline and InputSets], the input set repository is not same as the linked pipeline repository";
+      "As the account level setting: [Allow different repo for Pipeline and InputSets] is disabled, the input set repository and the linked pipeline repository cannot be different";
 
   @Override
   public InputSetEntity create(InputSetEntity inputSetEntity, boolean hasNewYamlStructure) {

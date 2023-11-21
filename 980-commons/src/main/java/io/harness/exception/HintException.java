@@ -151,7 +151,7 @@ public class HintException extends WingsException {
   public static final String HINT_DECRYPTED_SECRET_VALUE = "Please ensure secret with identifier %s exist.";
 
   public static final String HINT_INPUT_SET_ACCOUNT_SETTING =
-      "1) Please check if account level setting is expected to be enabled. \n2) Please check if requested input-set is in same repository as the linked pipeline.";
+      "1) Please check if account level setting: [Allow different repo for Pipeline and InputSets] is enabled. \n2) Please check if requested input-set is in same repository as the linked pipeline.";
   public static final String HINT_DOCKER_HUB_INVALID_IMAGE_PATH = "No tag found for given Image Path";
   public static final String CHECK_CREDENTIALS_ON_CONFIGURATION_PAGE =
       "Please provide valid credentials on configuration page.";
