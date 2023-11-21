@@ -73,6 +73,7 @@ public interface YamlPreProcessor {
       idSuffix = RandomStringUtils.randomAlphanumeric(4);
       idWithSuffix = id + "_" + idSuffix;
     }
+    idsValuesSet.add(idWithSuffix);
     return idWithSuffix;
   }
 }

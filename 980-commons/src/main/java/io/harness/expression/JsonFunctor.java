@@ -39,7 +39,7 @@ public class JsonFunctor implements ExpressionFunctor {
 
   public Object select(String path, String json) {
     final Object object = JsonUtils.jsonPath(json, path);
-    log.info(String.format("Json functor evaluated for the Json: %s and path %s", json, path));
+    log.debug(String.format("Json functor evaluated for the Json: %s and path %s", json, path));
     if (object instanceof String) {
       return object;
     } else if (object instanceof LinkedList) {

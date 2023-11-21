@@ -24,6 +24,7 @@ import software.wings.beans.Account.AccountKeys;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -34,6 +35,7 @@ public class AccountRingInfoIterator
   @Inject private io.harness.iterator.PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MorphiaPersistenceProvider<Account> persistenceProvider;
   @Inject private AccountRingInfoMetricHelper accountRingInfoMetricHelper;
+  private static Long time;
 
   @Override
   protected void createAndStartIterator(
@@ -77,9 +79,13 @@ public class AccountRingInfoIterator
 
   @Override
   public void handle(Account account) {
-    log.info("Account being handled {}", account.getAccountName());
+    long currentTime = System.currentTimeMillis();
+    if (time == null || TimeUnit.MILLISECONDS.toMinutes(currentTime - time) >= 30) {
+      time = currentTime;
+    }
+    log.debug("Account being handled {}", account.getAccountName());
     accountRingInfoMetricHelper.addAccountRingInfoMetric(
-        account.getUuid(), account.getAccountName(), account.getRingName());
+        account.getUuid(), account.getAccountName(), account.getRingName(), time);
   }
 
   private MorphiaFilterExpander<Account> getFilterQuery() {

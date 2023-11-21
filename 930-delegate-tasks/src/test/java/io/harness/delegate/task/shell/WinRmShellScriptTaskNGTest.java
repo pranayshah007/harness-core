@@ -9,6 +9,7 @@ package io.harness.delegate.task.shell;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.FILIP;
+import static io.harness.rule.OwnerRule.VED;
 
 import static java.util.Collections.emptyList;
 import static org.mockito.ArgumentMatchers.any;
@@ -127,12 +128,65 @@ public class WinRmShellScriptTaskNGTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void shouldReturnSuccessWhenExecutedOnDelegateWithCommandUnit() {
+    // given
+    TaskParameters parameters = WinRmShellScriptTaskParametersNG.builder()
+                                    .executeOnDelegate(true)
+                                    .outputVars(emptyList())
+                                    .secretOutputVars(emptyList())
+                                    .commandUnit(ShellScriptTaskNG.COMMAND_UNIT)
+                                    .build();
+
+    when(executor.executeCommandString(any(), anyList()))
+        .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
+    when(executor.executeCommandString(any(), anyList(), anyList(), any()))
+        .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
+
+    // when
+    DelegateResponseData responseData = winRmShellScriptTask.run(parameters);
+
+    // then
+    Assertions.assertThat(responseData)
+        .isNotNull()
+        .asInstanceOf(InstanceOfAssertFactories.type(ShellScriptTaskResponseNG.class))
+        .extracting(ShellScriptTaskResponseNG::getStatus)
+        .isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
   public void shouldReturnFailureWhenExecutorReturnFailureOnDelegate() {
     // given
     TaskParameters parameters =
         WinRmShellScriptTaskParametersNG.builder().executeOnDelegate(true).outputVars(emptyList()).build();
+
+    when(executor.executeCommandString(any(), anyList()))
+        .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.FAILURE).build());
+
+    // when
+    DelegateResponseData responseData = winRmShellScriptTask.run(parameters);
+
+    // then
+    Assertions.assertThat(responseData)
+        .isNotNull()
+        .asInstanceOf(InstanceOfAssertFactories.type(ShellScriptTaskResponseNG.class))
+        .extracting(ShellScriptTaskResponseNG::getStatus)
+        .isEqualTo(CommandExecutionStatus.FAILURE);
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void shouldReturnFailureWhenExecutorReturnFailureOnDelegateWithCommandUnitGiven() {
+    // given
+    TaskParameters parameters = WinRmShellScriptTaskParametersNG.builder()
+                                    .executeOnDelegate(true)
+                                    .outputVars(emptyList())
+                                    .commandUnit(ShellScriptTaskNG.COMMAND_UNIT)
+                                    .build();
 
     when(executor.executeCommandString(any(), anyList()))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.FAILURE).build());

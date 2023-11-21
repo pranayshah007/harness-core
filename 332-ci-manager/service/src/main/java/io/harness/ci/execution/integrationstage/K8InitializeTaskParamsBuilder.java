@@ -18,6 +18,7 @@ import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STEP
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STEP_NUMBER;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_SERVICE_LOG_KEY_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PORT_STARTING_RANGE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
@@ -135,6 +136,9 @@ public class K8InitializeTaskParamsBuilder {
       K8PodDetails k8PodDetails, K8sDirectInfraYaml k8sDirectInfraYaml, Ambiance ambiance, String logPrefix) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     String connectorRef = k8sDirectInfraYaml.getSpec().getConnectorRef().getValue();
+    if (isEmpty(connectorRef)) {
+      throw new CIStageExecutionException("Kubernetes connector identifier cannot be empty for the stage.");
+    }
     ConnectorDetails k8sConnector = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
     return CIK8InitializeTaskParams.builder()
         .k8sConnector(k8sConnector)

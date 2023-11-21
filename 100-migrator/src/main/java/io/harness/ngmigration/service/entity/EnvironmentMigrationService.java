@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.service.entity;
+
 import static io.harness.beans.EnvironmentType.PROD;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.environment.beans.EnvironmentType.PreProduction;
@@ -46,6 +47,7 @@ import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.service.MigrationHelperService;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -98,7 +100,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
   @Inject ConfigService configService;
   @Inject ConfigFileMigrationService configFileMigrationService;
   @Inject EnvironmentResourceClient environmentResourceClient;
-  @Inject private MigratorUtility migratorUtility;
+  @Inject private MigrationHelperService migrationHelperService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -285,7 +287,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
                     .type(PROD == environment.getEnvironmentType() ? Production : PreProduction)
                     .build())
             .build();
-    Map<String, Object> custom = MigratorUtility.updateContextVariables(migrationContext, entities, environment);
+    Map<String, Object> custom = migrationHelperService.updateContextVariables(migrationContext, entities, environment);
     MigratorExpressionUtils.render(migrationContext, environmentConfig, custom);
 
     List<NGYamlFile> files = new ArrayList<>();

@@ -7,16 +7,21 @@
 
 package io.harness.cdng.service.steps.helpers.serviceoverridesv2.services;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.filter.FilterType.OVERRIDE;
 import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
 
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.exception.InvalidRequestException;
+import io.harness.filter.dto.FilterDTO;
+import io.harness.filter.service.FilterService;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.serviceoverride.beans.OverrideFilterPropertiesDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
+import io.harness.scope.ScopeHelper;
 
 import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;

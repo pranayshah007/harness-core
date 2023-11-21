@@ -118,8 +118,8 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     String name = node.getName();
     String identifier = node.getIdentifier();
     if (metadata != null && metadata.getStrategyMetadata() != null) {
-      name = AmbianceUtils.modifyIdentifier(metadata.getStrategyMetadata(), node.getName());
-      identifier = AmbianceUtils.modifyIdentifier(metadata.getStrategyMetadata(), node.getIdentifier());
+      name = AmbianceUtils.modifyIdentifier(metadata.getStrategyMetadata(), node.getName(), ambiance);
+      identifier = AmbianceUtils.modifyIdentifier(metadata.getStrategyMetadata(), node.getIdentifier(), ambiance);
     }
     NodeExecution nodeExecution =
         NodeExecution.builder()

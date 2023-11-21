@@ -129,7 +129,7 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
       if (useFromStageInfraYaml.getUseFromStage() != null) {
         YamlField yamlField = ctx.getCurrentField();
         String identifier = useFromStageInfraYaml.getUseFromStage();
-        IntegrationStageConfig useFromStage = getIntegrationStageConfig(yamlField, identifier);
+        IntegrationStageConfig useFromStage = getIntegrationStageConfigFromPreviousStage(yamlField, identifier);
         infrastructure = useFromStage.getInfrastructure();
         if (infrastructure == null) {
           infrastructure = getRuntimeInfrastructure(useFromStage);
@@ -144,13 +144,22 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
     return integrationStageConfig.getCaching();
   }
 
-  private static IntegrationStageConfig getIntegrationStageConfig(YamlField yamlField, String identifier) {
+  private static IntegrationStageConfig getIntegrationStageConfigFromPreviousStage(
+      YamlField yamlField, String identifier) {
     try {
       YamlField stageYamlField = PlanCreatorUtils.getStageConfig(yamlField, identifier);
+      if (stageYamlField == null) {
+        String stage = yamlField.getNode().getIdentifier();
+        throw new CIStageExecutionException(
+            String.format("Stage %s has useFromStage dependency on Stage %s. Please select the Stage %s to run %s ",
+                stage, identifier, identifier, stage));
+      }
       IntegrationStageNode stageNode =
           YamlUtils.read(YamlUtils.writeYamlString(stageYamlField), IntegrationStageNode.class);
       return (IntegrationStageConfig) stageNode.getStageInfoConfig();
 
+    } catch (CIStageExecutionException ciStageException) {
+      throw ciStageException;
     } catch (Exception ex) {
       throw new CIStageExecutionException(
           "Failed to deserialize IntegrationStage for use from stage identifier: " + identifier, ex);

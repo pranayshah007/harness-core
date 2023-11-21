@@ -13,8 +13,12 @@ import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.KARAN;
 
 import static java.util.Collections.emptySet;
+import static java.util.Optional.of;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
@@ -127,9 +131,10 @@ public class HarnessUserGroupServiceImplTest extends AccessControlTestBase {
                                                                  .build())));
     when(userGroupService.upsert(userGroup)).thenReturn(userGroup);
     Optional<UserGroup> userGroupOptional =
-        Optional.of(UserGroup.builder().identifier(identifier).scopeIdentifier(scope.toString()).build());
+        of(UserGroup.builder().identifier(identifier).scopeIdentifier(scope.toString()).build());
     when(userGroupService.get(identifier, userGroup.getScopeIdentifier())).thenReturn(userGroupOptional);
     UserGroupUpdateEventData userGroupUpdateEventData = UserGroupUpdateEventData.builder()
+                                                            .scope(of(scope))
                                                             .usersAdded(users)
                                                             .usersRemoved(emptySet())
                                                             .updatedUserGroup(userGroup)
@@ -138,7 +143,8 @@ public class HarnessUserGroupServiceImplTest extends AccessControlTestBase {
     harnessUserGroupService.sync(identifier, scope);
     verify(userGroupClient, atLeastOnce()).getUserGroup(identifier, accountIdentifier, null, null);
     verify(userGroupService, times(1)).upsert(userGroup);
-    verify(accessControlChangeConsumer, times(1)).consumeEvent(UPDATE_ACTION, null, userGroupUpdateEventData);
+    verify(accessControlChangeConsumer, times(1))
+        .consumeEvent(eq(UPDATE_ACTION), isNull(), refEq(userGroupUpdateEventData));
   }
 
   @Test
@@ -162,8 +168,8 @@ public class HarnessUserGroupServiceImplTest extends AccessControlTestBase {
                                                                  .identifier(identifier)
                                                                  .build())));
     when(userGroupService.upsert(userGroup)).thenReturn(userGroup);
-    Optional<UserGroup> userGroupOptional = Optional.of(
-        UserGroup.builder().identifier(identifier).users(emptySet()).scopeIdentifier(scope.toString()).build());
+    Optional<UserGroup> userGroupOptional =
+        of(UserGroup.builder().identifier(identifier).users(emptySet()).scopeIdentifier(scope.toString()).build());
     when(userGroupService.get(identifier, userGroup.getScopeIdentifier())).thenReturn(userGroupOptional);
     harnessUserGroupService.sync(identifier, scope);
     verify(userGroupClient, atLeastOnce()).getUserGroup(identifier, accountIdentifier, null, null);

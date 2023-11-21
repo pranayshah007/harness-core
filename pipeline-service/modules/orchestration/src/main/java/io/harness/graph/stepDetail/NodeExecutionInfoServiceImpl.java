@@ -6,8 +6,6 @@
  */
 
 package io.harness.graph.stepDetail;
-
-import static io.harness.plancreator.strategy.StrategyConstants.IDENTIFIER_POSTFIX;
 import static io.harness.plancreator.strategy.StrategyConstants.ITEM;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATION;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATIONS;
@@ -231,7 +229,7 @@ public class NodeExecutionInfoServiceImpl implements NodeExecutionInfoService {
   }
 
   @Override
-  public Map<String, Object> fetchStrategyObjectMap(String nodeExecutionId) {
+  public Map<String, Object> fetchStrategyObjectMap(String nodeExecutionId, boolean useMatrixFieldName) {
     Map<String, StrategyMetadata> strategyMetadataMap =
         fetchStrategyMetadata(Collections.singletonList(nodeExecutionId));
     Map<String, Object> strategyObjectMap = new HashMap<>();
@@ -244,7 +242,8 @@ public class NodeExecutionInfoServiceImpl implements NodeExecutionInfoService {
     StrategyMetadata strategyMetadata = strategyMetadataMap.get(nodeExecutionId);
     Map<String, Object> matrixValuesMap = new HashMap<>();
     Map<String, Object> repeatValuesMap = new HashMap<>();
-    strategyObjectMap = getStrategyMapInternal(strategyMetadata, matrixValuesMap, repeatValuesMap, strategyObjectMap);
+    strategyObjectMap = getStrategyMapInternal(
+        strategyMetadata, matrixValuesMap, repeatValuesMap, strategyObjectMap, useMatrixFieldName);
     strategyObjectMap.put(MATRIX, matrixValuesMap);
     strategyObjectMap.put(REPEAT, repeatValuesMap);
 
@@ -252,7 +251,8 @@ public class NodeExecutionInfoServiceImpl implements NodeExecutionInfoService {
   }
 
   @Override
-  public Map<String, Object> fetchStrategyObjectMap(List<Level> levelsWithStrategyMetadata) {
+  public Map<String, Object> fetchStrategyObjectMap(
+      List<Level> levelsWithStrategyMetadata, boolean useMatrixFieldName) {
     Map<String, Object> strategyObjectMap = new HashMap<>();
     Map<String, Object> matrixValuesMap = new HashMap<>();
     Map<String, Object> repeatValuesMap = new HashMap<>();
@@ -268,7 +268,8 @@ public class NodeExecutionInfoServiceImpl implements NodeExecutionInfoService {
                      .currentIteration(strategyMetadata.getCurrentIteration())
                      .totalIterations(strategyMetadata.getTotalIterations())
                      .build());
-      strategyObjectMap = getStrategyMapInternal(strategyMetadata, matrixValuesMap, repeatValuesMap, strategyObjectMap);
+      strategyObjectMap = getStrategyMapInternal(
+          strategyMetadata, matrixValuesMap, repeatValuesMap, strategyObjectMap, useMatrixFieldName);
       if (LevelUtils.isStepLevel(level)) {
         StrategyUtils.fetchGlobalIterationsVariablesForStrategyObjectMap(strategyObjectMap, levels);
       }
@@ -280,7 +281,8 @@ public class NodeExecutionInfoServiceImpl implements NodeExecutionInfoService {
   }
 
   private Map<String, Object> getStrategyMapInternal(StrategyMetadata strategyMetadata,
-      Map<String, Object> matrixValuesMap, Map<String, Object> repeatValuesMap, Map<String, Object> strategyObjectMap) {
+      Map<String, Object> matrixValuesMap, Map<String, Object> repeatValuesMap, Map<String, Object> strategyObjectMap,
+      boolean useMatrixFieldName) {
     if (strategyMetadata.hasMatrixMetadata()) {
       // MatrixMapLocal can contain either a string as value or a json as value.
       Map<String, String> matrixMapLocal = strategyMetadata.getMatrixMetadata().getMatrixValuesMap();
@@ -294,7 +296,8 @@ public class NodeExecutionInfoServiceImpl implements NodeExecutionInfoService {
     strategyObjectMap.put(ITERATION, strategyMetadata.getCurrentIteration());
     strategyObjectMap.put(ITERATIONS, strategyMetadata.getTotalIterations());
     strategyObjectMap.put(TOTAL_ITERATIONS, strategyMetadata.getTotalIterations());
-    strategyObjectMap.put(IDENTIFIER_POSTFIX, strategyMetadata.getIdentifierPostFix());
+    strategyObjectMap.put(
+        "identifierPostFix", AmbianceUtils.getStrategyPostFixUsingMetadata(strategyMetadata, useMatrixFieldName));
     return strategyObjectMap;
   }
 

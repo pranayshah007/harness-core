@@ -12,6 +12,7 @@ import static io.harness.expression.SecretString.SECRET_MASK;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +20,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LogSanitizerHelper {
   public static final String JWT_REGEX = "[\\w-]*\\.[\\w-]*\\.[\\w-]*";
+  public static final String GITHUB_TOKENS = "ghp_[a-zA-Z0-9]{1,50}";
+  public static final Pattern github = Pattern.compile(GITHUB_TOKENS);
   public static final Pattern pattern = Pattern.compile(JWT_REGEX);
-  public static String sanitizeJWT(String message) {
+
+  public static String sanitizeTokens(String message) {
     String finalMessage = message;
     List<String> regexMatches = pattern.matcher(message)
                                     .results()
@@ -35,6 +39,9 @@ public class LogSanitizerHelper {
         log.error("Error while trying to decode JWT", ex);
       }
     }
-    return message;
+
+    // replace githubtokens
+    Matcher matcher = github.matcher(message);
+    return matcher.replaceAll(SECRET_MASK);
   }
 }

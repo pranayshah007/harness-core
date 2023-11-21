@@ -182,19 +182,28 @@ public class StringReplacer {
     expressionStartPos--;
     while (expressionStartPos >= 0) {
       char c = buf.charAt(expressionStartPos);
-      if (c == '(' || c == '[' || c == ',') {
+      if (c == '[') {
+        // Expression inside [], square brackets denote get method for list/map, thus don't take decision of concatenate
+        // from left substring
+        if (checkIfSquareBracketIsGetMethod(buf, expressionStartPos)) {
+          break;
+        }
+        // if there's no alphabet character before [ then it can't be used as a get method for list/map hence it can be
+        // concatenated
+        return true;
+      } else if (c == '(') {
         // expression is inside a method invocation, thus don't take decision of concatenate from left substring
+        break;
+      } else if (c == ',') {
         // , denotes it could be part of parameter in method, example <+json.list("$", <+var1>)>, then var1 shouldn't be
         // concatenated.
-        // Expression inside [], square brackets denote get method, thus should be also be considered.
-        break;
+        if (checkIfCommaIsInMethodInvocationInLeftSubstring(buf, expressionStartPos)) {
+          break;
+        }
+        return true;
       } else if (c == ':') {
         // Checking : belongs to ternary operator or not, if not concatenate it
-        if (!buf.toString().contains("?")) {
-          return true;
-        } else {
-          return false;
-        }
+        return !checkIfColonBelongsToTernaryOperator(buf);
       } else if (checkIfStringMathematicalOperator(c) || checkBooleanOperators(buf, expressionStartPos, true)
           || checkConditionalOrLoopOperators(buf, expressionStartPos)) {
         return false;
@@ -207,19 +216,21 @@ public class StringReplacer {
     // Check on right if any first string mathematical operator found or not
     while (expressionEndPos <= buf.length() - 1) {
       char c = buf.charAt(expressionEndPos);
-      if (c == ')' || c == ']' || c == ',') {
-        // expression is inside a method invocation, thus don't take decision of concatenate from right substring
+      if (c == ',') {
         // , denotes it could be part of parameter in method, example <+json.list("$", <+var1>)>, then var1 shouldn't be
         // concatenated.
+        if (checkIfCommaIsInMethodInvocationInRightSubstring(buf, expressionStartPos, expressionEndPos)) {
+          break;
+        }
+        return true;
+      }
+      if (c == ')' || c == ']') {
+        // expression is inside a method invocation, thus don't take decision of concatenate from right substring
         // Expression inside [], square brackets denote get method, thus should be also be considered.
         break;
       } else if (c == ':') {
         // Checking : belongs to ternary operator or not, if not concatenate it
-        if (!buf.toString().contains("?")) {
-          return true;
-        } else {
-          return false;
-        }
+        return !checkIfColonBelongsToTernaryOperator(buf);
       } else if (checkIfStringMathematicalOperator(c) || checkBooleanOperators(buf, expressionEndPos, false)) {
         return false;
       } else if (!skipNonCriticalCharacters(c)) {
@@ -322,6 +333,44 @@ public class StringReplacer {
     // =$ and !$ endsWith and its negate operator
     return c == '+' || c == '=' || c == '?' || c == '&' || c == '|' || c == '!' || c == '~' || c == '^' || c == '$'
         || c == '>';
+  }
+
+  private boolean checkIfCommaIsInMethodInvocationInLeftSubstring(StringBuffer buf, int currentPos) {
+    int i = currentPos - 1;
+    for (; i >= 0; i--) {
+      if (buf.charAt(i) == ')') {
+        return false;
+      }
+      if (buf.charAt(i) == '(') {
+        break;
+      }
+    }
+    if (i > 0) {
+      return StringUtils.isAlpha(String.valueOf(buf.charAt(i - 1)));
+    }
+    return false;
+  }
+
+  private boolean checkIfCommaIsInMethodInvocationInRightSubstring(
+      StringBuffer buf, int currentPos, int expressionEndPos) {
+    int i = currentPos + 1;
+    for (; i < expressionEndPos; i++) {
+      if (buf.charAt(i) == '(') {
+        return false;
+      }
+      if (buf.charAt(i) == ')') {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean checkIfSquareBracketIsGetMethod(StringBuffer buf, int currentPos) {
+    return currentPos > 0 && StringUtils.isAlpha(String.valueOf(buf.charAt(currentPos - 1)));
+  }
+
+  private boolean checkIfColonBelongsToTernaryOperator(StringBuffer buf) {
+    return buf.toString().contains("?");
   }
 
   private boolean skipNonCriticalCharacters(char c) {

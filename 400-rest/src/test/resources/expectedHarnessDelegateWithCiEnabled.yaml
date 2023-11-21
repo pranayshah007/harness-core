@@ -158,19 +158,3 @@ spec:
         - name: GRPC_SERVICE_CONNECTOR_PORT
           value: "8080"
       restartPolicy: Always
-
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: delegate-service
-  namespace: harness-delegate
-spec:
-  type: ClusterIP
-  selector:
-    harness.io/app: harness-delegate
-    harness.io/account: accoun
-    harness.io/name: harness-delegate
-  ports:
-    - port: 8080

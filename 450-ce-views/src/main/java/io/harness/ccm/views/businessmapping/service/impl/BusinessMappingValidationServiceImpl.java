@@ -144,6 +144,9 @@ public class BusinessMappingValidationServiceImpl implements BusinessMappingVali
     final ViewField viewField = viewCondition.getViewField();
     if (viewField.getIdentifier() == BUSINESS_MAPPING) {
       final BusinessMapping businessMapping = businessMappingDao.get(viewField.getFieldId());
+      if (Objects.isNull(businessMapping)) {
+        throw new InvalidRequestException(String.format("Invalid business mapping id %s", viewField.getFieldId()));
+      }
       if (!isEmpty(businessMapping.getCostTargets())) {
         validateCyclicDependency(businessMapping.getCostTargets(), nestedBusinessMappingDepth + 1);
         if (!isEmpty(businessMapping.getSharedCosts())) {

@@ -35,6 +35,7 @@ import software.wings.beans.AWSTemporaryCredentials;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.beans.command.AWS4SignerForAuthorizationHeader;
+import software.wings.service.impl.AwsApiHelperService;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.intfc.security.EncryptionService;
 
@@ -67,6 +68,7 @@ public class AwsS3ArtifactDownloadHandler implements ArtifactDownloadHandler {
   @Inject private EncryptionService encryptionService;
   @Inject private AwsHelperService awsHelperService;
   @Inject private SecretDecryptionService secretDecryptionService;
+  @Inject private AwsApiHelperService awsApiHelperService;
 
   @Override
   public String getCommandString(
@@ -117,15 +119,25 @@ public class AwsS3ArtifactDownloadHandler implements ArtifactDownloadHandler {
     String awsSecretKey;
     String awsToken = null;
     if (awsConfigDecrypted.isUseEc2IamCredentials()) {
-      AWSTemporaryCredentials credentials =
-          awsHelperService.getCredentialsForIAMROleOnDelegate(AWS_CREDENTIALS_URL, awsConfigDecrypted);
-      awsAccessKey = credentials.getAccessKeyId();
-      awsSecretKey = credentials.getSecretKey();
-      awsToken = credentials.getToken();
+      if (awsConfigDecrypted.isAssumeCrossAccountRole()) {
+        AWSCredentialsProvider aWSCredentialsProvider = awsHelperService.getAWSCredentialsProvider(awsConfigDecrypted);
+        AWSCredentials awsCredentials = aWSCredentialsProvider.getCredentials();
+        awsAccessKey = awsCredentials.getAWSAccessKeyId();
+        awsSecretKey = awsCredentials.getAWSSecretKey();
+        if (aWSCredentialsProvider.getCredentials() instanceof AWSSessionCredentials) {
+          awsToken = ((AWSSessionCredentials) awsCredentials).getSessionToken();
+        }
+      } else {
+        AWSTemporaryCredentials credentials =
+            awsHelperService.getCredentialsForIAMROleOnDelegate(AWS_CREDENTIALS_URL, awsConfigDecrypted);
+        awsAccessKey = credentials.getAccessKeyId();
+        awsSecretKey = credentials.getSecretKey();
+        awsToken = credentials.getToken();
+      }
+
     } else {
       if (awsConfigDecrypted.isAssumeCrossAccountRole() || awsConfigDecrypted.isUseIRSA()) {
-        AWSCredentialsProvider aWSCredentialsProvider =
-            awsHelperService.getCredentialsForCrossAccountRoleOnDelegate(awsConfigDecrypted);
+        AWSCredentialsProvider aWSCredentialsProvider = awsHelperService.getAWSCredentialsProvider(awsConfigDecrypted);
         AWSCredentials awsCredentials = aWSCredentialsProvider.getCredentials();
         awsAccessKey = awsCredentials.getAWSAccessKeyId();
         awsSecretKey = awsCredentials.getAWSSecretKey();
@@ -137,6 +149,7 @@ public class AwsS3ArtifactDownloadHandler implements ArtifactDownloadHandler {
         awsSecretKey = String.valueOf(awsConfigDecrypted.getSecretKey());
       }
     }
+
     String bucketName = s3ArtifactDelegateConfig.getBucketName();
     if (isEmpty(bucketName)) {
       throw new InvalidRequestException("Bucket name needs to be defined");
@@ -214,11 +227,13 @@ public class AwsS3ArtifactDownloadHandler implements ArtifactDownloadHandler {
         case AwsConstants.INHERIT_FROM_DELEGATE: {
           configBuilder.useEc2IamCredentials(true);
           configBuilder.useIRSA(false);
-          configBuilder.tag(((AwsInheritFromDelegateSpecDTO) awsCredentialDTO.getConfig())
-                                .getDelegateSelectors()
-                                .stream()
-                                .findAny()
-                                .orElse(null));
+          if (awsCredentialDTO.getConfig() != null) {
+            configBuilder.tag(((AwsInheritFromDelegateSpecDTO) awsCredentialDTO.getConfig())
+                                  .getDelegateSelectors()
+                                  .stream()
+                                  .findAny()
+                                  .orElse(null));
+          }
         } break;
         case AwsConstants.MANUAL_CONFIG: {
           configBuilder.useEc2IamCredentials(false);

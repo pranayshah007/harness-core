@@ -10,6 +10,8 @@ package io.harness.aggregator.consumers;
 import static io.harness.accesscontrol.common.AccessControlTestUtils.getRandomString;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.roles.RoleTestUtils.buildRole;
+import static io.harness.aggregator.ACLEventProcessingConstants.UPDATE_ACTION;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 
 import static junit.framework.TestCase.assertEquals;
@@ -34,7 +36,10 @@ import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.Ro
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.accesscontrol.roles.Role;
 import io.harness.accesscontrol.roles.RoleService;
+import io.harness.accesscontrol.scopes.HarnessScopeLevel;
+import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
+import io.harness.aggregator.AccessControlAdminService;
 import io.harness.aggregator.AggregatorTestBase;
 import io.harness.aggregator.models.ResourceGroupChangeEventData;
 import io.harness.category.element.UnitTests;
@@ -65,6 +70,7 @@ public class ResourceGroupChangeConsumerTest extends AggregatorTestBase {
   private ResourceGroupService resourceGroupService;
   private ResourceGroupChangeConsumer resourceGroupChangeConsumer;
   private InMemoryPermissionRepository inMemoryPermissionRepository;
+  private AccessControlAdminService accessControlAdminService;
   @Inject @Named("batchSizeForACLCreation") private int batchSizeForACLCreation;
   ACLGeneratorService aclGeneratorService;
   private Role role;
@@ -79,11 +85,13 @@ public class ResourceGroupChangeConsumerTest extends AggregatorTestBase {
     roleAssignmentRepository = mock(RoleAssignmentRepository.class);
     resourceGroupRepository = mock(ResourceGroupRepository.class);
     inMemoryPermissionRepository = mock(InMemoryPermissionRepository.class);
+    accessControlAdminService = mock(AccessControlAdminService.class);
+    when(accessControlAdminService.isBlocked(any())).thenReturn(false);
     when(inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(any(), any())).thenReturn(true);
     aclGeneratorService = new ACLGeneratorServiceImpl(roleService, userGroupService, resourceGroupService, scopeService,
         new HashMap<>(), aclRepository, inMemoryPermissionRepository, batchSizeForACLCreation);
-    resourceGroupChangeConsumer =
-        new ResourceGroupChangeConsumer(aclRepository, roleAssignmentRepository, aclGeneratorService);
+    resourceGroupChangeConsumer = new ResourceGroupChangeConsumer(
+        aclRepository, roleAssignmentRepository, aclGeneratorService, accessControlAdminService);
     aclRepository.cleanCollection();
     role = buildRole(scopeIdentifier);
   }
@@ -130,8 +138,8 @@ public class ResourceGroupChangeConsumerTest extends AggregatorTestBase {
     String identifier = randomAlphabetic(10);
     ResourceGroup resourceGroup = getResourceGroup(identifier, scopeIdentifier);
     List<RoleAssignmentDBO> roleAssignmentDBOs = createACLsForRoleAssignments(5, resourceGroup);
-    verifyACLs(resourceGroup, roleAssignmentDBOs, resourceGroup.getResourceSelectorsV2().size(), 1,
-        role.getPermissions().size());
+    verifyACLs(resourceGroup, roleAssignmentDBOs, role.getPermissions().size(), 1,
+        resourceGroup.getResourceSelectorsV2().size());
     ResourceGroup updatedResourceGroup = getResourceGroup(identifier, scopeIdentifier);
     setUpACLGenerationForRoleAssignments(updatedResourceGroup, roleAssignmentDBOs);
     Set<ResourceSelector> resourceSelectorsAdded =
@@ -145,7 +153,8 @@ public class ResourceGroupChangeConsumerTest extends AggregatorTestBase {
                                                                     .removedResourceSelectors(resourceSelectorsDeleted)
                                                                     .build();
     resourceGroupChangeConsumer.consumeUpdateEvent(null, resourceGroupChangeEventData);
-    verifyACLs(updatedResourceGroup, roleAssignmentDBOs, role.getPermissions().size(), 1, role.getPermissions().size());
+    verifyACLs(updatedResourceGroup, roleAssignmentDBOs, role.getPermissions().size(), 1,
+        updatedResourceGroup.getResourceSelectorsV2().size());
   }
 
   @Test
@@ -155,8 +164,8 @@ public class ResourceGroupChangeConsumerTest extends AggregatorTestBase {
     String identifier = randomAlphabetic(10);
     ResourceGroup resourceGroup = getResourceGroup(identifier, scopeIdentifier);
     List<RoleAssignmentDBO> roleAssignmentDBOs = createACLsForRoleAssignments(5, resourceGroup);
-    verifyACLs(resourceGroup, roleAssignmentDBOs, resourceGroup.getResourceSelectorsV2().size(), 1,
-        role.getPermissions().size());
+    verifyACLs(resourceGroup, roleAssignmentDBOs, role.getPermissions().size(), 1,
+        resourceGroup.getResourceSelectorsV2().size());
     ResourceGroup updatedResourceGroup = getResourceGroupWithNoResourcesSelected(identifier, scopeIdentifier);
     setUpACLGenerationForRoleAssignments(updatedResourceGroup, roleAssignmentDBOs);
     Set<ResourceSelector> resourceSelectorsAdded =
@@ -176,7 +185,7 @@ public class ResourceGroupChangeConsumerTest extends AggregatorTestBase {
   @Test
   @Owner(developers = JIMIT_GANDHI)
   @Category(UnitTests.class)
-  public void updateResourceGroupFromEmptyToNonEmpt() {
+  public void updateResourceGroupFromEmptyToNonEmpty() {
     String identifier = randomAlphabetic(10);
     ResourceGroup resourceGroup = getResourceGroupWithNoResourcesSelected(identifier, scopeIdentifier);
     List<RoleAssignmentDBO> roleAssignmentDBOs = createACLsForRoleAssignments(5, resourceGroup);
@@ -194,7 +203,37 @@ public class ResourceGroupChangeConsumerTest extends AggregatorTestBase {
                                                                     .removedResourceSelectors(resourceSelectorsDeleted)
                                                                     .build();
     resourceGroupChangeConsumer.consumeUpdateEvent(null, resourceGroupChangeEventData);
-    verifyACLs(updatedResourceGroup, roleAssignmentDBOs, role.getPermissions().size(), 1, role.getPermissions().size());
+    verifyACLs(updatedResourceGroup, roleAssignmentDBOs, role.getPermissions().size(), 1,
+        updatedResourceGroup.getResourceSelectorsV2().size());
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void doNotUpdateResourceGroupFromEmptyToNonEmpty_IfAccountIsBlocked() {
+    String identifier = randomAlphabetic(10);
+    ResourceGroup resourceGroup = getResourceGroupWithNoResourcesSelected(identifier, scopeIdentifier);
+    List<RoleAssignmentDBO> roleAssignmentDBOs = createACLsForRoleAssignments(5, resourceGroup);
+    verifyACLs(resourceGroup, roleAssignmentDBOs, 0, 0, 0);
+    ResourceGroup updatedResourceGroup = getResourceGroup(identifier, scopeIdentifier);
+    setUpACLGenerationForRoleAssignments(updatedResourceGroup, roleAssignmentDBOs);
+    Set<ResourceSelector> resourceSelectorsAdded =
+        ResourceGroup.getDiffOfResourceSelectors(updatedResourceGroup, resourceGroup);
+    Set<ResourceSelector> resourceSelectorsDeleted =
+        ResourceGroup.getDiffOfResourceSelectors(resourceGroup, updatedResourceGroup);
+
+    ResourceGroupChangeEventData resourceGroupChangeEventData =
+        ResourceGroupChangeEventData.builder()
+            .scope(Optional.ofNullable(
+                Scope.builder().level(HarnessScopeLevel.ACCOUNT).instanceId("some-account-id").build()))
+            .updatedResourceGroup(updatedResourceGroup)
+            .addedResourceSelectors(resourceSelectorsAdded)
+            .removedResourceSelectors(resourceSelectorsDeleted)
+            .build();
+    when(accessControlAdminService.isBlocked(any())).thenReturn(true);
+
+    resourceGroupChangeConsumer.consumeEvent(UPDATE_ACTION, null, resourceGroupChangeEventData);
+    verifyACLs(resourceGroup, roleAssignmentDBOs, 0, 0, 0);
   }
 
   private void verifyACLs(ResourceGroup resourceGroup, RoleAssignmentDBO roleAssignmentDBO, int distinctPermissions,

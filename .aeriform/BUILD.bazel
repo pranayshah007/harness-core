@@ -441,9 +441,9 @@ aeriform("//960-yaml-sdk:module")
 
 aeriform("//960-yaml-sdk:tests")
 
-aeriform("//965-api-key-filter:module")
+aeriform("//965-ng-filter:module")
 
-aeriform("//965-api-key-filter:tests")
+aeriform("//965-ng-filter:tests")
 
 aeriform("//967-walktree-visitor:module")
 

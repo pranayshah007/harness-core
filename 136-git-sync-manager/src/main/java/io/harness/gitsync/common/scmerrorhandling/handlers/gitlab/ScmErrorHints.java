@@ -27,7 +27,7 @@ public class ScmErrorHints {
   public static final String OAUTH_ACCESS_FAILURE =
       "In-case you are using OAUTH, please check your OAUTH configurations and access permissions from Gitlab, or try reconfiguring OAUTH setup.";
   public static final String HINT_REQUEST_TIMED_OUT = "Please try these out: \n"
-      + "1. Check if Github server is working as expected from GitLab's status page (https://status.gitlab.com/)\n"
-      + "2. Check if your selected delegates are able to connect to the GitLab server\n"
+      + "1. Check if GitLab server is working as expected from GitLab's status page (https://status.gitlab.com/)\n"
+      + "2. Check if your delegates are able to connect to the GitLab server\n"
       + "3. If the problem persists, please contact Harness Support Team.";
 }
