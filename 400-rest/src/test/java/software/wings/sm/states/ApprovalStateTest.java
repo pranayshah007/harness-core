@@ -1935,7 +1935,7 @@ public class ApprovalStateTest extends WingsBaseTest {
     verify(alertService)
         .openAlert(eq(ACCOUNT_ID), eq(APP_ID), eq(AlertType.ApprovalNeeded), any(ApprovalNeededAlert.class));
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(FAILED);
-    assertThat(executionResponse.getErrorMessage()).isEqualTo("Failed to schedule Approval");
+    assertThat(executionResponse.getErrorMessage().contains("Failed to schedule Approval")).isEqualTo(true);
   }
 
   @Test

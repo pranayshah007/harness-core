@@ -341,8 +341,8 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       ProcessResult processResult = processExecutor.execute();
 
       if (errorLog.length() > 0) {
-        log.error(
-            "[ScriptProcessExecutor-03] Error output stream:\n{}", LogSanitizerHelper.sanitizeJWT(errorLog.toString()));
+        log.error("[ScriptProcessExecutor-03] Error output stream:\n{}",
+            LogSanitizerHelper.sanitizeTokens(errorLog.toString()));
       }
 
       commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
