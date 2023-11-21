@@ -12,6 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.io.IOException;
+
+import io.harness.delegate.exceptionhandler.handler.DelegateExceptionHandler;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -22,13 +24,9 @@ public class DelegateRestUtils {
   public static <T> T executeRestCall(Call<T> call) throws IOException {
     Response<T> response = null;
     try {
-      response = call.execute();
-      if (response.isSuccessful()) {
-        return response.body();
-      }
+     throw new IOException("hello message");
     } catch (Exception e) {
-      log.error("error executing rest call", e);
-      throw e;
+      throw new IOException("Exception occurred while making rest call " + call.request().url(), e.getCause());
     } finally {
       if (response != null && !response.isSuccessful()) {
         String errorResponse = response.errorBody().string();
@@ -37,6 +35,6 @@ public class DelegateRestUtils {
         response.errorBody().close();
       }
     }
-    return null;
+//    return null;
   }
 }
