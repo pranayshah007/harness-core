@@ -38,6 +38,7 @@ public class GithubOpenCodeScanningAlertsDsl extends ScmBaseDslNoLoop {
         inputValues.stream().filter(inputValue -> inputValue.getKey().equals(SEVERITY_TYPE)).findFirst();
     if (inputValueOpt.isPresent()) {
       String inputValue = inputValueOpt.get().getValue();
+      inputValue = inputValue.replace("\"", "");
       if (!inputValue.isEmpty()) {
         url = url.replace(SEVERITY_REPLACER, inputValue.toLowerCase());
       }

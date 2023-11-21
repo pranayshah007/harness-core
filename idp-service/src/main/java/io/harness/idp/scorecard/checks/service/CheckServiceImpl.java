@@ -67,6 +67,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -358,24 +359,28 @@ public class CheckServiceImpl implements CheckService {
         throw new InvalidRequestException(format("Data point not found for dataSource: %s, dataPoint: %s",
             rule.getDataSourceIdentifier(), rule.getDataPointIdentifier()));
       }
-      DataPoint dataPoint = dataPointMap.get(key);
-      if (dataPoint.isIsConditional() && isEmpty(rule.getConditionalInputValue())) {
-        throw new InvalidRequestException("Conditional input value is required");
-      }
 
-      // TODO: Enable this validation once UI sends in new fprmat
-      //      if (dataPoint.isIsConditional()) {
-      //        List<InputValue> inputValues = rule.getInputValues();
-      //        if (inputValues.isEmpty()) {
-      //          throw new InvalidRequestException("Input value(s) is/are required");
-      //        }
-      //        for (InputValue inputValue : inputValues) {
-      //          if (isEmpty(inputValue.getValue())) {
-      //            throw new InvalidRequestException(String.format(
-      //                    "Conditional input value for key %s is required", inputValue.getKey()));
-      //          }
-      //        }
-      //      }
+      // TODO: Remove this condition once UI sends in new format
+      if (rule.getInputValues() != null) {
+        DataPoint dataPoint = dataPointMap.get(key);
+        List<InputValue> inputValues = rule.getInputValues();
+        for (InputValue inputValue : inputValues) {
+          Optional<InputDetails> inputDetailsOpt =
+              dataPoint.getInputDetails()
+                  .stream()
+                  .filter(inputDetails -> inputDetails.getKey().equals(inputValue.getKey()))
+                  .findFirst();
+          if (inputDetailsOpt.isEmpty()) {
+            throw new InvalidRequestException(
+                String.format("Conditional input value for key %s does not match any data point intput details",
+                    inputValue.getKey()));
+          }
+          if (inputDetailsOpt.get().isRequired() && isEmpty(inputValue.getValue())) {
+            throw new InvalidRequestException(
+                String.format("Conditional input value for key %s is required", inputValue.getKey()));
+          }
+        }
+      }
     }
   }
 

@@ -29,6 +29,7 @@ public class BitbucketMeanTimeToMergePRDsl extends BitbucketBaseDsl {
         inputValues.stream().filter(inputValue -> inputValue.getKey().equals(BRANCH_NAME)).findFirst();
     if (inputValueOpt.isPresent()) {
       String inputValue = inputValueOpt.get().getValue();
+      inputValue = inputValue.replace("\"", "");
       if (!inputValue.isEmpty()) {
         if (!inputValue.equals(DEFAULT_BRANCH_KEY_ESCAPED)) {
           url = url.replace(DESTINATION_BRANCH_NAME_REPLACER,

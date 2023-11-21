@@ -37,6 +37,7 @@ public class GithubIsBranchProtectionSetDsl extends ScmBaseDslNoLoop {
         inputValues.stream().filter(inputValue -> inputValue.getKey().equals(BRANCH_NAME)).findFirst();
     if (inputValueOpt.isPresent()) {
       String inputValue = inputValueOpt.get().getValue();
+      inputValue = inputValue.replace("\"", "");
       if (!inputValue.equals(DEFAULT_BRANCH_KEY_ESCAPED)) {
         requestBody =
             requestBody.replace(REPOSITORY_BRANCH_NAME_REPLACER, "ref(qualifiedName: \\\"" + inputValue + "\\\")");
