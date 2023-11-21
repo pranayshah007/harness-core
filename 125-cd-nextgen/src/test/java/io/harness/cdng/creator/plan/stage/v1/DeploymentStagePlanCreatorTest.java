@@ -169,13 +169,13 @@ public class DeploymentStagePlanCreatorTest extends CDNGTestBase {
                                                                 .action(AbortFailureActionConfigV1.builder().build())
                                                                 .build())));
 
-    JsonNode jsonNode = YamlUtils.readTree(node, "spec", null).getNode().getCurrJsonNode();
+    JsonNode jsonNode = YamlUtils.readTree(node, YAMLFieldNameConstants.SPEC, null).getNode().getCurrJsonNode();
     ((ObjectNode) jsonNode).put("type", YAMLFieldNameConstants.DEPLOYMENT_STAGE_V1);
 
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .globalContext(Map.of("metadata",
                                       PlanCreationContextValue.newBuilder().setAccountIdentifier("accountId").build()))
-                                  .currentField(new YamlField(new YamlNode("spec", jsonNode)))
+                                  .currentField(new YamlField(new YamlNode(YAMLFieldNameConstants.SPEC, jsonNode)))
                                   .build();
 
     try (MockedStatic<YamlUtils> mockSettings = mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
@@ -183,7 +183,8 @@ public class DeploymentStagePlanCreatorTest extends CDNGTestBase {
       SettingValueResponseDTO settingValueResponseDTO =
           SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
       when(serviceEntityHelper.getServiceDefinitionTypeFromService(any(), any())).thenReturn(KUBERNETES);
-      when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(new YamlNode("spec", jsonNode));
+      when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any()))
+          .thenReturn(new YamlNode(YAMLFieldNameConstants.SPEC, jsonNode));
       when(NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap =
           deploymentStagePlanCreator.createPlanForChildrenNodes(ctx, new YamlField(new YamlNode(jsonNode)));
@@ -496,8 +497,8 @@ public class DeploymentStagePlanCreatorTest extends CDNGTestBase {
   @Category(UnitTests.class)
   public void addServiceNodeUseFromStageFromServicesError_0() throws IOException {
     String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/v1/pipeline.yaml");
-    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
-    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 5));
+    YamlField pipeline = new YamlField(YAMLFieldNameConstants.PIPELINE, YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField(YAMLFieldNameConstants.SPEC, getStageNodeAtIndex(pipeline, 5));
     assertThatExceptionOfType(InvalidArgumentsException.class)
         .isThrownBy(
             ()
@@ -514,8 +515,8 @@ public class DeploymentStagePlanCreatorTest extends CDNGTestBase {
   @Category(UnitTests.class)
   public void addServiceNodeUseFromStageFromServicesError_1() throws IOException {
     String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/v1/pipeline.yaml");
-    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
-    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 5));
+    YamlField pipeline = new YamlField(YAMLFieldNameConstants.PIPELINE, YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField(YAMLFieldNameConstants.SPEC, getStageNodeAtIndex(pipeline, 5));
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(()
                         -> deploymentStagePlanCreator.useServicesYamlFromStage(
@@ -534,8 +535,8 @@ public class DeploymentStagePlanCreatorTest extends CDNGTestBase {
   @Category(UnitTests.class)
   public void addServiceNodeUseFromStageFromServicesError_2() throws IOException {
     String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/v1/pipeline.yaml");
-    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
-    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 6));
+    YamlField pipeline = new YamlField(YAMLFieldNameConstants.PIPELINE, YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField(YAMLFieldNameConstants.SPEC, getStageNodeAtIndex(pipeline, 6));
     assertThatExceptionOfType(InvalidArgumentsException.class)
         .isThrownBy(()
                         -> deploymentStagePlanCreator.useServicesYamlFromStage(
@@ -553,8 +554,8 @@ public class DeploymentStagePlanCreatorTest extends CDNGTestBase {
   @Category(UnitTests.class)
   public void addServiceNodeUseFromStageFromServicesError_3() throws IOException {
     String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/v1/pipeline.yaml");
-    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
-    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 7));
+    YamlField pipeline = new YamlField(YAMLFieldNameConstants.PIPELINE, YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField(YAMLFieldNameConstants.SPEC, getStageNodeAtIndex(pipeline, 7));
     assertThatExceptionOfType(InvalidArgumentsException.class)
         .isThrownBy(()
                         -> deploymentStagePlanCreator.useServicesYamlFromStage(
@@ -574,7 +575,7 @@ public class DeploymentStagePlanCreatorTest extends CDNGTestBase {
   public void addServiceNodeUseFromStageFromServicesWithMetadata() throws IOException {
     String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/v1/pipeline.yaml");
     YamlField pipeline = new YamlField(YamlNode.fromYamlPath(pipelineYaml, ""));
-    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 9));
+    YamlField specField = new YamlField(YAMLFieldNameConstants.SPEC, getStageNodeAtIndex(pipeline, 9));
     ServicesYaml services = deploymentStagePlanCreator.useServicesYamlFromStage(
         DeploymentStageConfigV1.builder()
             .services(
@@ -908,9 +909,9 @@ public class DeploymentStagePlanCreatorTest extends CDNGTestBase {
 
   private static YamlNode getStageNodeAtIndex(YamlField pipeline, int idx) {
     return pipeline.getNode()
-        .getField("spec")
+        .getField(YAMLFieldNameConstants.SPEC)
         .getNode()
-        .getField("stages")
+        .getField(YAMLFieldNameConstants.STAGES)
         .getNode()
         .asArray()
         .get(idx)

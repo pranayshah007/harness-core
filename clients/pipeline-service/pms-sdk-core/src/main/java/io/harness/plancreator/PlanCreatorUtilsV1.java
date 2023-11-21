@@ -481,7 +481,7 @@ public class PlanCreatorUtilsV1 {
     YamlNode stages = YamlUtils.getGivenYamlNodeFromParentPath(yamlField.getNode(), YAMLFieldNameConstants.STAGES);
     List<YamlField> stageYamlFields = getStageYamlFields(stages);
     for (YamlField stageYamlField : stageYamlFields) {
-      if (stageIdentifier.equals(stageYamlField.getNode().getField("id").getNode().asText())) {
+      if (stageIdentifier.equals(stageYamlField.getNode().getField(YAMLFieldNameConstants.ID).getNode().asText())) {
         return stageYamlField;
       }
     }
@@ -493,9 +493,12 @@ public class PlanCreatorUtilsV1 {
     List<YamlField> stageFields = new LinkedList<>();
 
     yamlNodes.forEach(yamlNode -> {
-      String stageFieldType = yamlNode.getStringValue("type");
+      String stageFieldType = yamlNode.getStringValue(YAMLFieldNameConstants.TYPE);
       if (YAMLFieldNameConstants.PARALLEL.equalsIgnoreCase(stageFieldType)) {
-        stageFields.addAll(getStageYamlFields(yamlNode.getField("spec").getNode().getField("stages").getNode()));
+        stageFields.addAll(getStageYamlFields(yamlNode.getField(YAMLFieldNameConstants.SPEC)
+                                                  .getNode()
+                                                  .getField(YAMLFieldNameConstants.STAGES)
+                                                  .getNode()));
       } else {
         stageFields.add(new YamlField(yamlNode));
       }
