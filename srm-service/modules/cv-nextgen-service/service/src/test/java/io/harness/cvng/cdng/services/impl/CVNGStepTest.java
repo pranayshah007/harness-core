@@ -8,7 +8,11 @@
 package io.harness.cvng.cdng.services.impl;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.rule.OwnerRule.*;
+import static io.harness.rule.OwnerRule.ABHIJITH;
+import static io.harness.rule.OwnerRule.ANSUMAN;
+import static io.harness.rule.OwnerRule.DHRUVX;
+import static io.harness.rule.OwnerRule.KAMAL;
+import static io.harness.rule.OwnerRule.SHUBHENDU;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
