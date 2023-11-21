@@ -33,11 +33,12 @@ import org.apache.commons.lang3.tuple.Pair;
 @OwnedBy(HarnessTeam.IDP)
 public class DateUtils {
   public static final String ZONE_ID_IST = "Asia/Kolkata";
+  public static final String ZONE_ID_UTC = "UTC";
 
   public long parseTimestamp(String timestamp, String format) {
     try {
       SimpleDateFormat dateFormat = new SimpleDateFormat(format);
-      dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+      dateFormat.setTimeZone(TimeZone.getTimeZone(ZONE_ID_UTC));
       Date date = dateFormat.parse(timestamp);
       return date.getTime();
     } catch (ParseException e) {
@@ -62,8 +63,8 @@ public class DateUtils {
         DateUtils.getDateByFormat(yesterdayDate, "yyyy-MM-dd"));
   }
 
-  public static long yesterdayInMilliseconds() {
-    Calendar calendar = Calendar.getInstance();
+  public static long yesterdayInMilliseconds(String zoneId) {
+    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(zoneId));
     calendar.add(Calendar.DATE, -1);
     calendar.set(Calendar.HOUR_OF_DAY, 12);
     calendar.set(Calendar.MINUTE, 0);

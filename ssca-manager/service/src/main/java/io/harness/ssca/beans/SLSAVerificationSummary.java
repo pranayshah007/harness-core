@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.SSCA;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
@@ -24,5 +23,5 @@ import lombok.experimental.FieldNameConstants;
 @FieldNameConstants(innerTypeName = "SLSAVerificationSummaryKeys")
 public class SLSAVerificationSummary {
   private String slsaPolicyOutcomeStatus;
-  private JsonNode provenanceArtifact;
+  private String provenanceArtifact;
 }

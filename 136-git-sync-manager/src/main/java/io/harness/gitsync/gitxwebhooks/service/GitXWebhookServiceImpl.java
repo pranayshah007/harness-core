@@ -158,6 +158,19 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
   }
 
   @Override
+  public List<GitXWebhook> getGitXWebhookForAllScopes(Scope scope, String repoName) {
+    Criteria criteria = Criteria.where(GitXWebhookKeys.accountIdentifier)
+                            .is(scope.getAccountIdentifier())
+                            .and(GitXWebhookKeys.orgIdentifier)
+                            .in(null, scope.getOrgIdentifier())
+                            .and(GitXWebhookKeys.projectIdentifier)
+                            .in(null, scope.getProjectIdentifier())
+                            .and(GitXWebhookKeys.repoName)
+                            .is(repoName);
+    return gitXWebhookRepository.findAll(new Query(criteria));
+  }
+
+  @Override
   public UpdateGitXWebhookResponseDTO updateGitXWebhook(UpdateGitXWebhookCriteriaDTO updateGitXWebhookCriteriaDTO,
       UpdateGitXWebhookRequestDTO updateGitXWebhookRequestDTO) {
     try (GitXWebhookLogContext context =

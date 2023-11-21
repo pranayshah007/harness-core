@@ -159,7 +159,7 @@ backstageEntitiesFetchLimit: 1000
 provisionModuleConfig:
   triggerPipelineUrl: ""
 
-env: ""
+env: "local"
 prEnvDefaultBackstageNamespace: ""
 
 backstageAppBaseUrl: https://localhost:3000

@@ -115,7 +115,7 @@ public class ShellScriptStepTest extends CategoryTest {
     ShellScriptTaskParametersNG taskParametersNG = ShellScriptTaskParametersNG.builder().script("echo hello").build();
     doReturn(taskParametersNG)
         .when(shellScriptHelperService)
-        .buildShellScriptTaskParametersNG(ambiance, stepParameters, null);
+        .buildShellScriptTaskParametersNG(ambiance, stepParameters, null, null);
 
     TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);
     assertThat(taskRequest.getDelegateTaskRequest().getRequest().getDetails().getExecutionTimeout().getSeconds())
@@ -138,7 +138,7 @@ public class ShellScriptStepTest extends CategoryTest {
         ShellScriptTaskParametersNG.builder().script("Write-Host hello").build();
     doReturn(taskParametersNG)
         .when(shellScriptHelperService)
-        .buildShellScriptTaskParametersNG(ambiance, stepParameters, null);
+        .buildShellScriptTaskParametersNG(ambiance, stepParameters, null, null);
     TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);
     assertThat(new HashSet<>(taskRequest.getDelegateTaskRequest().getLogKeysList()))
         .containsExactlyInAnyOrder(

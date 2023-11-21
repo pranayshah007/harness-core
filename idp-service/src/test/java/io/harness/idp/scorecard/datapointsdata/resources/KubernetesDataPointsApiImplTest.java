@@ -23,6 +23,7 @@ import io.harness.eraro.ResponseMessage;
 import io.harness.idp.scorecard.datapointsdata.resource.KubernetesDataPointsApiImpl;
 import io.harness.idp.scorecard.datapointsdata.service.KubernetesDataPointsService;
 import io.harness.rule.Owner;
+import io.harness.spec.server.idp.v1.model.KubernetesConfig;
 import io.harness.spec.server.idp.v1.model.KubernetesRequest;
 
 import java.util.Collections;
@@ -52,6 +53,7 @@ public class KubernetesDataPointsApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetK8sDataPointValues() {
     KubernetesRequest validRequest = new KubernetesRequest();
+    validRequest.setRequest(new KubernetesConfig().labelSelector("").dataSourceLocation(null));
     Map<String, Object> data = Collections.singletonMap("key", "value");
 
     when(kubernetesDataPointsService.getDataPointDataValues(eq(TEST_ACCOUNT), any())).thenReturn(data);
@@ -68,6 +70,7 @@ public class KubernetesDataPointsApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetK8sDataPointValuesException() {
     KubernetesRequest validRequest = new KubernetesRequest();
+    validRequest.setRequest(new KubernetesConfig().labelSelector("").dataSourceLocation(null));
     String errorMessage = "Error message";
 
     when(kubernetesDataPointsService.getDataPointDataValues(eq(TEST_ACCOUNT), any()))
