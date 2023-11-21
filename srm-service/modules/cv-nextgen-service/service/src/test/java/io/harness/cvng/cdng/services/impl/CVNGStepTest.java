@@ -8,10 +8,7 @@
 package io.harness.cvng.cdng.services.impl;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.rule.OwnerRule.ABHIJITH;
-import static io.harness.rule.OwnerRule.ANSUMAN;
-import static io.harness.rule.OwnerRule.DHRUVX;
-import static io.harness.rule.OwnerRule.KAMAL;
+import static io.harness.rule.OwnerRule.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,14 +28,8 @@ import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.beans.activity.ActivityStatusDTO;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
-import io.harness.cvng.cdng.beans.BlueGreenVerificationJobSpec;
-import io.harness.cvng.cdng.beans.CVNGStepParameter;
+import io.harness.cvng.cdng.beans.*;
 import io.harness.cvng.cdng.beans.CVNGStepParameter.CVNGStepParameterBuilder;
-import io.harness.cvng.cdng.beans.HostLevelVerificationJobSpec;
-import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
-import io.harness.cvng.cdng.beans.SimpleVerificationJobSpec;
-import io.harness.cvng.cdng.beans.TestVerificationJobSpec;
-import io.harness.cvng.cdng.beans.VerificationJobSpec;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskKeys;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
@@ -46,6 +37,7 @@ import io.harness.cvng.cdng.services.api.PipelineStepMonitoredServiceResolutionS
 import io.harness.cvng.cdng.services.impl.CVNGStep.VerifyStepOutcome;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.entities.*;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
@@ -720,6 +712,27 @@ public class CVNGStepTest extends CvNextGenTestBase {
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
   }
 
+  @Test
+  @Owner(developers = SHUBHENDU)
+  @Category(UnitTests.class)
+  public void testHasInvalidCVConfig() {
+    CVConfig cvConfig = DatadogMetricCVConfig.builder()
+                            .accountId(builderFactory.getContext().getAccountId())
+                            .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
+                            .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
+                            .monitoredServiceIdentifier(generateUuid())
+                            .metricPack(MetricPack.builder().dataCollectionDsl("dsl").build())
+                            .build();
+    assertThat(cvngStep.hasInvalidCVConfig(Collections.singletonList(cvConfig))).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SHUBHENDU)
+  @Category(UnitTests.class)
+  public void testHasInvalidCVConfig_falseCase() {
+    CVConfig cvConfig = builderFactory.splunkCVConfigBuilder().build();
+    assertThat(cvngStep.hasInvalidCVConfig(Collections.singletonList(cvConfig))).isFalse();
+  }
   private StepElementParameters getStepElementParametersWithLoadTest() {
     TestVerificationJobSpec spec = TestVerificationJobSpec.builder()
                                        .deploymentTag(randomParameter())

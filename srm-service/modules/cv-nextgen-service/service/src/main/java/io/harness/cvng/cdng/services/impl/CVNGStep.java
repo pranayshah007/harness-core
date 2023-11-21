@@ -400,7 +400,7 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
     return deploymentActivity;
   }
 
-  private boolean hasInvalidCVConfig(List<CVConfig> cvConfigs) {
+  public boolean hasInvalidCVConfig(List<CVConfig> cvConfigs) {
     for (CVConfig cvConfig : cvConfigs) {
       if (cvConfig.isDeploymentVerificationEnabled()) {
         return false;
