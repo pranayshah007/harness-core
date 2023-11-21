@@ -57,6 +57,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -734,5 +735,54 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(gitEntityInfo).isNotNull();
     assertThat(gitEntityInfo.getBranch()).isEqualTo("feature");
     assertThat(gitEntityInfo.getParentEntityRepoName()).isEqualTo("gitRepo");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testGetInfrastructuresWithYamlUsingIdentifierList() throws IOException {
+    Environment inlineEnvironment = Environment.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .identifier("IDENTIFIER")
+                                        .orgIdentifier(ORG_ID)
+                                        .projectIdentifier(PROJECT_ID)
+                                        .yaml("")
+                                        .build();
+    when(environmentService.getMetadata(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq("ENV_IDENTIFIER"), eq(false)))
+        .thenReturn(Optional.of(inlineEnvironment));
+
+    String filename = "infrastructure-without-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+    InfrastructureEntity createInfraRequest = InfrastructureEntity.builder()
+                                                  .accountId(ACCOUNT_ID)
+                                                  .identifier("IDENTIFIER")
+                                                  .orgIdentifier(ORG_ID)
+                                                  .projectIdentifier(PROJECT_ID)
+                                                  .envIdentifier("ENV_IDENTIFIER")
+                                                  .yaml(yaml)
+                                                  .build();
+
+    infrastructureEntityService.create(createInfraRequest);
+
+    List<InfrastructureEntity> entitiesByIdentifierList =
+        infrastructureEntityService.getAllInfrastructuresWithYamlFromIdentifierList(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", null, Arrays.asList("IDENTIFIER"));
+    assertThat(entitiesByIdentifierList).hasSize(1);
+
+    // another infra in same env
+    InfrastructureEntity createInfraRequest2 = InfrastructureEntity.builder()
+                                                   .accountId(ACCOUNT_ID)
+                                                   .identifier("IDENTIFIER_2")
+                                                   .orgIdentifier(ORG_ID)
+                                                   .projectIdentifier(PROJECT_ID)
+                                                   .envIdentifier("ENV_IDENTIFIER")
+                                                   .yaml(yaml)
+                                                   .build();
+    infrastructureEntityService.create(createInfraRequest2);
+
+    List<InfrastructureEntity> entitiesByEnvironmentRef =
+        infrastructureEntityService.getAllInfrastructuresWithYamlFromEnvRef(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", null);
+    assertThat(entitiesByEnvironmentRef).hasSize(2);
   }
 }
