@@ -19,7 +19,7 @@ set -e
 export TargetBranch=$(echo "${ghprbTargetBranch}")
 export SourceBranch=$(echo "${ghprbSourceBranch}")
 
-PR_Name=("SmartPRChecks-PMD" "SmartPRChecks-codebasehashcheck")
+PR_Name=("SmartPRChecks-PMD" "SmartPRChecks-codebasehashcheck" "SmartPRChecks-compileCode")
 PR_TI=("TIAll-JavaUnitTests0" "TIAll-JavaUnitTests1" "TIAll-JavaUnitTests2" "TIAll-JavaUnitTests3" \
 "TIAll-JavaUnitTests4" "TIAll-JavaUnitTests5" "TIAll-JavaUnitTests6" "TIAll-JavaUnitTests7" \
 "TIAll-JavaUnitTests8" "TIAll-JavaUnitTests9")
