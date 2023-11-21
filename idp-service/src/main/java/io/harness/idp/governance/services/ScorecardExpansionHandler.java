@@ -76,7 +76,7 @@ public class ScorecardExpansionHandler implements JsonExpansionHandler {
       cdStageMetaDataDTO = setServiceEnvRef(cdStageMetaDataDTO);
     }
 
-    Map<String, ServiceScorecards> serviceScores = new HashMap<>();
+    Map<String, List<ServiceScorecards>> serviceScores = new HashMap<>();
     for (CDStageMetaDataDTO.ServiceEnvRef serviceEnvRef : cdStageMetaDataDTO.getServiceEnvRefList()) {
       String serviceRef = serviceEnvRef.getServiceRef();
       String serviceId = constructServiceId(truncateEntityName(serviceRef));
@@ -93,9 +93,7 @@ public class ScorecardExpansionHandler implements JsonExpansionHandler {
         }
         log.info("Matching backstage entity: " + uuid);
         List<ScorecardSummaryInfo> scorecardSummaryInfos = scoreService.getScoresSummaryForAnEntity(accountId, uuid);
-        for (ScorecardSummaryInfo scorecardSummaryInfo : scorecardSummaryInfos) {
-          serviceScores.put(serviceRef, ServiceScorecardsMapper.toDTO(scorecardSummaryInfo));
-        }
+        serviceScores.put(serviceRef, ServiceScorecardsMapper.toDTO(scorecardSummaryInfos));
       } catch (Exception e) {
         log.error(
             format("Error while fetch catalog details for account = [%s], serviceIds = [%s] and [%s], error = [%s]",

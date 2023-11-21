@@ -19,21 +19,25 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
 public class ServiceScorecardsMapper {
-  public ServiceScorecards toDTO(ScorecardSummaryInfo scorecardSummaryInfo) {
-    List<ServiceScorecards.Check> checks = new ArrayList<>();
-    for (CheckStatus checkStatus : scorecardSummaryInfo.getChecksStatuses()) {
-      ServiceScorecards.Check check = ServiceScorecards.Check.builder()
-                                          .identifier(checkStatus.getIdentifier())
-                                          .name(checkStatus.getName())
-                                          .status(checkStatus.getStatus().toString())
-                                          .build();
-      checks.add(check);
+  public List<ServiceScorecards> toDTO(List<ScorecardSummaryInfo> scorecardSummaryInfos) {
+    List<ServiceScorecards> serviceScorecards = new ArrayList<>();
+    for (ScorecardSummaryInfo scorecardSummaryInfo : scorecardSummaryInfos) {
+      List<ServiceScorecards.Check> checks = new ArrayList<>();
+      for (CheckStatus checkStatus : scorecardSummaryInfo.getChecksStatuses()) {
+        ServiceScorecards.Check check = ServiceScorecards.Check.builder()
+                                            .identifier(checkStatus.getIdentifier())
+                                            .name(checkStatus.getName())
+                                            .status(checkStatus.getStatus().toString())
+                                            .build();
+        checks.add(check);
+      }
+      serviceScorecards.add(ServiceScorecards.builder()
+                                .identifier(scorecardSummaryInfo.getScorecardIdentifier())
+                                .name(scorecardSummaryInfo.getScorecardName())
+                                .score(scorecardSummaryInfo.getScore())
+                                .check(checks)
+                                .build());
     }
-    return ServiceScorecards.builder()
-        .identifier(scorecardSummaryInfo.getScorecardIdentifier())
-        .name(scorecardSummaryInfo.getScorecardName())
-        .score(scorecardSummaryInfo.getScore())
-        .check(checks)
-        .build();
+    return serviceScorecards;
   }
 }

@@ -103,9 +103,9 @@ public class ScorecardExpansionHandlerTest extends CategoryTest {
     when(scoreService.getScoresSummaryForAnEntity(ACCOUNT_ID, IDP_SERVICE_ENTITY_ID))
         .thenReturn(Collections.singletonList(getTestScorecardSummaryInfo()));
     ExpansionResponse response = expansionHandler.expand(fieldValue, expansionRequestMetadata, null);
-    String expectedJson = "{\"idp-service\":"
+    String expectedJson = "{\"idp-service\":["
         + "{\"identifier\":\"test-score-card-id\",\"name\":\"test-scorecard-name\",\"score\":90,"
-        + "\"check\":[{\"name\":\"test-check-name\",\"status\":\"PASS\"}]}}";
+        + "\"check\":[{\"name\":\"test-check-name\",\"status\":\"PASS\"}]}]}";
     assertNotNull(response);
     assertTrue(response.isSuccess());
     assertEquals(expectedJson, response.getValue().toJson());

@@ -13,6 +13,7 @@ import io.harness.pms.sdk.core.governance.ExpandedValue;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 @Slf4j
 public class ScorecardExpandedValue implements ExpandedValue {
-  @JsonProperty("serviceScores") Map<String, ServiceScorecards> serviceScores;
+  @JsonProperty("serviceScores") Map<String, List<ServiceScorecards>> serviceScores;
 
   @Override
   public String getKey() {
