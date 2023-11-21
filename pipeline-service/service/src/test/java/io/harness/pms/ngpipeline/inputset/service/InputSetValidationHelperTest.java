@@ -11,11 +11,13 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
+import static io.harness.rule.OwnerRule.SANDESH_SALUNKHE;
 import static io.harness.rule.OwnerRule.VED;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
@@ -68,6 +70,8 @@ public class InputSetValidationHelperTest extends CategoryTest {
   @Mock InputSetsApiUtils inputSetsApiUtils;
   @Mock ValidateAndMergeHelper validateAndMergeHelper;
 
+  String identifier = "inputSetId";
+  String invalidIdentifier = "\\{example";
   String accountId = "accountId";
   String orgId = "orgId";
   String projectId = "projectId";
@@ -186,6 +190,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
     String inputSetFile = "inputset1-with-org-proj-id.yaml";
     String inputSetYaml = readFile(inputSetFile);
     InputSetEntity inputSetEntity = InputSetEntity.builder()
+                                        .identifier(identifier)
                                         .accountId(accountId)
                                         .orgIdentifier(orgId)
                                         .projectIdentifier(projectId)
@@ -200,6 +205,67 @@ public class InputSetValidationHelperTest extends CategoryTest {
     setupGitContext(GitEntityInfo.builder().storeType(StoreType.REMOTE).isNewBranch(true).baseBranch("br").build());
     // no exception should be thrown
     InputSetValidationHelper.validateInputSet(inputSetService, inputSetEntity, false);
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testValidateInputSetWithInvalidIdentifier() {
+    setupGitContext(GitEntityInfo.builder().storeType(StoreType.REMOTE).build());
+    PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).storeType(StoreType.REMOTE).build();
+    doReturn(Optional.of(pipelineEntity))
+        .when(pipelineService)
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+
+    String inputSetFile = "inputset1-with-org-proj-id.yaml";
+    String inputSetYaml = readFile(inputSetFile);
+    InputSetEntity inputSetEntity = InputSetEntity.builder()
+                                        .identifier(invalidIdentifier)
+                                        .accountId(accountId)
+                                        .orgIdentifier(orgId)
+                                        .projectIdentifier(projectId)
+                                        .pipelineIdentifier(pipelineId)
+                                        .yaml(inputSetYaml)
+                                        .inputSetEntityType(InputSetEntityType.INPUT_SET)
+                                        .storeType(StoreType.REMOTE)
+                                        .build();
+    // no exception should be thrown
+    InputSetValidationHelper.validateInputSet(inputSetService, inputSetEntity, false);
+
+    setupGitContext(GitEntityInfo.builder().storeType(StoreType.REMOTE).isNewBranch(true).baseBranch("br").build());
+    // no exception should be thrown
+    InputSetValidationHelper.validateInputSet(inputSetService, inputSetEntity, false);
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testValidateInputSetWithNullIdentifier() {
+    setupGitContext(GitEntityInfo.builder().storeType(StoreType.REMOTE).build());
+    PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).storeType(StoreType.REMOTE).build();
+    doReturn(Optional.of(pipelineEntity))
+        .when(pipelineService)
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+
+    String inputSetFile = "inputset1-with-org-proj-id.yaml";
+    String inputSetYaml = readFile(inputSetFile);
+    InputSetEntity inputSetEntity = InputSetEntity.builder()
+                                        .accountId(accountId)
+                                        .orgIdentifier(orgId)
+                                        .projectIdentifier(projectId)
+                                        .pipelineIdentifier(pipelineId)
+                                        .yaml(inputSetYaml)
+                                        .inputSetEntityType(InputSetEntityType.INPUT_SET)
+                                        .storeType(StoreType.REMOTE)
+                                        .build();
+    // no exception should be thrown
+    assertThrows(InvalidRequestException.class,
+        () -> InputSetValidationHelper.validateInputSet(inputSetService, inputSetEntity, false));
+
+    setupGitContext(GitEntityInfo.builder().storeType(StoreType.REMOTE).isNewBranch(true).baseBranch("br").build());
+    // no exception should be thrown
+    assertThrows(InvalidRequestException.class,
+        () -> InputSetValidationHelper.validateInputSet(inputSetService, inputSetEntity, false));
   }
 
   @Test

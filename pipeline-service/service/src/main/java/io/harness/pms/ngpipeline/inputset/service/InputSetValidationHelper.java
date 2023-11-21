@@ -72,10 +72,6 @@ public class InputSetValidationHelper {
       default:
         throw new IllegalStateException("version not supported");
     }
-    String inputSetIdentifier = inputSetEntity.getIdentifier();
-    if (!inputSetIdentifier.matches(NGRegexValidatorConstants.IDENTIFIER_PATTERN)) {
-      log.warn(format("Identifier cannot contain special characters or spaces: [%s]", inputSetIdentifier));
-    }
     String orgIdentifier = inputSetEntity.getOrgIdentifier();
     String projectIdentifier = inputSetEntity.getProjectIdentifier();
     String pipelineIdentifier = inputSetEntity.getPipelineIdentifier();
@@ -87,6 +83,12 @@ public class InputSetValidationHelper {
       }
     } else {
       OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity);
+    }
+    String inputSetIdentifier = inputSetEntity.getIdentifier();
+    if (EmptyPredicate.isEmpty(inputSetIdentifier)) {
+      throw new InvalidRequestException("InputSet Identifier cannot contain be null.");
+    } else if (!inputSetIdentifier.matches(NGRegexValidatorConstants.IDENTIFIER_PATTERN)) {
+      log.warn(format("InputSet Identifier cannot contain special characters or spaces: [%s]", inputSetIdentifier));
     }
   }
 
