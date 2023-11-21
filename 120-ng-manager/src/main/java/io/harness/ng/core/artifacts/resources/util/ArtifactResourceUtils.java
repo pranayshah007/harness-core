@@ -2130,9 +2130,8 @@ public class ArtifactResourceUtils {
       modifiedBuilds.add(modifiedRepo);
     });
     modifiedBuilds.sort(Comparator.comparing(GARPackageDTO::getPackageName));
-    GARPackageDTOList modifiedBuildDetails = GARPackageDTOList.builder().garPackagesDTO(modifiedBuilds).build();
 
-    return modifiedBuildDetails;
+    return GARPackageDTOList.builder().garPackagesDTO(modifiedBuilds).build();
   }
 
   @Data
