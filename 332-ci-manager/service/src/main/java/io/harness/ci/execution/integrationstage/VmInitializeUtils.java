@@ -246,8 +246,8 @@ public class VmInitializeUtils {
     return envVars;
   }
 
-  public Map<String, String> getStageProxyVars(IntegrationStageConfig integrationStageConfig, OSType os, String workDir,
-      String poolID, Infrastructure infrastructure, NGAccess ngAccess, ConnectorUtils connectorUtils) {
+  public Map<String, String> getStageProxyVars(
+      IntegrationStageConfig integrationStageConfig, OSType os, NGAccess ngAccess, ConnectorUtils connectorUtils) {
     Map<String, String> envVars = new HashMap<>();
 
     if ((integrationStageConfig.getInfrastructure().getType() != Infrastructure.Type.HOSTED_VM
