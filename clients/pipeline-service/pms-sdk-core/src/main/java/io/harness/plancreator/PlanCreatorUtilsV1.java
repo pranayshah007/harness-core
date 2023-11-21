@@ -250,7 +250,7 @@ public class PlanCreatorUtilsV1 {
         kryoSerializer, dependency, stepFailureStrategies, nextNodeUuid, isStepInsideRollback);
   }
 
-  private List<AdviserObtainment> getFailureStrategiesAdvisers(KryoSerializer kryoSerializer, Dependency dependency,
+  protected List<AdviserObtainment> getFailureStrategiesAdvisers(KryoSerializer kryoSerializer, Dependency dependency,
       List<FailureConfigV1> stepFailureStrategies, String nextNodeUuid, boolean isStepInsideRollback) {
     List<FailureConfigV1> stageFailureStrategies = getStageFailureStrategies(kryoSerializer, dependency);
     List<FailureConfigV1> stepGroupFailureStrategies = getStepGroupFailureStrategies(kryoSerializer, dependency);
