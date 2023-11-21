@@ -34,7 +34,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
-import io.harness.connector.entities.embedded.vaultconnector.VaultConnector;
+import io.harness.connector.entities.embedded.vaultconnector.VaultConnector.VaultConnectorKeys;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.services.NGVaultService;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -555,7 +555,6 @@ public class SecretManagerConnectorServiceImplTest extends CategoryTest {
                        .ne(Boolean.TRUE)
                        .and("identifier")
                        .is(HARNESS_SECRET_MANAGER_IDENTIFIER));
-    assertThat(updateArgumentCaptor.getValue())
-        .isEqualTo(new Update().set(VaultConnector.VaultConnectorKeys.isDefault, Boolean.TRUE));
+    assertThat(updateArgumentCaptor.getValue()).isEqualTo(new Update().set(VaultConnectorKeys.isDefault, Boolean.TRUE));
   }
 }

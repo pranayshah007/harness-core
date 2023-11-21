@@ -55,7 +55,6 @@ import io.harness.utils.UserHelperService;
 
 import java.util.Collections;
 import java.util.Optional;
-import javax.ws.rs.NotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
