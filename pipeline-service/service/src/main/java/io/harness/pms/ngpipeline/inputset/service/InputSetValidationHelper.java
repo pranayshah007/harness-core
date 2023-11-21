@@ -44,11 +44,13 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(
     module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(PIPELINE)
 @UtilityClass
+@Slf4j
 public class InputSetValidationHelper {
   public void checkForPipelineStoreType(PipelineEntity pipelineEntity) {
     StoreType storeTypeInContext = GitAwareContextHelper.getGitRequestParamsInfo().getStoreType();
@@ -72,8 +74,7 @@ public class InputSetValidationHelper {
     }
     String inputSetIdentifier = inputSetEntity.getIdentifier();
     if (!inputSetIdentifier.matches(NGRegexValidatorConstants.IDENTIFIER_PATTERN)) {
-      throw new InvalidRequestException(
-          format("Identifier cannot contain special characters or spaces: [%s]", inputSetIdentifier));
+      log.warn(format("Identifier cannot contain special characters or spaces: [%s]", inputSetIdentifier));
     }
     String orgIdentifier = inputSetEntity.getOrgIdentifier();
     String projectIdentifier = inputSetEntity.getProjectIdentifier();
