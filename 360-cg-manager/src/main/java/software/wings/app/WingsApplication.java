@@ -65,7 +65,6 @@ import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.delegate.beans.StartupMode;
 import io.harness.delegate.event.handler.DelegateProfileEventHandler;
 import io.harness.delegate.eventstream.EntityCRUDConsumer;
-import io.harness.delegate.heartbeat.AccountRingInfoIterator;
 import io.harness.delegate.heartbeat.polling.DelegatePollingHeartbeatService;
 import io.harness.delegate.heartbeat.stream.DelegateStreamHeartbeatService;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
@@ -1605,7 +1604,6 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(LdapGroupScheduledHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(EncryptedDataLocalToGcpKmsMigrationHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(TimeoutEngine.class).registerIterator(iteratorExecutionHandler);
-    injector.getInstance(AccountRingInfoIterator.class).registerIterator(iteratorExecutionHandler);
     if (!configuration.isMoveGitPollingToRunnable()) {
       injector.getInstance(GitSyncPollingIterator.class).registerIterator(iteratorExecutionHandler);
     }

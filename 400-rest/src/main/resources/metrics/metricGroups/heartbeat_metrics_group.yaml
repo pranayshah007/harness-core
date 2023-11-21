@@ -4,6 +4,12 @@ labels:
   - accountId
   - accountName
   - companyName
+  - ringName
+  - delegateImageTag
+  - upgraderImageTag
+  - watcherVersion
+  - watcherJREVersion
+  - delegateJREVersion
   - orgId
   - projectId
   - delegateName
