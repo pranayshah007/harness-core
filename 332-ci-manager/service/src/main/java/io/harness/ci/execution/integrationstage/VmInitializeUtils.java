@@ -9,7 +9,13 @@ package io.harness.ci.execution.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.*;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_HTTP_PROXY;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_ARCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_MACHINE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_NAME;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_OS;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_TYPE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_WORKSPACE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ACCOUNT_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ADDON_VOLUME;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ADDON_VOL_MOUNT_PATH;
