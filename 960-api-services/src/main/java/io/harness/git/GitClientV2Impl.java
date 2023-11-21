@@ -6,6 +6,7 @@
  */
 
 package io.harness.git;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -209,12 +210,16 @@ public class GitClientV2Impl implements GitClientV2 {
         ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), request))).setTagOpt(TagOpt.FETCH_TAGS).call();
         checkout(request);
 
-        // Do not sync to the HEAD of the branch if a specific commit SHA is provided
-        if (StringUtils.isEmpty(request.getCommitId())) {
+        if (StringUtils.isNotEmpty(request.getBranch())) {
           git.reset().setMode(ResetCommand.ResetType.HARD).setRef("refs/remotes/origin/" + request.getBranch()).call();
+          log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Hard reset done for branch "
+              + request.getBranch());
+        } else if (isNotEmpty(request.getCommitId())) {
+          git.reset().setMode(ResetCommand.ResetType.HARD).call();
+          log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Hard reset done for ref "
+              + request.getCommitId());
         }
-        log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Hard reset done for branch "
-            + request.getBranch());
+
         printCommitId(request, git);
         // TODO:: log failed commits queued and being ignored.
         return;

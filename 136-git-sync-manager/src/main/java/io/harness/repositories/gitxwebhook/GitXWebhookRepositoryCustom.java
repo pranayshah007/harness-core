@@ -34,4 +34,6 @@ public interface GitXWebhookRepositoryCustom {
   GitXWebhook update(Query query, Update update);
 
   GitXWebhook find(Query query);
+
+  List<GitXWebhook> findAll(Query query);
 }

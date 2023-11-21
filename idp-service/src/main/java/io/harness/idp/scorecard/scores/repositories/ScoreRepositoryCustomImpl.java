@@ -8,6 +8,7 @@ package io.harness.idp.scorecard.scores.repositories;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.DOT_SEPARATOR;
+import static io.harness.idp.common.DateUtils.ZONE_ID_UTC;
 import static io.harness.idp.common.DateUtils.yesterdayInMilliseconds;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -75,7 +76,7 @@ public class ScoreRepositoryCustomImpl implements ScoreRepositoryCustom {
                             .and(ScoreEntity.ScoreKeys.scorecardIdentifier)
                             .in(scorecardIdentifiers)
                             .and(ScoreEntity.ScoreKeys.lastComputedTimestamp)
-                            .gt(yesterdayInMilliseconds());
+                            .gt(yesterdayInMilliseconds(ZONE_ID_UTC));
     ProjectionOperation projectionOperation =
         Aggregation.project()
             .andExpression(Constants.ID_KEY)

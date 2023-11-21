@@ -27,7 +27,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class StepParametersUtils {
-  public StageElementParametersV1Builder getStageParameters(CustomAbstractStageNodeV1 stageNode) {
+  public StageElementParametersV1Builder getStageParameters(CustomStageNodeV1 stageNode) {
     StageElementParametersV1Builder stageBuilder = getCommonStageParameters(stageNode);
     stageBuilder.failure(ParameterField.isNotNull(stageNode.getFailure()) ? stageNode.getFailure().getValue() : null);
     return stageBuilder;

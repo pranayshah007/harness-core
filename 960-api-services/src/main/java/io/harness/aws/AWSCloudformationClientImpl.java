@@ -80,6 +80,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Future;
@@ -493,6 +494,7 @@ public class AWSCloudformationClientImpl implements AWSCloudformationClient {
         List<StackEvent> stackEvents = getAllStackEvents(region,
             new DescribeStackEventsRequest().withStackName(describeStacksRequest.getStackName()), awsConfig,
             lastStackEventsTs);
+        Collections.reverse(stackEvents);
         lastStackEventsTs = awsCloudformationPrintHelper.printStackEvents(stackEvents, lastStackEventsTs, logCallback);
       }
       future.get();
