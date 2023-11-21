@@ -187,9 +187,6 @@ public class GARApiServiceTest extends CategoryTest {
         WireMock.get(WireMock.urlPathEqualTo("/v1/projects/cd-play/locations/wrong-region/repositories"))
             .withHeader("Authorization", equalTo("bearerToken"))
             .willReturn(aResponse().withStatus(404).withBody("Test Body")));
-    wireMockRule.stubFor(WireMock.get(WireMock.urlPathEqualTo("/v2/cd-play1"))
-                             .withHeader("Authorization", equalTo("bearerToken"))
-                             .willReturn(aResponse().withStatus(403).withBody("Response 403")));
     wireMockRule.stubFor(WireMock.get(WireMock.urlPathEqualTo("/v2/cd-play1/vivek-repo/package/manifests/latest10"))
                              .withHeader("Authorization", equalTo("bearerToken"))
                              .willReturn(aResponse().withStatus(403).withBody("Response 403")));
