@@ -17,7 +17,6 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.oidc.entities.OidcRegistrars;
 import io.harness.serializer.kryo.NGTemplateKryoRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
-import io.harness.serializer.kryo.ProjectAndOrgKryoRegistrar;
 import io.harness.serializer.morphia.NGTemplateMorphiaRegistrar;
 import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
 import io.harness.template.resources.beans.yaml.NGTemplateConfig;
