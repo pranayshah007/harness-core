@@ -222,10 +222,10 @@ public class VmInitializeUtils {
     envVars.put(GRADLE_CACHE_ENV_NAME, GRADLE_CACHE_DIR);
     return envVars;
   }
-  public Map<String, String> getStageEnvVars(IntegrationStageConfig integrationStageConfig, OSType os, String workDir,
-      String poolID, Infrastructure infrastructure, NGAccess ngAccess, ConnectorUtils connectorUtils) {
+  public Map<String, String> getStageEnvVars(
+      ParameterField<Platform> platform, OSType os, String workDir, String poolID, Infrastructure infrastructure) {
     Map<String, String> envVars = new HashMap<>();
-    ParameterField<Platform> platform = integrationStageConfig.getPlatform();
+
     if (platform != null && platform.getValue() != null && platform.getValue().getArch() != null) {
       ArchType arch = RunTimeInputHandler.resolveArchType(platform.getValue().getArch());
       envVars.put(DRONE_STAGE_ARCH, arch.toString());
@@ -237,8 +237,16 @@ public class VmInitializeUtils {
       envVars.put(DRONE_WORKSPACE, workDir);
     }
 
-    if (integrationStageConfig.getInfrastructure().getType() != Infrastructure.Type.HOSTED_VM
-        && integrationStageConfig.getInfrastructure().getType() != Infrastructure.Type.VM) {
+    return envVars;
+  }
+
+  public Map<String, String> getStageProxyVars(IntegrationStageConfig integrationStageConfig, OSType os, String workDir,
+      String poolID, Infrastructure infrastructure, NGAccess ngAccess, ConnectorUtils connectorUtils) {
+    Map<String, String> envVars = new HashMap<>();
+
+    if ((integrationStageConfig.getInfrastructure().getType() != Infrastructure.Type.HOSTED_VM
+            && integrationStageConfig.getInfrastructure().getType() != Infrastructure.Type.VM)
+        || os != OSType.Linux) {
       return envVars;
     }
 

@@ -229,9 +229,12 @@ public class VmInitializeTaskParamsBuilder {
         gitConnector, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
 
     Map<String, String> envVars = new HashMap<>();
-    Map<String, String> stageEnvVars = vmInitializeUtils.getStageEnvVars(
+    Map<String, String> stageEnvVars =
+        vmInitializeUtils.getStageEnvVars(integrationStageConfig.getPlatform(), os, workDir, poolId, infrastructure);
+    Map<String, String> proxyEnvVars = vmInitializeUtils.getStageProxyVars(
         integrationStageConfig, os, workDir, poolId, infrastructure, ngAccess, connectorUtils);
     envVars.putAll(stageEnvVars);
+    envVars.putAll(proxyEnvVars);
     envVars.putAll(codebaseEnvVars);
     envVars.putAll(gitEnvVars);
 
