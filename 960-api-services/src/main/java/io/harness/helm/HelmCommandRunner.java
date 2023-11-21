@@ -1,9 +1,19 @@
+/*
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ */
+
 package io.harness.helm;
 
 import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HelmClientException;
 import io.harness.process.LocalProcessRunner;
@@ -11,6 +21,7 @@ import io.harness.process.ProcessRef;
 import io.harness.process.ProcessRunner;
 import io.harness.process.RunProcessRequest;
 import io.harness.process.SharedProcessRunner;
+import io.harness.process.ThreadPoolProcessRunner;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
@@ -26,16 +37,17 @@ import org.zeroturnaround.exec.ProcessResult;
 
 @Slf4j
 @Singleton
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class HelmCommandRunner {
-  private ExecutorService cliExecutorService;
   private ProcessRunner sharedProcessRunner;
   private ProcessRunner localProcessRunner;
+  private ProcessRunner threadPoolProcessRunner;
 
   @Inject
   public HelmCommandRunner(@Named("helmCliExecutor") ExecutorService cliExecutorService) {
-    this.cliExecutorService = cliExecutorService;
     this.sharedProcessRunner = new SharedProcessRunner(cliExecutorService);
     this.localProcessRunner = new LocalProcessRunner(cliExecutorService);
+    this.threadPoolProcessRunner = new ThreadPoolProcessRunner(cliExecutorService);
   }
 
   public ProcessResult execute(
@@ -52,8 +64,10 @@ public class HelmCommandRunner {
     switch (type) {
       case REPO_ADD:
       case REPO_UPDATE:
-      case REPO_REMOVE:
+      case SEARCH_REPO:
         return executeShared(type, runProcessRequest);
+      case FETCH:
+        return executeThreadPool(type, runProcessRequest);
 
       default:
         return executeLocal(type, runProcessRequest);
@@ -66,6 +80,10 @@ public class HelmCommandRunner {
 
   private ProcessResult executeLocal(HelmCliCommandType type, RunProcessRequest request) {
     return runProcessRef(type, localProcessRunner.run(request));
+  }
+
+  private ProcessResult executeThreadPool(HelmCliCommandType type, RunProcessRequest request) {
+    return runProcessRef(type, threadPoolProcessRunner.run(request));
   }
 
   private ProcessResult runProcessRef(HelmCliCommandType type, ProcessRef processRef) {

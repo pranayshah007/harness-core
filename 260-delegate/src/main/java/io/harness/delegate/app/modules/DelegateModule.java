@@ -522,6 +522,7 @@ import io.harness.googlefunctions.GoogleCloudFunctionGenOneClient;
 import io.harness.googlefunctions.GoogleCloudFunctionGenOneClientImpl;
 import io.harness.googlefunctions.GoogleCloudRunClient;
 import io.harness.googlefunctions.GoogleCloudRunClientImpl;
+import io.harness.helm.HelmCliExecutorFactory;
 import io.harness.helm.HelmClient;
 import io.harness.helm.HelmClientImpl;
 import io.harness.helpers.EncryptDecryptHelperImpl;
@@ -1085,14 +1086,7 @@ public class DelegateModule extends AbstractModule {
   @Singleton
   @Named("helmCliExecutor")
   public ExecutorService helmCliExecutor() {
-    int corePoolSize = System.getenv("HELM_CLI_CORE_POOL_SIZE") != null
-        ? Integer.parseInt(System.getenv("HELM_CLI_CORE_POOL_SIZE"))
-        : 10;
-    int maxPoolSize = System.getenv("HELM_CLI_MAX_POOL_SIZE") != null
-        ? Integer.parseInt(System.getenv("HELM_CLI_MAX_POOL_SIZE"))
-        : 50;
-    return ThreadPool.create(corePoolSize, maxPoolSize, 30, TimeUnit.SECONDS,
-        new ThreadFactoryBuilder().setNameFormat("helm-cli-%d").setPriority(Thread.MIN_PRIORITY).build());
+    return HelmCliExecutorFactory.create();
   }
 
   @Provides

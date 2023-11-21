@@ -52,6 +52,7 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
+import io.harness.helm.HelmCliExecutorFactory;
 import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesContainerServiceImpl;
@@ -107,8 +108,7 @@ public class KubernetesNgTasksModule extends AbstractModule {
   @Singleton
   @Named("helmCliExecutor")
   public ExecutorService helmCliExecutor() {
-    return ThreadPool.create(10, 50, 30, TimeUnit.SECONDS,
-        new ThreadFactoryBuilder().setNameFormat("helm-cli-%d").setPriority(Thread.MIN_PRIORITY).build());
+    return HelmCliExecutorFactory.create();
   }
 
   @Override
