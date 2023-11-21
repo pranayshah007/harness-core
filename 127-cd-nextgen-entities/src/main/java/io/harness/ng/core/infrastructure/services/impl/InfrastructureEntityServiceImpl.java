@@ -638,7 +638,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
         accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, environmentBranch);
 
     try (EntityGitDetailsGuard ignore = new EntityGitDetailsGuard(gitContextForInfra)) {
-      populateInfrastructuresWithYaml(infrastructureEntities, true);
+      populateInfrastructuresWithYaml(infrastructureEntities, false);
     } catch (CompletionException ex) {
       // internal method always wraps the CompletionException, so we will have a cause
       log.error(String.format("Error while getting infrastructure YAML: %s", infraIdentifierList), ex);
@@ -680,7 +680,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
         getGitDetailsForInfrastructure(accountIdentifier, orgIdentifier, projectIdentifier, envRef, environmentBranch);
 
     try (EntityGitDetailsGuard ignore = new EntityGitDetailsGuard(gitContextForInfra)) {
-      populateInfrastructuresWithYaml(infrastructureEntities, true);
+      populateInfrastructuresWithYaml(infrastructureEntities, false);
     } catch (CompletionException ex) {
       // internal method always wraps the CompletionException, so we will have a cause
       log.error(String.format("Error while getting infrastructure YAML for environment: %s", envRef), ex);
