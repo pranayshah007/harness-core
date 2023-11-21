@@ -8,12 +8,14 @@
 package io.harness.pms.approval.resources;
 
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.approval.ApprovalResourceService;
+import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.steps.approval.step.beans.ApprovalInstanceResponseDTO;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityRequestDTO;
@@ -45,6 +47,7 @@ public class ApprovalResourceImpl implements ApprovalResource {
     return ResponseDTO.newResponse(approvalResourceService.get(approvalInstanceId, accountId));
   }
 
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<ApprovalInstanceResponseDTO> addHarnessApprovalActivity(@AccountIdentifier String accountId,
       @NotEmpty String approvalInstanceId, @NotNull @Valid HarnessApprovalActivityRequestDTO request) {
     return ResponseDTO.newResponse(approvalResourceService.addHarnessApprovalActivity(approvalInstanceId, request));
