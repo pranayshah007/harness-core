@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ANSUMAN;
 import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
+import static io.harness.rule.OwnerRule.SHUBHENDU;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -46,6 +47,9 @@ import io.harness.cvng.cdng.services.api.PipelineStepMonitoredServiceResolutionS
 import io.harness.cvng.cdng.services.impl.CVNGStep.VerifyStepOutcome;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.DatadogMetricCVConfig;
+import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
@@ -720,6 +724,27 @@ public class CVNGStepTest extends CvNextGenTestBase {
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
   }
 
+  @Test
+  @Owner(developers = SHUBHENDU)
+  @Category(UnitTests.class)
+  public void testHasInvalidCVConfig() {
+    CVConfig cvConfig = DatadogMetricCVConfig.builder()
+                            .accountId(builderFactory.getContext().getAccountId())
+                            .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
+                            .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
+                            .monitoredServiceIdentifier(generateUuid())
+                            .metricPack(MetricPack.builder().dataCollectionDsl("dsl").build())
+                            .build();
+    assertThat(cvngStep.hasInvalidCVConfig(Collections.singletonList(cvConfig))).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SHUBHENDU)
+  @Category(UnitTests.class)
+  public void testHasInvalidCVConfig_falseCase() {
+    CVConfig cvConfig = builderFactory.splunkCVConfigBuilder().build();
+    assertThat(cvngStep.hasInvalidCVConfig(Collections.singletonList(cvConfig))).isFalse();
+  }
   private StepElementParameters getStepElementParametersWithLoadTest() {
     TestVerificationJobSpec spec = TestVerificationJobSpec.builder()
                                        .deploymentTag(randomParameter())
