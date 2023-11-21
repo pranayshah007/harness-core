@@ -228,8 +228,8 @@ public class VmInitializeTaskParamsBuilder {
     Map<String, String> envVars = new HashMap<>();
     Map<String, String> stageEnvVars =
         vmInitializeUtils.getStageEnvVars(integrationStageConfig.getPlatform(), os, workDir, poolId, infrastructure);
-    Map<String, String> proxyEnvVars = vmInitializeUtils.getStageProxyVars(
-        integrationStageConfig, os, workDir, poolId, infrastructure, ngAccess, connectorUtils);
+    Map<String, String> proxyEnvVars =
+        vmInitializeUtils.getStageProxyVars(integrationStageConfig, os, ngAccess, connectorUtils);
     envVars.putAll(stageEnvVars);
     envVars.putAll(proxyEnvVars);
     envVars.putAll(codebaseEnvVars);
