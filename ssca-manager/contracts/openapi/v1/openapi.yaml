@@ -1397,31 +1397,7 @@ components:
           $ref: '#/components/schemas/Scores'
     SbomScorecardResponseBody:
       type: object
-      x-examples:
-        Example 1:
-          orchestrateId: string
-          accountId: string
-          orgId: string
-          projectId: string
-          avgScore: string
-          creationOn: string
-          sbom:
-            toolName: string
-            toolVersion: string
-            sbomFileName: string
-            sbomFormat: string
-            sbomVersion: string
-            fileFormat: string
-          scoreCardInfo:
-            toolName: string
-            toolVersion: string
-          scores:
-            category: string
-            feature: string
-            score: string
-            maxScore: string
-            description: string
-            ignored: string
+      x-examples: {}
       title: SbomScoreCardResponseBody
       properties:
         orchestrate_id:
