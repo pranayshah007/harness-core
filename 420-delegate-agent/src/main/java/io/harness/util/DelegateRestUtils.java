@@ -24,7 +24,10 @@ public class DelegateRestUtils {
   public static <T> T executeRestCall(Call<T> call) throws IOException {
     Response<T> response = null;
     try {
-     throw new IOException("hello message");
+      response = call.execute();
+      if (response.isSuccessful()) {
+        return response.body();
+      }
     } catch (Exception e) {
       throw new IOException("Exception occurred while making rest call " + call.request().url(), e.getCause());
     } finally {
@@ -35,6 +38,6 @@ public class DelegateRestUtils {
         response.errorBody().close();
       }
     }
-//    return null;
+    return null;
   }
 }
