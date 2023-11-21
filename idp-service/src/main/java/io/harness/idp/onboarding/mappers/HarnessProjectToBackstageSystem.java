@@ -8,6 +8,7 @@
 package io.harness.idp.onboarding.mappers;
 
 import static io.harness.idp.backstagebeans.Constants.ENTITY_UNKNOWN_OWNER;
+import static io.harness.idp.common.CommonUtils.truncateEntityName;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -29,18 +30,18 @@ public class HarnessProjectToBackstageSystem
 
     BackstageCatalogEntity.Metadata metadata = new BackstageCatalogEntity.Metadata();
     metadata.setMetadata(projectDTO.getIdentifier(), projectDTO.getOrgIdentifier() + "-" + projectDTO.getIdentifier(),
-        truncateName(projectDTO.getIdentifier()), projectDTO.getName(), projectDTO.getDescription(),
+        truncateEntityName(projectDTO.getIdentifier()), projectDTO.getName(), projectDTO.getDescription(),
         getTags(projectDTO.getTags()), null);
     backstageCatalogSystemEntity.setMetadata(metadata);
 
     BackstageCatalogSystemEntity.Spec spec = new BackstageCatalogSystemEntity.Spec();
     spec.setOwner(ENTITY_UNKNOWN_OWNER);
-    spec.setDomain(truncateName(projectDTO.getOrgIdentifier()));
+    spec.setDomain(truncateEntityName(projectDTO.getOrgIdentifier()));
     backstageCatalogSystemEntity.setSpec(spec);
 
     if (entityNamesSeenSoFar.contains(projectDTO.getIdentifier())) {
       backstageCatalogSystemEntity.getMetadata().setName(
-          truncateName(backstageCatalogSystemEntity.getMetadata().getAbsoluteIdentifier()));
+          truncateEntityName(backstageCatalogSystemEntity.getMetadata().getAbsoluteIdentifier()));
     }
 
     entityNamesSeenSoFar.add(projectDTO.getIdentifier());

@@ -1,0 +1,12 @@
+{
+  "identifier": "stage1",
+  "spec":
+  {
+    "serviceConfig": {
+      "serviceRef": "idp-service"
+    },
+    "infrastructure": {
+      "environmentRef": "env"
+    }
+  }
+}

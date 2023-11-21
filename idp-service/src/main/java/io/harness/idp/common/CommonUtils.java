@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.IDP)
@@ -39,6 +40,13 @@ public class CommonUtils {
       return arrOfStr[1];
     }
     return arrOfStr[0];
+  }
+
+  public static String truncateEntityName(String harnessEntityName) {
+    if (harnessEntityName.length() > 63) {
+      return StringUtils.truncate(harnessEntityName, 60) + "---";
+    }
+    return harnessEntityName;
   }
 
   public static String readFileFromClassPath(String filename) {

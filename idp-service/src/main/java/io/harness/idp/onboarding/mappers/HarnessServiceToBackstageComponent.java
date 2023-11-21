@@ -13,6 +13,7 @@ import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY;
 import static io.harness.idp.backstagebeans.Constants.ENTITY_UNKNOWN_OWNER;
 import static io.harness.idp.backstagebeans.Constants.SERVICE;
+import static io.harness.idp.common.CommonUtils.truncateEntityName;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_HARNESS_ANNOTATION_CD_SERVICE_ID;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_HARNESS_ANNOTATION_PROJECT_URL;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_HARNESS_ANNOTATION_SERVICES;
@@ -64,7 +65,7 @@ public class HarnessServiceToBackstageComponent
     BackstageCatalogEntity.Metadata metadata = new BackstageCatalogEntity.Metadata();
     metadata.setMetadata(serviceResponseDTO.getIdentifier(),
         orgIdentifier + "-" + projectIdentifier + "-" + serviceResponseDTO.getIdentifier(),
-        truncateName(serviceResponseDTO.getIdentifier()), serviceResponseDTO.getName(),
+        truncateEntityName(serviceResponseDTO.getIdentifier()), serviceResponseDTO.getName(),
         serviceResponseDTO.getDescription(), getTags(serviceResponseDTO.getTags()),
         getHarnessCiCdAnnotations(serviceResponseDTO));
     backstageCatalogComponentEntity.setMetadata(metadata);
@@ -73,14 +74,14 @@ public class HarnessServiceToBackstageComponent
     spec.setType(SERVICE);
     spec.setLifecycle(ENTITY_UNKNOWN_LIFECYCLE);
     spec.setOwner(ENTITY_UNKNOWN_OWNER);
-    spec.setDomain(truncateName(orgIdentifier));
-    spec.setSystem(truncateName(projectIdentifier));
+    spec.setDomain(truncateEntityName(orgIdentifier));
+    spec.setSystem(truncateEntityName(projectIdentifier));
     spec.setHarnessSystem(projectIdentifier);
     backstageCatalogComponentEntity.setSpec(spec);
 
     if (entityNamesSeenSoFar.contains(serviceResponseDTO.getIdentifier())) {
       backstageCatalogComponentEntity.getMetadata().setName(
-          truncateName(backstageCatalogComponentEntity.getMetadata().getAbsoluteIdentifier()));
+          truncateEntityName(backstageCatalogComponentEntity.getMetadata().getAbsoluteIdentifier()));
     }
 
     entityNamesSeenSoFar.add(serviceResponseDTO.getIdentifier());

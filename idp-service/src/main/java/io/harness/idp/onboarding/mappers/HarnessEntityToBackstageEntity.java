@@ -15,18 +15,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface HarnessEntityToBackstageEntity<S, T extends BackstageCatalogEntity> {
   T map(S harnessEntity);
-
-  default String truncateName(String harnessEntityName) {
-    if (harnessEntityName.length() > 63) {
-      return StringUtils.truncate(harnessEntityName, 60) + "---";
-    }
-    return harnessEntityName;
-  }
 
   default List<String> getTags(Map<String, String> harnessEntityTags) {
     if (harnessEntityTags == null) {
