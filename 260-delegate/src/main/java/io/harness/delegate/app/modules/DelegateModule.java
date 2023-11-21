@@ -2294,7 +2294,7 @@ public class DelegateModule extends AbstractModule {
 
     // TAS NG
     mapBinder.addBinding(TaskType.TAS_BG_SETUP).toInstance(TasBGSetupTask.class);
-    mapBinder.addBinding(TaskType.TAS_BG_SETUP_V2).toInstance(TasBGSetupTask.class);
+    mapBinder.addBinding(TaskType.TAS_BG_SETUP_SUPPORT_2_APPS_V2).toInstance(TasBGSetupTask.class);
     mapBinder.addBinding(TaskType.TAS_BASIC_SETUP).toInstance(TasBasicSetupTask.class);
     mapBinder.addBinding(TaskType.TAS_SWAP_ROUTES).toInstance(TasSwapRouteTask.class);
     mapBinder.addBinding(TaskType.TAS_APP_RESIZE).toInstance(TasAppResizeTask.class);

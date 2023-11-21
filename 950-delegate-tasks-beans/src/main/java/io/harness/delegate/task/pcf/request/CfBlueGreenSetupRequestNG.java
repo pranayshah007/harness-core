@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import static software.wings.beans.TaskType.TAS_BG_SETUP;
-import static software.wings.beans.TaskType.TAS_BG_SETUP_V2;
+import static software.wings.beans.TaskType.TAS_BG_SETUP_SUPPORT_2_APPS_V2;
 
 import static java.lang.String.format;
 
@@ -89,7 +89,7 @@ public class CfBlueGreenSetupRequestNG extends AbstractTasTaskRequest {
 
   public TaskType getDelegateTaskType() {
     if (this.olderActiveVersionCountToKeep == 0) {
-      return TAS_BG_SETUP_V2;
+      return TAS_BG_SETUP_SUPPORT_2_APPS_V2;
     } else {
       return TAS_BG_SETUP;
     }
