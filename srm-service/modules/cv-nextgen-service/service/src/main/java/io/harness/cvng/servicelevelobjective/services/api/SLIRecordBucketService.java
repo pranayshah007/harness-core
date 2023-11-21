@@ -49,10 +49,9 @@ public interface SLIRecordBucketService {
   Pair<Long, Long> getPreviousBucketRunningCount(
       SLIRecordBucket sliRecordBucket, ServiceLevelIndicator serviceLevelIndicator);
 
-  org.apache.commons.math3.util
-      .Pair<Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecordBucket>>,
-          Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>>
-      getSLODetailsSLIRecordsAndSLIMissingDataType(
-          List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,
-          Instant startTime, Instant endTime);
+  Pair<Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecordBucket>>,
+      Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>>
+  getSLODetailsSLIRecordsAndSLIMissingDataType(
+      List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,
+      Instant startTime, Instant endTime);
 }

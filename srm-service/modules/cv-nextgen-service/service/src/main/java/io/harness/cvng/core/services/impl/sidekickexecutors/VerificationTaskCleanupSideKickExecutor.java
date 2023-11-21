@@ -32,6 +32,7 @@ import io.harness.cvng.core.services.api.SideKickExecutor;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.CVNGObjectUtils;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
+import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecordBucket;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket.SLIRecordBucketKeys;
@@ -68,12 +69,12 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
   static final Collection<? extends Class<? extends PersistentEntity>> ENTITIES_DELETE_BLACKLIST_BY_VERIFICATION_ID =
       Arrays.asList(DeploymentLogAnalysis.class, DeploymentTimeSeriesAnalysis.class);
   @VisibleForTesting
-  static final List<Class<? extends PersistentEntity>> ENTITIES_TO_DELETE_BY_VERIFICATION_ID =
-      Arrays.asList(ClusteredLog.class, TimeSeriesShortTermHistory.class, TimeSeriesRecord.class,
-          AnalysisOrchestrator.class, AnalysisStateMachine.class, LearningEngineTask.class, LogRecord.class,
-          HostRecord.class, LogAnalysisRecord.class, LogAnalysisResult.class, LogAnalysisCluster.class,
-          TimeSeriesRiskSummary.class, TimeSeriesAnomalousPatterns.class, DataCollectionTask.class,
-          TimeSeriesCumulativeSums.class, CVNGDemoDataIndex.class, SLIRecord.class, CompositeSLORecord.class);
+  static final List<Class<? extends PersistentEntity>> ENTITIES_TO_DELETE_BY_VERIFICATION_ID = Arrays.asList(
+      ClusteredLog.class, TimeSeriesShortTermHistory.class, TimeSeriesRecord.class, AnalysisOrchestrator.class,
+      AnalysisStateMachine.class, LearningEngineTask.class, LogRecord.class, HostRecord.class, LogAnalysisRecord.class,
+      LogAnalysisResult.class, LogAnalysisCluster.class, TimeSeriesRiskSummary.class, TimeSeriesAnomalousPatterns.class,
+      DataCollectionTask.class, TimeSeriesCumulativeSums.class, CVNGDemoDataIndex.class, SLIRecord.class,
+      CompositeSLORecord.class, CompositeSLORecordBucket.class);
 
   @VisibleForTesting
   static final Map<Class<? extends PersistentEntity>, String> ENTITIES_TO_DELETE_BY_ID_MAP =

@@ -730,7 +730,7 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
                    .get(serviceLevelObjectiveV2Service.getScopedIdentifier(
                        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0)))
                    .getRunningGoodCount())
-        .isEqualTo(300);
+        .isEqualTo(400);
   }
 
   @Test

@@ -29,14 +29,12 @@ import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 
@@ -55,25 +53,21 @@ public class CompositeSLORecordBucket extends VerificationTaskBase implements Pe
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("slo_timestamp")
-                 .field(CompositeSLORecordBucketKeys.sloId)
-                 .field(CompositeSLORecordBucketKeys.startTimestamp)
+                 .name("verificationtaskid_bucketstarttime")
+                 .field(CompositeSLORecordBucketKeys.verificationTaskId)
+                 .field(CompositeSLORecordBucketKeys.bucketStartTime)
                  .build())
         .build();
   }
   public static class CompositeSLORecordBucketBuilder {
     public CompositeSLORecordBucket build() {
-      CompositeSLORecordBucket compositeSLORecordBucket = unsafeBuild();
-      compositeSLORecordBucket.setEpochMinute(TimeUnit.MILLISECONDS.toMinutes(startTimestamp.toEpochMilli()));
-      return compositeSLORecordBucket;
+      return unsafeBuild();
     }
   }
   @Version long version;
   @Id private String uuid;
   @FdIndex private String verificationTaskId;
-  private String sloId;
-  private Instant startTimestamp; // minute
-  @Setter(AccessLevel.PRIVATE) private long epochMinute;
+  private Instant bucketStartTime; // minute
   private double runningBadCount;
   private double runningGoodCount;
   private Map<String, SLIRecordBucket> scopedIdentifierSLIRecordBucketMap;

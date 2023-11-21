@@ -15,6 +15,7 @@ import io.harness.SRMPersistence;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
+import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLIValue;
@@ -335,12 +336,11 @@ public class SLIRecordBucketServiceImpl implements SLIRecordBucketService {
   }
 
   @Override
-  public org.apache.commons.math3.util
-      .Pair<Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecordBucket>>,
-          Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>>
-      getSLODetailsSLIRecordsAndSLIMissingDataType(
-          List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,
-          Instant startTime, Instant endTime) {
+  public Pair<Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecordBucket>>,
+      Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>>
+  getSLODetailsSLIRecordsAndSLIMissingDataType(
+      List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,
+      Instant startTime, Instant endTime) {
     Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecordBucket>>
         serviceLevelObjectivesDetailSLIRecordMap = new HashMap<>();
     Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>
@@ -371,9 +371,9 @@ public class SLIRecordBucketServiceImpl implements SLIRecordBucketService {
           && serviceLevelIndicator.getConsiderConsecutiveMinutes() > 1) {
         SLIRecordBucket lastSLIRecordBucket = getLatestSLIRecordSLIVersion(sliId, sliVersion);
         if (lastSLIRecordBucket != null) {
-          // TODO check again, we are adjusting endtime here
-          Instant timeOfLastRecordWhichIsFixed = lastSLIRecordBucket.getBucketStartTime().minus(
-              serviceLevelIndicator.getConsiderConsecutiveMinutes() - 2, ChronoUnit.MINUTES);
+          Instant timeOfLastRecordWhichIsFixed =
+              DateTimeUtils.roundDownTo5MinBoundary(lastSLIRecordBucket.getBucketStartTime().minus(
+                  serviceLevelIndicator.getConsiderConsecutiveMinutes() - 2, ChronoUnit.MINUTES));
           endTime = timeOfLastRecordWhichIsFixed.isBefore(endTime) ? timeOfLastRecordWhichIsFixed : endTime;
         }
       }
@@ -383,8 +383,7 @@ public class SLIRecordBucketServiceImpl implements SLIRecordBucketService {
         objectivesDetailSLIMissingDataTypeMap.put(objectivesDetail, serviceLevelIndicator.getSliMissingDataType());
       }
     }
-    return org.apache.commons.math3.util.Pair.create(
-        serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap);
+    return Pair.of(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap);
   }
 
   private SLIRecordBucket getLatestSLIRecordSLIVersion(String sliId, int sliVersion) {
