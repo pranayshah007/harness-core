@@ -116,10 +116,6 @@ public class CheckServiceImpl implements CheckService {
   public void createCheck(CheckDetails checkDetails, String accountIdentifier) {
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       generateRuleIdentifiers(checkDetails);
-
-      // TODO: To be removed once UI starts sending input values in the new format.
-      copyInputValues(checkDetails, accountIdentifier);
-
       validateCheckSaveRequest(checkDetails, accountIdentifier);
 
       if (isCheckAlreadyDeleted(accountIdentifier, checkDetails.getIdentifier())) {
@@ -135,11 +131,8 @@ public class CheckServiceImpl implements CheckService {
   public void updateCheck(CheckDetails checkDetails, String accountIdentifier) {
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       validateRules(checkDetails);
-
-      // TODO: To be removed once UI starts sending input values in the new format.
-      copyInputValues(checkDetails, accountIdentifier);
-
       validateCheckSaveRequest(checkDetails, accountIdentifier);
+
       CheckEntity oldCheckEntity =
           checkRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, checkDetails.getIdentifier());
       CheckEntity updatedCheckEntity =
@@ -371,9 +364,8 @@ public class CheckServiceImpl implements CheckService {
                   .filter(inputDetails -> inputDetails.getKey().equals(inputValue.getKey()))
                   .findFirst();
           if (inputDetailsOpt.isEmpty()) {
-            throw new InvalidRequestException(
-                String.format("Conditional input value for key %s does not match any data point intput details",
-                    inputValue.getKey()));
+            throw new InvalidRequestException(String.format(
+                "Conditional input value for key %s does not match any data point input details", inputValue.getKey()));
           }
           if (inputDetailsOpt.get().isRequired() && isEmpty(inputValue.getValue())) {
             throw new InvalidRequestException(
@@ -388,20 +380,6 @@ public class CheckServiceImpl implements CheckService {
     CheckEntity checkEntity =
         checkRepository.findByAccountIdentifierAndIdentifierAndIsDeleted(accountIdentifier, checkId, true);
     return checkEntity != null;
-  }
-
-  private void copyInputValues(CheckDetails checkDetails, String accountIdentifier) {
-    for (Rule rule : checkDetails.getRules()) {
-      DataPointEntity dataPoint = dataPointService.getDataPoint(
-          accountIdentifier, rule.getDataSourceIdentifier(), rule.getDataPointIdentifier());
-      List<InputDetails> inputsDetails = dataPoint.getInputDetails();
-      if (inputsDetails != null && inputsDetails.size() == 1) {
-        InputValue inputValue = new InputValue();
-        inputValue.setKey(inputsDetails.get(0).getKey());
-        inputValue.setValue(rule.getConditionalInputValue());
-        rule.setInputValues(Collections.singletonList(inputValue));
-      }
-    }
   }
 
   private void validateRules(CheckDetails checkDetails) {

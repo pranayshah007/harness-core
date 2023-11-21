@@ -32,8 +32,6 @@ public class DataSourceDataPointsMapMapperTest {
   private static final String TEST_DATA_POINT_TYPE = "test-datapoint-type";
   private static final String TEST_DATA_POINT_NAME = "test-data-point-name";
   private static final String TEST_DATA_POINT_DESCRIPTION = "test-data-point=description";
-  private static final Boolean TEST_DATA_POINT_IS_CONDITIONAL_VALUE = false;
-  private static final String TEST_CONDITIONAL_INPUT_DESCRIPTION = "test-datapoint-input-description";
   private static final String TEST_DATAPOINT_IDENTIFIER = "test-datapoint-identifier";
   private static final String TEST_DATAPOINT_DETAILED_DESCRIPTION = "test-datapoint-detailed-description";
 
@@ -52,8 +50,6 @@ public class DataSourceDataPointsMapMapperTest {
     dataPoint.setType(TEST_DATA_POINT_TYPE);
     dataPoint.setDescription(TEST_DATA_POINT_DESCRIPTION);
     dataPoint.setDetailedDescription(TEST_DATAPOINT_DETAILED_DESCRIPTION);
-    dataPoint.setIsConditional(TEST_DATA_POINT_IS_CONDITIONAL_VALUE);
-    dataPoint.setConditionalInputDescription(TEST_CONDITIONAL_INPUT_DESCRIPTION);
     List<DataPoint> listOfDataPoints = new ArrayList<>();
     listOfDataPoints.add(dataPoint);
 

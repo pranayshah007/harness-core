@@ -145,11 +145,9 @@ public class DataSourceApiImplTest extends CategoryTest {
   private DataPoint getTestDataPoint() {
     DataPoint dataPoint = new DataPoint();
     dataPoint.setDataPointIdentifier(TEST_DATA_POINT_IDENTIFIER);
-    dataPoint.setIsConditional(TEST_DATA_POINT_IS_CONDITIONAL);
     dataPoint.setType(TEST_DATA_POINT_TYPE);
     dataPoint.setName(TEST_DATA_POINT_NAME);
     dataPoint.setDescription(TEST_DATA_POINT_DESCRIPTION);
-    dataPoint.setConditionalInputDescription(TEST_DATA_POINT_INPUT_DESCRIPTION);
     return dataPoint;
   }
 

@@ -64,13 +64,11 @@ public class MultipleInputValuesMigration implements NGMigration {
         updatedRule.setDataSourceIdentifier(rule.getDataSourceIdentifier());
         updatedRule.setOperator(rule.getOperator());
         updatedRule.setValue(rule.getValue());
-        updatedRule.setConditionalInputValue(rule.getConditionalInputValue());
 
         List<InputDetails> inputsDetails = dataPoint.getInputDetails();
         if (inputsDetails.size() == 1) {
           InputValue inputValue = new InputValue();
           inputValue.setKey(inputsDetails.get(0).getKey());
-          inputValue.setValue(rule.getConditionalInputValue());
           updatedRule.setInputValues(Collections.singletonList(inputValue));
         }
         rules.add(updatedRule);

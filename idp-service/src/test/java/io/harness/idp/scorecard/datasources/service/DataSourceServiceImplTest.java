@@ -92,8 +92,6 @@ public class DataSourceServiceImplTest extends CategoryTest {
     dataPoint.setType(TEST_DATA_POINT_TYPE);
     dataPoint.setDescription(TEST_DATA_POINT_DESCRIPTION);
     dataPoint.setDetailedDescription(TEST_DATAPOINT_DETAILED_DESCRIPTION);
-    dataPoint.setIsConditional(TEST_DATA_POINT_IS_CONDITIONAL_VALUE);
-    dataPoint.setConditionalInputDescription(TEST_CONDITIONAL_INPUT_DESCRIPTION);
 
     when(dataPointService.getAllDataPointsDetailsForAccountAndDataSource(
              TEST_ACCOUNT_IDENTIFIER, TEST_DATA_SOURCE_IDENTIFIER))

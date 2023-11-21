@@ -13,7 +13,7 @@ import static io.harness.idp.common.Constants.GITHUB_IDENTIFIER;
 import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.CATALOG_TECH_DOCS;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.IS_BRANCH_PROTECTED;
-import static io.harness.idp.scorecard.datapoints.constants.Inputs.BRANCH_NAME;
+import static io.harness.idp.scorecard.datapoints.constants.Inputs.FILE_PATH;
 import static io.harness.rule.OwnerRule.VIGNESWARA;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -57,12 +57,14 @@ import io.harness.spec.server.idp.v1.model.CheckStatsResponse;
 import io.harness.spec.server.idp.v1.model.CheckStatus;
 import io.harness.spec.server.idp.v1.model.DataPoint;
 import io.harness.spec.server.idp.v1.model.InputDetails;
+import io.harness.spec.server.idp.v1.model.InputValue;
 import io.harness.spec.server.idp.v1.model.Rule;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
 import io.harness.utils.PageUtils;
 
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +86,6 @@ import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.IDP)
 public class CheckServiceImplTest extends CategoryTest {
-  private static final String DEVELOP_BRANCH = "develop";
   private static final String RULE_IDENTIFIER1 = "rule1";
   private static final String RULE_IDENTIFIER2 = "rule2";
   private CheckServiceImpl checkServiceImpl;
@@ -429,7 +430,10 @@ public class CheckServiceImplTest extends CategoryTest {
     rule.setDataSourceIdentifier(DATA_SOURCE_ID);
     rule.setDataPointIdentifier(DATA_POINT_ID);
     rule.setOperator("==");
-    rule.setConditionalInputValue(conditionalInput);
+    InputValue inputValue = new InputValue();
+    inputValue.setKey(FILE_PATH);
+    inputValue.setValue(conditionalInput);
+    rule.setInputValues(Collections.singletonList(inputValue));
     rule.setValue("true");
     rules.add(rule);
     CheckDetails checkDetails = new CheckDetails();
@@ -443,8 +447,8 @@ public class CheckServiceImplTest extends CategoryTest {
 
   private Map<String, DataPoint> getDataPointMap() {
     DataPoint dataPoint = new DataPoint();
+    dataPoint.setInputDetails(Collections.singletonList(getInputDetails()));
     dataPoint.setDataPointIdentifier(DATA_POINT_ID);
-    dataPoint.setIsConditional(true);
     return Map.of(DATA_SOURCE_ID + DOT_SEPARATOR + DATA_POINT_ID, dataPoint);
   }
 
@@ -523,8 +527,8 @@ public class CheckServiceImplTest extends CategoryTest {
 
   private InputDetails getInputDetails() {
     InputDetails inputDetails = new InputDetails();
-    inputDetails.key(BRANCH_NAME);
-    inputDetails.key(DEVELOP_BRANCH);
+    inputDetails.key(FILE_PATH);
+    inputDetails.setRequired(true);
     return inputDetails;
   }
 

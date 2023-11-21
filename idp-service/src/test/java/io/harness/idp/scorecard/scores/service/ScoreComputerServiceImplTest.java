@@ -279,7 +279,6 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
     rule2.setDataPointIdentifier(DATA_POINT_IDENTIFIER2);
     rule2.setOperator(OPERATOR2);
     rule2.setValue(VALUE);
-    rule2.setConditionalInputValue(INPUT_VALUE);
     rule2.setInputValues(List.of(inputValue));
     CheckEntity check2 = CheckEntity.builder()
                              .accountIdentifier(ACCOUNT_ID)
