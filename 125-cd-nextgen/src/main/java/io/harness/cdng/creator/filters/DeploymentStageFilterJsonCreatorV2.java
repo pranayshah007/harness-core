@@ -123,7 +123,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       addInfraFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
 
       return filterBuilder.build();
-    } catch (WingsException ex) {
+    } catch (WingsException | InvalidYamlRuntimeException ex) {
       log.error("Error while adding filters in DeploymentStageFilterJsonCreatorV2", ex);
       throw ex;
     } catch (Exception ex) {
