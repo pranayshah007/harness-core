@@ -19,6 +19,7 @@ java_library(
     deps = [
         "//:lombok",
         "//970-api-services-beans/src/main/java/io/harness/process:module",
+        "//980-commons/src/main/java/io/harness/beans:module",
         "@maven//:org_zeroturnaround_zt_exec",
         "@maven//:org_apache_commons_commons_lang3",
     ],
