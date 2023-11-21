@@ -15,6 +15,7 @@ import static io.harness.telemetry.helpers.InstrumentationConstants.ARTIFACT_TYP
 import static io.harness.telemetry.helpers.InstrumentationConstants.DEPLOYMENT_TYPE;
 import static io.harness.telemetry.helpers.InstrumentationConstants.GLOBAL_ACCOUNT_ID;
 import static io.harness.telemetry.helpers.InstrumentationConstants.IS_ARTIFACT_PRIMARY;
+import static io.harness.telemetry.helpers.InstrumentationConstants.IS_SERVICE_V2;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -39,7 +40,7 @@ public class ArtifactDeploymentInstrumentationHelper extends InstrumentationHelp
   @Inject TelemetryReporter telemetryReporter;
 
   private CompletableFuture<Void> publishArtifactInfo(ArtifactConfig artifactConfig, String accountId, String orgId,
-      String projectId, String eventName, String deploymentType) {
+      String projectId, String eventName, String deploymentType, Boolean isServiceV2) {
     HashMap<String, Object> eventPropertiesMap = new HashMap<>();
     eventPropertiesMap.put(ARTIFACT_ACCOUNT, accountId);
     eventPropertiesMap.put(ARTIFACT_ORG, orgId);
@@ -48,12 +49,14 @@ public class ArtifactDeploymentInstrumentationHelper extends InstrumentationHelp
     eventPropertiesMap.put(ARTIFACT_PROJECT, projectId);
     eventPropertiesMap.put(IS_ARTIFACT_PRIMARY, artifactConfig.isPrimaryArtifact());
     eventPropertiesMap.put(DEPLOYMENT_TYPE, deploymentType);
+    eventPropertiesMap.put(IS_SERVICE_V2, isServiceV2);
     return sendEvent(eventName, accountId, eventPropertiesMap);
   }
 
-  public CompletableFuture<Void> sendArtifactDeploymentEvent(
-      ArtifactConfig artifactConfig, String accountId, String orgId, String projectId, String deploymentType) {
-    return publishArtifactInfo(artifactConfig, accountId, orgId, projectId, "artifact_deployment", deploymentType);
+  public CompletableFuture<Void> sendArtifactDeploymentEvent(ArtifactConfig artifactConfig, String accountId,
+      String orgId, String projectId, String deploymentType, Boolean isServiceV2) {
+    return publishArtifactInfo(
+        artifactConfig, accountId, orgId, projectId, "artifact_deployment", deploymentType, isServiceV2);
   }
 
   private CompletableFuture<Void> sendEvent(

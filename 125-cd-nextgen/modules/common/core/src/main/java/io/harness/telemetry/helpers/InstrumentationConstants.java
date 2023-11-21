@@ -17,4 +17,5 @@ public class InstrumentationConstants {
   public static final String ARTIFACT_PROJECT = "artifact_project";
   public static final String IS_ARTIFACT_PRIMARY = "is_artifact_primary";
   public static final String DEPLOYMENT_TYPE = "deployment_type";
+  public static final String IS_SERVICE_V2 = "is_service_v2";
 }

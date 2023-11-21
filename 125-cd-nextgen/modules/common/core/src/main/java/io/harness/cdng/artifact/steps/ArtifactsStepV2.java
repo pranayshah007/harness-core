@@ -236,12 +236,12 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
         artifactConfigMap.put(primaryArtifactTaskId, artifacts.getPrimary().getSpec());
         artifactDeploymentInstrumentationHelper.sendArtifactDeploymentEvent(artifacts.getPrimary().getSpec(),
             AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-            AmbianceUtils.getProjectIdentifier(ambiance), service.getServiceDefinition().getType().name());
+            AmbianceUtils.getProjectIdentifier(ambiance), service.getServiceDefinition().getType().name(), true);
       } else if (ACTION.RUN_SYNC.equals(actionForPrimaryArtifact)) {
         artifactConfigMapForNonDelegateTaskTypes.add(artifacts.getPrimary().getSpec());
         artifactDeploymentInstrumentationHelper.sendArtifactDeploymentEvent(artifacts.getPrimary().getSpec(),
             AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-            AmbianceUtils.getProjectIdentifier(ambiance), service.getServiceDefinition().getType().name());
+            AmbianceUtils.getProjectIdentifier(ambiance), service.getServiceDefinition().getType().name(), true);
       }
     }
 
@@ -267,14 +267,14 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
           artifactConfigMap.put(taskId, sidecar.getSidecar().getSpec());
           artifactDeploymentInstrumentationHelper.sendArtifactDeploymentEvent(artifacts.getPrimary().getSpec(),
               AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-              AmbianceUtils.getProjectIdentifier(ambiance), service.getServiceDefinition().getType().name());
+              AmbianceUtils.getProjectIdentifier(ambiance), service.getServiceDefinition().getType().name(), true);
         } else if (ACTION.RUN_SYNC.equals(actionForSidecar)) {
           checkAndWarnIfDoesNotFollowIdentifierRegex(
               sidecar.getSidecar().getSpec().getIdentifier(), "Sidecar", logCallback);
           artifactConfigMapForNonDelegateTaskTypes.add(sidecar.getSidecar().getSpec());
           artifactDeploymentInstrumentationHelper.sendArtifactDeploymentEvent(artifacts.getPrimary().getSpec(),
               AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-              AmbianceUtils.getProjectIdentifier(ambiance), service.getServiceDefinition().getType().name());
+              AmbianceUtils.getProjectIdentifier(ambiance), service.getServiceDefinition().getType().name(), true);
         }
       }
     }
