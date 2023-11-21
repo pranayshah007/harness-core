@@ -1291,14 +1291,41 @@ components:
       type: object
       description: 'Trigger request body object '
       properties:
-        type:
+        description:
           type: string
-          enum:
-            - custom
-        spec:
+        enabled:
+          type: boolean
+        encryptedWebhookSecretIdentifier:
+          type: string
+        identifier:
+          type: string
+          pattern: "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
+        inputSetRefs:
+          type: array
+          items:
+            type: string
+        inputYaml:
+          type: string
+        name:
+          type: string
+          pattern: "^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$"
+        pipelineBranchName:
+          type: string
+        source:
           $ref: '#/components/schemas/TriggerSpec'
+        stagesToExecute:
+          type: array
+          items:
+            type: string
+        tags:
+          type: object
+          additionalProperties:
+            type: string
       required:
         - type
+        - identifier
+        - name
+        - source
     TriggerUpdateRequestBody:
       title: Trigger Update Request Body
       type: object
@@ -1316,14 +1343,29 @@ components:
       title: Trigger Spec
       type: object
       properties:
-        payload_conditions:
-          type: array
-          items:
-            $ref: '#/components/schemas/TriggerConditions'
-        header_conditions:
-          type: array
-          items:
-            $ref: '#/components/schemas/TriggerConditions'
+        pollInterval:
+          type: string
+          pattern: "(((([1-9])+\\d*[mh])+(\\s/?\\d+[mh])*)|(^$)|(0))$"
+        type:
+          type: string
+          enum:
+            - Webhook
+            - Artifact
+            - Manifest
+            - Scheduled
+            - MultiRegionArtifact
+        webhookId:
+          type: string
+        spec:
+          oneOf:
+            - $ref: '#/components/schemas/ScheduledTriggerSpec'
+          discriminator:
+            propertyName: type
+            mapping:
+              Scheduled: '#/components/schemas/ScheduledTriggerSpec'
+      required:
+        - type
+        - spec
     TriggerConditions:
       title: Trigger PayloadConditions
       type: object
@@ -1334,6 +1376,17 @@ components:
         operator:
           type: string
         value:
+          type: string
+    ScheduledTriggerSpec:
+      title: Scheduled Trigger Spec
+      type: object
+      description: 'Spec for Scheduled Triggers'
+      properties:
+        type:
+          type: string
+          enum:
+            - Cron
+        expression:
           type: string
     TriggerCreateResponseBody:
       title: Trigger Create Response Body
