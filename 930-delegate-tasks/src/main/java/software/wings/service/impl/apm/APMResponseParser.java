@@ -45,7 +45,7 @@ public class APMResponseParser {
   public static Collection<NewRelicMetricDataRecord> extract(List<APMResponseData> apmResponseData) {
     Map<String, NewRelicMetricDataRecord> resultMap = new HashMap<>();
     for (APMResponseData data : apmResponseData) {
-      log.info("Response Data is :  {}", data);
+      log.debug("Response Data is :  {}", data);
       for (APMMetricInfo metricInfo : data.getMetricInfos()) {
         VerificationResponseParser apmResponseParser = new VerificationResponseParser();
         String timestampFormat = null;

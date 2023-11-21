@@ -71,7 +71,7 @@ public abstract class LogSanitizer {
     }
 
     // JWT sanitization
-    sanitizedLogMessage = LogSanitizerHelper.sanitizeJWT(sanitizedLogMessage);
+    sanitizedLogMessage = LogSanitizerHelper.sanitizeTokens(sanitizedLogMessage);
 
     return sanitizedLogMessage;
   }
