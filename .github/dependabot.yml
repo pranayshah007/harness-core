@@ -1,0 +1,101 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /315-sto-manager/build/container
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /931-delegate-decryption-service/src/dockerization
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /953-events-api/src/monitoring
+    schedule:
+      interval: daily
+
+  - package-ecosystem: pip
+    directory: /953-events-api/src/monitoring
+    schedule:
+      interval: daily
+
+  - package-ecosystem: gomod
+    directory: /clients/queue-service/go/client
+    schedule:
+      interval: daily
+
+  - package-ecosystem: gomod
+    directory: /commons/go/lib
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /delegate/src/main/java/io/harness/taskapps/dockerization
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /dockerization/base-images/go/1/1.20
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /dockerization/base-images/go/1/1.21
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /dockerization/base-images/java/11/11.0
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /dockerization/base-images/java/17/17.0
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /dockerization/base-images/python/3/3.11
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /dockerization/base-images/python/3/3.8
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /dockerization/base-images/python/3/3.9
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /dockerization/base-images/ubi/8/8.8
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /dockerization/delegate-proxy
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /dockerization/delegate
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /on-prem/helper
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /on-prem/kubernetes_installer/harness/components/mongodb-replicaset/install
+    schedule:
+      interval: daily
