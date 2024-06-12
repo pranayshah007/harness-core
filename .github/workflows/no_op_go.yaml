@@ -11,8 +11,13 @@ jobs:
     name: No-op tests for Go
     runs-on: ubuntu-22.04
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
+        with:
+          egress-policy: audit
+
       - name: Complete ti0
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@faaa4d96fecf273bd762985e0e7f9f933c774918 # v1.1.0
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: SmartPRChecks-tin0
@@ -21,7 +26,7 @@ jobs:
           sha: ${{github.event.pull_request.head.sha || github.sha}}
 
       - name: Complete ti1
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@faaa4d96fecf273bd762985e0e7f9f933c774918 # v1.1.0
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: SmartPRChecks-tin1
@@ -30,7 +35,7 @@ jobs:
           sha: ${{github.event.pull_request.head.sha || github.sha}}
 
       - name: Complete ti2
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@faaa4d96fecf273bd762985e0e7f9f933c774918 # v1.1.0
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: SmartPRChecks-ti2
@@ -39,7 +44,7 @@ jobs:
           sha: ${{github.event.pull_request.head.sha || github.sha}}
 
       - name: Complete ti3
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@faaa4d96fecf273bd762985e0e7f9f933c774918 # v1.1.0
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: SmartPRChecks-tin3 
@@ -48,7 +53,7 @@ jobs:
           sha: ${{github.event.pull_request.head.sha || github.sha}}
 
 #       - name: Complete Compile-bazelbuild
-#         uses: Sibz/github-status-action@v1
+#         uses: Sibz/github-status-action@faaa4d96fecf273bd762985e0e7f9f933c774918 # v1.1.0
 #         with:
 #           authToken: ${{secrets.GITHUB_TOKEN}}
 #           context: Compile-bazelbuild
@@ -57,7 +62,7 @@ jobs:
 #           sha: ${{github.event.pull_request.head.sha || github.sha}}
 
       - name: Complete ti4
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@faaa4d96fecf273bd762985e0e7f9f933c774918 # v1.1.0
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: SmartPRChecks-tin4
@@ -66,7 +71,7 @@ jobs:
           sha: ${{github.event.pull_request.head.sha || github.sha}}
 
       - name: Complete functionalTests1
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@faaa4d96fecf273bd762985e0e7f9f933c774918 # v1.1.0
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: SmartPRChecks-Functional_tests
@@ -75,7 +80,7 @@ jobs:
           sha: ${{github.event.pull_request.head.sha || github.sha}}
 
       - name: Complete functionalTests2
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@faaa4d96fecf273bd762985e0e7f9f933c774918 # v1.1.0
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: SmartPRChecks-Functional_tests1
@@ -84,7 +89,7 @@ jobs:
           sha: ${{github.event.pull_request.head.sha || github.sha}}
 
       - name: Complete pmd checks
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@faaa4d96fecf273bd762985e0e7f9f933c774918 # v1.1.0
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: PMD-PMDCheck
@@ -93,7 +98,7 @@ jobs:
           sha: ${{github.event.pull_request.head.sha || github.sha}}
 
       - name: Complete maven build
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@faaa4d96fecf273bd762985e0e7f9f933c774918 # v1.1.0
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: Compile-mavenbuild
@@ -102,7 +107,7 @@ jobs:
           sha: ${{github.event.pull_request.head.sha || github.sha}}
 
       - name: Complete check-style
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@faaa4d96fecf273bd762985e0e7f9f933c774918 # v1.1.0
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: CheckStyle-checkstylecheck
@@ -111,7 +116,7 @@ jobs:
           sha: ${{github.event.pull_request.head.sha || github.sha}}
 
       - name: Complete code base hash
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@faaa4d96fecf273bd762985e0e7f9f933c774918 # v1.1.0
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: CodeBaseHash-codebasehashcheck
@@ -120,7 +125,7 @@ jobs:
           sha: ${{github.event.pull_request.head.sha || github.sha}}
 
       - name: Complete aeriform check
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@faaa4d96fecf273bd762985e0e7f9f933c774918 # v1.1.0
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: runAeriformCheck-AeriformCheck
